@@ -1,0 +1,47 @@
+---
+title: "03_RNA_annotations"
+author: "toobiwankenobi"
+date: "2020-07-28"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Preparations
+
+## Load libraries
+
+```{r, message=F}
+library(SingleCellExperiment)
+library(dplyr)
+library(data.table)
+```
+
+## Load data
+
+```{r load data}
+sce = readRDS(file = "data/sce_RNA.rds")
+```
+
+# Add clinical colData()
+
+## Various variables
+
+```{r}
+# before we can add the clinical metadata to the cell_meta file we first have to make sure that the clinical metadata is also ordered according to the single cell data. In this case the reference for each single cell is the imagenubmer. so we need to order the clinical data by image number first.
+clinical_mat <- clinical_mat[order(clinical_mat$ImageNumber),]
+cell_meta <- cell_meta[order(cell_meta$ImageNumber),]
+
+
+## TRANSFER THIS SECTION TO SCRIPT WHERE WE ADD COLDATA
+# here we add further metadata from the clinical data to the single cell metadata
+cell_meta$Location <- clinical_mat$Location[cell_meta$ImageNumber]
+cell_meta$Adjuvant <- clinical_mat$Adjuvant[cell_meta$ImageNumber]
+cell_meta$E_I_D <- clinical_mat$E_I_D[cell_meta$ImageNumber]
+cell_meta$Mutation <- clinical_mat$Mutation[cell_meta$ImageNumber]
+cell_meta$Cancer_Stage <- clinical_mat$Cancer_Stage[cell_meta$ImageNumber]
+cell_meta$Status_at_3m <- clinical_mat$Status_at_3m[cell_meta$ImageNumber]
+cell_meta$BlockID <- clinical_mat$BlockID[cell_meta$ImageNumber]
+```
+
+

@@ -1,0 +1,144 @@
+---
+title: "01_RNA_read_data"
+author: "toobiwankenobi"
+date: "2020-07-28"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Preparations
+This file will load the single-cell data and store it in an SingleCellExperiment data container. In order to successfully run this script, several .csv files have to provided in the data folder of this repository.
+
+## Load Libraries
+
+```{r warning=F, message=F}
+library(SingleCellExperiment)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(data.table)
+```
+
+## Load data (DOWNLOAD DATA SET AND STORE FILES IN CORRESPONDING FOLDER WITH CORRECT NAMING)
+
+```{r}
+# load cell data
+cells <- data.frame(fread(file = "data/rna/cell.csv",stringsAsFactors = FALSE))
+
+# load image metadata as output from CellProfiler
+image_mat <- read.csv(file = "data/rna/Image.csv", stringsAsFactors = FALSE)
+
+# load panel information as exported from AirLab and modified to contain ilastik and full columns and nicely written Target names.
+panel_mat <- read.csv(file = "data/rna/panel_mat.csv", stringsAsFactors = FALSE )
+
+# load the channel order information. this information is created from the jupyter notebook in the tiffs folder for every single tiff that is created. 
+# since it is the same panel for all images we just select one single file. the order or the metals in this file is the actual channels order.
+tags <- read.csv( "data/rna/20190731_ZTMA256.1_slide2_TH_s1_p14_r1_a1_ac_full.csv", header = FALSE)
+
+# load clinical data and TMA data to link images with patients
+clinical_mat <- read.csv(file = "data/rna/clinical_data_RNA.csv",stringsAsFactors = FALSE)
+```
+
+# Pre-processing
+
+## Generate the counts data frame
+
+```{r}
+cur_counts <- cells[,grepl("Intensity_MeanIntensityCorrected_FullStackFiltered",colnames(cells))]
+```
+
+## Get the scaling factor
+the single cell data needs to be multiplied with the scaling factor (16 bit)
+
+```{r}
+cur_counts <- cur_counts * image_mat$Scaling_FullStack[1]
+
+# order the channels according to channel number
+channelNumber <- as.numeric(sub("^.*_c", "", colnames(cur_counts)))
+cur_counts <- cur_counts[,order(channelNumber,decreasing = FALSE)]
+```
+
+## Get the information whether a cell is in the tumor mask
+any cell that has more than 25 % of its Area in the tumor mask is considered as "TRUE" meaning inside the tumor.
+
+```{r}
+tumor_mask <- cells$Intensity_MeanIntensity_tumormask * image_mat$Scaling_FullStack[1]
+in_tumor <- tumor_mask > 0.25
+```
+
+## Prepare the cell level metadata (colData)
+
+```{r}
+cell_meta <- DataFrame(CellNumber = cells$ObjectNumber,
+                       ImageNumber = cells$ImageNumber,
+                       Center_X = cells$Location_Center_X,
+                       Center_Y = cells$Location_Center_Y,
+                       Area = cells$AreaShape_Area,
+                       MajorAxisLength = cells$AreaShape_MajorAxisLength,
+                       MinorAxisLength = cells$AreaShape_MinorAxisLength,
+                       NumberOfNeighbors = cells$Neighbors_NumberOfNeighbors_8,
+                       in_tumor = in_tumor)
+
+# add a unique cellID to each cell consisting of "dataset"+"ImageNumber"+"ObjectNumber"
+cell_meta$cellID <- paste0("RNA_",cell_meta$ImageNumber, "_",cell_meta$CellNumber)
+rownames(cell_meta) <- cell_meta$cellID
+
+# order according to ImageNumber
+cell_meta <- cell_meta[order(cell_meta$ImageNumber),]
+```
+
+## Prepare the row-level metadata (panel/marker information)
+here we prepare all the metadata for the rows in the single cell experiment object (rowData)
+
+```{r}
+# the channel numbers are the rownumbers in the "tags" file that we create above
+tags$channel <- as.numeric(rownames(tags))
+colnames(tags) <- c("Metal.Tag","channel")
+
+# include the channel information in the panel metadata (panel_mat)
+panel_mat <- merge(panel_mat,tags,by="Metal.Tag")
+
+# now we order the panel metadata by channel. therefore we first modify the column names
+panel_mat <- panel_mat[order(panel_mat$channel,decreasing = FALSE),]
+
+# rename CD8a -> CD8 in Targets
+panel_mat$Target[26] <- "CD8"
+
+# assign rownames
+rownames(panel_mat) <- panel_mat$Target
+```
+
+# Create SCE object
+
+## Create the single cell experiment object
+
+```{r}
+# create the SCE object
+sce <- SingleCellExperiment(assays = list(counts = t(cur_counts)))
+
+# Set marker name as rownames and cellID as colnames
+rownames(sce) <- rownames(panel_mat)
+colnames(sce) <- rownames(cell_meta)
+
+# add the column and row metadata
+colData(sce) <- cell_meta
+rowData(sce) <- panel_mat
+
+# we also generate here the generically implemented "logcounts" as asinh transformed counts
+assay(sce, "asinh") <- asinh(SingleCellExperiment::counts(sce))
+```
+
+## Assign the clinical data to the metadata slot
+
+```{r}
+# order according to ImageNumber
+clinical_mat <- clinical_mat[order(clinical_mat$ImageNumber),]
+metadata(sce) <- as.list(clinical_mat)
+```
+
+## Save the SCE object
+
+```{r}
+saveRDS(sce,file = "data/sce_RNA.rds")
+```
