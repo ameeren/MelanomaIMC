@@ -1,12 +1,34 @@
 name: "melanoma_publication"
 output_dir: ../docs
 navbar:
-  title: "melanoma_publication"
+  title: "Melanoma Publication"
   left:
   - text: Home
     href: index.html
   - text: About
     href: about.html
+  - text: Preparations RNA TMA
+    menu:
+      - text: Read Data
+        href: 01_RNA_read_data.html
+      - text: Quality Control
+        href: 02_RNA_quality_control.html
+      - text: Add Clinical Data/Annotations
+        href: 03_RNA_annotations.html
+      - text: Celltype Classificaiton
+        href: 04_1_RNA_celltype_classification.html
+      - text: Subclustering of Celltypes
+        href: 04_2_RNA_classification_subclustering.html
+      - text: Definition of Chemokine-Expressing Cells
+        href: 05_RNA_chemokine_expressing_cells.html
+      - text: Definition of Chemokine Clusters and Communities
+        href: 06_RNA_chemokine_community_definition.html
+    - text: Preparations Protein TMA
+    menu:
+    - text: Main Figures
+    menu:
+    - text: Supplemental Figures
+    menu:
   - text: License
     href: license.html
 output:
@@ -15,3 +37,4 @@ output:
     toc_float: yes
     theme: cosmo
     highlight: textmate
+
