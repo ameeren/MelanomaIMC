@@ -8,40 +8,127 @@ editor_options:
 ---
 
 # Preparations
+Here, we add more metadata and colData annotations to the SCE object which are needed for downstream analyses. 
 
 ## Load libraries
 
 ```{r, message=F}
 library(SingleCellExperiment)
 library(dplyr)
-library(data.table)
 ```
 
 ## Load data
 
-```{r load data}
+```{r}
 sce = readRDS(file = "data/sce_RNA.rds")
+cur_sce <- data.frame(colData(sce))
+cur_meta <- data.frame(metadata(sce))
 ```
 
-# Add clinical colData()
+# Add existing clinical colData
 
 ## Various variables
 
 ```{r}
-# before we can add the clinical metadata to the cell_meta file we first have to make sure that the clinical metadata is also ordered according to the single cell data. In this case the reference for each single cell is the imagenubmer. so we need to order the clinical data by image number first.
-clinical_mat <- clinical_mat[order(clinical_mat$ImageNumber),]
-cell_meta <- cell_meta[order(cell_meta$ImageNumber),]
+cur_sce <- cur_sce %>%
+  left_join(., cur_meta[,c("ImageNumber", "Location", "Adjuvant", "E_I_D", "Mutation", 
+                           "Cancer_Stage", "Status_at_3m", "BlockID", "Description", "TissueType",
+                           "MM_location")])
+```
 
+# Make clinical data interpretable for statistical analysis
 
-## TRANSFER THIS SECTION TO SCRIPT WHERE WE ADD COLDATA
-# here we add further metadata from the clinical data to the single cell metadata
-cell_meta$Location <- clinical_mat$Location[cell_meta$ImageNumber]
-cell_meta$Adjuvant <- clinical_mat$Adjuvant[cell_meta$ImageNumber]
-cell_meta$E_I_D <- clinical_mat$E_I_D[cell_meta$ImageNumber]
-cell_meta$Mutation <- clinical_mat$Mutation[cell_meta$ImageNumber]
-cell_meta$Cancer_Stage <- clinical_mat$Cancer_Stage[cell_meta$ImageNumber]
-cell_meta$Status_at_3m <- clinical_mat$Status_at_3m[cell_meta$ImageNumber]
-cell_meta$BlockID <- clinical_mat$BlockID[cell_meta$ImageNumber]
+## Simplified biopsy origin
+
+```{r}
+# create simplified location of biopsies
+cur_sce$MM_location_simplified <- NA
+cur_sce[grep("CTRL", cur_sce$Location), ]$MM_location_simplified <- "control"
+cur_sce[grep("LN", cur_sce$MM_location), ]$MM_location_simplified <- "LN"
+cur_sce[grep("skin", cur_sce$MM_location), ]$MM_location_simplified <- "skin"
+cur_sce[is.na(cur_sce$MM_location_simplified) == TRUE, ]$MM_location_simplified <- "other"
+
+# add to colData
+colData(sce)$MM_location_simplified <- cur_sce$MM_location_simplified
+
+# add to metadata
+cur_meta <- left_join(cur_meta, distinct(cur_sce, MM_location_simplified, ImageNumber))
+```
+
+## Create relapse info based on clinical time-series data
+
+```{r}
+# add summarized relapse info to cur_meta
+cur_meta$relapse <- NA
+cur_meta[is.na(cur_meta$Date_progression) & cur_meta$MM_location_simplified != "control",]$relapse <- "untreated/lost"
+cur_meta[cur_meta$Date_progression %in% c("") & cur_meta$MM_location_simplified != "control" ,]$relapse <- "no relapse"
+cur_meta[is.na(cur_meta$relapse) & cur_meta$MM_location_simplified != "control",]$relapse <- "relapse"
+cur_meta[cur_meta$MM_location_simplified == "control",]$relapse <- "control"
+
+# add relapse info to cur_sce
+cur_sce <- left_join(cur_sce, cur_meta[,c("ImageNumber", "relapse")])
+
+# add relapse to SCE
+colData(sce)$relapse <- cur_sce$relapse
+```
+
+## Create therapy grouping before surgery
+
+```{r}
+# unique treatments
+unique(cur_meta$Last_sys_treatment_before_surgery)
+
+# group treatment types
+cur_meta$treatment_group_before_surgery <- NA
+cur_meta[cur_meta$MM_location_simplified == "control",]$treatment_group_before_surgery <- "control"
+cur_meta[cur_meta$Last_sys_treatment_before_surgery %in% "untreated",]$treatment_group_before_surgery <- "untreated"
+cur_meta[cur_meta$Last_sys_treatment_before_surgery %in% c("aPD1", "aPD1 + aCTLA4", "aCTLA4", 
+                                                           "aPD1 + aCTLA4 or aPD1", "aPD1 + aLAG3"),]$treatment_group_before_surgery <- "ICI"
+cur_meta[cur_meta$Last_sys_treatment_before_surgery %in% c("BRAFi + MEKi", "MEKi"),]$treatment_group_before_surgery <- "Targeted"
+cur_meta[cur_meta$Last_sys_treatment_before_surgery %in% c("chemotherapy"),]$treatment_group_before_surgery <- "Chemotherapy"
+cur_meta[is.na(cur_meta$Last_sys_treatment_before_surgery),]$treatment_group_before_surgery <- "unknown"
+
+# add treatment type  to cur_sce
+cur_sce <- left_join(cur_sce, cur_meta[,c("ImageNumber", "treatment_group_before_surgery")])
+
+# add relapse to SCE
+colData(sce)$treatment_group_before_surgery <- cur_sce$treatment_group_before_surgery
+```
+
+## Create therapy grouping after surgery
+
+```{r}
+# unique treatments
+unique(cur_meta$Treatment_after_surgery)
+
+# group treatment types
+cur_meta$treatment_group_after_surgery <- NA
+cur_meta[cur_meta$MM_location_simplified == "control",]$treatment_group_after_surgery <- "control"
+cur_meta[cur_meta$Treatment_after_surgery %in% "untreated",]$treatment_group_after_surgery <- "untreated"
+cur_meta[cur_meta$Treatment_after_surgery %in% c("aPD1 + aCTLA4", "aPD1", "aCTLA4", "aPD1 + aLAG3"),]$treatment_group_after_surgery <- "ICI"
+cur_meta[cur_meta$Treatment_after_surgery %in% c("BRAFi + MEKi", "BRAFi", "MEKi", "BRAFi + MEKi +/- aPD1"),]$treatment_group_after_surgery <- "Targeted"
+cur_meta[cur_meta$Treatment_after_surgery %in% c("chemotherapy"),]$treatment_group_after_surgery <- "Chemotherapy"
+cur_meta[cur_meta$Treatment_after_surgery %in% c("TVEC"),]$treatment_group_after_surgery <- "TVEC"
+cur_meta[cur_meta$Treatment_after_surgery %in% c("PC"),]$treatment_group_after_surgery <- "Palliative"
+cur_meta[is.na(cur_meta$Treatment_after_surgery),]$treatment_group_after_surgery <- "unknown"
+
+# add treatment type  to cur_sce
+cur_sce <- left_join(cur_sce, cur_meta[,c("ImageNumber", "treatment_group_after_surgery")])
+
+# add relapse to SCE
+colData(sce)$treatment_group_after_surgery <- cur_sce$treatment_group_after_surgery
+```
+
+# Add updated metadata to SCE object
+
+```{r}
+metadata(sce) <- list(cur_meta)
+```
+
+## Save the SCE object
+
+```{r}
+saveRDS(sce,file = "data/sce_RNA.rds")
 ```
 
 

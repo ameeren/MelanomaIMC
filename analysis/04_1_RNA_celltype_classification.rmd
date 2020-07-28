@@ -7,9 +7,256 @@ editor_options:
   chunk_output_type: console
 ---
 
-## Introduction
+# Introduction
+
+This script performs cell-type classification based on manually labelled cells. We will create increasing complexity for cell type labelling. Meaning, in a first layer (layer_1) we will only classify major cell types. We will then use some of those labelled cells (e.g. T cells) and generate a more fine grained annotation (layer_2) and this will continue until layer 3.
+
+This script contains the classification of layer 1.
+
+# Preparations
+
+## Read in data 
+First, we will read in the SingleCellExperiment object and load all libraries.
+
+```{r read-sce, message=F}
+sapply(list.files("/Volumes/thoch/Git/imcRtools/R/", full.names = TRUE), source)
+library(randomForest)
+library(scater)
+library(reshape2)
+library(viridis)
+require(nnet)
+```
+
+## Load data
 
 ```{r}
-
+sce <- readRDS("data/sce_RNA.rds")
+colour_vector <- readRDS("data/rna/colour_vector.rds")
+label.files <- list.files("data/rna/classifier_celltypes/", full.names = TRUE)
+label.names <- list.files("data/rna/classifier_celltypes/", full.names = FALSE)
 ```
+
+## Load labels
+Next, we will read in the manually labelled data.
+Labels are stored in form of .csv files for which the file name specifies the label and all cell IDs are stored in the files.
+We will only work with the cells that are uniquely labelled.
+
+```{r read_labels}
+# Read in labels
+labels <- vector()
+for(i in 1:length(label.files)){
+  cur_labels <- read.csv(label.files[i])
+  cur_vector <- rep(sub("_\\d+.*", "", label.names[i]), nrow(cur_labels))
+  names(cur_vector) <- paste0("RNA_",cur_labels$cell_ID)
+  labels <- c(labels, cur_vector)
+}
+
+# Select unique cells
+length(labels)
+dup <- names(labels)[duplicated(names(labels))]
+labels <- labels[!(names(labels) %in% dup)]
+length(labels)
+
+# Save this in SingleCellExperiment
+label_vector <- rep("unlabelled", ncol(sce))
+names(label_vector) <- colnames(sce)
+label_vector[names(labels)] <- labels
+
+colData(sce)$layer_1_labelled <- label_vector
+```
+
+# Random Forrest Training - Model 1
+
+Here, we will select the labelled cells and split them into training and validation cells.
+
+## Random split
+
+First, we will randomly subset the cells.
+Here, we will use a 70:30 split.
+
+```{r subset_cells}
+# Subset sce
+cur_sce <- sce[,is.na(sce$layer_1_labelled)]
+
+# Remove uninformative markers
+cur_sce <- cur_sce[!grepl("Histone|DNA|PD1|Vimentin|T\\d+_", rownames(cur_sce)),]
+
+# Train data
+set.seed(12345)
+sam <- sample(1:ncol(cur_sce), 0.7*ncol(cur_sce))
+train_sce <- cur_sce[,sam]
+
+# Validation data
+val_sce <- cur_sce[,-sam]
+```
+
+## Training
+
+Next, we will train the model.
+
+```{r train_model}
+model1 <- randomForest(x = t(assay(train_sce, "asinh")), 
+                       y = factor(train_sce$layer_1_labelled), importance = TRUE, 
+                       ntree = 1000)
+model1
+```
+
+We can have a look at the importance of individual features.
+
+```{r feature_importance}
+varImpPlot(model1) 
+```
+
+## Validation
+
+Now, we can validate the performance of the model.
+
+```{r validate_model, fig.width=15, fig.height=10}
+valid <- predict(model1, newdata = t(assay(val_sce, "asinh")), type = "response")
+
+# Confusion matrix
+table(val_sce$layer_1_labelled, valid)
+
+# Class error
+tab <- table(val_sce$layer_1_labelled, valid)
+for(i in 1:ncol(tab)){
+  print(paste0(colnames(tab)[i], ": ",
+        round(100*(sum(tab[i,-i])/sum(tab[i,])), 1), "%"))
+}
+
+# Classification probabilies
+valid <- as.data.frame(predict(model1, newdata = t(assay(val_sce, "asinh")), type = "prob"))
+valid$labels <- val_sce$layer_1_labelled
+valid.df <- melt(valid)
+
+ggplot(valid.df) + geom_boxplot(aes(variable, value)) +
+  facet_wrap(. ~ labels)
+```
+
+## Image-specific split
+
+First, we will subset the specific images.
+Again, we will perform a 70:30 split on the images.
+
+```{r subset_images}
+# Subset sce
+cur_sce <- sce[,sce$layer_1_labelled != "unlabelled"]
+
+# Remove uninformative markers
+cur_sce <- cur_sce[!grepl("Histone|DNA|PD1|Vimentin|T\\d+_", rownames(cur_sce)),]
+
+# Plot cell-type distribution on images
+table(as.numeric(cur_sce$ImageNumber), cur_sce$layer_1_labelled)
+
+# Train data
+set.seed(43)
+images <- unique(cur_sce$ImageNumber)[sample(1:length(unique(cur_sce$ImageNumber)), 0.7*length(unique(cur_sce$ImageNumber)))]
+train_sce <- cur_sce[,cur_sce$ImageNumber %in% images]
+
+# Validation data
+val_sce <- cur_sce[,!(cur_sce$ImageNumber %in% images)]
+
+# Check for cell labels
+table(train_sce$layer_1_labelled)
+table(val_sce$layer_1_labelled)
+```
+
+# Random Forrest Training - Model 2
+
+## Training
+
+Next, we will train the model.
+
+```{r train_model_images}
+model2 <- randomForest(x = t(assay(train_sce, "asinh")), 
+                       y = factor(train_sce$layer_1_labelled), 
+                       importance = TRUE, ntree = 1000)
+model2
+```
+
+We can have a look at the importance of individual features.
+
+```{r feature_importance_images}
+varImpPlot(model2) 
+```
+
+## Validation
+
+Now, we can validate the performance of the model.
+
+```{r validate_model_images, fig.width=15, fig.height=10}
+valid <- predict(model2, newdata = t(assay(val_sce, "asinh")), type = "response")
+
+# Confusion matrix
+table(val_sce$layer_1_labelled, valid)
+
+# Class error
+tab <- table(val_sce$layer_1_labelled, valid)
+for(i in 1:nrow(tab)){
+  print(paste0(colnames(tab)[i], ": ",
+        round(100*(sum(tab[i,-i])/sum(tab[i,])), 1), "%"))
+}
+
+# Classification probabilies
+valid <- as.data.frame(predict(model2, newdata = t(assay(val_sce, "asinh")), type = "prob"))
+valid$labels <- val_sce$layer_1_labelled
+valid.df <- melt(valid)
+
+ggplot(valid.df) + geom_boxplot(aes(variable, value)) +
+  facet_wrap(. ~ labels)
+```
+
+It is obvious that prediction on new images does not work as well as predicting new cells on images for which the model was trained. 
+
+# Predicting new data
+
+Finally, we will predict the labels of all other cells.
+For cell-type classification, we will use the method that was trained across all images. 
+However, for comparison we will also use model 2 for prediction.
+
+## Model 1
+
+We will use the model that was trained on all labelled images.
+
+```{r predict_cells}
+cell_labels.class <- as.character(predict(object = model1, 
+                       newdata = t(assay(sce[!grepl("Histone|DNA|PD1|Vimentin|T\\d+_", rownames(cur_sce)),], "asinh")), 
+                       type = "response"))
+cell_labels.prob <- predict(object = model1, 
+                       newdata = t(assay(sce[!grepl("Histone|DNA|PD1|Vimentin|T\\d+_", rownames(cur_sce)),], "asinh")), 
+                       type = "prob")
+
+colData(sce)$layer_1_classification <- cell_labels.class
+
+cur_sce <- sce
+colData(cur_sce)[,paste0(colnames(cell_labels.prob), "_prob")] <- cell_labels.prob
+```
+
+## Visualize results as heatmap and scatterplots
+
+```{r heatmap_cell_classified_mean_asinh,fig.height=10, fig.width=15}
+mean_sce <- calculateSummary(sce, split_by = c("layer_1_classification"), exprs_values = "counts")
+assay(mean_sce, "asinh") <- asinh(assay(mean_sce, "meanCounts"))
+assay(mean_sce, "asinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+plotHeatmap(mean_sce,features = rownames(sce)[!grepl("DNA|Histone|Vimentin",rownames(sce))]  ,exprs_values = "asinh",colour_columns_by = "layer_1_classification",color = viridis(100))
+```
+
+## Heatmap with scaled counts
+
+```{r Heatmap_cells_classified_mean_asinh_scaled, fig.height = 10, fig.width=15}
+plotHeatmap(mean_sce,features =  rownames(sce)[!grepl("DNA|Histone|Vimentin",rownames(sce))] , exprs_values = "asinh_scaled", colour_columns_by = c("layer_1_classification"), zlim = c(-3,3),
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100))
+```
+
+# Save RDS
+
+```{r saveRDS}
+saveRDS(sce, "data/sce_RNA.rds")
+
+# create data frame with class and probabilities and save as csv.
+layer_1_dat <- as.data.frame(cell_labels.prob)
+layer_1_dat$class <- cell_labels.class
+write.csv(layer_1_dat, file = paste0(mount_path,"/data/layer_1_classification.csv"))
+```
+
 
