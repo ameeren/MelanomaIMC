@@ -9,6 +9,22 @@ navbar:
     href: about.html
   - text: Preparations RNA TMA
     menu:
+      - text: Read Data
+        href: 01_RNA_read_data.html
+      - text: Annotations
+        href: 02_RNA_annotations.html
+      - text: Quality Control
+        href: 03_RNA_quality_control.html
+      - text: Automated Celltype Classification
+        href: 04_1_RNA_celltype_classification.html
+      - text: Subclustering
+        href: 04_2_RNA_classification_subclustering.html
+      - text: Chemokine-Expressing Cells
+        href: 05_RNA_chemokine_expressing_cells.html
+      - text: Mixed Chemokine Communities
+        href: 06_RNA_chemokine_community_definition.html
+      - text: Pure Chemokine Communities
+        href: 07_RNA_neighbourhood_analysis_chemokines.html
   - text: Preparations Protein TMA
     menu:
   - text: Main Figures
