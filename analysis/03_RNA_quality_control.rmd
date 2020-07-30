@@ -1,0 +1,240 @@
+---
+title: "02_RNA_quality_control"
+author: "Nils Eling/Daniel Schulz/Tobias Hoch"
+date: "2020-07-28"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Preparations
+
+## Load libraries
+
+```{r message=F}
+sapply(list.files("/Volumes/server_homes/daniels/Git/imcRtools/R", full.names = TRUE), source)
+sapply(list.files("/Volumes/thoch/Git/ZTMA256_protein_data/code/helper_functions", full.names = TRUE), source)
+sapply(list.files("/Volumes/thoch/Git/ZTMA256_RNA_data/code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(dplyr)
+library(ggplot2)
+library(scater)
+library(CATALYST)
+library(reshape2)
+library(LSD)
+library(viridis)
+library(ggridges)
+library(cowplot)
+library(BiocParallel)
+library(dittoSeq)
+```
+
+## Load the single cell experiment object and the image metadata
+
+```{r}
+sce <- readRDS(file = "data/sce_RNA.rds")
+```
+
+# Assay
+
+## Add different assays
+
+```{r}
+assay(sce, "scaled_counts") <- t(scale(t(assay(sce, "counts"))))
+assay(sce, "scaled_asinh") <- t(scale(t(assay(sce, "asinh"))))
+```
+
+# General Plots
+
+## Plot Cell Counts for every Image
+
+```{r cell_counts_over_samples, fig.width=15, fig.height=10}
+# this function takes all the column metadata from the sce and plots parts thereof
+plotCellCounts(sce, colour_by = "Location", split_by = "ImageNumber")
+```
+
+## Image 57 has only a few cells and should probably be excluded.
+will be flagged below
+
+```{r images with less than 500 cells}
+cur_sce <- data.frame(colData(sce))
+# show images with less than 500 cells
+cur_sce %>%
+  group_by(ImageNumber) %>%
+  summarise(n=n()) %>%
+  filter(n<500)
+```
+
+## Flag image in sce object for future exclusion
+
+```{r flag images}
+# define vector for each single cell whether to keep (TRUE) or not (FALSE)
+includeImage <- colData(sce)$ImageNumber != 57
+sce$includeImage <- includeImage
+```
+
+## Mean intensity of markers per image
+
+```{r mean marker intensities over images}
+# we use a function from Nils. This function makes use of the aggregate function to calculate the mean for each channel over all specified groups
+mean_sce <- calculateSummary(sce, split_by = c("ImageNumber", "BlockID", "Location","Mutation","Cancer_Stage", "Status_at_3m","E_I_D","Adjuvant"), exprs_values = "counts")
+``` 
+
+## Transform data
+
+```{r transform mean data}
+assay(mean_sce, "asinh") <- asinh(assay(mean_sce, "meanCounts"))
+assay(mean_sce, "asinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+```
+
+## Plot the mean data
+
+```{r  mean_per_image, fig.height= 10, fig.width=15}
+# first we define a vector of markers that we want to plot
+plot_targets <- rownames(sce)
+plot_targets <- plot_targets[! plot_targets %in% c("DNA1","DNA2","HistoneH3")]
+
+# now we plot the heatmap
+plotHeatmap(mean_sce,features = plot_targets  ,exprs_values = "asinh",colour_columns_by = "ImageNumber",color = viridis(100))
+```
+
+## Plot the scaled data
+
+```{r mean_per_image_scaled, fig.height=10, fig.width=15}
+# now we plot the scaled heatmap
+plotHeatmap(mean_sce,features = plot_targets, exprs_values = "asinh_scaled", colour_columns_by = c("ImageNumber"), zlim = c(-3,3),
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100))
+```
+
+## Cell level quality control
+here we plot the marker intensity distributions for all images. since we have too many images we make groups of 10.
+
+```{r density_plots_all_markers, message=F, fig.height= 10, fig.width=15}
+y <- c(rep(1:10,16),rep(11,7))
+
+# add the group information to the sce object
+sce$groups <- y[colData(sce)$ImageNumber]
+
+# now we use the function written by Nils
+plotDist(sce, plot_type = "ridges", 
+         colour_by = "groups", split_by = "rows", 
+         exprs_values = "asinh") + 
+  theme_minimal(base_size = 15)
+ # the distributions look very even across images indicating that we have no major batch effects.
+
+```
+
+## Define markers which had poor staining
+
+```{r define good markers}
+rowData(sce)$good_marker <- ! grepl( "DNA|Histone|Vimentin|PD1|PDL1|CCR2",rownames(sce))
+```
+
+## Calculate tSNE and UMAP
+
+```{r}
+set.seed(12345)
+
+# TSNE
+start = Sys.time()
+sce <- runTSNE(sce, exprs_values = "scaled_asinh", 
+                     subset_row = rowData(sce)$good_marker)
+end = Sys.time()
+print(end-start)
+
+# UMAP
+start = Sys.time()
+sce <- runUMAP(sce, exprs_values = "scaled_asinh", 
+                     subset_row = rowData(sce)$good_marker)
+end = Sys.time()
+print(end-start)
+```
+
+## Subset SCE for UMAP/tSNE visualization
+
+```{r}
+cur_sce <- sce[, colnames(sce) %in% sample(sce$cellID, round(length(sce$cellID)*0.05))]
+cur_sce$ImageNumber <- as.character(cur_sce$ImageNumber)
+```
+
+## Visualize features on tSNE and UMAP
+Next, we will visualize different quality features on these representations.
+
+```{r TSNE_clinical_features, fig.width=35, fig.height=25, message=FALSE}
+# Select plots in list
+p.list <- list()
+
+# 
+p.list$ImageNumber <- dittoDimPlot(cur_sce, var = "ImageNumber", reduction.use = "TSNE", size = 0.5, legend.show = FALSE) 
+p.list$Mutation <- dittoDimPlot(cur_sce, var = "Mutation", reduction.use = "TSNE", size = 0.5)
+p.list$Cancer_Stage <- dittoDimPlot(cur_sce, var = "Cancer_Stage", reduction.use = "TSNE", size = 0.5)
+p.list$relapse <- dittoDimPlot(cur_sce, var = "relapse", reduction.use = "TSNE", size = 0.5)
+p.list$Location <- dittoDimPlot(cur_sce, var = "Location", reduction.use = "TSNE", size = 0.5)
+p.list$TissueType <- dittoDimPlot(cur_sce, var = "TissueType", reduction.use = "TSNE", size = 0.5)
+p.list$MM_location_simplified <- dittoDimPlot(cur_sce, var = "MM_location_simplified", reduction.use = "TSNE", size = 0.5)
+p.list$treatment_group_before_surgery <- dittoDimPlot(cur_sce, var = "treatment_group_before_surgery", reduction.use = "TSNE", size = 0.5)
+
+plot_grid(plotlist = p.list, ncol = 4, rel_widths = c(1.5, 1, 1, 1))
+```
+
+## UMAP
+
+```{r UMAP_clinical_features, fig.width=35, fig.height=25, message=FALSE}
+# Select plots in list
+p.list <- list()
+
+# 
+p.list$ImageNumber <- dittoDimPlot(cur_sce, var = "ImageNumber", reduction.use = "UMAP", size = 0.5, legend.show = FALSE) 
+p.list$Mutation <- dittoDimPlot(cur_sce, var = "Mutation", reduction.use = "UMAP", size = 0.5)
+p.list$Cancer_Stage <- dittoDimPlot(cur_sce, var = "Cancer_Stage", reduction.use = "UMAP", size = 0.5)
+p.list$relapse <- dittoDimPlot(cur_sce, var = "relapse", reduction.use = "UMAP", size = 0.5)
+p.list$Location <- dittoDimPlot(cur_sce, var = "Location", reduction.use = "UMAP", size = 0.5)
+p.list$TissueType <- dittoDimPlot(cur_sce, var = "TissueType", reduction.use = "UMAP", size = 0.5)
+p.list$MM_location_simplified <- dittoDimPlot(cur_sce, var = "MM_location_simplified", reduction.use = "UMAP", size = 0.5)
+p.list$treatment_group_before_surgery <- dittoDimPlot(cur_sce, var = "treatment_group_before_surgery", reduction.use = "UMAP", size = 0.5)
+
+
+plot_grid(plotlist = p.list, ncol = 4, rel_widths = c(1.5, 1, 1, 1))
+```
+
+## Marker Expression on TSNE
+
+```{r asinh_TSNE_marker, fig.width=35, fig.height=25, message=FALSE}
+p.list <- list()
+for(i in rownames(sce)[rowData(cur_sce)$good_marker]){
+  p.list[[i]] <- plotTSNE(cur_sce, colour_by = i, by_exprs_values = "asinh")
+}
+
+plot_grid(plotlist = p.list, ncol = 7)
+```
+
+## Scaled Expression
+
+```{r scaled_asinh_TSNE_marker, fig.width=35, fig.height=25, message=FALSE}
+p.list <- list()
+for(i in rownames(sce)[rowData(cur_sce)$good_marker]){
+  p.list[[i]] <- plotTSNE(cur_sce, colour_by = i, by_exprs_values = "scaled_asinh") 
+}
+
+plot_grid(plotlist = p.list, ncol = 7)
+```
+
+## Scaled Expression UMAP
+
+```{r scaled_asinh_UMAP_marker, fig.width=35, fig.height=25, message=FALSE}
+p.list <- list()
+for(i in rownames(sce)[rowData(cur_sce)$good_marker]){
+  p.list[[i]] <- plotUMAP(cur_sce, colour_by = i, by_exprs_values = "scaled_asinh")
+}
+
+
+plot_grid(plotlist = p.list, ncol = 7)
+```
+
+# Save data
+
+## Save updated SCE object
+
+```{r save updated sce file}
+saveRDS(sce, file = "data/sce_RNA.rds")
+```

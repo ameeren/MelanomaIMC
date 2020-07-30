@@ -20,7 +20,7 @@ library(dplyr)
 ## Load data
 
 ```{r}
-sce = readRDS(file = "data/sce_RNA.rds")
+sce <- readRDS(file = "data/sce_RNA.rds")
 cur_sce <- data.frame(colData(sce))
 cur_meta <- data.frame(metadata(sce))
 ```
@@ -34,6 +34,17 @@ cur_sce <- cur_sce %>%
   left_join(., cur_meta[,c("ImageNumber", "Location", "Adjuvant", "E_I_D", "Mutation", 
                            "Cancer_Stage", "Status_at_3m", "BlockID", "Description", "TissueType",
                            "MM_location")])
+
+colData(sce)$Location <- cur_sce$Location
+colData(sce)$Adjuvant <- cur_sce$Adjuvant
+colData(sce)$E_I_D <- cur_sce$E_I_D
+colData(sce)$Mutation <- cur_sce$Mutation
+colData(sce)$Cancer_Stage <- cur_sce$Cancer_Stage
+colData(sce)$Status_at_3m <- cur_sce$Status_at_3m
+colData(sce)$BlockID <- cur_sce$BlockID
+colData(sce)$Description <- cur_sce$Description
+colData(sce)$TissueType <- cur_sce$TissueType
+colData(sce)$MM_location <- cur_sce$MM_location
 ```
 
 # Make clinical data interpretable for statistical analysis
