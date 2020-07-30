@@ -7,9 +7,116 @@ editor_options:
   chunk_output_type: console
 ---
 
-## Introduction
+# Introduction
 
-```{r}
+This script detects interaction networks of a given celltype (here: chemokine producing cells) and defines these networks as clusters. Once a cluster is defined, an algorithm screens the neighbourhood of those clusters to identify cells within/surrounding a cluster. These cells are defined as the community of a cluster. 
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+
+# Set path. get the info for the path to the project folder on your system.
+mount_path <- "/Volumes/thoch/Git/ZTMA256_RNA_data"
+```
+
+# Preparations
+
+## Load packages and helper functions
+
+```{r message=F}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(ggplot2)
+library(scater)
+library(igraph)
+library(reshape2)
+library(cowplot)
+library(ggridges)
+library(tidyverse)
+library(viridis)
+library(dplyr)
+library(sp)
+library(sf)
+library(RANN)
+```
+
+## Load data
+
+```{r load data}
+sce = readRDS(file = "data/sce_rna.rds")
+```
+
+# Clusters/Communities - General
+
+## Find clusters of chemokine-producing cells and define communities
+
+A cluster of chemokine-producing cells consists of cells (min. 10) that have a max distance of 20µm to the next chemokine producing cells. A community is defined by cells which surround (max 25µm) the border of a cluster (definded by the convex hull of the cluster).  
+
+```{r Cluster and Community Detection chemokines general}
+# average cell diameter
+sqrt(mean(sce$Area)/pi)
+sqrt(median(sce$Area)/pi)
+quantile(sqrt(sce$Area/pi))
+
+# find chemokine clusters
+sce <- findClusters(sce, sce[,colData(sce)$chemokine == TRUE]$cellID , 
+                    'cellID', 
+                    'Center_X', 'Center_Y', 
+                    'ImageNumber', 
+                    distance = 20, 
+                    min_clust_size = 10,
+                    output_colname = "chemokine_cluster")
+
+# number of chemokine clusters
+length(unique(sce$chemokine_cluster))
+
+# define cells within/surrounding a cluster of chemokine producing cells
+sce <- findCommunity(sce, 
+                     'cellID', 
+                     'Center_X', 'Center_Y', 
+                     'ImageNumber', 
+                     'chemokine_cluster', 
+                     distance = 25,
+                     output_colname = "chemokine_community")
+
+# number of chemokine communities
+length(unique(sce$chemokine_community))
+```
+
+# Clusters/Communities - CXCL13
+
+## Find CXCL13 communities (for TLS definition with protein data set)
+
+```{r Cluster and Community Detection CXCL13}
+# find CXCL13 clusters
+sce <- findClusters(sce, 
+                    sce[,colData(sce)$CXCL13 == 1]$cellID , 
+                    'cellID', 
+                    'Center_X', 'Center_Y', 
+                    'ImageNumber', 
+                    distance = 30, 
+                    min_clust_size = 10,
+                    output_colname = "cxcl13_cluster")
+
+# number of chemokine clusters
+length(unique(sce$cxcl13_cluster))
+
+# define cells within/surrounding a cluster of chemokine producing cells
+sce <- findCommunity(sce, 
+                     'cellID', 
+                     'Center_X', 
+                     'Center_Y', 
+                     'ImageNumber', 
+                     'cxcl13_cluster', 
+                     distance = 1,
+                     output_colname = "cxcl13_community")
+
+# number of chemokine communities
+length(unique(sce$cxcl13_community))
+```
+
+# Save SCE object
+
+```{r save sce}
+saveRDS(sce, file = "data/sce_rna.rds")
 ```
 

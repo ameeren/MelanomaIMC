@@ -7,9 +7,197 @@ editor_options:
   chunk_output_type: console
 ---
 
-## Introduction
+# Introduction
+Here, we define chemokine-expressing cells 
+
+# Preparations
+
+## Load libraries
+
+```{r, message=F}
+source("code/helper_functions/compute_diff_dapb.R")
+library(SingleCellExperiment)
+library(dplyr)
+library(ggplot2)
+library(scater)
+library(CATALYST)
+library(reshape2)
+library(LSD)
+library(data.table)
+library(ComplexHeatmap)
+library(corrplot)
+library(pheatmap)
+library(grid)
+library(gridExtra)
+```
+
+## Load the single cell experiment object and the image metadata
 
 ```{r}
+sce <- readRDS(file = "data/sce_RNA.rds")
+```
+
+# Detect Chemokine Expressing Cells
+
+## Detection of chemokine expressing cells
+
+for the detection of chemokine expressing cells we make use of the fact that we also measured a negative control (DapB). 
+
+```{r}
+# first we get the dat from the sce object to build a data.table
+dat_wide <- as.data.table(t(assay(sce,"asinh")))
+dat_wide[,id := sce$cellID]
+
+# get the names of the chemokine channels without the negative control channel
+chemokine_channels = rownames(sce[which(grepl("T\\d+_",rownames(sce)) & ! grepl("DapB",rownames(sce))),])
+
+# construct empty data.tables that will be filled in
+col_to_keep = c("id", chemokine_channels)
+p_values_adjusted = dat_wide[,..col_to_keep]
+z_scores = dat_wide[,..col_to_keep]
+```
+
+## Build binary matrix for chemokine expression
+
+```{r, warning=F}
+# define chemokine producing cells according to linear model
+col_to_keep = c("id", "T6_DapB", chemokine_channels)
+chemokines = dat_wide[,..col_to_keep]
+
+# here we use the function "compute_difference" (helper function) to calculate for each cell a binary score whether the cell is significantly expressing the respective chemokine or not.
+for (i in chemokine_channels) {
+  diff_chemo = compute_difference(dat_wide,i)
+  chemokines[,as.character(i) := ifelse(diff_chemo$padj <= 0.01 & diff_chemo$scaled_diff > 0 & diff_chemo$mean_DapB < 2.5, 1, 0)]
+}
+
+chemokines = chemokines[,-"T6_DapB"]
+```
+
+## Plot results from chemokine detection
+
+```{r different_chemokine_detection_results,eval=FALSE}
+# check difference between DapB and signal (histogram)
+for(i in chemokine_channels){
+  a = ggplot(data = diff_chemo, aes(x=diff)) + 
+  geom_histogram(binwidth = 0.01) + 
+  xlab(paste("DapB mRNA signal subtracted from", i, sep = " ")) + ggtitle("Raw distribution") + 
+  theme(plot.title = element_text(hjust = 0.5), axis.title = element_text(size=15))
+
+  b = ggplot(data = diff_chemo, aes(x=scaled_diff)) + 
+  geom_histogram(binwidth = 0.1, aes(fill = 
+                                        ifelse(padj <= 0.01 & scaled_diff > 0 & mean_DapB < 2.5, 'p<0.01', 'n.s.'))) + 
+  xlab(paste("DapB mRNA signal subtracted from", i, sep = " ")) + ggtitle("Scaled distribution") + 
+    labs(fill = "legend") +
+    xlim(-5,7) +
+    scale_fill_manual(values = c("black", "deepskyblue1")) +
+        theme(plot.title = element_text(hjust = 0.5, size = 35), 
+          axis.title = element_text(size = 25), 
+          legend.text = element_text(size = 20), 
+          legend.title = element_text(size=20),
+          axis.text =  element_text(size = 15))
+  
+  # significant cells defined by substration
+  c = ggplot(data=diff_chemo, aes(x=mean_DapB, y=mean_chemokine)) + geom_point(alpha=0.2, aes(col = 
+                                                                                             ifelse(padj <= 0.01 & scaled_diff > 0 & mean_DapB < 2.5, 'p<0.01', 'n.s.'))) + 
+    scale_color_manual(values = c("black", "deepskyblue1")) +
+    xlim(0,5.5) + ylim(0,5.5) +
+    ylab(paste("Mean expression of", i, sep=" ")) +
+    xlab("Mean DapB mRNAexpression") +
+    ggtitle(paste("DapB mRNA vs.", i, sep = " ")) + 
+    theme(plot.title = element_text(hjust = 0.5, size = 35), 
+          axis.title = element_text(size = 25), 
+          legend.position = "none",
+          axis.text =  element_text(size = 15))
+  #png(file = paste("~/Daniel_volume/Rout_RNA/chemokine_detection_method_comparison/",i,"difference_distribution_BH_0.01.png", sep="_"), height = 1000, width = 1600)
+  grid.arrange(a,b,c, nrow = 3, ncol=1)
+  #dev.off()
+}
+```
+
+# Basic Stats
+
+## Basic numbers on the chemokine expressing cells 
+
+```{r}
+# calculate the amount of cells that are positive for 1, 2 and multiple combinations. exclude column containing the ids (12)
+single_combinations = chemokines[rowSums(chemokines[,-1]) == 1,-1]
+# number of single chemokines positive cells 
+length(single_combinations$T5_CCL4)
+
+double_combinations = chemokines[rowSums(chemokines[,-1]) == 2,-1]
+# number of single chemokines positive cells 
+length(double_combinations$T5_CCL4)
+
+
+multiple_combinations = chemokines[rowSums(chemokines[,-1]) >= 3,-1]
+# number of cells that express 3 or more chemokines
+length(multiple_combinations$T5_CCL4)
+
+
+# number of double positives per chemokine
+double_counts <- colSums(double_combinations)
+
+# frequency matrix and corrplot for frequency matrix
+double_combinations[double_combinations == 0] <- NA
+count_matrix = psych::pairwiseCount(x=double_combinations)
+
+# normalize the frequency matrix by the amount of double combinations that occur for each chemokine
+frequency_matrix <- count_matrix
+for (i in colnames(count_matrix)){
+  frequency_matrix[,i] <- frequency_matrix[,i]/double_counts[i]
+}
 
 ```
 
+## Frequency double-positive cells
+The next plot shows the frequencies of all double positive cell occurences. e.g. of all T4_CXCL10 expressing cells that also express another chemokine more than 50% express T9_CXCL9.
+
+```{r frequency_of_double_positive_chemokines, fig.height=10, fig.width=10}
+corrplot(frequency_matrix, is.corr = FALSE, tl.col = 'black', method = 'pie', type = 'full', 
+         tl.srt = 45, tl.cex = 0.8, tl.offset = 0.5, cl.length = 2, cl.cex = 1, cl.align.text = "l", cl.ratio = 0.3,
+         diag=TRUE, order = "hclust")
+```
+
+## Corrplot of Frequency matrix
+Now we normalize the numbers of double positives by the numbers of all respective positive chemokines. this shows that usually between 20-40 percent of chemokine expressing cells are double positive expressors.
+
+```{r freq_corrplot}
+single_counts <- colSums(single_combinations)
+frequency_matrix <- count_matrix
+for (i in colnames(count_matrix)){
+  frequency_matrix[,i] <- frequency_matrix[,i]/single_counts[i]
+}
+
+corrplot(frequency_matrix, is.corr = FALSE, tl.col = 'black', method = 'pie', type = 'full', 
+         tl.srt = 45, tl.cex = 0.8, tl.offset = 0.5, cl.length = 2, cl.cex = 1, cl.align.text = "l", cl.ratio = 0.3,
+         cl.lim = c(0,1), diag=TRUE, order = "hclust")
+```
+
+# SCE object
+
+## Add data to SCE object
+
+```{r add to sec object}
+# general chemokine producer tag for every cell (logical binary)
+sce$chemokine <- ifelse(rowSums(chemokines[,-1]) > 0, TRUE, FALSE)
+sum(sce$chemokine)
+
+# specific chemokines
+sce$CCL4 <- chemokines$T5_CCL4
+sce$CCL18 <- chemokines$T7_CCL18
+sce$CXCL8 <- chemokines$T1_CXCL8
+sce$CXCL10 <- chemokines$T4_CXCL10
+sce$CXCL12 <- chemokines$T3_CXCL12
+sce$CXCL13 <- chemokines$T8_CXCL13
+sce$CCL2 <- chemokines$T12_CCL2
+sce$CCL22 <- chemokines$T2_CCL22
+sce$CXCL9 <- chemokines$T9_CXCL9
+sce$CCL8 <- chemokines$T11_CCL8
+sce$CCL19 <- chemokines$T10_CCL19
+```
+
+## Save sce object
+
+```{r save sce object}
+saveRDS(object = sce,file = "data/sce_RNA.rds")
+```
