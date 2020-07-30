@@ -46,6 +46,13 @@ for(i in 1:length(file.names)){
     labelled_sce <- cbind(labelled_sce, file)
   }
 }
+```
+
+## Duplicates
+
+```{r}
+# how many duplicates do we have?
+ncol(labelled_sce[,duplicated(labelled_sce$cellID) == T]) / ncol(labelled_sce[,duplicated(labelled_sce$cellID) == F]) * 100
 
 # remove duplicates (more than 1 label per cellID)
 unique_labels <- labelled_sce[,duplicated(labelled_sce$cellID) == F]
@@ -69,6 +76,9 @@ label_vector[label_vector == "CD3+CD8+LAG3-"] <- "Tcytotoxic"
 
 # unique cell labels
 unique(label_vector)
+
+# add to sce
+colData(sce)$layer_1_gated <- label_vector
 ```
 
 ## Create colour vector
@@ -100,27 +110,11 @@ metadata(sce)$colour_vectors$layer_1 <- layer1_colours
 
 In the next step, we will check the quality of the labels by:
 
-1. checking how many cells contain multiple labels
+1. checking how many cells contain multiple labels (see chunk 2)
 2. how many cells of how many images are labeled
 3. how balanced the classes are
 4. if the selected cells actually express the markers that they are supposed to express
 
-```{r quality-control-1}
-# 1. percentage of cells with multiple labels
-sum(duplicated(names(labels)))/length(unique(names(labels))) * 100
-
-# Select unique cells
-dup <- names(labels)[duplicated(names(labels))]
-labels <- labels[!(names(labels) %in% dup)]
-length(unique(names(labels)))/length(labels)
-
-# Store this vector in SCE object
-label_vector <- rep("unlabelled", ncol(sce))
-names(label_vector) <- colnames(sce)
-label_vector[names(labels)] <- labels
-
-colData(sce)$layer_1_gated <- label_vector
-```
 
 Next, we will check how many cells and how many images are labelled.
 
@@ -129,25 +123,19 @@ Next, we will check how many cells and how many images are labelled.
 
 # Percent cells labelled
 as_tibble(colData(sce)) %>% 
-  summarise(labelled_cells = sum(layer_1_gated != "unlabelled")/n()) 
+  summarise(labelled_cells = sum(layer_1_gated != "unlabelled")/n()) * 100
 
 # Percent images labelled
 as_tibble(colData(sce)) %>% 
-  group_by(SampleId, ROI) %>%
+  group_by(ImageNumber) %>%
   summarise(labelled_cells = sum(layer_1_gated != "unlabelled")) %>%
   ungroup() %>%
-  summarise(labelled_images = sum(labelled_cells != 0)/n())
+  summarise(labelled_images = sum(labelled_cells != 0)/n()) * 100
 
-# Percent Samples labelled
-as_tibble(colData(sce)) %>% 
-  group_by(SampleId) %>%
-  summarise(labelled_cells = sum(layer_1_gated != "unlabelled")) %>%
-  ungroup() %>%
-  summarise(labelled_images = sum(labelled_cells != 0)/n())
 
 # Percent of cells labelled per image
 as_tibble(colData(sce)) %>% 
-  group_by(SampleId, ROI) %>%
+  group_by(ImageNumber) %>%
   summarise(labelled_cells = sum(layer_1_gated != "unlabelled")/n(),
             number_cells = n()) %>%
   as.data.frame()
@@ -163,33 +151,28 @@ as_tibble(colData(sce)) %>%
 
 # Total cells per class and Sample
 as_tibble(colData(sce)) %>%
-  group_by(layer_1_gated, SampleId) %>%
+  group_by(layer_1_gated, ImageNumber) %>%
   summarise(number_cells = n()) %>%
-  as.data.frame()
-
-# Total cells per class and image
-as_tibble(colData(sce)) %>%
-  group_by(layer_1_gated, SampleId, ROI) %>%
-  summarise(number_cells = n()) %>%
-  as.data.frame()
+  as.data.frame() %>%
+  head(.)
 ```
 
 Now, we will check the expression of selected markers across the classes and visualize cell labels on tSNE.
 
 ```{r quality-control-4}
 lab_sce <- sce[,sce$layer_1_gated != "unlabelled"]
-agr_sce <- aggregateAcrossCells(lab_sce, ids = colData(lab_sce)[,c("SampleId", "layer_1_gated")], 
+agr_sce <- aggregateAcrossCells(lab_sce, ids = colData(lab_sce)[,c("ImageNumber", "layer_1_gated")], 
                                 average = TRUE)
 assay(agr_sce, "exprs") <- asinh(counts(agr_sce))
 colnames(agr_sce) <- paste0(agr_sce$SampleId, "_", agr_sce$layer_1_gated)
 
 # Define markers that were used for gating
-cur_markers <- c("Ecad", "CarbonicAnhydrase", "CD14", "HLADR", "CD11c", "CD303", "CD68", "CD15", "MPO", "CD38",
-                 "SMA", "PDGFRb", "CD20", "CD7", "CD3")
+cur_markers <- c("SMA", "CK5","CD38","HLADR","S100","Cadherin11","FAP","CD68", "CD134", "CD68",
+                 "CD3", "Lag3", "PD1", "CD8", "SOX10", "CD31", "Mart1", "pRB", "CD15", "MPO")
 
 # Non-scaled
 dittoHeatmap(agr_sce[cur_markers,], assay = "exprs",
-            annot.by = c("SampleId", "layer_1_gated"), 
+            annot.by = c("ImageNumber", "layer_1_gated"), 
             order.by = "layer_1_gated", cluster_rows = FALSE,
             scale = "none", heatmap.colors = viridis(100), 
             annotation_colors = list(layer_1_gated = metadata(sce)$colour_vectors$layer_1))
