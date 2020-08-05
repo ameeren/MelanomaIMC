@@ -398,7 +398,6 @@ assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
 
 colnames(agr_sce) <- paste0(agr_sce$ImageNumber, "_", agr_sce$celltypes_layer1)
 
-rownames(sce)
 # Non-scaled
 dittoHeatmap(agr_sce[cur_markers,], assay = "asinh",
             annot.by = c("celltypes_layer1"), 
