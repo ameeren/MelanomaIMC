@@ -32,7 +32,7 @@ library(workflowr)
 ## Load data
 
 ```{r load data}
-sce = readRDS(file = "data/sce_RNA.rds")
+sce <- readRDS(file = "data/sce_RNA.rds")
 ```
 
 # Marker for Clustering
