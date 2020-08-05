@@ -33,6 +33,10 @@ navbar:
         href: 02_Protein_annotations.html
       - text: Quality Control
         href: 03_Protein_quality_control.html
+      - text: Automated Celltype Classification
+        href: 04_1_Protein_celltype_classification.html
+      - text: Subclustering
+        href: 04_2_Protein_classification_subclustering.html
   - text: Main Figures
     menu:
       - text: Overview
