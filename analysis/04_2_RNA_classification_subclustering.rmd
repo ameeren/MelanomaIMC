@@ -28,6 +28,7 @@ library(igraph)
 library(CATALYST)
 library(workflowr)
 library(gridExtra)
+library(dplyr)
 ```
 
 ## Load data
@@ -202,7 +203,7 @@ plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",
 ## Marker expression density of clusters vs. manually gated - Tcytotoxic
 
 ```{r density_marker_Tcytotoxic, fig.width=15, fig.height=10}
-# Density of Lag3 Expression in different Tcytotoxic clusters vs. manually gated Lag3+ cells
+# Density of Expression in different Tcytotoxic clusters vs. manually gated Lag3+ cells
 cur_sce <- data.frame(colData(sce))
 cur_exprs <- data.frame(t(assays(sce)[[2]]))
 cur_exprs <- cbind(cur_exprs, cur_sce[,c("celltype", "layer_1_gated", "celltype_clustered")])
