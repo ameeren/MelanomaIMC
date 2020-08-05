@@ -79,7 +79,7 @@ marker_list$Macrophage <- c("CD68", "CD163", "HLADR", "PDL1", "CD3", "CCR2","T5_
 marker_list$Vasculature <- c("CD31", "SMA","CK5","pRB", "Cadherin11","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
                        "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
 
-marker_list$HLA-DR <- c("HLADR","CD68","CD3","CCR2","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
+marker_list$`HLA-DR` <- c("HLADR","CD68","CD3","CCR2","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
                        "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
 
 marker_list$CD38 <- c("HLADR","CD38","CD3","CCR2","CD163","CD68","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
@@ -105,8 +105,6 @@ fs_clustering <- vector(length = ncol(sce))
 # Macrophage, Bcells, Thelper, Tcytotoxic, Tother and BnT cells will be clustered for a total of 6 clustes each
 set.seed(12345)
 
-unique(sce$celltype)
-names(assays(sce))
 # 6 clusters
 for(i in c("Tcell","Macrophage","Tcytotoxic","Tumor")){
   #subset cells for clustering
