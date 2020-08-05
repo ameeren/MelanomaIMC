@@ -27,8 +27,24 @@ navbar:
         href: 07_RNA_neighbourhood_analysis_chemokines.html
   - text: Preparations Protein TMA
     menu:
+      - text: Read Data
+        href: 01_Protein_read_data.html
+      - text: Annotations
+        href: 02_Protein_annotations.html
+      - text: Quality Control
+        href: 03_Protein_quality_control.html
   - text: Main Figures
     menu:
+      - text: Overview
+        href: Figure_1.html
+      - text: Chemokines in Metastatic Melanoma
+        href: Figure_2.html
+      - text: Chemokine Communities
+        href: Figure_3.html
+      - text: T cell scoring
+        href: Figure_4.html
+      - text: Clinical comparison
+        href: Figure_5.html
   - text: Supplemental Figures
     menu:
   - text: License

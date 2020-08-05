@@ -1,0 +1,162 @@
+---
+title: "Figure_2"
+author: "toobiwankenobi"
+date: "2020-08-04"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+Here, we define chemokine-expressing cells. 
+
+```{r}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, cache.lazy = FALSE)
+```
+
+# Preparation
+
+## Load libraries
+```{r, message=F}
+library(SingleCellExperiment)
+library(ComplexHeatmap)
+library(data.table)
+library(dplyr)
+library(janitor)
+```
+
+## Load data
+
+```{r}
+sce <- readRDS(file = "data/sce_RNA.rds")
+
+cur_dt <- as.data.table(colData(sce))
+```
+
+# Plots
+
+## UpSet plot with ComplexHeatmap - including CellType Annotation and Met Location (with controls)
+
+```{r upset_plot, message=F, fig.width=15, fig.height=13}
+# extract chemokine columns
+chemokines <- cbind(cur_dt[,c("ImageNumber", "MM_location_simplified", "celltype")], cur_dt[,grepl(glob2rx("C*L*"),names(cur_dt)), with = F])
+
+# create combination matrix
+m <- make_comb_mat(chemokines, top_n_sets = 11)
+
+# filter based on combination size and combination degree
+m <- m[comb_size(m) >= 600 & comb_degree(m) > 0]
+
+# extract comb names
+comb_names <- comb_name(m)
+
+# count celltypes for each combination
+celltypes <- data.table()
+location <- data.table()
+
+for (i in comb_names){
+  # subset
+  set <- chemokines[extract_comb(m, i)]
+  
+  # chemokines celltypes
+  set1 <- set %>%
+    group_by(celltype) %>%
+    summarise(n=n()) %>%
+    reshape2::dcast(.,i ~ celltype, value.var = "n")
+  
+  # chemokines by location
+  set2 <- set %>%
+    group_by(ImageNumber, MM_location_simplified) %>%
+    summarise(n=n())
+  
+  # add images with no combinations to not distort median
+  set2_add <- distinct(cur_dt[,c("ImageNumber", "MM_location_simplified")], ImageNumber, .keep_all = T)
+  set2_add$n <- 0
+  
+  # subset to only contain images which are not already part of set2
+  set2_add <- set2_add[!(ImageNumber %in% set2$ImageNumber),]
+  
+  set2 <- set2 %>%
+    rbind(., set2_add) %>%
+    group_by(MM_location_simplified) %>%
+    mutate(median = median(n)) %>%
+    distinct(MM_location_simplified, median) %>%
+    reshape2::dcast(.,i ~ MM_location_simplified, value.var = "median")
+  
+  # add to data.frame
+  celltypes <- rbind(celltypes, set1, fill = TRUE)
+  location <- rbind(location, set2, fill = TRUE)
+}
+
+# replace NA
+celltypes[is.na(celltypes)] <- 0
+location[is.na(location)] <- 0
+
+# properties of combination matrix
+ss = set_size(m)
+cs = comb_size(m)
+
+# legend for celltypes
+lgd1 = Legend(labels = colnames(celltypes[,-1]), 
+             title = "Celltypes", 
+             legend_gp = gpar(fill = metadata(sce)$colour_vectors$celltypes[colnames(celltypes[,-1])]),
+             nrow = 3)
+lgd2 = Legend(labels = colnames(location[,-1]), 
+             title = "Location of Metastasis", 
+             legend_gp = gpar(fill = grDevices::hcl.colors(ncol(location[,-1]), palette = "Dark 2")),
+             nrow = 4)
+
+# create plot
+ht = UpSet(m, 
+    set_order = order(ss),
+    comb_order = order(cs, decreasing = T),
+    top_annotation = HeatmapAnnotation(
+        "Combination Size" = anno_barplot(celltypes[,-1], 
+            ylim = c(0, max(cs)*1.1),
+            border = FALSE, 
+            gp = gpar(fill = metadata(sce)$colour_vectors$celltypes[colnames(celltypes[,-1])]), 
+            height = unit(12, "cm"),
+        ), 
+        annotation_name_side = "left", 
+        annotation_name_rot = 0),
+    left_annotation = rowAnnotation(
+        "Total Cells" = anno_barplot(-ss, 
+            baseline = 0,
+            axis_param = list(
+                at = c(0, -5000, -10000, -15000),
+                labels = c(0, 5000, 10000, 15000),
+                labels_rot = 0),
+            border = FALSE, 
+            gp = gpar(fill = "black"), 
+            width = unit(5, "cm")
+        ),
+        set_name = anno_text(set_name(m), 
+            location = 0.5, 
+            just = "center",
+            width = max_text_width(set_name(m)) + unit(4, "mm"))
+    ),
+    bottom_annotation = HeatmapAnnotation("Median Number of Chemokine- \nProducing Cells per Tissue Type" = 
+                                            anno_barplot(location[,-1],
+                                                         border = FALSE, 
+                                                         gp = gpar(fill = grDevices::hcl.colors(ncol(location[,-1]), 
+                                                                                                palette = "Dark 2"))),
+                                          height = unit(5, "cm")),
+    right_annotation = NULL,
+    show_row_names = FALSE,
+    pt_size = unit(5, "mm"),
+    lwd = 2,
+    width = unit(20, "cm"),
+    height = unit(10, "cm")
+    )
+
+# draw heatmap
+ht = draw(ht, heatmap_legend_list = list(lgd1, lgd2), heatmap_legend_side = "top")
+
+# add absolute numbers on top of barplot
+od = column_order(ht)
+decorate_annotation("Combination Size", {
+  grid.text(cs[od], x = seq_along(cs), y = unit(cs[od], "native") + unit(2, "pt"), 
+            default.units = "native", just = c("left", "bottom"), 
+            gp = gpar(fontsize = 8, col = "#404040"), rot = 45)
+})
+```

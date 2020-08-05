@@ -1,0 +1,101 @@
+---
+title: "celltype_classification_new_classifier"
+author: "Tobias Hoch"
+date: "2020-07-29"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Introduction
+
+```{r}
+devtools::install_github("https://github.com/BodenmillerGroup/cytomapper")
+library(SingleCellExperiment)
+library(cytomapper)
+```
+
+# Read the data
+
+```{r load data}
+sce = readRDS(file = "data/sce_protein.rds")
+```
+
+## load the segmentation masks and the pixel-level information (IMC images)
+
+```{r}
+all_mask <- loadImages(x = "/Volumes/server_homes/daniels/Data/Melanoma/12plex/protein/cpout/",pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
+all_pixel <- loadImages(x = "/Volumes/server_homes/daniels/Data/Melanoma/12plex/protein/tiffs/",pattern = "_full.tiff")
+```
+
+## add the respective ImageNumber as in the sce object to the all_mask object
+
+```{r match image numbers}
+# we load the metadata for the images.
+image_mat <- as.data.frame(read.csv(file = "data/protein/Image.csv",stringsAsFactors = FALSE))
+
+# we extract only the FileNames of the masks as they are in the all_masks object
+cur_df <- data.frame(cellmask = image_mat$FileName_cellmask,
+                     ImageNumber = image_mat$ImageNumber,
+                     Description = image_mat$Metadata_Description)
+
+# we set the rownames of the extracted data to be equal to the names of all_masks
+rownames(cur_df) <- gsub(pattern = ".tiff",replacement = "",image_mat$FileName_cellmask)
+
+# we add the extracted information via mcols in the order of the all_masks object
+mcols(all_mask) <- cur_df[names(all_mask),]
+```
+
+## add the respective ImageNumber as in the sce object to the all_pixel object
+
+```{r match image numbers}
+# we load the metadata for the images.
+image_mat <- as.data.frame(read.csv(file = "data/protein/Image.csv",stringsAsFactors = FALSE))
+
+# we extract only the FileNames of the stacks as they are in the all_pixel object
+cur_df <- data.frame(cellmask = image_mat$FileName_FullStack,
+                     ImageNumber = image_mat$ImageNumber)
+
+# we set the rownames of the extracted data to be equal to the names of all_pixel
+rownames(cur_df) <- gsub(pattern = ".tiff",replacement = "",image_mat$FileName_FullStack)
+
+# we add the extracted information via mcols in the order of the all_pixel object
+mcols(all_pixel) <- cur_df[names(all_pixel),]
+```
+
+## scale the masks
+
+```{r scale masks}
+all_mask <- scaleImages(all_mask,2^16-1)
+all_pixel <- scaleImages(all_pixel,2^16-1)
+```
+
+## add the channel names
+
+```{r add channel names}
+panel_meta <- read.csv(file = "data/protein/melanoma_1.06_protein.csv", sep= ",",  stringsAsFactors = FALSE )
+
+# sort the channel names accordingly to the stack
+# extract metal masshttp://127.0.0.1:5322/#
+panel_meta$Metal.Number = str_extract(string = panel_meta$Metal.Tag, pattern = "[0-9]+")
+
+# order according to  metal mass
+panel_meta = panel_meta[order(panel_meta$Metal.Number),]
+
+# assign channel number, matching with the measured channles in cellprofiler
+# the channel number should be double-checked with the channel order in the _full.csv file in the tiff folder to see if the order matches (e.g. Y89 can cause a mismatch)
+panel_meta$channel = c(1:nrow(panel_meta))
+
+channelNames(all_pixel) <- panel_meta$clean_target
+```
+
+## Launch shiny
+
+```{r}
+rownames(sce) <- channelNames(all_pixel)
+
+cytomapperShiny(object = sce, mask = all_mask, image = all_pixel,
+                        cell_id = "CellNumber", img_id = "ImageNumber", interpolate = T)
+```
+
+

@@ -1,7 +1,7 @@
 ---
-title: "03_RNA_annotations"
+title: "02_Protein_annotations"
 author: "toobiwankenobi"
-date: "2020-07-28"
+date: "2020-08-04"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
@@ -20,7 +20,7 @@ library(dplyr)
 ## Load data
 
 ```{r}
-sce <- readRDS(file = "data/sce_RNA.rds")
+sce <- readRDS(file = "data/sce_protein.rds")
 cur_sce <- data.frame(colData(sce))
 cur_meta <- data.frame(metadata(sce))
 ```
@@ -139,7 +139,5 @@ metadata(sce) <- as.list(cur_meta)
 ## Save the SCE object
 
 ```{r}
-saveRDS(sce,file = "data/sce_RNA.rds")
+saveRDS(sce,file = "data/sce_protein.rds")
 ```
-
-

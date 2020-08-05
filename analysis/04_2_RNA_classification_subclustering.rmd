@@ -32,7 +32,7 @@ library(workflowr)
 ## Load data
 
 ```{r load data}
-sce = readRDS(file = "/Volumes/thoch/Git/ZTMA256_RNA_data/data/sce_RNA.rds")
+sce = readRDS(file = "data/sce_RNA.rds")
 ```
 
 # Marker for Clustering
@@ -42,40 +42,11 @@ sce = readRDS(file = "/Volumes/thoch/Git/ZTMA256_RNA_data/data/sce_RNA.rds")
 ```{r subclustering of the celltypes} 
 # Select markers
 marker_list <- list()
-marker_list$Stroma <- c("SMA", "CK5", "HLADR", "Cadherin11", "FAP","pRB", "CD163","B2M","CD68","GLUT1","T5_CCL4","T7_CCL18","CCR2","T1_CXCL8","T4_CXCL10","T8_CXCL13",
-                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T6_DapB","T11_CCL8","CD31","T10_CCL19","cleavedPARP")
 
-marker_list$Tumor <- c("HLADR", "S100","B2M","GLUT1","T5_CCL4","T7_CCL18","CCR2","T1_CXCL8","T4_CXCL10","T8_CXCL13",
-                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T6_DapB","T11_CCL8","PDL1","SOX10","T10_CCL19","cleavedPARP",
-                       "Mart1","pRB")
-
-marker_list$Neutrophils <- c("CD15", "PDL1","GLUT1", "MPO","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
-                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T6_DapB","T11_CCL8","T10_CCL19" )
-
-
-marker_list$Tcells <- c("CD3", "CD8", "PD1", "Lag3", "CCR2","CD38",
-                        "PDL1", "HLADR", "CD31", "B2M", "CD134","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
-                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T6_DapB","T11_CCL8","T10_CCL19")
-
-marker_list$Tcytotoxic <- c("CD3", "CD8", "PD1", "Lag3", "CCR2","CD38",
-                        "PDL1", "HLADR", "CD31", "B2M", "CD134","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
-                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T6_DapB","T11_CCL8","T10_CCL19")
-
-
-marker_list$Mac <- c("CD68", "CD163", "HLADR", "PDL1","CCR2","Cadherin11","FAP","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
-                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T6_DapB","T11_CCL8","T10_CCL19")
-
-marker_list$Vasculature <- c("CD31", "SMA","CK5","pRB", "Cadherin11","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
-                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T6_DapB","T11_CCL8","T10_CCL19")
-
-marker_list$HLADR <- c("HLADR","CD68","CD3","CCR2","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
-                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T6_DapB","T11_CCL8","T10_CCL19")
-
-marker_list$CD38 <- c("HLADR","CD38","CD3","CCR2","CD163","CD68","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
-                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T6_DapB","T11_CCL8","T10_CCL19")
+marker_list$Tumor <- c("HLADR", "S100","B2M","GLUT1","SOX10","cleavedPARP","Mart1","pRB")
 
 # check if the names of the marker list match the names of the classified cells
-names(marker_list) %in% unique(sce$layer_1_classification)
+names(marker_list) %in% unique(sce$celltypes_layer1)
 ```
 
 # Clustering
@@ -91,43 +62,41 @@ rowData(sce)$marker_class <- "state"
 # vector for clustering
 fs_clustering <- vector(length = ncol(sce))
 
-# Macrophage, Bcells, Thelper, Tcytotoxic, Tother and BnT cells will be clustered for a total of 6 clustes each
+# Cluster Tumor cells into 6 clusters
 set.seed(12345)
 
-for(i in c("Tcells","Mac","Tcytotoxic","Tumor")){
+start = Sys.time()
+for(i in c("Tumor")){
   #subset cells for clustering
-  cur_sce <- sce[,sce$layer_1_classification == i]
-  names(assays(cur_sce)) <- c("counts", "exprs")
+  cur_sce <- sce[,sce$celltypes_layer1 == i]
+  
+  # change name of assay for clustering to exprs (hard-coded in CATALYST)
+  names(assays(cur_sce)) <- c("counts", "exprs", "scaled_counts", "scaled_asinh")
   cur_sce <- CATALYST::cluster(cur_sce, features = marker_list[i][[1]], ydim = 2, xdim = 3, maxK = 4)
-  fs_clustering[sce$layer_1_classification == i] <- cur_sce$cluster_id
+  fs_clustering[sce$celltypes_layer1 == i] <- cur_sce$cluster_id
 }
+end = Sys.time()
+print(end-start)
 
+# create new vector with layer1 info and tumor clusters
+labels <- ifelse(sce$celltypes_layer1 == "Tumor", paste0(sce$celltypes_layer1, "_", fs_clustering), sce$celltypes_layer1)
 
-# pDCs and Neutrophils will be clustered to 4 clusteres
-for(i in c("Neutrophils","CD38","Stroma","Vasculature","HLADR")){
-  cur_sce <- sce[,sce$layer_1_classification == i]
-  names(assays(cur_sce)) <- c("counts", "exprs")
-  cur_sce <- cluster(cur_sce,features = marker_list[i][[1]],ydim = 2,xdim = 2,maxK = 3)
-  fs_clustering[sce$layer_1_classification == i] <- cur_sce$cluster_id
-}
 
 # Save in SCE object
-colData(sce)$classification_clustering_FS <- as.factor(fs_clustering)
-
-sce$classification_clustering_FS <- paste0(sce$layer_1_classification, "_", sce$classification_clustering_FS)
+sce$celltypes_layer2 <- labels
 ```
 
 # Visualization
 
 ## Visulalize clustering results for FlowSOM
 
-```{r heatmap_mean_expression_per_layer_1_classification_subclustered_asinh, fig.width= 20, fig.height=15}
+```{r heatmap_mean_expression_per_celltypes_layer1_subclustered_asinh, fig.width= 20, fig.height=15}
 # Aggregate the counts
-mean_sce <- calculateSummary(sce, split_by = c("layer_1_classification","classification_clustering_FS"), 
+mean_sce <- calculateSummary(sce, split_by = c("celltypes_layer2"), 
                              exprs_values = "counts")
 
-# Exclude DNA and Histone
-mean_sce <- mean_sce[!grepl("DNA|Histone|Vimentin", rownames(mean_sce)),]
+# Exclude bad markers
+mean_sce <- mean_sce[rowData(sce)$good_marker,]
 
 # Transform and scale
 assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
@@ -135,7 +104,7 @@ assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts
 
 # Linear scale 
 plotHeatmap(mean_sce, exprs_values = "arcsinh", 
-            colour_columns_by = c("layer_1_classification"), 
+            colour_columns_by = c("celltypes_layer2"), 
             color = viridis(100), labels_col = mean_sce$gating_clustering_FS,
             show_colnames = TRUE, annotation_legend = FALSE, borders_color = NA)
 
@@ -143,11 +112,11 @@ plotHeatmap(mean_sce, exprs_values = "arcsinh",
 
 ## Scaled heatmap
 
-```{r heatmap_mean_expression_per_layer_1_classification_subclustered_asinh_scaled, fig.width= 20, fig.height=15}
+```{r heatmap_mean_expression_per_celltypes_layer1_subclustered_asinh_scaled, fig.width= 20, fig.height=15}
 # Scaled
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
-            colour_columns_by = c("layer_1_classification"), 
-            labels_col = mean_sce$classification_clustering_FS,
+            colour_columns_by = c("celltypes_layer2"), 
+            labels_col = mean_sce$celltypes_layer2,
             show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
             color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             zlim = c(-4, 4),legend = TRUE)
@@ -157,7 +126,7 @@ plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",
 ## Numbers of cells per cluster
 
 ```{r counts per cluster}
-celltype_counts <- sce$classification_clustering_FS
+celltype_counts <- sce$celltypes_layer2
 
 table(celltype_counts)
 ```
@@ -167,91 +136,30 @@ table(celltype_counts)
 ## Assign names to clusters
 
 ```{r names for clusters, fig.height= 15, fig.width=15}
-annotations <- sce$classification_clustering_FS
+annotations <- sce$celltypes_layer2
 
-annotations[annotations == "other_4"] <- "Other_CD206Low_pS6Low"
-annotations[annotations == "other_2"] <- "Tumor_SOX9Low_SOX10+_MITF+_S100+_bCatenin++"
-annotations[annotations == "other_3"] <- "Other_SOX10Low_MITFLow_bCatenin+"
-annotations[annotations == "other_1"] <- "Other_CaveolinLow"
-annotations[annotations == "other_5"] <- "Vasculature_SMA++_Collagen+_Caveolin+"
-annotations[annotations == "other_6"] <- "Stroma_SMA+_Collagen++_Caveolin++_CD36++"
-
-annotations[annotations == "Tumor_2"] <- "Tumor_SOX9++_p75+"
-annotations[annotations == "Tumor_3"] <- "Tumor_SOX10+_MITFLow_CD36Low"
-annotations[annotations == "Tumor_4"] <- "Tumor_SOX10Low_S100+"
-annotations[annotations == "Tumor_5"] <- "Tumor_SOX9++_SOX10+_MITF+_S100Low"
-annotations[annotations == "Tumor_8"] <- "Tumor_SOX9Low_SOX10Low_MITFLow_p75+"
-annotations[annotations == "Tumor_9"] <- "Tumor_SOX10+_MITF+_S100++"
-annotations[annotations == "Tumor_6"] <- "Tumor_S100+"
-annotations[annotations == "Tumor_1"] <- "Tumor_SOX10Low_MITFLow_HLADR+"
-annotations[annotations == "Tumor_7"] <- "Tumor_SOX10+_MITF++_S100+_pS6+"
-
-annotations[annotations == "Bcells_1"] <- "Bcells_pErkLow_H3K27meLow"
-annotations[annotations == "Bcells_4"] <- "Bcells_pErkLow_H3K27meLow"
-annotations[annotations == "Bcells_2"] <- "Bcells_H3K27me_LowpS6Low"
-annotations[annotations == "Bcells_3"] <- "Bcells_CD19++_pErkLow_H3K27meLow"
-annotations[annotations == "Bcells_5"] <- "Bcells_Ki67++"
-annotations[annotations == "Bcells_6"] <- "Bcells_SMALow"
-
-annotations[annotations == "BnT_1"] <- "Bcells_CD3Low_CD4Low"
-annotations[annotations == "BnT_2"] <- "Bcells_pErkLow_H3K27meLow"
-annotations[annotations == "BnT_6"] <- "BnT_CD8+"
-annotations[annotations == "BnT_4"] <- "BnT_CD8+"
-annotations[annotations == "BnT_5"] <- "BnT_CD4+_TCF7+"
-annotations[annotations == "BnT_3"] <- "BnT_CD4+_ICOS++_PD1++_Ki67+"
-
-annotations[annotations == "T_other_4"] <- "Tcells_undefined"
-annotations[annotations == "T_other_5"] <- "Tcells_undefined"
-annotations[annotations == "T_other_3"] <- "Tcells_CD15_LowGrzB+"
-annotations[annotations == "T_other_1"] <- "Tcells_Ki67++"
-annotations[annotations == "T_other_2"] <- "Tcells_CaveolinLow_SMALow"
-annotations[annotations == "T_other_6"] <- "Tcells_undefined"
-
-annotations[annotations == "T_helper_2"] <- "Thelper_CD11cLow_HLADRLow"
-annotations[annotations == "T_helper_5"] <- "Thelper_SMALow_CaveolinLow"
-annotations[annotations == "T_helper_1"] <- "Thelper_TCF7++"
-annotations[annotations == "T_helper_6"] <- "Thelper_FoxP3++_ICOS+_CD11cLow_CD206Low"
-annotations[annotations == "T_helper_3"] <- "Thelper_FoxP3Low_pERKLow"
-annotations[annotations == "T_helper_4"] <- "Thelper_FoxP3Low"
-
-annotations[annotations == "T_cytotoxic_3"] <- "Tcytotoxic_PD1+_TOX1+_GrzBLow"
-annotations[annotations == "T_cytotoxic_5"] <- "Tcytotoxic_TCF7+_H3K27meLow"
-annotations[annotations == "T_cytotoxic_6"] <- "Tcytotoxic_PD1+_TOX1+_GrzB+_ICOSLow_Ki67+"
-annotations[annotations == "T_cytotoxic_1"] <- "Tcytotoxic_GrzBLow_SMALow_CaveolinLow"
-annotations[annotations == "T_cytotoxic_2"] <- "Tcytotoxic_GrzBLow_pS6Low"
-annotations[annotations == "T_cytotoxic_4"] <- "Tcytotoxic_PD1+_TOX1+_GrzBLow_ICOSLow_CD11cLow_CD206Low"
-
-annotations[annotations == "Macrophage_4"] <- "Macrophage_CD68Low_CaveolinLow"
-annotations[annotations == "Macrophage_6"] <- "Tumor_CD68Low_S100Low_bCateninLow_MITFLow_SOX10Low_HLADR+"
-annotations[annotations == "Macrophage_2"] <- "Macrophage_CD68Low_CD206++_CD36Low"
-annotations[annotations == "Macrophage_1"] <- "Macrophage_CD68Low_pS6Low_S100Low"
-annotations[annotations == "Macrophage_3"] <- "Macrophage_CD68+_CD11c+_CD206++_CXCR2+_PDL1+"
-annotations[annotations == "Macrophage_5"] <- "Macrophage_CD68++_CD11c+_CD36+_Caveolin+_Collagen+"
-
-annotations[annotations == "pDC_1"] <- "pDC_IDO1+_GrzB+"
-annotations[annotations == "pDC_2"] <- "pDC_IDO1+_TOX1+_CD11b+"
-annotations[annotations == "pDC_3"] <- "pDC_IDO1++_GrzB++"
-annotations[annotations == "pDC_4"] <- "pDC_Ido1+_PARP++"
-
-annotations[annotations == "Neutrophil_2"] <- "Neutrophil_CD11b+_CD15++_MPO+_PDL1++"
-annotations[annotations == "Neutrophil_4"] <- "Neutrophil_CD11b+_CD15+_MPO+_PDL1Low"
-annotations[annotations == "Neutrophil_3"] <- "Neutrophil_CD11b++_CD15++_MPO++_CXCR2Low_PDL1+"
-annotations[annotations == "Neutrophil_1"] <- "Neutrophil_CD11b+_CD15+_MPO++"
+# add annotation if wanted
+#annotations[annotations == "Tumor_1"] <- "Tumor1_"
+#annotations[annotations == "Tumor_2"] <- "Tumor2_"
+#annotations[annotations == "Tumor_3"] <- "Tumor3_"
+#annotations[annotations == "Tumor_4"] <- "Tumor4_"
+#annotations[annotations == "Tumor_5"] <- "Tumor5_"
+#annotations[annotations == "Tumor_6"] <- "Tumor6_"
 
 sce$cellAnnotation <- annotations
 
-mean_sce <- calculateSummary(sce, split_by = c("layer_1_classification","cellAnnotation"), 
+mean_sce <- calculateSummary(sce, split_by = c("celltypes_layer2","cellAnnotation"), 
                              exprs_values = "counts")
 
-# Exclude DNA and Histone
-mean_sce <- mean_sce[!grepl("DNA|Histone", rownames(mean_sce)),]
+# Exclude bad markers
+mean_sce <- mean_sce[rowData(sce)$good_marker,]
 
 # Transform and scale
 assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
 assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
 
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
-            colour_columns_by = c("layer_1_classification"), 
+            colour_columns_by = c("celltypes_layer2"), 
             labels_col = mean_sce$cellAnnotation,
             show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
             color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
@@ -266,7 +174,7 @@ __Additionally, the clustering did not pick up proliferating and non prolifertat
 ## Update Celltype
 
 ```{r re-assign celltypes}
-sce$celltype <- gsub("_.*",replacement = "",x = sce$cellAnnotation)
+sce$celltype <- sce$celltypes_layer1
 ```
 
 ## Counts per Celltype
@@ -283,7 +191,6 @@ table(celltype_counts)
 
 ```{r save object with clusters}
 # delete the "exprs" slot from the single cell experiment again.
-assay(sce,"exprs") <- NULL
 
 saveRDS(sce, "data/sce_RNA.rds")
 ```

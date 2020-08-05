@@ -1,7 +1,7 @@
 ---
-title: "02_RNA_quality_control"
-author: "Nils Eling/Daniel Schulz/Tobias Hoch"
-date: "2020-07-28"
+title: "03_Protein_quality_control"
+author: "toobiwankenobi"
+date: "2020-08-04"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
@@ -32,7 +32,7 @@ library(dittoSeq)
 ## Load the single cell experiment object and the image metadata
 
 ```{r}
-sce <- readRDS(file = "data/sce_RNA.rds")
+sce <- readRDS(file = "data/sce_protein.rds")
 ```
 
 # Assay
@@ -53,7 +53,7 @@ assay(sce, "scaled_asinh") <- t(scale(t(assay(sce, "asinh"))))
 plotCellCounts(sce, colour_by = "Location", split_by = "ImageNumber")
 ```
 
-## Image 57 has only a few cells and should probably be excluded.
+## Image 16 has only a few cells and should probably be excluded.
 will be flagged below
 
 ```{r images with less than 500 cells}
@@ -69,7 +69,7 @@ cur_sce %>%
 
 ```{r flag images}
 # define vector for each single cell whether to keep (TRUE) or not (FALSE)
-includeImage <- colData(sce)$ImageNumber != 57
+includeImage <- colData(sce)$ImageNumber != 16
 sce$includeImage <- includeImage
 ```
 
@@ -127,7 +127,7 @@ plotDist(sce, plot_type = "ridges",
 ## Define markers which had poor staining
 
 ```{r define good markers}
-rowData(sce)$good_marker <- ! grepl( "DNA|Histone|Vimentin|PD1|PDL1|CCR2",rownames(sce))
+rowData(sce)$good_marker <- !grepl( "DNA|Histone|Vimentin|Ki67Pt198|CD19|TOX1",rownames(sce))
 ```
 
 ## Calculate UMAP
@@ -201,5 +201,6 @@ plot_grid(plotlist = p.list, ncol = 7)
 ## Save updated SCE object
 
 ```{r save updated sce file}
-saveRDS(sce, file = "data/sce_RNA.rds")
+saveRDS(sce, file = "data/sce_protein.rds")
 ```
+

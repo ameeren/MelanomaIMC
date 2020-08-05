@@ -1,7 +1,7 @@
 ---
-title: "04_1_RNA_celltype_classification"
+title: "04_1_Protein_celltype_classification"
 author: "toobiwankenobi"
-date: "2020-07-28"
+date: "2020-08-24"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
@@ -28,10 +28,10 @@ library(doParallel)
 ## Load data
 
 ```{r}
-sce <- readRDS("data/sce_RNA.rds")
+sce <- readRDS("data/sce_protein.rds")
 
 # load all subsetted sce object from hierarchichal gating and combine them
-path = "data/rna/new_classifier/"
+path = "data/protein/celltype_classifier/"
 file.names <- dir(path, pattern =".rds")
 
 # loop through all files and combine sce objects
@@ -59,21 +59,11 @@ unique_labels <- labelled_sce[,duplicated(labelled_sce$cellID) == F]
 ## Add labels to SCE object
 
 ```{r read_labels}
+unique(unique_labels$cytomapper_CellLabel)
+
 label_vector <- rep("unlabelled", ncol(sce))
 names(label_vector) <- colnames(sce)
 label_vector[colnames(unique_labels)] <- unique_labels$cytomapper_CellLabel
-
-# rename labeles
-label_vector[label_vector == "CD68+"] <- "Macrophage"
-label_vector[label_vector == "CD15+MPO+"] <- "Neutrophil"
-label_vector[label_vector == "HLA-DR+CD68-"] <- "HLA-DR"
-label_vector[label_vector == "CD3+CD8-CD134+"] <- "CD134+ Tcell"
-label_vector[label_vector == "CD3+CD8-CD134-"] <- "CD134- Tcell"
-label_vector[label_vector == "CD3+CD8+LAG3+"] <- "exhausted Tcytotoxic"
-label_vector[label_vector == "CD3+CD8+LAG3-"] <- "Tcytotoxic"
-
-# unique cell labels
-unique(label_vector)
 
 # add to sce
 colData(sce)$layer_1_gated <- label_vector
@@ -87,16 +77,15 @@ Here, we will define a colour vector for the cell-types contained in layer 1.
 layer1_colours <- vector(length = length(unique(label_vector)))
 names(layer1_colours) <- unique(label_vector)
 
-layer1_colours["CD38"] <- "goldenrod2"
-layer1_colours["HLA-DR"] <- "green1"
+layer1_colours["BnTcell"] <- "goldenrod2"
+layer1_colours["Bcell"] <- "green1"
 layer1_colours["Macrophage"] <- "greenyellow"
 layer1_colours["Neutrophil"] <- "blue1"
-layer1_colours["CD134- Tcell"] <- "yellow"
-layer1_colours["CD134+ Tcell"] <- "sienna1"
-layer1_colours["Vasculature"] <- "red2"
+layer1_colours["Thelper"] <- "yellow"
+layer1_colours["Tregulatory"] <- "sienna1"
+layer1_colours["pDC"] <- "red2"
 layer1_colours["Stroma"] <- "tomato"
 layer1_colours["Tcytotoxic"] <- "deepskyblue"
-layer1_colours["exhausted Tcytotoxic"] <- "deeppink"
 layer1_colours["Tumor"] <- "sienna4"
 layer1_colours["unlabelled"] <- "gray"
 
@@ -168,9 +157,10 @@ assay(agr_sce, "scaled_asinh") <- t(scale(t(asinh(counts(agr_sce)))))
 colnames(agr_sce) <- paste0(agr_sce$ImageNumber, "_", agr_sce$layer_1_gated)
 
 # Define markers that were used for gating
-cur_markers <- c("SMA", "CK5","CD38","HLADR","S100","Cadherin11","FAP", "CD134", "CD68",
-                 "CD3", "Lag3", "PD1", "CD8", "SOX10", "CD31", "Mart1", "pRB", "CD15", "MPO",
-                 "CD163")
+rownames(sce)
+
+cur_markers <- c("CD15", "S100", "CD20", "CD68", "CD3", "p75", "MiTF", "FOXP3", "CD8", "Collagen1",
+                 "CD4", "IDO1", "SOX10", "CD303", "MPO")
 
 # Non-scaled
 dittoHeatmap(agr_sce[cur_markers,], assay = "asinh",
@@ -282,7 +272,7 @@ We will also look at the variable importance.
 
 ```{r variable-importance, fig.height = 15}
 cur_varImp <- varImp(rffit)
-plot(cur_varImp, top = 34)
+plot(cur_varImp, top = 37)
 ```
 
 Finally, we will validate the model using the test data.
@@ -423,16 +413,15 @@ Here, we will define a colour vector for the cell-types contained in layer 1 (wi
 layer1_colours <- vector(length = length(unique(sce$celltypes_layer1)))
 names(layer1_colours) <- unique(sce$celltypes_layer1)
 
-layer1_colours["CD38"] <- "goldenrod2"
-layer1_colours["HLA-DR"] <- "green1"
+layer1_colours["BnTcell"] <- "goldenrod2"
+layer1_colours["Bcell"] <- "green1"
 layer1_colours["Macrophage"] <- "greenyellow"
 layer1_colours["Neutrophil"] <- "blue1"
-layer1_colours["CD134- Tcell"] <- "yellow"
-layer1_colours["CD134+ Tcell"] <- "sienna1"
-layer1_colours["Vasculature"] <- "red2"
+layer1_colours["Thelper"] <- "yellow"
+layer1_colours["Tregulatory"] <- "sienna1"
+layer1_colours["pDC"] <- "red2"
 layer1_colours["Stroma"] <- "tomato"
 layer1_colours["Tcytotoxic"] <- "deepskyblue"
-layer1_colours["exhausted Tcytotoxic"] <- "deeppink"
 layer1_colours["Tumor"] <- "sienna4"
 
 # Save in SCE object
@@ -442,11 +431,11 @@ metadata(sce)$colour_vectors$celltypes <- layer1_colours
 # Save RDS
 
 ```{r saveRDS}
-saveRDS(sce, "data/sce_RNA.rds")
+saveRDS(sce, "data/sce_protein.rds")
 
 # create data frame with class and probabilities and save as csv.
 layer_1_dat <- as.data.frame(cell_labels.prob)
 layer_1_dat$class <- cell_labels.class
 
-write.csv(layer_1_dat, file = "data/layer_1_classification_rna.csv")
+write.csv(layer_1_dat, file = "data/layer_1_classification_protein.csv")
 ```
