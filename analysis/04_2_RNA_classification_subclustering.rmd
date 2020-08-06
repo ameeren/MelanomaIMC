@@ -42,10 +42,28 @@ sce <- readRDS(file = "data/sce_RNA.rds")
 ## Define Superclasses for subclustering
 
 ```{r}
-sce$celltype <- sce$layer_1_gated
+sce[,sce$celltype %in% c("exhausted Tcytotoxic", "Tcytotoxic")]$celltype <- "Tcytotoxic"
+sce[,sce$celltype %in% c("CD134+ Tcell", "CD134- Tcell")]$celltype <- "Tcell"
+```
 
-sce[,sce$layer_1_gated %in% c("exhausted Tcytotoxic", "Tcytotoxic")]$celltype <- "Tcytotoxic"
-sce[,sce$layer_1_gated %in% c("CD134+ Tcell", "CD134- Tcell")]$celltype <- "Tcell"
+## Define color vector for superclasses
+
+```{r}
+celltype_color <- vector(length = length(unique(sce$celltype)))
+names(celltype_color) <- unique(sce$celltype)
+
+celltype_color["CD38"] <- "goldenrod2"
+celltype_color["HLA-DR"] <- "green1"
+celltype_color["Macrophage"] <- "greenyellow"
+celltype_color["Neutrophil"] <- "blue1"
+celltype_color["Tcell"] <- "yellow"
+celltype_color["Vasculature"] <- "red2"
+celltype_color["Stroma"] <- "tomato"
+celltype_color["Tcytotoxic"] <- "deepskyblue"
+celltype_color["Tumor"] <- "sienna4"
+
+# Save in SCE object
+metadata(sce)$colour_vectors$celltype <- celltype_color
 ```
 
 ## Definition of markers used for subclustering the classified cells
@@ -180,7 +198,7 @@ annotations <- sce$celltype_clustered
 
 sce$cellAnnotation <- annotations
 
-mean_sce <- calculateSummary(sce, split_by = c("celltype_clustered","cellAnnotation"), 
+mean_sce <- calculateSummary(sce, split_by = c("celltype_clustered","celltype"), 
                              exprs_values = "counts")
 
 # Exclude bad markers
@@ -191,8 +209,8 @@ assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts"))
 assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
 
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
-            colour_columns_by = c("celltype_clustered"), 
-            labels_col = mean_sce$cellAnnotation,
+            colour_columns_by = c("celltype"), 
+            labels_col = mean_sce$celltype,
             show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
             color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             zlim = c(-4, 4),legend = TRUE)
@@ -206,12 +224,13 @@ plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",
 # Density of Expression in different Tcytotoxic clusters vs. manually gated Lag3+ cells
 cur_sce <- data.frame(colData(sce))
 cur_exprs <- data.frame(t(assays(sce)[[2]]))
-cur_exprs <- cbind(cur_exprs, cur_sce[,c("celltype", "layer_1_gated", "celltype_clustered")])
+cur_exprs <- cbind(cur_exprs, cur_sce[,c("celltype", "celltypes_layer1", "celltype_clustered")])
 cur_exprs$cellID <- rownames(cur_exprs)
 
 cur_exprs <- cur_exprs %>%
-  reshape2::melt(id.vars = c("cellID", "celltype", "layer_1_gated", "celltype_clustered"), 
+  reshape2::melt(id.vars = c("cellID", "celltype", "celltypes_layer1", "celltype_clustered"), 
                  variable.name = "marker", value.name = "asinh")
+
 
 # clustering
 a <- cur_exprs %>%
@@ -224,7 +243,7 @@ a <- cur_exprs %>%
 # manual gating
 b <- cur_exprs %>%
   filter(celltype == "Tcytotoxic" & marker %in% marker_list$Tcytotoxic) %>%
-  ggplot(data=., aes(asinh, color = layer_1_gated)) + 
+  ggplot(data=., aes(asinh, color = celltypes_layer1)) + 
   geom_density() +
   xlim(0,4) + 
   facet_wrap(~marker)
@@ -246,7 +265,7 @@ a <- cur_exprs %>%
 # manual gating
 b <- cur_exprs %>%
   filter(celltype == "Tcell" & marker %in% marker_list$Tcell) %>%
-  ggplot(data=., aes(asinh, color = layer_1_gated)) + 
+  ggplot(data=., aes(asinh, color = celltypes_layer1)) + 
   geom_density() +
   xlim(0,4) + 
   facet_wrap(~marker)

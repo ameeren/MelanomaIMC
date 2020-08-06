@@ -349,7 +349,7 @@ We will not overwrite the labels of the already labelled cells.
 cell_labels <- sce$layer_1_gated
 cell_labels[colnames(unlab_sce)] <- cell_labels.class
 
-sce$celltypes_layer1 <- cell_labels 
+sce$celltype <- cell_labels 
 ```
 
 # Visualization
@@ -360,12 +360,12 @@ Here, we will visualize the predicted cell-types and their associated classifica
 ## Using reduced dimensions
 
 ```{r UMAP_celltypes_gated}
-dittoDimPlot(sce[,sce$layer_1_gated != "unlabelled"], var = "celltypes_layer1", reduction.use = "UMAP", size = 0.5, 
+dittoDimPlot(sce[,sce$layer_1_gated != "unlabelled"], var = "celltype", reduction.use = "UMAP", size = 0.5, 
               color.panel = metadata(sce)$colour_vectors$layer_1, main = "Cell types gated")
 ```
 
 ```{r UMAP_celltypes_classified}
-dittoDimPlot(sce[,sce$layer_1_gated == "unlabelled"], var = "celltypes_layer1", reduction.use = "UMAP", size = 0.5, 
+dittoDimPlot(sce[,sce$layer_1_gated == "unlabelled"], var = "celltype", reduction.use = "UMAP", size = 0.5, 
               color.panel = metadata(sce)$colour_vectors$layer_1, main = "Cell types classified") 
 ```
 
@@ -392,24 +392,24 @@ Finally, we will visualize the marker expression per cell type using the classif
 
 ```{r heatmap-visualization}
 unlab_sce <- sce[,sce$layer_1_gated == "unlabelled"]
-agr_sce <- aggregateAcrossCells(unlab_sce, ids = colData(unlab_sce)[,c("ImageNumber", "celltypes_layer1")], 
+agr_sce <- aggregateAcrossCells(unlab_sce, ids = colData(unlab_sce)[,c("ImageNumber", "celltype")], 
                                 average = TRUE)
 assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
 
-colnames(agr_sce) <- paste0(agr_sce$ImageNumber, "_", agr_sce$celltypes_layer1)
+colnames(agr_sce) <- paste0(agr_sce$ImageNumber, "_", agr_sce$celltype)
 
 # Non-scaled
 dittoHeatmap(agr_sce[cur_markers,], assay = "asinh",
-            annot.by = c("celltypes_layer1"), 
-            order.by = "celltypes_layer1", cluster_rows = FALSE,
+            annot.by = c("celltype"), 
+            order.by = "celltype", cluster_rows = FALSE,
             scale = "none", heatmap.colors = viridis(100), 
-            annotation_colors = list(celltypes_layer1 = metadata(sce)$colour_vectors$layer_1))
+            annotation_colors = list(celltype = metadata(sce)$colour_vectors$layer_1))
 
 # Centered and scaled
 dittoHeatmap(agr_sce[cur_markers,], assay = "asinh",
-            annot.by = c("celltypes_layer1"), 
+            annot.by = c("celltype"), 
             cluster_rows = FALSE,
-            annotation_colors = list(celltypes_layer1 = metadata(sce)$colour_vectors$layer_1),
+            annotation_colors = list(celltype = metadata(sce)$colour_vectors$layer_1),
             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             breaks = seq(-3, 3, length.out = 101))
 ```
@@ -435,7 +435,7 @@ layer1_colours["exhausted Tcytotoxic"] <- "deeppink"
 layer1_colours["Tumor"] <- "sienna4"
 
 # Save in SCE object
-metadata(sce)$colour_vectors$celltypes <- layer1_colours
+metadata(sce)$colour_vectors$classified_celltypes <- layer1_colours
 ```
 
 # Save RDS
