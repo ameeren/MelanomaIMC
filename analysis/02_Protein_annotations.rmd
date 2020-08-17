@@ -130,6 +130,18 @@ cur_sce <- left_join(cur_sce, cur_meta[,c("ImageNumber", "treatment_group_after_
 colData(sce)$treatment_group_after_surgery <- cur_sce$treatment_group_after_surgery
 ```
 
+## Create Death grouping
+
+```{r}
+Date_death <- metadata(sce)$Date_death
+sce$Date_death <- Date_death[sce$ImageNumber]
+
+#binarize death
+sce$Death <- "no"
+sce[,grepl("20",sce$Date_death)]$Death <- "yes"
+```
+
+
 # Add updated metadata to SCE object
 
 ```{r}

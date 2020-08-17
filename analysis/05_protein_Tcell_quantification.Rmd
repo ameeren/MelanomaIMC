@@ -1,0 +1,551 @@
+---
+title: "cytotoxic T cell quantification"
+author: "Daniel"
+date: "July 2020"
+output: html_document
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# load packages
+
+```{r load packages}
+sapply(list.files("~/bbvolume/Git/ZTMA256_protein_data/code/helper_functions/", full.names = TRUE), source)
+sapply(list.files("~/bbvolume/Git/imcRtools/R/", full.names = TRUE), source)
+
+library(LSD)
+library(SingleCellExperiment)
+library(ggplot2)
+library(scater)
+library(viridis)
+library(igraph)
+library(CATALYST)
+library(reshape2)
+library(cowplot)
+library(ggridges)
+library(pheatmap)
+library(tidyverse)
+```
+
+
+# load data
+
+```{r load data, echo=FALSE}
+sce = readRDS(file = "data/sce_protein.rds")
+
+image_mat <- as.data.frame(read.csv(file = "~/bbvolume/Data/Melanoma/12plex/protein/cpout/Image.csv",stringsAsFactors = FALSE))
+
+# load colour vector for celltype coloring
+colour_vector <- readRDS("~/bbvolume/Git/ZTMA256_protein_data/data/colour_vector.rds")
+```
+
+
+## Next we want to calculate the T cell density.
+
+we calculate this per mm2. We use the count for cytotxic T cells as defined under "03_cell_type_definition" script
+
+```{r T cytotoxic cell density}
+cur_df <- data.frame(celltype = sce$celltype,
+                             ImageNumber = sce$ImageNumber)
+
+cellcount <- (t(table(cur_df)))
+
+image_mat$Height_cellmask
+image_mat$Width_cellmask
+
+# here we get the imagesize from the image metadata
+im_size <- (image_mat$Height_cellmask * image_mat$Width_cellmask)/1000000
+
+
+cellcount <- as.data.frame(cellcount)
+
+# we calculate the density for each celltype for 1 mm2
+cellcount$density <- cellcount$Freq/im_size[cellcount$ImageNumber]
+```
+
+
+```{r histogram T cytotoxic density}
+# there are roughly 60 images with 50 or less cytotoxic T cells
+hist(cellcount[cellcount$celltype == "Tcytotoxic",]$density,breaks = 100)
+```
+
+## here we define cut offs for T cell density
+
+images with up to 40 cytotoxic T cells/mm2 are called "absent"
+images with more than 40 and up to 100 cytotoxic T cells/mm2 are called "low"
+images with more than 100 and up to 400 cytotoxic T cells/mm2 are called "medium"
+images with more than 400 cytotoxic T cells/mm2 are called "high"
+
+```{r define cut offs for infiltration score}
+# define a vector with all ImgeNumbers
+T_density_scores <-c(1:length(unique(cellcount$ImageNumber)))
+
+T_density_scores  <- rep("unassigned",length(unique(cellcount$ImageNumber)))
+
+T_absent <- which(cellcount[cellcount$celltype == "Tcytotoxic",]$density <= 40)
+T_low <- which(cellcount[cellcount$celltype == "Tcytotoxic",]$density > 40 & cellcount[cellcount$celltype == "Tcytotoxic",]$density <= 100)
+T_med <- which(cellcount[cellcount$celltype == "Tcytotoxic",]$density > 100 & cellcount[cellcount$celltype == "Tcytotoxic",]$density <= 400)
+T_high <- which(cellcount[cellcount$celltype == "Tcytotoxic",]$density > 400)
+
+T_density_scores[T_absent] <- "absent"
+T_density_scores[T_low] <- "low"
+T_density_scores[T_med] <- "med"
+T_density_scores[T_high] <- "high"
+
+# now we add the information to the single cell experiment
+sce$Tcell_score <- T_density_scores[sce$ImageNumber]
+```
+
+## Area per BlockID
+
+```{r get the area per BlockID}
+# here we get the imagesize from the image metadata
+im_size <- (image_mat$Height_cellmask * image_mat$Width_cellmask)/1000000
+
+size_df <- tibble(image_size = im_size,
+                      BlockID =metadata(sce)$BlockID,
+                      ImageNumber = metadata(sce)$ImageNumber)
+
+size_df <- size_df %>%
+  group_by(BlockID) %>%
+  mutate(BlockIDarea = sum(image_size))
+
+BlockIDarea <- unique(select(size_df,BlockID,BlockIDarea))
+```
+
+## T cell score per BlockID
+
+```{r generate T cell score per BlockID}
+cur_df <- data.frame(celltype = sce$celltype,
+                             BlockID = sce$BlockID)
+
+cellcount <- (t(table(cur_df)))
+
+# get the data for Tcyotoxic
+cellcount <- as.data.frame(cellcount)
+cellcount <- cellcount[cellcount$celltype == "Tcytotoxic",]
+
+# merge with the area data
+cellcount <- left_join(cellcount,BlockIDarea,by="BlockID")
+
+# we calculate the density for Tcytotoxic per 1 mm2
+cellcount <- cellcount %>% 
+  mutate(density = cellcount$Freq/BlockIDarea)
+```
+
+definition of cut offs for T cell density per BlockID (same as for images)
+
+Blocks with up to 40 cytotoxic T cells/mm2 are called "absent"
+Blocks with more than 40 and up to 100 cytotoxic T cells/mm2 are called "low"
+Blocks with more than 100 and up to 400 cytotoxic T cells/mm2 are called "medium"
+Blocks with more than 400 cytotoxic T cells/mm2 are called "high"
+
+```{r define T cell density score per BlockID}
+T_density_scores  <- rep("unassigned",length(unique(cellcount$BlockID)))
+
+# define a vector with all ImgeNumbers
+names(T_density_scores) <-cellcount$BlockID
+
+T_absent <- which(cellcount$density <= 40)
+T_low <- which(cellcount$density > 40 & cellcount[cellcount$celltype == "Tcytotoxic",]$density <= 100)
+T_med <- which(cellcount$density > 100 & cellcount[cellcount$celltype == "Tcytotoxic",]$density <= 400)
+T_high <- which(cellcount$density > 400)
+
+T_density_scores[T_absent] <- "absent"
+T_density_scores[T_low] <- "low"
+T_density_scores[T_med] <- "med"
+T_density_scores[T_high] <- "high"
+
+
+# now we add the information to the single cell experiment
+sce$Tcell_score_per_BlockID <- T_density_scores[sce$BlockID]
+```
+
+## Area per PatientID
+
+```{r get the area per PatientID}
+# here we get the imagesize from the image metadata
+im_size <- (image_mat$Height_cellmask * image_mat$Width_cellmask)/1000000
+
+size_df <- tibble(image_size = im_size,
+                      PatientID =metadata(sce)$Internal_pat_ID,
+                      ImageNumber = metadata(sce)$ImageNumber)
+
+size_df <- size_df %>%
+  group_by(PatientID) %>%
+  mutate(PatientID_area = sum(image_size))
+
+PatientID_area <- unique(select(size_df,PatientID,PatientID_area))
+```
+
+## T cell score per PatientID
+
+```{r generate T cell score per PatientID}
+pat_ID <- metadata(sce)$Internal_pat_ID
+sce$PatientID <- pat_ID[sce$ImageNumber]
+
+cur_df <- data.frame(celltype = sce$celltype,
+                             PatientID = sce$PatientID)
+
+cellcount <- (t(table(cur_df)))
+
+# get the data for Tcyotoxic
+cellcount <- as.data.frame(cellcount)
+cellcount <- cellcount[cellcount$celltype == "Tcytotoxic",]
+
+# merge with the area data
+cellcount <- left_join(cellcount,PatientID_area,by="PatientID")
+
+# we calculate the density for Tcytotoxic per 1 mm2
+cellcount <- cellcount %>% 
+  mutate(density = cellcount$Freq/PatientID_area)
+```
+
+definition of cut offs for T cell density per PatientID (same as for images)
+
+Blocks with up to 40 cytotoxic T cells/mm2 are called "absent"
+Blocks with more than 40 and up to 100 cytotoxic T cells/mm2 are called "low"
+Blocks with more than 100 and up to 400 cytotoxic T cells/mm2 are called "medium"
+Blocks with more than 400 cytotoxic T cells/mm2 are called "high"
+
+```{r define Tcell density score per PatientID}
+T_density_scores  <- rep("unassigned",length(unique(cellcount$PatientID)))
+
+# define a vector with all ImgeNumbers
+names(T_density_scores) <-cellcount$PatientID
+
+T_absent <- which(cellcount$density <= 40)
+T_low <- which(cellcount$density > 40 & cellcount[cellcount$celltype == "Tcytotoxic",]$density <= 100)
+T_med <- which(cellcount$density > 100 & cellcount[cellcount$celltype == "Tcytotoxic",]$density <= 400)
+T_high <- which(cellcount$density > 400)
+
+T_density_scores[T_absent] <- "absent"
+T_density_scores[T_low] <- "low"
+T_density_scores[T_med] <- "med"
+T_density_scores[T_high] <- "high"
+
+
+# now we add the information to the single cell experiment
+sce$Tcell_score_per_PatientID <- T_density_scores[sce$PatientID]
+```
+
+## fraction of cytotoxic T cells per ImageNumber
+
+we group images by the fraction of cytotoxic T cells. we calculate the fractions and then make three even groups: low, medium, high by simply splitting the sorted data.
+
+```{r T cell fraction score per ImageNumber}
+cur_df <- tibble(celltype = sce$celltype,
+                 ImageNumber = sce$ImageNumber)
+
+cellcount <- as_tibble(t(table(cur_df)))
+
+cellcount <- cellcount %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(n))
+
+cellcount <- cellcount %>%
+  filter(celltype == "Tcytotoxic")
+
+
+cellcount <- cellcount %>%
+  mutate(Tcytotoxic_frac =n/total)
+
+# here we generate three classes based on ranks
+cellcount$rank <- ntile(cellcount$Tcytotoxic_frac,n=3)
+
+# the lowest third of cytotoxic T cell fraction BlockIDs get grouped
+cellcount$T_frac_score <- ""
+cellcount[which(cellcount$rank == 1),]$T_frac_score <- "low"
+cellcount[which(cellcount$rank == 2),]$T_frac_score <- "med"
+cellcount[which(cellcount$rank == 3),]$T_frac_score <- "high"
+
+T_frac_score <- cellcount$T_frac_score
+names(T_frac_score) <- cellcount$ImageNumber
+
+
+sce$T_frac_score_per_ImageNumber <- T_frac_score[sce$ImageNumber]
+
+```
+
+
+## fraction of cytotoxic T cells per BlockID
+
+we group images by the fraction of cytotoxic T cells. we calculate the fractions and then make three even groups: low, medium, high by simply splitting the sorted data.
+
+```{r T cell fraction score per BlockID}
+cur_df <- tibble(celltype = sce$celltype,
+                 BlockID = sce$BlockID)
+
+cellcount <- as_tibble(t(table(cur_df)))
+
+cellcount <- cellcount %>%
+  group_by(BlockID) %>%
+  mutate(total = sum(n))
+
+cellcount <- cellcount %>%
+  filter(celltype == "Tcytotoxic")
+
+cellcount <- cellcount %>%
+  mutate(Tcytotoxic_frac =n/total) %>%
+  arrange(Tcytotoxic_frac)
+
+# the lowest third of cytotoxic T cell fraction BlockIDs get grouped
+cellcount$T_frac_score <- ""
+cellcount[1:30,]$T_frac_score <- "low"
+cellcount[31:61,]$T_frac_score <- "med"
+cellcount[62:92,]$T_frac_score <- "high"
+
+T_frac_score <- cellcount$T_frac_score
+names(T_frac_score) <- cellcount$BlockID
+
+sce$T_frac_score_per_BlockID <- T_frac_score[sce$BlockID]
+```
+
+## fraction of cytotoxic T cells per PatientID
+
+we group images by the fraction of cytotoxic T cells. we calculate the fractions and then make three even groups: low, medium, high by simply splitting the sorted data.
+
+```{r T cell fraction score per PatientID}
+cur_df <- tibble(celltype = sce$celltype,
+                 PatientID = sce$PatientID)
+
+cellcount <- as_tibble(t(table(cur_df)))
+
+cellcount <- cellcount %>%
+  group_by(PatientID) %>%
+  mutate(total = sum(n))
+
+cellcount <- cellcount %>%
+  filter(celltype == "Tcytotoxic")
+
+cellcount <- cellcount %>%
+  mutate(Tcytotoxic_frac =n/total) %>%
+  arrange(Tcytotoxic_frac)
+
+# the lowest third of cytotoxic T cell fraction BlockIDs get grouped
+cellcount$T_frac_score <- ""
+cellcount[1:23,]$T_frac_score <- "low"
+cellcount[24:46,]$T_frac_score <- "med"
+cellcount[47:70,]$T_frac_score <- "high"
+
+T_frac_score <- cellcount$T_frac_score
+names(T_frac_score) <- cellcount$PatientID
+
+sce$T_frac_score_per_PatientID <- T_frac_score[sce$PatientID]
+```
+
+## E_I_D score compared to Tcell_score
+
+```{r check the cut offs}
+cur_df <- data.frame(T_density = sce$Tcell_score,
+                     E_I_D = sce$E_I_D)
+
+table(cur_df)
+```
+
+__cells from images classified as deserted mostly belong to the absent class defined here. However, in the absent class defined here many cells from images belong to either inflamed or excluded classes.__
+
+
+## develope a E_I_D score based on the images in this cohort
+
+we will therefore make use of the tumor mask that we generated using ilastik. Every cell has a tag which assigns it to being within the tumor or not.
+
+We will define as follows:
+Deserted: No T cells - same as infiltration = absent -> less than 40 cytotxic T cells/mm2
+Excluded: infiltration status == low | med | high. ratio of T cells inside the tumor to outside the tumor < 0.5
+Inflamed: infiltration status == low | med | high. ratio of T cells inside the tumor to outside the tumor > 0.5 or if more than 100 Tcells are inside the tumor.
+
+```{r develope E_I_D score based on this data}
+cur_df <- data.frame(inside_tumor = sce[,sce$celltype == "Tcytotoxic"]$in_tumor,
+                     E_I_D = sce[,sce$celltype == "Tcytotoxic"]$E_I_D)
+
+# from the table below it becomes apparent that even in inflamed images there are still many T cells that are outside the tumor.
+table(cur_df)
+
+# some images to not contain a E_I_D score. these are all images that are control
+unique(sce[,sce$E_I_D == ""]$Location)
+
+# we next calculate the amount of T cells inside and outside the tumor for each image
+cur_df <- data.frame(inside_tumor = sce$in_tumor,
+                     E_I_D = sce$E_I_D,
+                     ImageNumber = sce$ImageNumber,
+                     celltype = sce$celltype,
+                     Tcell_score = sce$Tcell_score)
+
+cur_df <- reshape2::dcast(cur_df,formula = "ImageNumber + E_I_D + inside_tumor + Tcell_score ~ celltype")
+
+cur_df <- cur_df[,c("ImageNumber","E_I_D","inside_tumor", "Tcell_score","Tcytotoxic")]
+
+cur_df <- reshape2::dcast(cur_df,formula = "ImageNumber + E_I_D + Tcell_score~ inside_tumor")
+
+colnames(cur_df) <- c("ImageNumber" , "E_I_D" ,"Tcell_score", "outside_tumor", "inside_tumor")
+
+# convert NAs to 0
+cur_df[is.na(cur_df$outside_tumor),]$outside_tumor <- 0
+
+# the ratio still has "Inf" and "NAns" values due to 0 values in the data. we will take care of this below
+cur_df$infiltration_ratio <- cur_df$inside_tumor/cur_df$outside_tumor
+
+cur_df$infiltration <- "unassigned"
+
+# for all samples that have abenst Tcell_score we also enter the status "Deserted"
+cur_df[cur_df$Tcell_score == "absent",]$infiltration <- "Deserted"
+
+# for samples with low | med | high Tcell_score we calculate the ratio between Tcells inside the tumor mask and outside the tumor mask. If this ratio is < 0.5 we  call the tumor excluded. It >0.5 we call it inflamed.
+cur_df[(cur_df$Tcell_score %in% c("low","med","high") & cur_df$infiltration_ratio < 0.5),]$infiltration <- "Excluded"
+
+cur_df[cur_df$Tcell_score %in% c("low","med","high") & cur_df$infiltration_ratio > 0.5 | cur_df$inside_tumor > 200,]$infiltration <- "Inflamed"
+
+# incorporate the information into the single cell experiment
+
+sce$infiltration <- cur_df$infiltration[sce$ImageNumber]
+
+```
+
+## check the overlap between the E_I_D score (global) and the local infiltration score
+
+```{r infiltration score vs E_I_D score}
+inf_df <- cur_df[,c("E_I_D","infiltration")]
+
+#table(inf_df)
+
+inf_df <- as.data.frame(table(inf_df))
+
+ggplot(inf_df,aes(x=infiltration,y=Freq,fill = as.factor(E_I_D)))+
+  geom_bar(stat="identity")+
+  ggtitle("IMC image based T infiltration scoring vs H&E based")
+```
+
+__we can see that there is really not a good overlap between the scoring from the pathology and the image based scoring!__
+
+## now we check the celltype distributions in the images based on infiltration and E_I_D scores
+
+```{r celltype counts by infiltration status and celltype by E_I_D status, fig.height=5, fig.width=10}
+p1 <- plotCellCounts(sce[,! sce$Location == "CTRL"],colour_by = "celltype",split_by = "infiltration",proportion = TRUE)+
+  scale_fill_manual(values = colour_vector)
+
+p2 <- plotCellCounts(sce[,! sce$Location == "CTRL"],colour_by = "celltype",split_by = "E_I_D",proportion = TRUE)+
+  scale_fill_manual(values = colour_vector)
+
+p3 <- plotCellCounts(sce[,! sce$Location == "CTRL"],colour_by = "celltype",split_by = "Tcell_score",proportion = TRUE)+
+  scale_fill_manual(values = colour_vector)
+
+p4 <- plotCellCounts(sce[,! sce$Location == "CTRL"],colour_by = "celltype",split_by = "T_frac_score_per_ImageNumber",proportion = FALSE)+
+  scale_fill_manual(values = colour_vector)
+
+plot_grid(p1,p2,p3,p4,ncol = 4)
+```
+
+__again this looks very different. There are more helper T cells in the excluded images and many more B cells.__
+
+there are 41905 cytotoxic T cells in inflamed images, 13141 in excluded images and 648 in deserted images.
+```{r number of Tcytotoxic per infiltration class}
+table(sce[,sce$celltype == "Tcytotoxic"]$infiltration)
+```
+
+## check the T cell marker profile across the infiltration categories
+
+
+```{r Tcytotoxic marker profile for infiltration status, fig.height=15, fig.width=15} 
+mean_sce <- calculateSummary(sce,split_by = c("celltype","celltype_clustered","E_I_D","infiltration"),exprs_values = "counts")
+
+assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
+assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+
+# convert the factors of clusters into integers
+#mean_sce$clusters <- as.character(mean_sce$clusters)
+
+# we add unique colnames to the mean dataset
+colnames(mean_sce) <- as.character(paste(mean_sce$celltype,mean_sce$celltype_clustered,mean_sce$E_I_D,mean_sce$infiltration,sep="__"))
+
+
+cur_df <- reshape2::melt(as.matrix(assay(mean_sce,"arcsinh")),variable.factors = FALSE)
+# add back information for plotting by groups
+colnames(cur_df) <- c("marker","sample","value")
+
+cur_df$sample <- as.character(cur_df$sample)
+
+cur_df$celltype <- sapply(cur_df$sample, function(x){strsplit(x,split = "__")[[1]][1]})
+cur_df$celltype_clustered <- sapply(cur_df$sample, function(x){strsplit(x,split = "__")[[1]][2]})
+cur_df$E_I_D <- sapply(cur_df$sample, function(x){strsplit(x,split = "__")[[1]][3]})
+cur_df$infiltration <- sapply(cur_df$sample, function(x){strsplit(x,split = "__")[[1]][4]})
+
+# mean expression of markers per cluster colored by Batch 
+
+ggplot(cur_df[cur_df$celltype == "Tcytotoxic",],aes(x=marker,y = value,fill= factor(infiltration)))+
+  #facet_wrap(~E_I_D)+
+  geom_boxplot(outlier.shape = NA) +
+  #geom_jitter(aes(x=marker,y =value,color=as.factor(E_I_D)),position = position_jitter( width = .1))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+## check the T cell marker profile across the E_I_D categories
+
+```{r Tcytotoxic marker profile for E_I_D status, fig.height=15, fig.width=15} 
+ggplot(cur_df[cur_df$celltype == "Tcytotoxic",],aes(x=marker,y = value, fill = factor(E_I_D)))+
+  #facet_wrap(~E_I_D)+
+  geom_boxplot(outlier.shape = NA) +
+  #geom_jitter(aes(x=marker,y =value,color=as.factor(infiltration)),position = position_jitter( width = .1))+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+
+## heatmap comparing the different marker expressions for celltypes
+
+```{r heatmap celltype marker for infiltration status, fig.height=15, fig.width=15}
+plot_targets <- rownames(sce)
+plot_targets <- plot_targets[! plot_targets %in% c("DNA1","DNA2","HistoneH3")]
+
+mean_sce <- calculateSummary(sce,split_by = c("celltype","infiltration"),exprs_values = "counts")
+
+assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
+assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+
+
+plotHeatmap(mean_sce, exprs_values = "arcsinh", features = plot_targets,
+            colour_columns_by = c("celltype","infiltration"), 
+            color = viridis(100))
+```
+
+
+```{r heatmap celltype marker for infiltration status asinh scaled, fig.height=15, fig.width=15}
+plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",  features = plot_targets,
+            colour_columns_by = c("celltype","infiltration"), zlim = c(-4,4),
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100))
+```
+
+
+## heatmap comparing the different marker expressions for cytotoxic T cells
+
+```{r heatmap Tcytotoxic for infiltration status asinh, fig.height=15, fig.width=15}
+plot_targets <- rownames(sce)
+plot_targets <- plot_targets[! plot_targets %in% c("DNA1","DNA2","HistoneH3")]
+
+mean_sce <- calculateSummary(sce[,sce$celltype == "Tcytotoxic"],split_by = c("celltype_clustered","infiltration"),exprs_values = "counts")
+
+assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
+assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+
+plotHeatmap(mean_sce, exprs_values = "arcsinh", features = plot_targets,
+            colour_columns_by = c("celltype_clustered","infiltration"), 
+            color = viridis(100))
+```
+
+
+```{r heatmap Tcytotoxic for infiltration status asinh_scaled, fig.height=15, fig.width=15}
+plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",  features = plot_targets,
+            colour_columns_by = c("celltype_clustered","infiltration"), zlim = c(-4,4),
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100))
+```
+
+
+
+```{r save sce}
+saveRDS(sce,file = "data/sce_protein.rds")
+```
+
+
+
+
