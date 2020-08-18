@@ -559,6 +559,15 @@ names(Tfrac_vec) <- T_frac_score_per_ImageNumber$ImageNumber....sce.ImageNumber
 
 saveRDS(Tfrac_vec,file = "data/T_frac_score_per_ImageNumber")
 
+T_frac_score_per_Description <-data.frame(Description <- sce$Description,
+                                      T_frac_score_per_ImageNumber = sce$T_frac_score_per_ImageNumber)
+
+T_frac_score_per_Description <- unique(T_frac_score_per_Description)
+Tfrac_vec <- T_frac_score_per_Description$T_frac_score_per_ImageNumber
+names(Tfrac_vec) <- T_frac_score_per_Description$Description....sce.Description
+
+saveRDS(Tfrac_vec,file = "data/T_frac_score_per_Description")
+
 ```
 
 
