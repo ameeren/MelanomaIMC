@@ -288,20 +288,25 @@ cellcount <- cellcount %>%
 cellcount <- cellcount %>%
   filter(celltype == "Tcytotoxic")
 
+
 cellcount <- cellcount %>%
-  mutate(Tcytotoxic_frac =n/total) %>%
-  arrange(Tcytotoxic_frac)
+  mutate(Tcytotoxic_frac =n/total)
+
+# here we generate three classes based on ranks
+cellcount$rank <- ntile(cellcount$Tcytotoxic_frac,n=3)
 
 # the lowest third of cytotoxic T cell fraction BlockIDs get grouped
 cellcount$T_frac_score <- ""
-cellcount[1:30,]$T_frac_score <- "low"
-cellcount[31:61,]$T_frac_score <- "med"
-cellcount[62:92,]$T_frac_score <- "high"
+cellcount[which(cellcount$rank == 1),]$T_frac_score <- "low"
+cellcount[which(cellcount$rank == 2),]$T_frac_score <- "med"
+cellcount[which(cellcount$rank == 3),]$T_frac_score <- "high"
 
 T_frac_score <- cellcount$T_frac_score
 names(T_frac_score) <- cellcount$BlockID
 
+
 sce$T_frac_score_per_BlockID <- T_frac_score[sce$BlockID]
+
 ```
 
 ## fraction of cytotoxic T cells per PatientID
@@ -321,18 +326,22 @@ cellcount <- cellcount %>%
 cellcount <- cellcount %>%
   filter(celltype == "Tcytotoxic")
 
+
 cellcount <- cellcount %>%
-  mutate(Tcytotoxic_frac =n/total) %>%
-  arrange(Tcytotoxic_frac)
+  mutate(Tcytotoxic_frac =n/total)
+
+# here we generate three classes based on ranks
+cellcount$rank <- ntile(cellcount$Tcytotoxic_frac,n=3)
 
 # the lowest third of cytotoxic T cell fraction BlockIDs get grouped
 cellcount$T_frac_score <- ""
-cellcount[1:23,]$T_frac_score <- "low"
-cellcount[24:46,]$T_frac_score <- "med"
-cellcount[47:70,]$T_frac_score <- "high"
+cellcount[which(cellcount$rank == 1),]$T_frac_score <- "low"
+cellcount[which(cellcount$rank == 2),]$T_frac_score <- "med"
+cellcount[which(cellcount$rank == 3),]$T_frac_score <- "high"
 
 T_frac_score <- cellcount$T_frac_score
 names(T_frac_score) <- cellcount$PatientID
+
 
 sce$T_frac_score_per_PatientID <- T_frac_score[sce$PatientID]
 ```
@@ -433,7 +442,7 @@ p2 <- plotCellCounts(sce[,! sce$Location == "CTRL"],colour_by = "celltype",split
 p3 <- plotCellCounts(sce[,! sce$Location == "CTRL"],colour_by = "celltype",split_by = "Tcell_score",proportion = TRUE)+
   scale_fill_manual(values = colour_vector)
 
-p4 <- plotCellCounts(sce[,! sce$Location == "CTRL"],colour_by = "celltype",split_by = "T_frac_score_per_ImageNumber",proportion = FALSE)+
+p4 <- plotCellCounts(sce[,! sce$Location == "CTRL"],colour_by = "celltype",split_by = "T_frac_score_per_ImageNumber",proportion = TRUE)+
   scale_fill_manual(values = colour_vector)
 
 plot_grid(p1,p2,p3,p4,ncol = 4)
@@ -441,16 +450,16 @@ plot_grid(p1,p2,p3,p4,ncol = 4)
 
 __again this looks very different. There are more helper T cells in the excluded images and many more B cells.__
 
-there are 41905 cytotoxic T cells in inflamed images, 13141 in excluded images and 648 in deserted images.
+
 ```{r number of Tcytotoxic per infiltration class}
 table(sce[,sce$celltype == "Tcytotoxic"]$infiltration)
 ```
 
-## check the T cell marker profile across the infiltration categories
+## check the T cell marker profile across the T_frac_score
 
 
-```{r Tcytotoxic marker profile for infiltration status, fig.height=15, fig.width=15} 
-mean_sce <- calculateSummary(sce,split_by = c("celltype","celltype_clustered","E_I_D","infiltration"),exprs_values = "counts")
+```{r Tcytotoxic marker profile for T_frac_per_ImageNumber status, fig.height=15, fig.width=15} 
+mean_sce <- calculateSummary(sce,split_by = c("celltype","celltype_clustered","T_frac_score_per_ImageNumber"),exprs_values = "counts")
 
 assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
 assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
@@ -459,7 +468,7 @@ assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts
 #mean_sce$clusters <- as.character(mean_sce$clusters)
 
 # we add unique colnames to the mean dataset
-colnames(mean_sce) <- as.character(paste(mean_sce$celltype,mean_sce$celltype_clustered,mean_sce$E_I_D,mean_sce$infiltration,sep="__"))
+colnames(mean_sce) <- as.character(paste(mean_sce$celltype,mean_sce$celltype_clustered,mean_sce$T_frac_score_per_ImageNumber,sep="__"))
 
 
 cur_df <- reshape2::melt(as.matrix(assay(mean_sce,"arcsinh")),variable.factors = FALSE)
@@ -470,80 +479,92 @@ cur_df$sample <- as.character(cur_df$sample)
 
 cur_df$celltype <- sapply(cur_df$sample, function(x){strsplit(x,split = "__")[[1]][1]})
 cur_df$celltype_clustered <- sapply(cur_df$sample, function(x){strsplit(x,split = "__")[[1]][2]})
-cur_df$E_I_D <- sapply(cur_df$sample, function(x){strsplit(x,split = "__")[[1]][3]})
-cur_df$infiltration <- sapply(cur_df$sample, function(x){strsplit(x,split = "__")[[1]][4]})
+cur_df$T_frac_score_per_ImageNumber <- sapply(cur_df$sample, function(x){strsplit(x,split = "__")[[1]][3]})
 
 # mean expression of markers per cluster colored by Batch 
 
-ggplot(cur_df[cur_df$celltype == "Tcytotoxic",],aes(x=marker,y = value,fill= factor(infiltration)))+
+ggplot(cur_df[cur_df$celltype == "Tcytotoxic",],aes(x=marker,y = value,fill= factor(T_frac_score_per_ImageNumber)))+
   #facet_wrap(~E_I_D)+
   geom_boxplot(outlier.shape = NA) +
   #geom_jitter(aes(x=marker,y =value,color=as.factor(E_I_D)),position = position_jitter( width = .1))+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1))
-```
-## check the T cell marker profile across the E_I_D categories
-
-```{r Tcytotoxic marker profile for E_I_D status, fig.height=15, fig.width=15} 
-ggplot(cur_df[cur_df$celltype == "Tcytotoxic",],aes(x=marker,y = value, fill = factor(E_I_D)))+
-  #facet_wrap(~E_I_D)+
-  geom_boxplot(outlier.shape = NA) +
-  #geom_jitter(aes(x=marker,y =value,color=as.factor(infiltration)),position = position_jitter( width = .1))+
   theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
 
 ## heatmap comparing the different marker expressions for celltypes
 
-```{r heatmap celltype marker for infiltration status, fig.height=15, fig.width=15}
+```{r heatmap celltype marker for T_frac_score_per_ImageNumbre status, fig.height=15, fig.width=15}
 plot_targets <- rownames(sce)
 plot_targets <- plot_targets[! plot_targets %in% c("DNA1","DNA2","HistoneH3")]
 
-mean_sce <- calculateSummary(sce,split_by = c("celltype","infiltration"),exprs_values = "counts")
+mean_sce <- calculateSummary(sce,split_by = c("T_frac_score_per_ImageNumber","celltype"),exprs_values = "counts")
 
 assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
 assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
 
 
 plotHeatmap(mean_sce, exprs_values = "arcsinh", features = plot_targets,
-            colour_columns_by = c("celltype","infiltration"), 
+            colour_columns_by = c("celltype","T_frac_score_per_ImageNumber"), 
             color = viridis(100))
 ```
 
 
-```{r heatmap celltype marker for infiltration status asinh scaled, fig.height=15, fig.width=15}
+```{r heatmap celltype marker for T_frac_score_per_ImageNumber status asinh scaled, fig.height=15, fig.width=15}
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",  features = plot_targets,
-            colour_columns_by = c("celltype","infiltration"), zlim = c(-4,4),
-            color = colorRampPalette(c("dark blue", "white", "dark red"))(100))
+            colour_columns_by = c("T_frac_score_per_ImageNumber","celltype"), zlim = c(-4,4),
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),cluster_cols = FALSE)
+
 ```
 
 
 ## heatmap comparing the different marker expressions for cytotoxic T cells
 
-```{r heatmap Tcytotoxic for infiltration status asinh, fig.height=15, fig.width=15}
+```{r heatmap Tcytotoxic for T_frac_score_per_ImageNumber status asinh, fig.height=15, fig.width=15}
 plot_targets <- rownames(sce)
 plot_targets <- plot_targets[! plot_targets %in% c("DNA1","DNA2","HistoneH3")]
 
-mean_sce <- calculateSummary(sce[,sce$celltype == "Tcytotoxic"],split_by = c("celltype_clustered","infiltration"),exprs_values = "counts")
+mean_sce <- calculateSummary(sce[,sce$celltype == "Tcytotoxic"],split_by = c("T_frac_score_per_ImageNumber","celltype_clustered"),exprs_values = "counts")
 
 assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
 assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
 
 plotHeatmap(mean_sce, exprs_values = "arcsinh", features = plot_targets,
-            colour_columns_by = c("celltype_clustered","infiltration"), 
-            color = viridis(100))
+            colour_columns_by = c("celltype_clustered","T_frac_score_per_ImageNumber"), 
+            color = viridis(100),cluster_cols = FALSE)
 ```
 
 
-```{r heatmap Tcytotoxic for infiltration status asinh_scaled, fig.height=15, fig.width=15}
+```{r heatmap Tcytotoxic for T_frac_score_per_ImageNumber status asinh_scaled, fig.height=15, fig.width=15}
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",  features = plot_targets,
-            colour_columns_by = c("celltype_clustered","infiltration"), zlim = c(-4,4),
-            color = colorRampPalette(c("dark blue", "white", "dark red"))(100))
+            colour_columns_by = c("celltype_clustered","T_frac_score_per_ImageNumber"), zlim = c(-4,4),
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),cluster_cols = FALSE)
 ```
 
+```{r export scores for RNA dataset}
+T_frac_score_per_BlockID <-data.frame(BlockID <- sce$BlockID,
+                                      T_frac_score_per_BlockID = sce$T_frac_score_per_BlockID)
+
+T_frac_score_per_BlockID <- unique(T_frac_score_per_BlockID)
+Tfrac_vec <- T_frac_score_per_BlockID$T_frac_score_per_BlockID
+names(Tfrac_vec) <- T_frac_score_per_BlockID$BlockID....sce.BlockID
+
+saveRDS(Tfrac_vec,file = "data/T_frac_score_per_BlockID")
+
+T_frac_score_per_ImageNumber <-data.frame(ImageNumber <- sce$ImageNumber,
+                                      T_frac_score_per_ImageNumber = sce$T_frac_score_per_ImageNumber)
+
+T_frac_score_per_ImageNumber <- unique(T_frac_score_per_ImageNumber)
+Tfrac_vec <- T_frac_score_per_ImageNumber$T_frac_score_per_ImageNumber
+names(Tfrac_vec) <- T_frac_score_per_ImageNumber$ImageNumber....sce.ImageNumber
+
+saveRDS(Tfrac_vec,file = "data/T_frac_score_per_ImageNumber")
+
+```
 
 
 ```{r save sce}
 saveRDS(sce,file = "data/sce_protein.rds")
+
 ```
 
 

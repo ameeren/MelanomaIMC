@@ -72,24 +72,24 @@ scale_y_continuous(trans='log')
 
 
 
-## coxph modeling for T cell score
+## coxph modeling for T cell density score
 
-```{r Hazard ratio for T cell score}
-Tcells_per_BlockID <- data.frame(BlockID = sce$BlockID,
+```{r Hazard ratio for T cell density score}
+Tcell_density_per_BlockID <- data.frame(BlockID = sce$BlockID,
                                       Tcell_score_per_BlockID = sce$Tcell_score_per_BlockID)
 
-Tcells_per_BlockID <- unique(Tcells_per_BlockID)
+Tcell_density_per_BlockID <- unique(Tcell_density_per_BlockID)
 
-Tcell_block <- Tcells_per_BlockID$Tcell_score_per_BlockID
-names(Tcell_block) <- Tcells_per_BlockID$BlockID
+Tcell_block <- Tcell_density_per_BlockID$Tcell_score_per_BlockID
+names(Tcell_block) <- Tcell_density_per_BlockID$BlockID
 
 
-survdat$Tcells_per_BlockID <- Tcell_block[survdat$Block.ID]
+survdat$Tcell_density_per_BlockID <- Tcell_block[survdat$Block.ID]
 
 # add factor for T cell scoring
-survdat$Tcells_per_BlockID <- factor(survdat$Tcells_per_BlockID,levels = c("high","med","low","absent"))
+survdat$Tcell_density_per_BlockID <- factor(survdat$Tcell_density_per_BlockID,levels = c("high","med","low","absent"))
   
-res <- coxph(Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression) ~ Tcells_per_BlockID,data = survdat)
+res <- coxph(Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression) ~ Tcell_density_per_BlockID,data = survdat)
 
 
 td_res = tidy(res, exponentiate = TRUE)
@@ -106,20 +106,50 @@ geom_hline(yintercept = 1,color = 'blue')
 
 ```
 
+```{r Hazard ratio for T cell fraction score}
+Tcell_fraction_per_BlockID <- data.frame(BlockID = sce$BlockID,
+                                      Tcell_score_per_BlockID = sce$T_frac_score_per_BlockID)
+
+Tcell_fraction_per_BlockID <- unique(Tcell_fraction_per_BlockID)
+
+Tcell_block <- Tcell_fraction_per_BlockID$Tcell_score_per_BlockID
+names(Tcell_block) <- Tcell_fraction_per_BlockID$BlockID
 
 
-## Kaplan Meier plot for Death split by Tcell_score
+survdat$Tcell_fraction_per_BlockID <- Tcell_block[survdat$Block.ID]
 
-```{r Kaplan Meier Tcell score survival for BlockID, fig.height=6, fig.width=8}
+# add factor for T cell scoring
+survdat$Tcell_fraction_per_BlockID <- factor(survdat$Tcell_fraction_per_BlockID,levels = c("high","med","low"))
+  
+res <- coxph(Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression) ~ Tcell_fraction_per_BlockID,data = survdat)
+
+
+td_res = tidy(res, exponentiate = TRUE)
+
+# Make sure plot is ordered according to increasing HRs
+td_res = td_res %>% arrange(estimate) %>% mutate(term = factor(term,levels = term))
+# Visualize hazard ratios
+ggplot(td_res, aes(x = term, y = estimate,color =p.value < 0.05)) +
+geom_point(size = 4) +
+geom_errorbar(aes(ymax = conf.high, ymin = conf.low))+
+scale_color_manual(values = c('lightblue','red'))+
+coord_flip()+
+geom_hline(yintercept = 1,color = 'blue')
+
+```
+
+## Kaplan Meier plot for Death split by Tcell density score
+
+```{r Kaplan Meier Tcell density score survival for BlockID, fig.height=6, fig.width=8}
 # generate survival object
 Surv_RFS <- Surv(survdat$Time_to_death_or_last_PET,survdat$censoring_death)
 
 KM_all <- survfit(Surv_RFS ~ 1)
 
-KM_groups <- survfit(Surv_RFS ~ survdat$Tcells_per_BlockID)
+KM_groups <- survfit(Surv_RFS ~ survdat$Tcell_density_per_BlockID)
 
 cols = brewer.pal(4,"Dark2")
-names(cols) <- levels(survdat$Tcells_per_BlockID)
+names(cols) <- levels(survdat$Tcell_density_per_BlockID)
 
 tidy(KM_groups) %>%
   summarise(median(time))
@@ -131,43 +161,76 @@ legend("bottomleft",1,names(cols),fill=cols, title= "OS by Tcell score for Block
 
 ```
 
+## Kaplan Meier plot for Death split by Tcell fraction score
 
-## Kaplan Meier plot for treatment naive BlockIDs for Death split by Tcell_score
+```{r Kaplan Meier Tcell fraction score survival for BlockID, fig.height=6, fig.width=8}
+# generate survival object
+Surv_RFS <- Surv(survdat$Time_to_death_or_last_PET,survdat$censoring_death)
 
-```{r Kaplan Meier Tcell score survival for untreated, fig.height=6, fig.width=8}
+KM_all <- survfit(Surv_RFS ~ 1)
+
+KM_groups <- survfit(Surv_RFS ~ survdat$Tcell_fraction_per_BlockID)
+
+cols = brewer.pal(3,"Dark2")
+names(cols) <- levels(survdat$Tcell_fraction_per_BlockID)
+
+plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=3)
+par(new=TRUE)
+plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "survival (%)")
+legend("bottomleft",1,names(cols),fill=cols, title= "OS by Tcell score for BlockIDs")
+
+```
+
+## Kaplan Meier plot for treatment naive BlockIDs for Death split by Tcell density score
+
+```{r Kaplan Meier Tcell density score survival for untreated, fig.height=6, fig.width=8}
 # generate survival object
 Surv_RFS <- Surv(survdat[which(survdat$Number.of.treatments.before.surgery == 0),]$Time_to_death_or_last_PET,survdat[which(survdat$Number.of.treatments.before.surgery == 0),]$censoring_death)
 
 KM_all <- survfit(Surv_RFS ~ 1)
 
-KM_groups <- survfit(Surv_RFS ~ survdat[which(survdat$Number.of.treatments.before.surgery == 0),]$Tcells_per_BlockID)
+KM_groups <- survfit(Surv_RFS ~ survdat[which(survdat$Number.of.treatments.before.surgery == 0),]$Tcell_density_per_BlockID)
 
 cols = brewer.pal(4,"Dark2")
-names(cols) <- levels(survdat$Tcells_per_BlockID)
-
-tidy(KM_groups) %>%
-  summarise(median(time))
+names(cols) <- levels(survdat$Tcell_density_per_BlockID)
 
 plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=3)
 par(new=TRUE)
 plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "survival (%)")
 legend("bottomleft",1,names(cols),fill=cols, title = "OS for Tcell score by treatment naive BlockIDs")
 ```
-## Kaplan Meier plot for relapsesplit by Tcell score
 
-```{r Kaplan Meier Tcell score progression, fig.height=8, fig.width=10}
+## Kaplan Meier plot for treatment naive BlockIDs for Death split by Tcell fraction score
+
+```{r Kaplan Meier Tcell fraction score survival for untreated, fig.height=6, fig.width=8}
+# generate survival object
+Surv_RFS <- Surv(survdat[which(survdat$Number.of.treatments.before.surgery == 0),]$Time_to_death_or_last_PET,survdat[which(survdat$Number.of.treatments.before.surgery == 0),]$censoring_death)
+
+KM_all <- survfit(Surv_RFS ~ 1)
+
+KM_groups <- survfit(Surv_RFS ~ survdat[which(survdat$Number.of.treatments.before.surgery == 0),]$Tcell_fraction_per_BlockID)
+
+cols = brewer.pal(4,"Dark2")
+names(cols) <- levels(survdat$Tcell_fraction_per_BlockID)
+
+plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=3)
+par(new=TRUE)
+plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "survival (%)")
+legend("bottomleft",1,names(cols),fill=cols, title = "OS for Tcell score by treatment naive BlockIDs")
+```
+
+## Kaplan Meier plot for relapse split by Tcell density score
+
+```{r Kaplan Meier Tcell density score progression, fig.height=8, fig.width=10}
 # generate survival object
 Surv_RFS <- Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression)
 
 KM_all <- survfit(Surv_RFS ~ 1)
 
-KM_groups <- survfit(Surv_RFS ~ survdat$Tcells_per_BlockID)
+KM_groups <- survfit(Surv_RFS ~ survdat$Tcell_density_per_BlockID)
 
 cols = brewer.pal(4,"Dark2")
-names(cols) <- levels(survdat$Tcells_per_BlockID)
-
-tidy(KM_groups) %>%
-  summarise(median(time))
+names(cols) <- levels(survdat$Tcell_density_per_BlockID)
 
 plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=3)
 par(new=TRUE)
@@ -175,6 +238,24 @@ plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "RFS
 legend("bottomleft",1,names(cols),fill=cols,title = "RFS for Tcell score by BlockIDs")
 ```
 
+## Kaplan Meier plot for relapse split by Tcell fraction score
+
+```{r Kaplan Meier Tcell fraction score progression, fig.height=8, fig.width=10}
+# generate survival object
+Surv_RFS <- Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression)
+
+KM_all <- survfit(Surv_RFS ~ 1)
+
+KM_groups <- survfit(Surv_RFS ~ survdat$Tcell_fraction_per_BlockID)
+
+cols = brewer.pal(3,"Dark2")
+names(cols) <- levels(survdat$Tcell_fraction_per_BlockID)
+
+plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=3)
+par(new=TRUE)
+plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "RFS (%)")
+legend("bottomleft",1,names(cols),fill=cols,title = "RFS for Tcell score by BlockIDs")
+```
 
 ## Kaplan Meier curves for relapse split by E_I_D
 
@@ -191,21 +272,10 @@ names(cols) <- levels(survdat$IHC.T.cell.scoring)
 
 
 
-plot(KM_groups,mark.time = T,col = cols,conf.int = F)
+plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=3)
 par(new=TRUE)
 plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "RFS (%)")
 legend("topright",1,names(cols),fill=cols)
-```
-
-same plot but with ggplot
-```{r ggplot Kaplan Meier curve,eval=FALSE, fig.height=5, fig.width=10}
-ggplot(tidy(KM_all), aes(time, estimate)) + geom_line() +
-    geom_ribbon(aes(ymin=conf.low, ymax=conf.high), alpha=.25)+
-  geom_line(data = tidy(KM_groups),aes(time,estimate, group=strata, color=strata))+
-  ylim(0,1)+
-  theme_bw()+
-  labs(x="days",y="RFS (%)")
-
 ```
 
 ## Kaplan Meier plot for Death split by E_I_D score
@@ -222,20 +292,20 @@ cols = brewer.pal(5,"Dark2")
 names(cols) <- levels(survdat$IHC.T.cell.scoring)
 
 
-plot(KM_groups,mark.time = T,col = cols,conf.int = F)
+plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=3)
 par(new=TRUE)
 plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "Survival (%)")
 legend("topright",1,names(cols),fill=cols)
 ```
 
-## Kaplan Meier plot for progression for MM_location
+## Kaplan Meier plot for death for MM_location
 
 ```{r Kaplan Meier for MM_location progression, fig.height=8, fig.width=12}
 # add factor for MM.location
 survdat$MM.location <- factor(survdat$MM.location,levels = unique(survdat$MM.location))
 
 # generate survival object
-Surv_RFS <- Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression)
+Surv_RFS <- Surv(survdat$Time_to_death_or_last_PET,survdat$censoring_death)
 
 KM_all <- survfit(Surv_RFS ~ 1)
 
@@ -274,7 +344,7 @@ names(cols) <- c("skin subcutaneous","LN")
 
 
 
-plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=2)
+plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=3)
 par(new=TRUE)
 plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "Survival (%)")
 legend("topright",1,names(cols),fill=cols)
@@ -300,28 +370,10 @@ names(cols) <- c("Cancer Stage III","Cancer Stage IV")
 
 
 
-plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=2)
+plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=3)
 par(new=TRUE)
 plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "Survival (%)")
 legend("topright",1,names(cols),fill=cols)
 ```
 
-## coxph modeling for MM_location
 
-```{r Hazard ratio for MM_location, fig.height=8, fig.width=12}
-
-res <- coxph(Surv(survdat$Time_to_death_or_last_PET,survdat$censoring_death) ~ MM.location,data = survdat)
-
-td_res = tidy(res, exponentiate = TRUE)
-
-# Make sure plot is ordered according to increasing HRs
-td_res = td_res %>% arrange(estimate) %>% mutate(term = factor(term,levels = term))
-# Visualize hazard ratios
-ggplot(td_res, aes(x = term, y = estimate,color =p.value < 0.05)) +
-geom_point(size = 4) +
-geom_errorbar(aes(ymax = conf.high, ymin = conf.low))+
-scale_color_manual(values = c('lightblue','red'))+
-coord_flip()+
-geom_hline(yintercept = 1,color = 'blue')+
-scale_y_continuous(trans='log')
-```

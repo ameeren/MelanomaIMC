@@ -1,0 +1,303 @@
+---
+title: "cell type summary clinical data for Tcell fraction score"
+author: "Daniel"
+date: "18 08 2020"
+output: html_document
+---
+
+## here we compare the fractions of cell type clusters and marker expressions for T cell score
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# load packages
+
+```{r load packages, message=FALSE}
+sapply(list.files("~/bbvolume/Git/imcRtools/R/", full.names = TRUE), source)
+sapply(list.files("~/bbvolume/Git/ZTMA256_protein_data/code/helper_functions/", full.names = TRUE), source)
+library(LSD)
+library(SingleCellExperiment)
+library(ggplot2)
+library(scater)
+library(viridis)
+library(igraph)
+library(CATALYST)
+library(reshape2)
+library(cowplot)
+library(tidyverse)
+```
+
+
+# load data
+
+```{r load data}
+sce = readRDS(file = "data/sce_protein.rds")
+
+colour_vector <- readRDS("~/bbvolume/Git/ZTMA256_protein_data/data/colour_vector.rds")
+```
+
+
+```{r adapt T cell score to numbers, fig.height=10, fig.width=10}
+
+sce[,which(sce$T_frac_score_per_BlockID == "low" & sce$Location != "CTRL")]$T_frac_score_per_BlockID <- 0
+sce[,which(sce$T_frac_score_per_BlockID == "med" & sce$Location != "CTRL")]$T_frac_score_per_BlockID <- 1
+sce[,which(sce$T_frac_score_per_BlockID == "high" & sce$Location != "CTRL")]$T_frac_score_per_BlockID <- 2
+
+  # subset sce to not contain CTRL samples
+sce <- sce[,sce$Location != "CTRL"]
+```
+
+
+
+## T_frac_score_per_BlockID analysis
+
+```{r chemokine expression by T_frac_score_per_BlockID boxplot, fig.height=12, fig.width=20, message=FALSE}
+p1 <- plotCellCounts(sce,colour_by = "celltype",split_by = "T_frac_score_per_BlockID", proportion = FALSE)+scale_fill_manual(values = colour_vector)
+p2 <- plotCellCounts(sce,colour_by = "celltype",split_by = "T_frac_score_per_BlockID", proportion = TRUE)+scale_fill_manual(values = colour_vector)
+
+p3 <- plotCellFracGroups(sce,CellClass = "celltype",color_by = "T_frac_score_per_BlockID")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1)
+```
+
+__overall we do see a correlation between Tcytotoxic and Thelper cells.__
+
+## Tcytotoxic cluster fractions and marker profile for T_frac_score_per_BlockID
+
+```{r Tcytotoxic cluster fractions for T_frac_score_per_BlockID, fig.height=15, fig.width=20, message=FALSE}
+p1 <- plotCellCounts(sce[,which(sce$celltype == "Tcytotoxic" ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = FALSE)
+p2 <- plotCellCounts(sce[,which(sce$celltype == "Tcytotoxic" ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = TRUE)+theme(legend.position = "none")
+p3 <- plotCellFracGroups(sce[,which(sce$celltype == "Tcytotoxic"  ) ],CellClass = "celltype_clustered",color_by = "T_frac_score_per_BlockID")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+__Tcytotoxic_1 cluster are T cells that also express tumor markers indicating that these potentially sit next to tumor cells. this is also reflected by higher fractions of these cells in inflamed versus excluded images. Tcytotoxic_3_ cluster is enriched in deserted images (given that overall deserted images show much less Tcytotoxic cells). these cells are potentially exhausted, bystander Tcytotoxic cells, but hard to say with these markers. all of the chemokine expressing Tcytotoxic cells are enriched in inflamed images__
+
+```{r marker expression of Tcytotoxic cells, fig.height=15, fig.width=20, message=FALSE}
+# Aggregate the counts
+mean_sce <- calculateSummary(sce, split_by = c("T_frac_score_per_BlockID","celltype","celltype_clustered"), 
+                             exprs_values = "counts")
+
+# Exclude DNA and Histone
+mean_sce <- mean_sce[!grepl("DNA|Histone|Vimentin", rownames(mean_sce)),]
+
+# Transform and scale
+assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
+assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+
+# Scaled
+plotHeatmap(mean_sce[,mean_sce$celltype == "Tcytotoxic"], exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c("celltype_clustered","T_frac_score_per_BlockID"), 
+            labels_col = mean_sce[,mean_sce$celltype == "Tcytotoxic"]$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE,cluster_cols = FALSE)
+
+```
+
+
+## Thelper cluster fractions and marker profile for T_frac_score_per_BlockID
+
+```{r Thelper cluster fractions for T_frac_score_per_BlockID, fig.height=10, fig.width=20, message=FALSE}
+p1 <- plotCellCounts(sce[,which(sce$celltype == "Thelper"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = FALSE)
+p2 <- plotCellCounts(sce[,which(sce$celltype == "Thelper"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = TRUE)+theme(legend.position = "none")
+p3 <- plotCellFracGroups(sce[,which(sce$celltype == "Thelper"  ) ],CellClass = "celltype_clustered",color_by = "T_frac_score_per_BlockID")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+__strong biases in the distributions of Thelper cells. all Tcells that have potentially activating profiles show an increase with the Tcell score.__
+
+
+```{r marker expression of Thelper cells, fig.height=15, fig.width=20, message=FALSE}
+# Scaled
+plotHeatmap(mean_sce[,mean_sce$celltype == "Thelper"], exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c("celltype_clustered", "T_frac_score_per_BlockID"), 
+            labels_col = mean_sce[,mean_sce$celltype == "Thelper"]$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE,cluster_cols = FALSE)
+
+```
+
+## Tregulatory cluster fractions and marker profile for T_frac_score_per_BlockID
+
+```{r Tregulatory cluster fractions for T_frac_score_per_BlockID, fig.height=10, fig.width=20, message=FALSE}
+p1 <- plotCellCounts(sce[,which(sce$celltype == "Tregulatory"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = FALSE)
+p2 <- plotCellCounts(sce[,which(sce$celltype == "Tregulatory"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = TRUE)+theme(legend.position = "none")
+p3 <- plotCellFracGroups(sce[,which(sce$celltype == "Tregulatory"  ) ],CellClass = "celltype_clustered",color_by = "T_frac_score_per_BlockID")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+__strong biases in the distributions of Thelper cells. all Tcells that have potentially activating profiles show an increase with the Tcell score.__
+
+
+```{r marker expression of Tregulatory cells, fig.height=15, fig.width=20, message=FALSE}
+# Scaled
+plotHeatmap(mean_sce[,mean_sce$celltype == "Tregulatory"], exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c("celltype_clustered", "T_frac_score_per_BlockID"), 
+            labels_col = mean_sce[,mean_sce$celltype == "Tregulatory"]$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE,
+            cluster_cols = FALSE)
+
+```
+
+## Macrophage cluster fractions and marker profile for T_frac_score_per_BlockID
+
+```{r Macropahges cluster fractions for T_frac_score_per_BlockID, fig.height=10, fig.width=20, message=FALSE}
+p1 <- plotCellCounts(sce[,which(sce$celltype == "Macrophage"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = FALSE)
+p2 <- plotCellCounts(sce[,which(sce$celltype == "Macrophage"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = TRUE)+theme(legend.position = "none")
+p3 <- plotCellFracGroups(sce[,which(sce$celltype == "Macrophage"  ) ],CellClass = "celltype_clustered",color_by = "T_frac_score_per_BlockID")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+```{r marker expression of Macrophages cells, fig.height=15, fig.width=20, message=FALSE}
+
+# Scaled
+plotHeatmap(mean_sce[,mean_sce$celltype == "Macrophage"], exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c("celltype_clustered", "T_frac_score_per_BlockID"), 
+            labels_col = mean_sce[,mean_sce$celltype == "Macrophage"]$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE,
+            cluster_cols = FALSE)
+
+```
+
+## Tumor cluster fractions and marker profile for T_frac_score_per_BlockID
+
+```{r Tumor cluster fractions for T_frac_score_per_BlockID, fig.height=15, fig.width=20, message=FALSE}
+p1 <- plotCellCounts(sce[,which(sce$celltype == "Tumor"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = FALSE)
+p2 <- plotCellCounts(sce[,which(sce$celltype == "Tumor"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = TRUE)+theme(legend.position = "none")
+p3 <- plotCellFracGroups(sce[,which(sce$celltype == "Tumor"  ) ],CellClass = "celltype_clustered",color_by = "T_frac_score_per_BlockID")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+
+```{r marker expression of Tumor cells, fig.height=15, fig.width=20, message=FALSE}
+# Scaled
+plotHeatmap(mean_sce[,mean_sce$celltype == "Tumor"], exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c( "celltype_clustered", "T_frac_score_per_BlockID"), 
+            labels_col = mean_sce[,mean_sce$celltype == "Tumor"]$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-6,6),legend = TRUE,
+            cluster_cols = FALSE)
+
+```
+
+## marker profile for Tumor cells
+
+```{r marker expression of tumor cells in skin sub-cutaneous, fig.height=15, fig.width=15, message=FALSE}
+cur_df <- data.frame(t(assay(sce,"asinh")))
+cur_df$celltype <- sce$celltype
+cur_df$celltype_clustered <- sce$celltype_clustered
+cur_df$T_frac_score_per_BlockID <- sce$T_frac_score_per_BlockID
+cur_df$cellID <- rownames(cur_df)
+cur_df$MM_location <- sce$MM_location
+cur_df$Death <- sce$Death
+
+# subset to only contain the celltype of interest
+cur_df <- cur_df[which(cur_df$celltype == "Tumor"),]
+
+# long format
+cur_df_long <- melt(cur_df)
+
+cur_df_long %>%
+  filter(variable %in% c("H3K27me3","HLADR","S100","Sox9","pERK","CD36","p75","MITF","PDL1","bCatenin","Ki67","Collagen1","SOX10","pS6")) %>%
+  ggplot()+
+  geom_boxplot(aes(x = celltype_clustered,y=value, fill=T_frac_score_per_BlockID))+
+  facet_wrap(~variable)+
+  theme(axis.text.x = element_text(angle = 90, vjust = 1))
+```
+
+## Bcell cluster fractions and marker profile for Tcell_score
+
+```{r Bcell cluster fractions for Tcell_score, fig.height=15, fig.width=20, message=FALSE}
+p1 <- plotCellCounts(sce[,which(sce$celltype == "Bcell"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = FALSE)
+p2 <- plotCellCounts(sce[,which(sce$celltype == "Bcell"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = TRUE)+theme(legend.position = "none")
+p3 <- plotCellFracGroups(sce[,which(sce$celltype == "Bcell"  ) ],CellClass = "celltype_clustered",color_by = "T_frac_score_per_BlockID")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+
+
+```{r marker expression of Bcells cells, fig.height=15, fig.width=20, message=FALSE}
+# Scaled
+plotHeatmap(mean_sce[,mean_sce$celltype == "Bcell"], exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c( "celltype_clustered", "T_frac_score_per_BlockID"), 
+            labels_col = mean_sce[,mean_sce$celltype == "Bcell"]$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE,
+            cluster_cols = FALSE)
+
+```
+
+
+
+## BnTcell cluster fractions and marker profile for T_frac_score_per_BlockID
+
+```{r BnTcell cluster fractions for T_frac_score_per_BlockID, fig.height=15, fig.width=20, message=FALSE}
+p1 <- plotCellCounts(sce[,which(sce$celltype == "BnTcell"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = FALSE)
+p2 <- plotCellCounts(sce[,which(sce$celltype == "BnTcell"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = TRUE)+theme(legend.position = "none")
+p3 <- plotCellFracGroups(sce[,which(sce$celltype == "BnTcell"  ) ],CellClass = "celltype_clustered",color_by = "T_frac_score_per_BlockID")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+
+```{r marker expression of BnTcell cells, fig.height=15, fig.width=20, message=FALSE}
+
+# Scaled
+plotHeatmap(mean_sce[,mean_sce$celltype == "BnTcell"], exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c( "celltype_clustered", "T_frac_score_per_BlockID"), 
+            labels_col = mean_sce[,mean_sce$celltype == "BnTcell"]$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE,
+            cluster_cols = FALSE)
+
+```
+
+
+## pDC cluster fractions and marker profile for T_frac_score_per_BlockID
+
+```{r pDC cluster fractions for T_frac_score_per_BlockID, fig.height=15, fig.width=20, message=FALSE}
+p1 <- plotCellCounts(sce[,which(sce$celltype == "pDC"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = FALSE)
+p2 <- plotCellCounts(sce[,which(sce$celltype == "pDC"  ) ],colour_by = "celltype_clustered",split_by = "T_frac_score_per_BlockID", proportion = TRUE)+theme(legend.position = "none")
+p3 <- plotCellFracGroups(sce[,which(sce$celltype == "pDC"  ) ],CellClass = "celltype_clustered",color_by = "T_frac_score_per_BlockID")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+
+```{r marker expression of pDC cells, fig.height=15, fig.width=20, message=FALSE}
+# Scaled
+plotHeatmap(mean_sce[,mean_sce$celltype == "pDC"], exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c( "celltype_clustered", "T_frac_score_per_BlockID"), 
+            labels_col = mean_sce[,mean_sce$celltype == "pDC"]$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE,
+            cluster_cols = FALSE)
+
+```
