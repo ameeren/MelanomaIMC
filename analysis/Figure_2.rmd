@@ -29,7 +29,6 @@ library(janitor)
 
 ```{r}
 sce <- readRDS(file = "data/sce_RNA.rds")
-
 cur_dt <- as.data.table(colData(sce))
 ```
 
@@ -99,7 +98,7 @@ cs = comb_size(m)
 # legend for celltypes
 lgd1 = Legend(labels = colnames(celltypes[,-1]), 
              title = "Celltypes", 
-             legend_gp = gpar(fill = metadata(sce)$colour_vectors$celltypes[colnames(celltypes[,-1])]),
+             legend_gp = gpar(fill = metadata(sce)$colour_vectors$celltype[colnames(celltypes[,-1])]),
              nrow = 3)
 lgd2 = Legend(labels = colnames(location[,-1]), 
              title = "Location of Metastasis", 
@@ -114,7 +113,7 @@ ht = UpSet(m,
         "Combination Size" = anno_barplot(celltypes[,-1], 
             ylim = c(0, max(cs)*1.1),
             border = FALSE, 
-            gp = gpar(fill = metadata(sce)$colour_vectors$celltypes[colnames(celltypes[,-1])]), 
+            gp = gpar(fill = metadata(sce)$colour_vectors$celltype[colnames(celltypes[,-1])]), 
             height = unit(12, "cm"),
         ), 
         annotation_name_side = "left", 

@@ -16,7 +16,7 @@ In this script we try to set global thresholds for some key markers (CD3 etc) an
 ## Load libraries
 
 ```{r message=F}
-sapply(list.files("/Volumes/thoch/Git/ZTMA256_protein_data/code/helper_functions/", full.names = TRUE), source)
+sapply(list.files("code/helper_functions/", full.names = TRUE), source)
 sapply(list.files("/Volumes/server_homes/daniels/Git/imcRtools/R/", full.names = TRUE), source)
 library(LSD)
 library(SingleCellExperiment)
@@ -27,26 +27,85 @@ library(Rphenograph)
 library(igraph)
 library(CATALYST)
 library(workflowr)
+library(gridExtra)
+library(dplyr)
 ```
 
 ## Load data
 
 ```{r load data}
-sce = readRDS(file = "data/sce_RNA.rds")
+sce <- readRDS(file = "data/sce_RNA.rds")
 ```
 
 # Marker for Clustering
 
+## Define Superclasses for subclustering
+
+```{r}
+sce[,sce$celltype %in% c("exhausted Tcytotoxic", "Tcytotoxic")]$celltype <- "Tcytotoxic"
+sce[,sce$celltype %in% c("CD134+ Tcell", "CD134- Tcell")]$celltype <- "Tcell"
+```
+
+## Define color vector for superclasses
+
+```{r}
+celltype_color <- vector(length = length(unique(sce$celltype)))
+names(celltype_color) <- unique(sce$celltype)
+
+celltype_color["CD38"] <- "goldenrod2"
+celltype_color["HLA-DR"] <- "green1"
+celltype_color["Macrophage"] <- "greenyellow"
+celltype_color["Neutrophil"] <- "blue1"
+celltype_color["Tcell"] <- "yellow"
+celltype_color["Vasculature"] <- "red2"
+celltype_color["Stroma"] <- "tomato"
+celltype_color["Tcytotoxic"] <- "deepskyblue"
+celltype_color["Tumor"] <- "sienna4"
+
+# Save in SCE object
+metadata(sce)$colour_vectors$celltype <- celltype_color
+```
+
 ## Definition of markers used for subclustering the classified cells
 
 ```{r subclustering of the celltypes} 
-# Select markers
 marker_list <- list()
 
-marker_list$Tumor <- c("HLADR", "S100","B2M","GLUT1","SOX10","cleavedPARP","Mart1","pRB")
+marker_list$Stroma <- c("SMA", "CK5", "Cadherin11", "FAP","pRB","B2M","GLUT1","T5_CCL4","T7_CCL18","CCR2","T1_CXCL8",
+                        "T4_CXCL10","T8_CXCL13","T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","CD31",
+                        "T10_CCL19","cleavedPARP")
+
+marker_list$Tumor <- c("HLADR", "S100","B2M","GLUT1","PDL1","SOX10","T5_CCL4","T7_CCL18","CCR2","T1_CXCL8","T4_CXCL10","T8_CXCL13",
+                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","T10_CCL19","cleavedPARP",
+                       "Mart1","pRB")
+
+marker_list$Neutrophil <- c("CD15", "PDL1","GLUT1", "MPO","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
+                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
+
+
+marker_list$Tcell <- c("CD3", "CD8", "PD1", "Lag3", "CCR2","CD38","PDL1", "HLADR", "CD134","T5_CCL4", "B2M", "CD31",
+                       "T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13","T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9",
+                       "T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
+
+marker_list$Tcytotoxic <- c("CD3", "CD8", "PD1", "Lag3", "CCR2","CD38","PDL1", "HLADR", "CD134","T5_CCL4", "B2M", "CD31",
+                       "T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13","T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9",
+                       "T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
+
+
+marker_list$Macrophage <- c("CD68", "CD163", "HLADR", "PDL1", "CD3", "CCR2","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
+                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
+
+marker_list$Vasculature <- c("CD31", "SMA","CK5","pRB", "Cadherin11","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
+                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
+
+marker_list$`HLA-DR` <- c("HLADR","CD68","CD3","CCR2","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
+                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
+
+marker_list$CD38 <- c("HLADR","CD38","CD3","CCR2","CD163","CD68","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
+                       "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
 
 # check if the names of the marker list match the names of the classified cells
-names(marker_list) %in% unique(sce$celltypes_layer1)
+all(names(marker_list) %in% unique(sce$celltype))
 ```
 
 # Clustering
@@ -62,37 +121,39 @@ rowData(sce)$marker_class <- "state"
 # vector for clustering
 fs_clustering <- vector(length = ncol(sce))
 
-# Cluster Tumor cells into 6 clusters
+# Macrophage, Bcells, Thelper, Tcytotoxic, Tother and BnT cells will be clustered for a total of 6 clustes each
 set.seed(12345)
 
-start = Sys.time()
-for(i in c("Tumor")){
+# 6 clusters
+for(i in c("Tcell","Macrophage","Tcytotoxic","Tumor")){
   #subset cells for clustering
-  cur_sce <- sce[,sce$celltypes_layer1 == i]
-  
-  # change name of assay for clustering to exprs (hard-coded in CATALYST)
-  names(assays(cur_sce)) <- c("counts", "exprs", "scaled_counts", "scaled_asinh")
+  cur_sce <- sce[,sce$celltype == i]
+  names(assays(cur_sce)) <- c("counts", "exprs","scaled_counts", "scaled_asinh")
   cur_sce <- CATALYST::cluster(cur_sce, features = marker_list[i][[1]], ydim = 2, xdim = 3, maxK = 4)
-  fs_clustering[sce$celltypes_layer1 == i] <- cur_sce$cluster_id
+  fs_clustering[sce$celltype == i] <- cur_sce$cluster_id
 }
-end = Sys.time()
-print(end-start)
 
-# create new vector with layer1 info and tumor clusters
-labels <- ifelse(sce$celltypes_layer1 == "Tumor", paste0(sce$celltypes_layer1, "_", fs_clustering), sce$celltypes_layer1)
-
+# 4 clusters
+for(i in c("Neutrophil","CD38","Stroma","Vasculature","HLA-DR")){
+  cur_sce <- sce[,sce$celltype == i]
+  names(assays(cur_sce)) <-  c("counts", "exprs","scaled_counts", "scaled_asinh")
+  cur_sce <- cluster(cur_sce,features = marker_list[i][[1]],ydim = 2,xdim = 2,maxK = 3)
+  fs_clustering[sce$celltype == i] <- cur_sce$cluster_id
+}
 
 # Save in SCE object
-sce$celltypes_layer2 <- labels
+colData(sce)$celltype_clustered <- as.factor(fs_clustering)
+
+sce$celltype_clustered <- paste0(sce$celltype, "_", sce$celltype_clustered)
 ```
 
 # Visualization
 
 ## Visulalize clustering results for FlowSOM
 
-```{r heatmap_mean_expression_per_celltypes_layer1_subclustered_asinh, fig.width= 20, fig.height=15}
+```{r heatmap_mean_expression_per_celltypes_layer1_subclustered_asinh_scaled, fig.width= 20, fig.height=15}
 # Aggregate the counts
-mean_sce <- calculateSummary(sce, split_by = c("celltypes_layer2"), 
+mean_sce <- calculateSummary(sce, split_by = c("celltype_clustered", "celltype"), 
                              exprs_values = "counts")
 
 # Exclude bad markers
@@ -102,31 +163,20 @@ mean_sce <- mean_sce[rowData(sce)$good_marker,]
 assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
 assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
 
-# Linear scale 
-plotHeatmap(mean_sce, exprs_values = "arcsinh", 
-            colour_columns_by = c("celltypes_layer2"), 
-            color = viridis(100), labels_col = mean_sce$gating_clustering_FS,
-            show_colnames = TRUE, annotation_legend = FALSE, borders_color = NA)
-
-```
-
-## Scaled heatmap
-
-```{r heatmap_mean_expression_per_celltypes_layer1_subclustered_asinh_scaled, fig.width= 20, fig.height=15}
 # Scaled
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
-            colour_columns_by = c("celltypes_layer2"), 
-            labels_col = mean_sce$celltypes_layer2,
+            colour_columns_by = "celltype", 
+            labels_col = mean_sce$celltype_clustered,
             show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
             color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             zlim = c(-4, 4),legend = TRUE)
-
 ```
+
 
 ## Numbers of cells per cluster
 
 ```{r counts per cluster}
-celltype_counts <- sce$celltypes_layer2
+celltype_counts <- sce$celltype_clustered
 
 table(celltype_counts)
 ```
@@ -136,7 +186,7 @@ table(celltype_counts)
 ## Assign names to clusters
 
 ```{r names for clusters, fig.height= 15, fig.width=15}
-annotations <- sce$celltypes_layer2
+annotations <- sce$celltype_clustered
 
 # add annotation if wanted
 #annotations[annotations == "Tumor_1"] <- "Tumor1_"
@@ -148,7 +198,7 @@ annotations <- sce$celltypes_layer2
 
 sce$cellAnnotation <- annotations
 
-mean_sce <- calculateSummary(sce, split_by = c("celltypes_layer2","cellAnnotation"), 
+mean_sce <- calculateSummary(sce, split_by = c("celltype_clustered","celltype"), 
                              exprs_values = "counts")
 
 # Exclude bad markers
@@ -159,30 +209,116 @@ assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts"))
 assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
 
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
-            colour_columns_by = c("celltypes_layer2"), 
-            labels_col = mean_sce$cellAnnotation,
+            colour_columns_by = c("celltype"), 
+            labels_col = mean_sce$celltype,
             show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
             color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             zlim = c(-4, 4),legend = TRUE)
 ```
 
-__clustering does not really pick up PDL1 positive Tumor cells (which definitely exist). Potentially we have to investigate this with a manual cut off. arcsinh > 1.75 seems to be reasonable__
+# Clustering Quality Control
 
-__Additionally, the clustering did not pick up proliferating and non prolifertating tumor clusters. this should also be investigated by manual cut offs. arcsinh > 1.25 seems reasonable.__
+## Marker expression density of clusters vs. manually gated - Tcytotoxic
+
+```{r density_marker_Tcytotoxic, fig.width=15, fig.height=10}
+# Density of Expression in different Tcytotoxic clusters vs. manually gated Lag3+ cells
+cur_sce <- data.frame(colData(sce))
+cur_exprs <- data.frame(t(assays(sce)[[2]]))
+cur_exprs <- cbind(cur_exprs, cur_sce[,c("celltype", "celltypes_layer1", "celltype_clustered")])
+cur_exprs$cellID <- rownames(cur_exprs)
+
+cur_exprs <- cur_exprs %>%
+  reshape2::melt(id.vars = c("cellID", "celltype", "celltypes_layer1", "celltype_clustered"), 
+                 variable.name = "marker", value.name = "asinh")
 
 
-## Update Celltype
+# clustering
+a <- cur_exprs %>%
+  filter(celltype == "Tcytotoxic" & marker %in% marker_list$Tcytotoxic) %>%
+  ggplot(data=., aes(asinh, color = celltype_clustered)) + 
+  geom_density() +
+  xlim(0,4) + 
+  facet_wrap(~marker)
 
-```{r re-assign celltypes}
-sce$celltype <- sce$celltypes_layer1
+# manual gating
+b <- cur_exprs %>%
+  filter(celltype == "Tcytotoxic" & marker %in% marker_list$Tcytotoxic) %>%
+  ggplot(data=., aes(asinh, color = celltypes_layer1)) + 
+  geom_density() +
+  xlim(0,4) + 
+  facet_wrap(~marker)
+
+grid.arrange(a, b, ncol = 2)
 ```
 
-## Counts per Celltype
+## Tcell
 
-```{r counts per celltype}
-celltype_counts <- sce$celltype
+```{r density_marker_Tcells, fig.width=15, fig.height=10}
+# clustering
+a <- cur_exprs %>%
+  filter(celltype == "Tcell" & marker %in% marker_list$Tcell) %>%
+  ggplot(data=., aes(asinh, color = celltype_clustered)) + 
+  geom_density() +
+  xlim(0,4) + 
+  facet_wrap(~marker)
 
-table(celltype_counts)
+# manual gating
+b <- cur_exprs %>%
+  filter(celltype == "Tcell" & marker %in% marker_list$Tcell) %>%
+  ggplot(data=., aes(asinh, color = celltypes_layer1)) + 
+  geom_density() +
+  xlim(0,4) + 
+  facet_wrap(~marker)
+
+grid.arrange(a, b, ncol = 2)
+```
+
+## Tumor
+
+```{r density_marker_Tumor, fig.width=10, fig.height=10}
+# clustering
+cur_exprs %>%
+  filter(celltype == "Tumor" & marker %in% marker_list$Tumor) %>%
+  ggplot(data=., aes(asinh, color = celltype_clustered)) + 
+  geom_density() +
+  xlim(0,4) + 
+  facet_wrap(~marker)
+```
+
+## Neutrophil
+
+```{r density_marker_Neutrophil, fig.width=10, fig.height=10}
+# clustering
+cur_exprs %>%
+  filter(celltype == "Neutrophil" & marker %in% marker_list$Neutrophil) %>%
+  ggplot(data=., aes(asinh, color = celltype_clustered)) + 
+  geom_density() +
+  xlim(0,4) + 
+  facet_wrap(~marker)
+```
+
+## Macrophage
+
+```{r density_marker_Macrophage, fig.width=10, fig.height=10}
+# clustering
+cur_exprs %>%
+  filter(celltype == "Macrophage" & marker %in% marker_list$Macrophage) %>%
+  ggplot(data=., aes(asinh, color = celltype_clustered)) + 
+  geom_density() +
+  xlim(0,4) + 
+  facet_wrap(~marker)
+```
+
+## CD38
+
+```{r density_marker_CD38, fig.width=10, fig.height=10}
+# clustering
+cur_exprs %>%
+  filter(celltype == "CD38" & marker %in% marker_list$CD38) %>%
+  ggplot(data=., aes(asinh, color = celltype_clustered)) + 
+  geom_density() +
+  xlim(0,4) + 
+  facet_wrap(~marker)
 ```
 
 # SCE object
@@ -190,7 +326,5 @@ table(celltype_counts)
 ## Save the single cell object
 
 ```{r save object with clusters}
-# delete the "exprs" slot from the single cell experiment again.
-
 saveRDS(sce, "data/sce_RNA.rds")
 ```
