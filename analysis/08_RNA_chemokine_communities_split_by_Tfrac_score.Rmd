@@ -1,0 +1,133 @@
+---
+title: "celltypes and chemokine expression split by Tfrac score"
+author: "Daniel"
+date: "18 08 2020"
+output: html_document
+---
+
+## here we compare the fractions of cell type clusters and marker expressions for T cell score
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# load packages
+
+```{r load packages, message=FALSE}
+sapply(list.files("~/bbvolume/Git/imcRtools/R/", full.names = TRUE), source)
+sapply(list.files("~/bbvolume/Git/melanoma_publication/code/helper_functions/", full.names = TRUE), source)
+library(LSD)
+library(SingleCellExperiment)
+library(ggplot2)
+library(scater)
+library(viridis)
+library(igraph)
+library(CATALYST)
+library(reshape2)
+library(cowplot)
+library(tidyverse)
+```
+
+
+# load data
+
+```{r load data}
+sce = readRDS(file = "../../bbvolume/server_homes/thoch/Git/melanoma_publication/data/sce_RNA.rds")
+
+colour_vector <- readRDS("~/bbvolume/Git/ZTMA256_protein_data/data/colour_vector.rds")
+
+# import T_frac_score and add to sce object
+T_frac_score <- readRDS("data/T_frac_score_per_Description")
+
+sce$T_frac_score_per_ImageNumber   <- T_frac_score[sce$Description]
+
+# import also the T cell score per BlockID
+T_frac_score <- readRDS("data/T_frac_score_per_BlockID")
+
+sce$T_frac_score_per_BlockID   <- T_frac_score[sce$BlockID]
+```
+
+
+```{r adapt T cell score to numbers, fig.height=10, fig.width=10}
+
+sce[,which(sce$T_frac_score_per_ImageNumber == "low" & sce$Location != "CTRL")]$T_frac_score_per_ImageNumber <- 0
+sce[,which(sce$T_frac_score_per_ImageNumber == "med" & sce$Location != "CTRL")]$T_frac_score_per_ImageNumber <- 1
+sce[,which(sce$T_frac_score_per_ImageNumber == "high" & sce$Location != "CTRL")]$T_frac_score_per_ImageNumber <- 2
+
+  # subset sce to not contain CTRL samples
+sce <- sce[,sce$Location != "CTRL"]
+```
+
+
+
+## celltypes per T_frac score
+the fraction score defined on the protein dataset does also nicely split up the RNA data
+
+```{r celltype fractions per T_frac_score_per_ImageNumber, fig.height=12, fig.width=20, message=FALSE}
+p1 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "T_frac_score_per_ImageNumber",scale = "count")
+p2 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "T_frac_score_per_ImageNumber",scale = "percent")+theme(legend.position = "none")
+
+p3 <- plotCellFracGroups(sce,CellClass = "community_module",color_by = "T_frac_score_per_ImageNumber")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+__communities are strongly over represented in imagse with many cytotoxic T cells__
+
+## community fractions by relapse
+
+```{r celltype fractions per relapse, fig.height=12, fig.width=20, message=FALSE}
+p1 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "relapse",scale = "count")
+p2 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "relapse",scale = "percent")+theme(legend.position = "none")
+
+p3 <- plotCellFracGroups(sce,CellClass = "community_module",color_by = "relapse")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+## community fractions by Death
+
+```{r celltype fractions per Death, fig.height=12, fig.width=20, message=FALSE}
+p1 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "Death",scale = "count")
+p2 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "Death",scale = "percent")+theme(legend.position = "none")
+
+p3 <- plotCellFracGroups(sce,CellClass = "community_module",color_by = "Death")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+
+
+
+## community fractions by Death within skin_subcutaneous
+
+```{r celltype fractions per Death, fig.height=12, fig.width=20, message=FALSE}
+p1 <- plotBarFracCluster(sce[,sce$MM_location == "skin_subcutaneous"],colour_by = "community_module",split_by = "Death",scale = "count")
+p2 <- plotBarFracCluster(sce[,sce$MM_location == "skin_subcutaneous"],colour_by = "community_module",split_by = "Death",scale = "percent")+theme(legend.position = "none")
+
+p3 <- plotCellFracGroups(sce[,sce$MM_location == "skin_subcutaneous"],CellClass = "community_module",color_by = "Death")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+
+
+## community fractions by MM_location
+
+```{r celltype fractions per MM_location, fig.height=12, fig.width=20, message=FALSE}
+p1 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "MM_location",scale = "count")
+p2 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "MM_location",scale = "percent")+theme(legend.position = "none")
+
+p3 <- plotCellFracGroups(sce,CellClass = "community_module",color_by = "MM_location")
+
+bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+```
+
+
+
