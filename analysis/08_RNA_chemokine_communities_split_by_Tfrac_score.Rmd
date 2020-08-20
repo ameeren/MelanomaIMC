@@ -16,7 +16,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
 ```{r load packages, message=FALSE}
 sapply(list.files("~/bbvolume/Git/imcRtools/R/", full.names = TRUE), source)
-sapply(list.files("~/bbvolume/Git/melanoma_publication/code/helper_functions/", full.names = TRUE), source)
+sapply(list.files("~/bbvolume/Git/melanoma_publication/code/helper_functions", full.names = TRUE), source)
 library(LSD)
 library(SingleCellExperiment)
 library(ggplot2)
@@ -48,6 +48,37 @@ T_frac_score <- readRDS("data/T_frac_score_per_BlockID")
 sce$T_frac_score_per_BlockID   <- T_frac_score[sce$BlockID]
 ```
 
+```{r define chemokine expression colentry}
+cur_df <- colData(sce)
+cur_df <- as_tibble(cur_df)
+
+
+cur_df <- cur_df[,grepl("CCL|CXCL",colnames(cur_df))]
+
+
+for(i in colnames(cur_df)){
+  cur_df[[i]] <- ifelse(cur_df[[i]]== 1,i,"none")
+}
+
+cur_df <- cur_df %>%
+  unite(expressor,sep = "_",na.rm =TRUE,remove=FALSE)
+
+
+cur_df$expressor <- gsub("none_","",cur_df$expressor)
+cur_df$expressor <- gsub("_none","",cur_df$expressor)
+
+summary_cur_df <- table(cur_df$expressor)
+
+targets <- names(which(summary_cur_df >250))
+targets <- targets[!targets == "none"]
+
+
+sce$expressor <- cur_df$expressor
+
+
+sce[,which(! sce$expressor %in% c(targets,"none")) ]$expressor <- "other"
+```
+
 
 ```{r adapt T cell score to numbers, fig.height=10, fig.width=10}
 
@@ -59,18 +90,83 @@ sce[,which(sce$T_frac_score_per_ImageNumber == "high" & sce$Location != "CTRL")]
 sce <- sce[,sce$Location != "CTRL"]
 ```
 
+## chemokine expression by T_frac score
+the fraction score defined on the protein dataset does also nicely split up the RNA data
+
+```{r chemokine expression per T_frac_score_per_ImageNumber, fig.height=12, fig.width=20, message=FALSE}
+  cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+  cur_df$expressor <- as.factor(colData(sce)[,"expressor"])
+
+  cur_df$T_frac_score_per_ImageNumber <- as.factor(colData(sce)[,"T_frac_score_per_ImageNumber"])
+
+cur_df %>%
+    group_by(ImageNumber) %>%
+    add_count(expressor,name="n") %>%
+    unique() %>%
+    mutate(total = sum(n), frac = n/total) %>%
+    filter(expressor != "none") %>%
+    ggplot(aes(x=expressor,y=frac,fill=T_frac_score_per_ImageNumber))+
+    geom_boxplot(outlier.shape = NA,position=position_dodge(width=1)) +
+    geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4) +
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    ylab("Fraction of chemokine expression per Image")
+```
+
+```{r}
+  cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+  cur_df$expressor <- as.factor(colData(sce)[,"expressor"])
+
+  cur_df$T_frac_score_per_ImageNumber <- as.factor(colData(sce)[,"T_frac_score_per_ImageNumber"])
+  cur_df$Death <- as.factor(colData(sce)[,"Death"])
+  cur_df$MM_location <- as.factor(colData(sce)[,"MM_location"])
+
+  cur_df %>%
+    group_by(ImageNumber) %>%
+    add_count(expressor,name="n") %>%
+    unique() %>%
+    mutate(total = sum(n), frac = n/total) %>%
+    filter(expressor == "CCL18", MM_location == "skin_subcutaneous") %>%
+    arrange(n)
+
+  
+#### need to correct this code!! the add_count function is not accurate  
+cur_df %>%
+    group_by(ImageNumber) %>%
+    add_count(expressor,name="n") %>%
+    unique() %>%
+    mutate(total = sum(n), frac = n/total) %>%
+    filter(expressor != "none", MM_location == "skin_subcutaneous") %>%
+    ggplot(aes(x=expressor,y=frac,fill=Death))+
+    geom_boxplot(outlier.shape = NA,position=position_dodge(width=1)) +
+    geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4) +
+    theme_bw()+
+    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+    ylab("Fraction of chemokine expression per Image")
 
 
-## celltypes per T_frac score
+plotCellCounts(sce[,which(sce$expressor %in% targets & sce$MM_location == "skin_subcutaneous") ],colour_by = "expressor", split_by = "Death")
+```
+
+```{r}
+plotCellFracGroupsSubset(sce[,sce$MM_location == "skin_subcutaneous"],CellClass = "celltype",color_by =  "Death",celltype_subset = "Tcytotoxic",cluster_col = "celltype_clustered")
+```
+
+
+__it seems that CXCL9 strongly separates patients that die from those that do not in Skin_subcutaneous samples. We still need to double check that these plots are good.__
+
+## chemokine community module per T_frac score
 the fraction score defined on the protein dataset does also nicely split up the RNA data
 
 ```{r celltype fractions per T_frac_score_per_ImageNumber, fig.height=12, fig.width=20, message=FALSE}
 p1 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "T_frac_score_per_ImageNumber",scale = "count")
-p2 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "T_frac_score_per_ImageNumber",scale = "percent")+theme(legend.position = "none")
+
 
 p3 <- plotCellFracGroups(sce,CellClass = "community_module",color_by = "T_frac_score_per_ImageNumber")
 
-bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
+bottom_row <- plot_grid(p1)
 plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
 ```
 
@@ -117,16 +213,58 @@ plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
 
 
 
-## community fractions by MM_location
+## chemokine expression by MM_location
 
-```{r celltype fractions per MM_location, fig.height=12, fig.width=20, message=FALSE}
-p1 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "MM_location",scale = "count")
-p2 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "MM_location",scale = "percent")+theme(legend.position = "none")
+```{r chemokine expression by MM_location, fig.height=12, fig.width=20, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = (colData(sce)[,"ImageNumber"]))
+cur_df$expressor <- (colData(sce)[,"expressor"])
 
-p3 <- plotCellFracGroups(sce,CellClass = "community_module",color_by = "MM_location")
+cur_df$MM_location <- (colData(sce)[,"MM_location"])
 
-bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
-plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
+cur_df$Tissue <- (colData(sce)[,"TissueType"])
+
+# generate the individual control samples for plotting
+cur_df[which(cur_df$Tissue == "Skin"),]$MM_location <- "Skin_control"
+cur_df[which(cur_df$Tissue == "PSO"),]$MM_location <- "Psoriasis_control"
+cur_df[which(cur_df$Tissue == "Lymphnode"),]$MM_location <- "LN_control"
+
+# merge some MM_location classes together
+cur_df[which(cur_df$MM_location == "skin"),]$MM_location <- "skin_undefine"
+cur_df[which(cur_df$MM_location == "LN or soft tissue"),]$MM_location <- "soft tissue"
+cur_df[which(cur_df$MM_location == "parotis or LN"),]$MM_location <- "LN"
+
+# we will exclude the mucosal sample as it only contains two samples (4 images)
+cur_df <- cur_df %>%
+  filter(MM_location != "mucosal")
+
+  
+single_targets <- c("CCL2","CCL4","CCL8","CCL18","CCL19","CCL22","CXCL8","CXCL9","CXCL10","CXCL12","CXCL13")
+
+cur_df <- dcast(cur_df,formula = "ImageNumber + MM_location + Tissue ~ expressor",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","MM_location","Tissue"),variable.name = "expressor")
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(expressor %in% single_targets) %>%
+  ggplot(aes(x=expressor,y=frac,fill=MM_location))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=0.8)) +
+  geom_jitter(position = position_jitterdodge(dodge.width = 0.8, jitter.width = 0),lwd=0.4) +
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of chemokine expression per Image")+
+  coord_cartesian(ylim = c(0,0.075))
+
+p2 <- cur_df %>%
+  group_by(MM_location) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(expressor  %in% single_targets) %>%
+  ggplot(aes(x=MM_location,y=frac,fill=expressor))+
+  geom_bar(stat="identity")+
+  theme_bw()
+
+plot_grid(p1,p2,ncol = 1)
 ```
 
 

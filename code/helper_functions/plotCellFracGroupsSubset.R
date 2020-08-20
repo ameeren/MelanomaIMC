@@ -1,7 +1,7 @@
 # function to plot (boxplot) the fraction of each celltype for all images in an single cell experiment.
 # fractions can be colored according to Image level colData in the single cell experiment
 
-plotCellFracGroupsSubset <- function(x,CellClass,color_by, celltype_subset,cluster_col) {
+plotCellFracGroupsSubset <- function(x,CellClass,colour_by, celltype_subset,cluster_col) {
   # check if x is SingleCellExperiment
   .sceCheck(x)
 
@@ -38,25 +38,31 @@ plotCellFracGroupsSubset <- function(x,CellClass,color_by, celltype_subset,clust
   }
 
 
-  # create the data for plotting
-  cur_df <- data.frame( "ImageNumber" = as.factor(colData(x)[,"ImageNumber"]))
+  cur_df <- data.frame(ImageNumber = (colData(x)[,"ImageNumber"]))
 
-  cur_df$CellClass <- as.factor(colData(x)[,CellClass])
+  cur_df$split_by <- (colData(x)[,split_by])
 
-  cur_df$color_by <- as.factor(colData(x)[,color_by])
+  #cur_df$colour_by <- as.factor(colData(x)[,colour_by])
 
-  cur_df$cluster <- as.factor(colData(x)[,cluster_col])
+  cur_df$cluster <- (colData(x)[,celltype_cluster_col])
 
-  cur_df %>%
-    group_by(ImageNumber) %>%
-    add_count(cluster,name="n") %>%
-    unique() %>%
-    mutate(total = sum(n), frac = n/total) %>%
-    filter(CellClass==celltype_subset) %>%
-    ggplot(aes(x=cluster,y=frac,fill=color_by))+
-    geom_boxplot(outlier.shape = NA,position=position_dodge(width=1)) +
-    geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4) +
-    theme_bw()+
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    ylab("Fraction of celltype per Image")
+  cur_df <- dcast(cur_df,formula = " ImageNumber + split_by ~ cluster",fun.aggregate = length)
+
+  cur_df <- melt(cur_df,id.vars = c("ImageNumber","split_by"))
+
+  if(scale == "count"){
+    cur_df %>%
+      group_by(ImageNumber) %>%
+      mutate(total = sum(value), frac = value/total) %>%
+      separate(col = variable, into = c("celltype","cluster"),remove = FALSE,sep = "_") %>%
+      filter(celltype == celltype_subset) %>%
+      ggplot(aes(x=variable,y=frac,fill=split_by))+
+      geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+      geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+      theme_bw()+
+      theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+      ylab("Fraction of celltype per Image")+
+      scale_fill_discrete(name = colour_by)
+  }
+
 }
