@@ -85,133 +85,7 @@ sce[,which(! sce$expressor %in% c(targets,"none")) ]$expressor <- "other"
 sce[,which(sce$T_frac_score_per_ImageNumber == "low" & sce$Location != "CTRL")]$T_frac_score_per_ImageNumber <- 0
 sce[,which(sce$T_frac_score_per_ImageNumber == "med" & sce$Location != "CTRL")]$T_frac_score_per_ImageNumber <- 1
 sce[,which(sce$T_frac_score_per_ImageNumber == "high" & sce$Location != "CTRL")]$T_frac_score_per_ImageNumber <- 2
-
-  # subset sce to not contain CTRL samples
-sce <- sce[,sce$Location != "CTRL"]
 ```
-
-## chemokine expression by T_frac score
-the fraction score defined on the protein dataset does also nicely split up the RNA data
-
-```{r chemokine expression per T_frac_score_per_ImageNumber, fig.height=12, fig.width=20, message=FALSE}
-  cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
-
-  cur_df$expressor <- as.factor(colData(sce)[,"expressor"])
-
-  cur_df$T_frac_score_per_ImageNumber <- as.factor(colData(sce)[,"T_frac_score_per_ImageNumber"])
-
-cur_df %>%
-    group_by(ImageNumber) %>%
-    add_count(expressor,name="n") %>%
-    unique() %>%
-    mutate(total = sum(n), frac = n/total) %>%
-    filter(expressor != "none") %>%
-    ggplot(aes(x=expressor,y=frac,fill=T_frac_score_per_ImageNumber))+
-    geom_boxplot(outlier.shape = NA,position=position_dodge(width=1)) +
-    geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4) +
-    theme_bw()+
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    ylab("Fraction of chemokine expression per Image")
-```
-
-```{r}
-  cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
-
-  cur_df$expressor <- as.factor(colData(sce)[,"expressor"])
-
-  cur_df$T_frac_score_per_ImageNumber <- as.factor(colData(sce)[,"T_frac_score_per_ImageNumber"])
-  cur_df$Death <- as.factor(colData(sce)[,"Death"])
-  cur_df$MM_location <- as.factor(colData(sce)[,"MM_location"])
-
-  cur_df %>%
-    group_by(ImageNumber) %>%
-    add_count(expressor,name="n") %>%
-    unique() %>%
-    mutate(total = sum(n), frac = n/total) %>%
-    filter(expressor == "CCL18", MM_location == "skin_subcutaneous") %>%
-    arrange(n)
-
-  
-#### need to correct this code!! the add_count function is not accurate  
-cur_df %>%
-    group_by(ImageNumber) %>%
-    add_count(expressor,name="n") %>%
-    unique() %>%
-    mutate(total = sum(n), frac = n/total) %>%
-    filter(expressor != "none", MM_location == "skin_subcutaneous") %>%
-    ggplot(aes(x=expressor,y=frac,fill=Death))+
-    geom_boxplot(outlier.shape = NA,position=position_dodge(width=1)) +
-    geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4) +
-    theme_bw()+
-    theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
-    ylab("Fraction of chemokine expression per Image")
-
-
-plotCellCounts(sce[,which(sce$expressor %in% targets & sce$MM_location == "skin_subcutaneous") ],colour_by = "expressor", split_by = "Death")
-```
-
-```{r}
-plotCellFracGroupsSubset(sce[,sce$MM_location == "skin_subcutaneous"],CellClass = "celltype",color_by =  "Death",celltype_subset = "Tcytotoxic",cluster_col = "celltype_clustered")
-```
-
-
-__it seems that CXCL9 strongly separates patients that die from those that do not in Skin_subcutaneous samples. We still need to double check that these plots are good.__
-
-## chemokine community module per T_frac score
-the fraction score defined on the protein dataset does also nicely split up the RNA data
-
-```{r celltype fractions per T_frac_score_per_ImageNumber, fig.height=12, fig.width=20, message=FALSE}
-p1 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "T_frac_score_per_ImageNumber",scale = "count")
-
-
-p3 <- plotCellFracGroups(sce,CellClass = "community_module",color_by = "T_frac_score_per_ImageNumber")
-
-bottom_row <- plot_grid(p1)
-plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
-```
-
-__communities are strongly over represented in imagse with many cytotoxic T cells__
-
-## community fractions by relapse
-
-```{r celltype fractions per relapse, fig.height=12, fig.width=20, message=FALSE}
-p1 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "relapse",scale = "count")
-p2 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "relapse",scale = "percent")+theme(legend.position = "none")
-
-p3 <- plotCellFracGroups(sce,CellClass = "community_module",color_by = "relapse")
-
-bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
-plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
-```
-
-## community fractions by Death
-
-```{r celltype fractions per Death, fig.height=12, fig.width=20, message=FALSE}
-p1 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "Death",scale = "count")
-p2 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "Death",scale = "percent")+theme(legend.position = "none")
-
-p3 <- plotCellFracGroups(sce,CellClass = "community_module",color_by = "Death")
-
-bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
-plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
-```
-
-
-
-
-## community fractions by Death within skin_subcutaneous
-
-```{r celltype fractions per Death, fig.height=12, fig.width=20, message=FALSE}
-p1 <- plotBarFracCluster(sce[,sce$MM_location == "skin_subcutaneous"],colour_by = "community_module",split_by = "Death",scale = "count")
-p2 <- plotBarFracCluster(sce[,sce$MM_location == "skin_subcutaneous"],colour_by = "community_module",split_by = "Death",scale = "percent")+theme(legend.position = "none")
-
-p3 <- plotCellFracGroups(sce[,sce$MM_location == "skin_subcutaneous"],CellClass = "community_module",color_by = "Death")
-
-bottom_row <- plot_grid(p1, p2, ncol = 2, rel_widths = c(1,1))
-plot_grid(p3,bottom_row, ncol = 1, rel_heights = c(2,1))
-```
-
-
 
 ## chemokine expression by MM_location
 
@@ -267,5 +141,523 @@ p2 <- cur_df %>%
 plot_grid(p1,p2,ncol = 1)
 ```
 
+```{r}
+# subset sce to not contain CTRL samples
+sce <- sce[,sce$Location != "CTRL"]
+```
+
+
+## chemokine expression by T_frac score
+the fraction score defined on the protein dataset does also nicely split up the RNA data
+
+```{r chemokine expression per T_frac_score_per_ImageNumber, fig.height=12, fig.width=20, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$expressor <- as.factor(colData(sce)[,"expressor"])
+
+cur_df$T_frac_score_per_ImageNumber <- as.factor(colData(sce)[,"T_frac_score_per_ImageNumber"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + T_frac_score_per_ImageNumber ~ expressor",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","T_frac_score_per_ImageNumber"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "none")%>%
+  ggplot(aes(x=variable,y=frac,fill=T_frac_score_per_ImageNumber))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of celltype per Image")+
+  scale_fill_discrete(name = "T_frac_score_per_ImageNumber")
+
+p2 <- plotBarFracCluster(sce,colour_by = "expressor",split_by = "T_frac_score_per_ImageNumber", scale="count")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+## community module expression by T_frac score
+the fraction score defined on the protein dataset does also nicely split up the RNA data
+
+```{r community module expression per T_frac_score_per_ImageNumber, fig.height=12, fig.width=20, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$community_module <- as.factor(colData(sce)[,"community_module"])
+
+cur_df$T_frac_score_per_ImageNumber <- as.factor(colData(sce)[,"T_frac_score_per_ImageNumber"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + T_frac_score_per_ImageNumber ~ community_module",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","T_frac_score_per_ImageNumber"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != 0)%>%
+  ggplot(aes(x=variable,y=frac,fill=T_frac_score_per_ImageNumber))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of celltype per Image")+
+  scale_fill_discrete(name = "T_frac_score_per_ImageNumber")
+
+p2 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "T_frac_score_per_ImageNumber", scale="count")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+```{r generate pure_community and pure_cluster colData slots}
+# here we generate a colData entry by which we can split the data
+sce$pure_community <- ""
+
+sce[,sce$cxcl9only_comm != 0]$pure_community <- "cxcl9only_comm"
+sce[,sce$cxcl10only_comm != 0]$pure_community <- "cxcl10only_comm"
+sce[,sce$cxcl13only_comm != 0]$pure_community <- "cxcl13only_comm"
+sce[,sce$ccl2only_comm != 0]$pure_community <- "ccl2only_comm"
+sce[,sce$ccl4only_comm != 0]$pure_community <- "ccl4only_comm"
+sce[,sce$ccl18only_comm != 0]$pure_community <- "ccl18only_comm"
+sce[,sce$ccl19only_comm != 0]$pure_community <- "ccl19only_comm"
+sce[,sce$ccl22only_comm != 0]$pure_community <- "ccl22only_comm"
+sce[,sce$cxcl8only_comm != 0]$pure_community <- "cxcl8only_comm"
+
+# here we generate a colData entry by which we can split the data
+sce$pure_cluster <- ""
+
+sce[,sce$cxcl9only_clust != 0]$pure_cluster <- "cxcl9only_clust"
+sce[,sce$cxcl10only_clust != 0]$pure_cluster <- "cxcl10only_clust"
+sce[,sce$cxcl13only_clust != 0]$pure_cluster <- "cxcl13only_clust"
+sce[,sce$ccl2only_clust != 0]$pure_cluster <- "ccl2only_clust"
+sce[,sce$ccl4only_clust != 0]$pure_cluster <- "ccl4only_clust"
+sce[,sce$ccl18only_clust != 0]$pure_cluster <- "ccl18only_clust"
+sce[,sce$ccl19only_clust != 0]$pure_cluster <- "ccl19only_clust"
+sce[,sce$ccl22only_clust != 0]$pure_cluster <- "ccl22only_clust"
+sce[,sce$cxcl8only_clust != 0]$pure_cluster <- "cxcl8only_clust"
+```
+
+## pure_community expression by T_frac score
+the fraction score defined on the protein dataset does also nicely split up the RNA data
+
+```{r pure_community expression per T_frac_score_per_ImageNumber, fig.height=12, fig.width=20, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$pure_community <- as.factor(colData(sce)[,"pure_community"])
+
+cur_df$T_frac_score_per_ImageNumber <- as.factor(colData(sce)[,"T_frac_score_per_ImageNumber"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + T_frac_score_per_ImageNumber ~ pure_community",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","T_frac_score_per_ImageNumber"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != 0)%>%
+  ggplot(aes(x=variable,y=frac,fill=T_frac_score_per_ImageNumber))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of pure_community per Image")+
+  scale_fill_discrete(name = "T_frac_score_per_ImageNumber")
+
+p2 <- plotBarFracCluster(sce,colour_by = "pure_community",split_by = "T_frac_score_per_ImageNumber", scale="count")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+## pure_cluster expression by T_frac score
+the fraction score defined on the protein dataset does also nicely split up the RNA data
+
+```{r pure_cluster expression per T_frac_score_per_ImageNumber, fig.height=12, fig.width=20, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$pure_cluster <- as.factor(colData(sce)[,"pure_cluster"])
+
+cur_df$T_frac_score_per_ImageNumber <- as.factor(colData(sce)[,"T_frac_score_per_ImageNumber"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + T_frac_score_per_ImageNumber ~ pure_cluster",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","T_frac_score_per_ImageNumber"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "Var.3")%>%
+  ggplot(aes(x=variable,y=frac,fill=T_frac_score_per_ImageNumber))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of pure_cluster per Image")+
+  scale_fill_discrete(name = "T_frac_score_per_ImageNumber")
+
+p2 <- plotBarFracCluster(sce,colour_by = "pure_cluster",split_by = "T_frac_score_per_ImageNumber", scale="count")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+## chemokine expression by Death
+
+```{r chemokine expression by Death,fig.height=10, fig.width=10, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$expressor <- as.factor(colData(sce)[,"expressor"])
+
+cur_df$Death <- as.factor(colData(sce)[,"Death"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + Death ~ expressor",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","Death"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "none",)%>%
+  ggplot(aes(x=variable,y=frac,fill=Death))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of celltype per Image")+
+  scale_fill_discrete(name = "Death")
+
+p2 <- plotBarFracCluster(sce,colour_by = "expressor",split_by = "Death", scale="percent")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+## chemokine expression by Death within skin_subcutaneous
+
+```{r chemokine expression by Death within skin_subcutaneous,fig.height=10, fig.width=10, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$expressor <- as.factor(colData(sce)[,"expressor"])
+
+cur_df$Death <- as.factor(colData(sce)[,"Death"])
+
+cur_df$MM_location <- as.factor(colData(sce)[,"MM_location"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + Death + MM_location ~ expressor",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","Death","MM_location"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "none",MM_location == "skin_subcutaneous")%>%
+  ggplot(aes(x=variable,y=frac,fill=Death))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of celltype per Image")+
+  scale_fill_discrete(name = "Death")
+
+p2 <- cur_df %>%
+  group_by(Death) %>%
+  filter(MM_location == "skin_subcutaneous") %>%
+  select(! MM_location) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "none")%>%
+  ggplot(aes(x=Death,y=frac,fill=variable))+
+  geom_bar(stat="identity")+
+            theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                  axis.title.x = element_blank(),
+                  panel.background = element_blank(),
+                  panel.grid.minor=element_blank(),
+                  panel.grid.major.x=element_blank(),
+                  panel.grid.major.y=element_line(color="grey", size=.3)) +
+            ylab("Cell fraction of all cells per group") + scale_fill_discrete(name = "Death")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+__it seems that CXCL9 strongly separates patients that die from those that do not in Skin_subcutaneous samples. We still need to double check that these plots are good.__
+
+
+```{r Tcytotoxic cell fractions for Death within skin_subcutaneous, fig.height=10, fig.width=10}
+p1 <- plotCellFracGroupsSubset(sce[,which(sce$MM_location == "skin_subcutaneous" & sce$treatment_group_after_surgery == "ICI")],CellClass = "celltype",split_by = "Death",celltype_subset = "Tcytotoxic",cluster_col = "celltype_clustered")
+p2 <- plotCellFracGroupsSubset(sce[,which(sce$MM_location == "skin_subcutaneous")],CellClass = "celltype",split_by = "Death",celltype_subset = "Tcytotoxic",cluster_col = "celltype_clustered")
+plot_grid(p1,p2)
+```
+
+__Tcytotoxic_3 are almost absent from samples of patients that die. as you can see below,these are the chemokine expressing cytotoxic T cells.__
+
+```{r marker expression of cytotoxic T cells clusters within skin_subcutaneous}
+mean_sce <- calculateSummary(sce[,sce$MM_location == "skin_subcutaneous"], split_by = c( "celltype","celltype_clustered"), 
+                             exprs_values = "counts")
+
+# Exclude DNA and Histone
+mean_sce <- mean_sce[!grepl("DNA|Histone|Vimentin", rownames(mean_sce)),]
+
+# Transform and scale
+assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
+assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+
+# Scaled
+plotHeatmap(mean_sce[,mean_sce$celltype == "Tcytotoxic"], exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c("celltype_clustered"), 
+            labels_col = mean_sce[,mean_sce$celltype == "Tcytotoxic"]$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE, cluster_cols = FALSE)
+
+mean_sce <- calculateSummary(sce[,sce$MM_location == "skin_subcutaneous"], split_by = c( "Death","celltype","celltype_clustered"), 
+                             exprs_values = "counts")
+
+# Exclude DNA and Histone
+mean_sce <- mean_sce[!grepl("DNA|Histone|Vimentin", rownames(mean_sce)),]
+
+# Transform and scale
+assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
+assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+
+# Scaled
+plotHeatmap(mean_sce[,mean_sce$celltype == "Tcytotoxic"], exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c("celltype_clustered","Death"), 
+            labels_col = mean_sce[,mean_sce$celltype == "Tcytotoxic"]$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE, cluster_cols = FALSE)
+
+```
+
+## community fractions by Death
+
+```{r community_module expression by Death,fig.height=10, fig.width=10, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$community_module <- as.factor(colData(sce)[,"community_module"])
+
+cur_df$Death <- as.factor(colData(sce)[,"Death"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + Death ~ community_module",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","Death"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != 0,)%>%
+  ggplot(aes(x=variable,y=frac,fill=Death))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of celltype per Image")+
+  scale_fill_discrete(name = "Death")
+
+p2 <- plotBarFracCluster(sce,colour_by = "community_module",split_by = "Death", scale="percent")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+
+## community module expression by Death within skin_subcutaneous
+
+```{r community_module expression by Death within skin_subcutaneous,fig.height=10, fig.width=10, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$community_module <- as.factor(colData(sce)[,"community_module"])
+
+cur_df$Death <- as.factor(colData(sce)[,"Death"])
+
+cur_df$MM_location <- as.factor(colData(sce)[,"MM_location"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + Death + MM_location ~ community_module",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","Death","MM_location"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != 0,MM_location == "skin_subcutaneous")%>%
+  ggplot(aes(x=variable,y=frac,fill=Death))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of community module per Image")+
+  scale_fill_discrete(name = "Death")
+
+p2 <- cur_df %>%
+  group_by(Death) %>%
+  filter(MM_location == "skin_subcutaneous") %>%
+  select(! MM_location) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != 0)%>%
+  ggplot(aes(x=Death,y=frac,fill=variable))+
+  geom_bar(stat="identity")+
+            theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                  axis.title.x = element_blank(),
+                  panel.background = element_blank(),
+                  panel.grid.minor=element_blank(),
+                  panel.grid.major.x=element_blank(),
+                  panel.grid.major.y=element_line(color="grey", size=.3)) +
+            ylab("Cell fraction of all cells per group") + scale_fill_discrete(name = "Death")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+
+
+
+## pure chemokine communities separated by Death
+
+```{r pure_community expression by Death,fig.height=10, fig.width=10, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$pure_community <- as.factor(colData(sce)[,"pure_community"])
+
+cur_df$Death <- as.factor(colData(sce)[,"Death"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + Death ~ pure_community",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","Death"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "Var.3",)%>%
+  ggplot(aes(x=variable,y=frac,fill=Death))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of pure_community per Image")+
+  scale_fill_discrete(name = "Death")
+
+p2 <- plotBarFracCluster(sce,colour_by = "pure_community",split_by = "Death", scale="percent")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+
+## pure_community separated by Death within skin_subcutaneous
+
+```{r pure_community expression by Death within skin_subcutaneous,fig.height=10, fig.width=10, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$pure_community <- as.factor(colData(sce)[,"pure_community"])
+
+cur_df$Death <- as.factor(colData(sce)[,"Death"])
+
+cur_df$MM_location <- as.factor(colData(sce)[,"MM_location"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + Death + MM_location ~ pure_community",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","Death","MM_location"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "Var.4",MM_location == "skin_subcutaneous")%>%
+  ggplot(aes(x=variable,y=frac,fill=Death))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of pure_community per Image")+
+  scale_fill_discrete(name = "Death")
+
+p2 <- cur_df %>%
+  group_by(Death) %>%
+  filter(MM_location == "skin_subcutaneous") %>%
+  select(! MM_location) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "Var.4")%>%
+  ggplot(aes(x=Death,y=frac,fill=variable))+
+  geom_bar(stat="identity")+
+            theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                  axis.title.x = element_blank(),
+                  panel.background = element_blank(),
+                  panel.grid.minor=element_blank(),
+                  panel.grid.major.x=element_blank(),
+                  panel.grid.major.y=element_line(color="grey", size=.3)) +
+            ylab("Cell fraction of all cells per group") + scale_fill_discrete(name = "Death")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+
+## pure_cluster separated by Death
+
+```{r pure_cluster expression by Death,fig.height=10, fig.width=10, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$pure_cluster <- as.factor(colData(sce)[,"pure_cluster"])
+
+cur_df$Death <- as.factor(colData(sce)[,"Death"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + Death ~ pure_cluster",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","Death"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "Var.3",)%>%
+  ggplot(aes(x=variable,y=frac,fill=Death))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of pure_cluster per Image")+
+  scale_fill_discrete(name = "Death")
+
+p2 <- plotBarFracCluster(sce,colour_by = "pure_cluster",split_by = "Death", scale="percent")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
+
+
+## pure_cluster separated by Death within skin_subcutaneous
+
+```{r pure_cluster expression by Death within skin_subcutaneous,fig.height=10, fig.width=10, message=FALSE}
+cur_df <- data.frame( "ImageNumber" = as.factor(colData(sce)[,"ImageNumber"]))
+
+cur_df$pure_cluster <- as.factor(colData(sce)[,"pure_cluster"])
+
+cur_df$Death <- as.factor(colData(sce)[,"Death"])
+
+cur_df$MM_location <- as.factor(colData(sce)[,"MM_location"])
+
+cur_df <- dcast(cur_df,formula = " ImageNumber + Death + MM_location ~ pure_cluster",fun.aggregate = length)
+
+cur_df <- melt(cur_df,id.vars = c("ImageNumber","Death","MM_location"))
+
+p1 <- cur_df %>%
+  group_by(ImageNumber) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "Var.4",MM_location == "skin_subcutaneous")%>%
+  ggplot(aes(x=variable,y=frac,fill=Death))+
+  geom_boxplot(outlier.shape = NA,position=position_dodge(width=1))+
+  geom_jitter(position = position_jitterdodge(dodge.width = 1, jitter.width = 0.05),lwd=0.4)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Fraction of pure_cluster per Image")+
+  scale_fill_discrete(name = "Death")
+
+p2 <- cur_df %>%
+  group_by(Death) %>%
+  filter(MM_location == "skin_subcutaneous") %>%
+  select(! MM_location) %>%
+  mutate(total = sum(value), frac = value/total) %>%
+  filter(variable != "Var.4")%>%
+  ggplot(aes(x=Death,y=frac,fill=variable))+
+  geom_bar(stat="identity")+
+            theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                  axis.title.x = element_blank(),
+                  panel.background = element_blank(),
+                  panel.grid.minor=element_blank(),
+                  panel.grid.major.x=element_blank(),
+                  panel.grid.major.y=element_line(color="grey", size=.3)) +
+            ylab("Cell fraction of all cells per group") + scale_fill_discrete(name = "Death")
+
+plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
+```
 
 

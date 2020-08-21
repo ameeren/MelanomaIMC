@@ -39,16 +39,8 @@ colour_vector <- readRDS("~/bbvolume/Git/ZTMA256_protein_data/data/colour_vector
 ```
 
 
-```{r adapt T cell score to numbers, fig.height=10, fig.width=10}
-
-sce[,which(sce$T_frac_score_per_BlockID == "low" & sce$Location != "CTRL")]$T_frac_score_per_BlockID <- 0
-sce[,which(sce$T_frac_score_per_BlockID == "med" & sce$Location != "CTRL")]$T_frac_score_per_BlockID <- 1
-sce[,which(sce$T_frac_score_per_BlockID == "high" & sce$Location != "CTRL")]$T_frac_score_per_BlockID <- 2
-
-  # subset sce to not contain CTRL samples
-sce <- sce[,which(sce$Location != "CTRL" & sce$T_frac_score_per_BlockID == 1)]
-
-sce <- sce[,sce$T_frac_score_per_BlockID == 1]
+```{r subset sce, fig.height=10, fig.width=10}
+sce <- sce[,sce$MM_location == "skin_subcutaneous"]
 ```
 
 
@@ -98,7 +90,7 @@ plotHeatmap(mean_sce[,mean_sce$celltype == "Tcytotoxic"], exprs_values = "arcsin
             labels_col = mean_sce[,mean_sce$celltype == "Tcytotoxic"]$celltype_clustered,
             show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
             color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            zlim = c(-4, 4),legend = TRUE)
+            zlim = c(-4, 4),legend = TRUE, cluster_cols = FALSE)
 
 ```
 
