@@ -1,0 +1,40 @@
+---
+title: "cell type summary clinical data for Tcell fraction score"
+author: "Daniel"
+date: "18 08 2020"
+output: html_document
+---
+
+## here we compare the fractions of cell type clusters and marker expressions for T cell score
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# load packages
+
+```{r load packages, message=FALSE}
+sapply(list.files("~/bbvolume/Git/imcRtools/R/", full.names = TRUE), source)
+sapply(list.files("~/bbvolume/Git/melanoma_publication/code/helper_functions/", full.names = TRUE), source)
+library(LSD)
+library(SingleCellExperiment)
+library(ggplot2)
+library(scater)
+library(viridis)
+library(igraph)
+library(reshape2)
+library(cowplot)
+library(tidyverse)
+
+```
+
+
+# load data
+
+```{r load data}
+sce = readRDS(file = "data/sce_protein.rds")
+
+colour_vector <- readRDS("~/bbvolume/Git/ZTMA256_protein_data/data/colour_vector.rds")
+```
+
