@@ -13,8 +13,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 # load packages
 
 ```{r load packages, message=FALSE}
-sapply(list.files("~/bbvolume/Git/imcRtools/R/", full.names = TRUE), source)
-sapply(list.files("~/bbvolume/Git/melanoma_publication/code/helper_functions/", full.names = TRUE), source)
+sapply(list.files("code/helper_functions/", full.names = TRUE), source)
 library(SingleCellExperiment)
 library(ggplot2)
 library(reshape2)
@@ -27,7 +26,7 @@ library(corrplot)
 ```{r load RNA and protein datasets}
 sce_protein <- readRDS(file = "data/sce_protein.rds")
 
-sce_RNA <- readRDS(file = "../../bbvolume/server_homes/thoch/Git/melanoma_publication/data/sce_RNA.rds")
+sce_RNA <- readRDS(file = "data/sce_RNA.rds")
 ```
 
 ## Generate one large table with data from both single cell experiments

@@ -13,9 +13,7 @@ This script detects interaction networks of a given celltype (here: chemokine pr
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message= FALSE)
-
-# Set path. get the info for the path to the project folder on your system.
-mount_path <- "/Volumes/thoch/Git/ZTMA256_RNA_data"
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 # Preparations

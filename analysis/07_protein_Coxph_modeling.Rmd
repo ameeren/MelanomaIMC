@@ -26,10 +26,10 @@ library(RColorBrewer)
 ```{r load data}
 sce = readRDS(file = "data/sce_protein.rds")
 
-relapse_score <- readRDS("~/bbvolume/Git/ZTMA256_protein_data/data/relapse_BlockID.rds")
+#relapse_score <- readRDS("~/bbvolume/Git/ZTMA256_protein_data/data/relapse_BlockID.rds")
 
 # load the data that contains the time to event and censoring
-survdat <- read.csv("~/bbvolume/Data/Melanoma/12plex/200323_TMA_256_Hot Cold_Clinical Data_Updated Response Data_For Collaborators_latest updated_Mar_2020_for_Coxph_modeling.csv",sep = ";")
+survdat <- read.csv("data/200323_TMA_256_Hot Cold_Clinical Data_Updated Response Data_For Collaborators_latest updated_Mar_2020_for_Coxph_modeling.csv",sep = ";")
 ```
 
 ## median time to progression in cohort

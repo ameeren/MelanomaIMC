@@ -9,13 +9,13 @@ editor_options:
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 # load packages
 
 ```{r load packages}
-sapply(list.files("~/bbvolume/Git/ZTMA256_protein_data/code/helper_functions/", full.names = TRUE), source)
-sapply(list.files("~/bbvolume/bbvolume/server_homes/daniels/Git/imcRtools/R/", full.names = TRUE), source)
+sapply(list.files("code/helper_functions/", full.names = TRUE), source)
 library(LSD)
 library(SingleCellExperiment)
 library(ggplot2)
