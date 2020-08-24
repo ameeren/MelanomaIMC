@@ -15,8 +15,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 # load packages
 
 ```{r load packages, message=FALSE}
-sapply(list.files("~/bbvolume/Git/imcRtools/R/", full.names = TRUE), source)
-sapply(list.files("~/bbvolume/Git/melanoma_publication/code/helper_functions", full.names = TRUE), source)
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
 library(LSD)
 library(SingleCellExperiment)
 library(ggplot2)
@@ -33,9 +32,9 @@ library(tidyverse)
 # load data
 
 ```{r load data}
-sce = readRDS(file = "../../bbvolume/server_homes/thoch/Git/melanoma_publication/data/sce_RNA.rds")
+sce = readRDS(file = "data/sce_RNA.rds")
 
-colour_vector <- readRDS("~/bbvolume/Git/ZTMA256_protein_data/data/colour_vector.rds")
+colour_vector <- readRDS("data/colour_vector.rds")
 
 # import T_frac_score and add to sce object
 T_frac_score <- readRDS("data/T_frac_score_per_Description")

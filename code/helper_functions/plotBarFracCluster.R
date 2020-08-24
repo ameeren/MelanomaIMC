@@ -32,7 +32,7 @@ plotBarFracCluster <- function(x, colour_by = NULL, split_by = NULL, celltype_su
 
   cur_df$colour_by <- as.factor(colData(x)[,colour_by])
 
-  cur_df <- dcast(cur_df,formula = " split_by ~ colour_by",fun.aggregate = length)
+  cur_df <- reshape2::dcast(cur_df,formula = " split_by ~ colour_by",fun.aggregate = length)
 
   cur_df <- melt(cur_df)
 
@@ -84,7 +84,7 @@ plotBarFracCluster <- function(x, colour_by = NULL, split_by = NULL, celltype_su
 
       cur_df$cluster <- as.factor(colData(x)[,celltype_cluster_col])
 
-      cur_df <- dcast(cur_df,formula = " split_by ~ cluster",fun.aggregate = length)
+      cur_df <- reshape2::dcast(cur_df,formula = " split_by ~ cluster",fun.aggregate = length)
 
       cur_df <- melt(cur_df,id.vars = c("split_by"))
 

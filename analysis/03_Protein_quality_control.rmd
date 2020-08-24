@@ -12,9 +12,7 @@ editor_options:
 ## Load libraries
 
 ```{r message=F}
-sapply(list.files("/Volumes/server_homes/daniels/Git/imcRtools/R", full.names = TRUE), source)
-sapply(list.files("/Volumes/thoch/Git/ZTMA256_protein_data/code/helper_functions", full.names = TRUE), source)
-sapply(list.files("/Volumes/thoch/Git/ZTMA256_RNA_data/code/helper_functions", full.names = TRUE), source)
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
 library(SingleCellExperiment)
 library(dplyr)
 library(ggplot2)
