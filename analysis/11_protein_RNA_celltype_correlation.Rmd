@@ -31,22 +31,9 @@ sce_RNA <- readRDS(file = "data/sce_RNA.rds")
 
 ## Generate one large table with data from both single cell experiments
 
-```{r generate summary tables, eval=FALSE}
+```{r generate summary tables}
 metadata_protein <- data.frame(metadata(sce_protein)[1:34],stringsAsFactors = FALSE)
 metadata_RNA <- data.frame(metadata(sce_RNA)[1:34],stringsAsFactors = FALSE)
-
-metadata_protein[order(metadata_protein$Description),]
-metadata_RNA[order(metadata_RNA$Description),]
-
-cur_df <- data.frame(ImageNumber = sce_protein$ImageNumber,
-                     Tcell_score = sce_protein$Tcell_score,
-                     infiltration = sce_protein$infiltration)
-# this table now holds the image wise scores which were calculated from the protein dataset single cells.
-cur_df <- unique(cur_df)
-
-# add the table to the metadata_protein
-metadata_protein <- merge(metadata_protein,cur_df,by = "ImageNumber")
-
 ```
 
 ## fraction celltype calculation
@@ -55,6 +42,7 @@ now we calculate per image the fraction of cell types or the count of specific c
 
 ```{r RNA cellfractions, fig.height=12,fig.width=12}
 cur_df_RNA <- as_tibble(data.frame(ImageNumber = sce_RNA$ImageNumber,
+                                   Description = sce_RNA$Description,
                                    celltype = sce_RNA$celltype,
                                    clustered_celltypes = sce_RNA$celltype_clustered,
                                    CCL2 = sce_RNA$CCL2,
@@ -98,7 +86,7 @@ clusterfrac_RNA$ImageNumber <- clustered_celltypes_RNA$ImageNumber
 
 Chemo_summary <- cur_df_RNA %>%
   group_by(ImageNumber) %>%
-  select(! c(celltype,clustered_celltypes)) %>%
+  select(! c(celltype,clustered_celltypes, Description)) %>%
   summarize_all(sum)
 
 chemo_frac <- Chemo_summary[,-1]/rowSums(celltypes_RNA[,-1])
@@ -175,12 +163,22 @@ all_frac <- all_frac %>%
   filter(! Description %in% ctrl_images)
 ```
 
+## celltype correlation in RNA dataset
 
-```{r correlation of celltype fractions in RNA data,fig.height=12,fig.width=12}
+```{r correlation of celltype fractions in RNA data}
 M <-as.matrix(cellfrac_RNA %>%
   select(!ImageNumber))
 
-corrplot(cor(M, method= "spearman"))
+corrplot(cor(M, method= "pearson"))
+```
+
+## celltype correlation in protein dataset
+
+```{r correlation of celltype fractions in protein data}
+M <-as.matrix(cellfrac_protein %>%
+  select(!ImageNumber))
+
+corrplot(cor(M, method= "pearson"))
 ```
 
 ```{r correlation of celltype from RNA and protein,fig.height=12,fig.width=12}
@@ -188,50 +186,71 @@ M <-as.matrix(all_frac %>%
   select(!Description) %>%
     select(protein_celltypes_names,RNA_celltypes_names))
 
-corrplot(cor(M, method= "spearman"))
+corrplot(cor(M, method= "pearson"))
 
 cor(all_frac$Bcell_protein,all_frac$CXCL13, method = "pearson")
 ```
 
-```{r correlation of celltype fractions in protein data}
-M <-as.matrix(cellfrac_protein %>%
-  select(!ImageNumber))
-
-corrplot(cor(M, method= "spearman"))
-```
 ```{r correlation of celltype fractions in protein data with chemokoines, fig.height=10, fig.width=10}
 M <-as.matrix(all_frac %>%
   select(!Description) %>%
   select(protein_celltypes_names,chemokine_cells_names))
 
 corrplot(cor(M, method= "pearson"))
+corrplot(cor(M, method= "spearman"))
+```
+
+```{r scatterplots,eval=FALSE}
+ggplot(all_frac)+
+  geom_point(aes(x=CXCL13,y=Bcell_protein),col="black")+
+  scale_x_log10()+
+  scale_y_log10()
+
 ggplot(all_frac)+
   geom_point(aes(x=CXCL13,y=Bcell_protein),col="black")
 
-cor(all_frac$CCL19,all_frac$Bcell_protein, method = "spearman")
+ggplot(all_frac)+
+  geom_point(aes(x=CCL22,y=pDC_protein),col="black")+
+  scale_x_log10()+
+  scale_y_log10()
+
+ggplot(all_frac)+
+  geom_point(aes(x=CXCL9,y=Thelper_protein),col="black")+
+  scale_x_log10()+
+  scale_y_log10()
+
+cor(all_frac$CXCL13,all_frac$Bcell_protein, method = "pearson")
+cor(all_frac$CXCL13,all_frac$Bcell_protein, method = "spearman")
 cor(all_frac$CCL19,all_frac$Bcell_protein, method = "pearson")
 
 cor.test(all_frac$CXCL13,all_frac$Bcell_protein)
-ggplot(all_frac)+
-  geom_point(aes(x=CCL22,y=Thelper_protein),col="green")+
-  geom_point(aes(x=CXCL13,y=Bcell_protein),color="blue")+
-  geom_point(aes(x=CXCL9,y=Tcytotoxic_protein),col="red")+
-  geom_point(aes(x=CXCL12,y=pDC_protein),col="orange")
 
 ggplot(all_frac)+
-  geom_point(aes(x=CCL2,y=CCL4),col="green")+
-  geom_point(aes(x=CXCL13,y=CXCL10),color="blue")+
-  geom_point(aes(x=CXCL9,y=CXCL10),col="red")+
-  geom_point(aes(x=CXCL10,y=CCL2),col="orange")
+  geom_point(aes(x=CCL22,y=Tcytotoxic_protein),col="black")+
+  scale_x_log10()+
+  scale_y_log10()
+
+ggplot(all_frac)+
+  geom_point(aes(x=CCL19,y=Tcytotoxic_protein),col="black")+
+  scale_x_log10()+
+  scale_y_log10()
+
+
+ggplot(all_frac)+
+  geom_point(aes(x=CXCL13,y=pDC_protein),col="black")+
+  scale_x_log10()+
+  scale_y_log10()
+
 
 ```
+
 
 ```{r protein clustered celltypes correlation with chemokines pearson, fig.height=25, fig.width=25}
 M <-as.matrix(all_frac %>%
   select( !Description) %>%
   select(protein_clustered_celltypes_names,chemokine_cells_names))
 
-corrplot(cor(M, method= "spearman"))
+corrplot(cor(M, method= "pearson"))
 ```
 
 

@@ -15,7 +15,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 # load packages
 
 ```{r load packages, message=FALSE}
-sapply(list.files("~/bbvolume/Git/melanoma_publication/code/helper_functions/", full.names = TRUE), source)
+sapply(list.files("code/helper_functions/", full.names = TRUE), source)
 library(LSD)
 library(SingleCellExperiment)
 library(ggplot2)
