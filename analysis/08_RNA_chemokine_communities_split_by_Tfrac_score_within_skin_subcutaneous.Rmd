@@ -275,7 +275,7 @@ plot_grid(p1, p2,ncol=1, rel_heights = c(2,1))
 
 ```{r Tcytotoxic cell fractions for Death within skin_subcutaneous, fig.height=10, fig.width=10}
 p1 <- plotCellFracGroupsSubset(sce[,which(sce$treatment_group_before_surgery == "ICI")],CellClass = "celltype",split_by = "Death",celltype_subset = "Tcytotoxic",cluster_col = "celltype_clustered")
-p2 <- plotCellFracGroupsSubset(sce[,sce$treatment_group_before_surgery == "untreated"],CellClass = "celltype",split_by = "Death",celltype_subset = "Tcytotoxic",cluster_col = "celltype_clustered")
+p2 <- plotCellFracGroupsSubset(sce[,which(sce$treatment_group_before_surgery == "untreated" & sce$treatment_group_after_surgery == "ICI")],CellClass = "celltype",split_by = "Death",celltype_subset = "Tcytotoxic",cluster_col = "celltype_clustered")
 p3 <- plotCellFracGroupsSubset(sce[,sce$treatment_group_before_surgery %in% c("untreated","ICI")],CellClass = "celltype",split_by = "treatment_group_before_surgery",celltype_subset = "Tcytotoxic",cluster_col = "celltype_clustered")
 plot_grid(p1,p2,p3)
 ```
