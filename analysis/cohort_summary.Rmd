@@ -1,0 +1,154 @@
+---
+title: "clinical data summary"
+author: "daniels"
+date: "9 4 2020"
+output:
+  html_document: 
+    self_contained: no
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## load libraries
+
+```{r load libraries}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(data.table)
+library(survival)
+library(ggplot2)
+library(broom)
+library(dplyr)
+library(RColorBrewer)
+library(ggalluvial)
+library(tidyverse)
+library(cowplot)
+```
+
+## load the single cell experiment, get the metadata (clinical data) then delete single cell experiment
+
+```{r}
+dat <- read_csv("~/bbvolume/Git/ZTMA256_protein_data/data/clinical_data_protein.csv")
+
+sce = readRDS(file = "data/sce_protein.rds")
+```
+
+## clinical features of the cohort
+
+Note: as the cohort is very diverse, we are using the BlockID as the minimal unit since clinical parameters are described per BlockID. However, sometimes we do have patients of which we have multiple FFPE blocks (BlockIDs). Nonetheless, clinical parameters are not given per patient but per patient FFPE block and are therefore considered the minimial unit.
+
+```{r metastasis location by BlockID, fig.height=8, fig.width=15}
+
+p1 <- unique(dat[,c("BlockID","MM_location")]) %>%
+  ggplot()+
+  geom_bar(aes(y=MM_location),stat ="count") +
+  labs(x ="BlockIDs per metastasis location")
+
+
+p2 <- dat %>%
+  ggplot()+
+  geom_bar(aes(x=BlockID, fill=(MM_location)),stat="count")+
+  theme(axis.text.x = element_text(angle = 90,vjust = 0.5))
+
+plot_grid(p1,p2,rel_widths = c(1,3))  
+```
+
+```{r MM_location with cancer stage and punch position, fig.height=10,fig.width=10}
+cur_df <- dat%>%
+  select(BlockID,Nr_treatments_before_surgery,MM_location,Treatment_after_surgery, Status_at_3m, Date_death,Location,Cancer_Stage)
+cur_df <- unique(cur_df)
+cur_df$Death <- "yes"
+cur_df[which(is.na(cur_df$Date_death)),]$Death <- "no"
+
+cur_df%>%
+  dplyr::count(MM_location,Cancer_Stage,Location) %>%
+  ggplot(aes(axis1 = MM_location, axis2 = Cancer_Stage, axis3 = Location,y=n))+
+  geom_alluvium(aes(fill=as.factor(MM_location)))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal()+
+  scale_x_discrete(limits = c("met location", "Cancer Stage", "Punch position"), expand = c(.2, .05))
+```
+
+```{r whole cohort colored by MM_location,fig.width=10,fig.height=7}
+cur_df <- cur_df%>%
+  select(! Location) %>%
+  unique()
+
+cur_df %>%
+  dplyr::count(MM_location, Nr_treatments_before_surgery, Treatment_after_surgery,Status_at_3m) %>%
+  ggplot(aes(axis1 = MM_location, axis2 = Nr_treatments_before_surgery, axis3 = Treatment_after_surgery,y=n))+
+  geom_alluvium(aes(fill=as.factor(MM_location)))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal()+
+  scale_x_discrete(limits = c("met location", "# prevous treatments", "Therapy"), expand = c(.2, .05))
+
+```
+
+```{r colored by death,fig.width=10,fig.height=7}
+cur_df %>%
+  dplyr::count(MM_location, Nr_treatments_before_surgery, Cancer_Stage,Death) %>%
+  ggplot(aes(axis1 = MM_location, axis2 = Nr_treatments_before_surgery, axis3 = Cancer_Stage,axis4 = Death,y=n))+
+  geom_alluvium(aes(fill=as.factor(Death)))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal()+
+  scale_x_discrete(limits = c("met location", "# prevous treatments", "Therapy"), expand = c(.2, .05))
+
+```
+
+```{r whole cohort colored by MM_location sorted by Nr treatments,fig.width=10,fig.height=7}
+cur_df %>%
+  dplyr::count(MM_location, Nr_treatments_before_surgery, Treatment_after_surgery,Status_at_3m) %>%
+  ggplot(aes(axis2 = MM_location, axis1 = Nr_treatments_before_surgery, axis3 = Treatment_after_surgery, axis4 = Status_at_3m,y=n))+
+  geom_alluvium(aes(fill=as.factor(MM_location)))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal()+
+  scale_x_discrete(limits = c( "# prevous treatments","met location", "Therapy", "response"), expand = c(.2, .05))
+
+```
+```{r whole cohort colored by Nr_treatments sorted by Nr treatments,fig.width=10,fig.height=7}
+cur_df %>%
+  dplyr::count(MM_location, Nr_treatments_before_surgery, Treatment_after_surgery,Status_at_3m) %>%
+  ggplot(aes(axis2 = MM_location, axis1 = Nr_treatments_before_surgery, axis3 = Treatment_after_surgery, axis4 = Status_at_3m,y=n))+
+  geom_alluvium(aes(fill=as.factor(Nr_treatments_before_surgery)))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal()+
+  scale_x_discrete(limits = c( "# prevous treatments","met location", "Therapy", "reponse"), expand = c(.2, .05))
+
+```
+
+```{r untreated samples colored by MM_location,fig.width=10,fig.height=7}
+cur_df %>%
+  filter(Nr_treatments_before_surgery == 0)%>%
+  dplyr::count(MM_location, Treatment_after_surgery, Status_at_3m,Death) %>%
+  ggplot(aes(axis2 = Treatment_after_surgery, axis1 = MM_location,axis4 = Status_at_3m, axis5 =Death,y=n))+
+  geom_alluvium(aes(fill=as.factor(MM_location)))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal()+
+  scale_x_discrete(limits = c("met location", "Therapy", "response","Death"), expand = c(.2, .05))+
+  ggtitle("subsetted to untreated samples")
+```
+
+```{r untreataed samples colored by Therapy,fig.width=10,fig.height=7}
+cur_df %>%
+  filter(Nr_treatments_before_surgery == 0)%>%
+  dplyr::count(MM_location, Treatment_after_surgery, Status_at_3m,Death) %>%
+  ggplot(aes(axis2 = Treatment_after_surgery, axis1 = MM_location,axis4 = Status_at_3m, axis5 =Death,y=n))+
+  geom_alluvium(aes(fill=as.factor(Treatment_after_surgery)))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal()+
+  scale_x_discrete(limits = c("met location", "Therapy", "response","Death"), expand = c(.2, .05))+
+  ggtitle("subsetted to untreated samples")
+```
+
+
+
