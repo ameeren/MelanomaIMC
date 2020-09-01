@@ -51,7 +51,7 @@ plotCellFracGroups <- function(x,CellClass,color_by) {
     # plot data
     ggplot(frac_df) +
       geom_boxplot(aes_string(x=CellClass,y="value", fill=color_by),position=position_dodge(width=1)) +
-      geom_jitter(aes_string(x=CellClass,y="value", fill=color_by),position = position_jitterdodge(0.05),lwd=0.4) +
+      geom_jitter(aes_string(x=CellClass,y="value", fill=color_by),position = position_jitterdodge(dodge.width = 1,jitter.width = 0.05),lwd=0.4) +
       theme_bw()+
       theme(axis.text.x = element_text(angle = 90, hjust = 1)) +
       ylab("Fraction of celltype per Image")
