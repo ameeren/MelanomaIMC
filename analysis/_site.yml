@@ -1,7 +1,7 @@
-name: "melanoma_publication"
+name: melanoma_publication_new_data
 output_dir: ../docs
 navbar:
-  title: "Melanoma Publication"
+  title: melanoma_publication_new_data
   left:
   - text: Home
     href: index.html
@@ -9,50 +9,50 @@ navbar:
     href: about.html
   - text: Preparations RNA TMA
     menu:
-      - text: Read Data
-        href: 01_RNA_read_data.html
-      - text: Annotations
-        href: 02_RNA_annotations.html
-      - text: Quality Control
-        href: 03_RNA_quality_control.html
-      - text: Automated Celltype Classification
-        href: 04_1_RNA_celltype_classification.html
-      - text: Subclustering
-        href: 04_2_RNA_classification_subclustering.html
-      - text: Chemokine-Expressing Cells
-        href: 05_RNA_chemokine_expressing_cells.html
-      - text: Mixed Chemokine Communities
-        href: 06_RNA_chemokine_community_definition.html
-      - text: Pure Chemokine Communities
-        href: 07_RNA_neighbourhood_analysis_chemokines.html
+    - text: Read Data
+      href: 01_RNA_read_data.html
+    - text: Annotations
+      href: 02_RNA_annotations.html
+    - text: Quality Control
+      href: 03_RNA_quality_control.html
+    - text: Automated Celltype Classification
+      href: 04_1_RNA_celltype_classification.html
+    - text: Subclustering
+      href: 04_2_RNA_classification_subclustering.html
+    - text: Chemokine-Expressing Cells
+      href: 05_RNA_chemokine_expressing_cells.html
+    - text: Mixed Chemokine Communities
+      href: 06_RNA_chemokine_community_definition.html
+    - text: Pure Chemokine Communities
+      href: 07_RNA_neighbourhood_analysis_chemokines.html
   - text: Preparations Protein TMA
     menu:
-      - text: Read Data
-        href: 01_Protein_read_data.html
-      - text: Annotations
-        href: 02_Protein_annotations.html
-      - text: Quality Control
-        href: 03_Protein_quality_control.html
-      - text: Automated Celltype Classification
-        href: 04_1_Protein_celltype_classification.html
-      - text: Subclustering
-        href: 04_2_Protein_classification_subclustering.html
+    - text: Read Data
+      href: 01_Protein_read_data.html
+    - text: Annotations
+      href: 02_Protein_annotations.html
+    - text: Quality Control
+      href: 03_Protein_quality_control.html
+    - text: Automated Celltype Classification
+      href: 04_1_Protein_celltype_classification.html
+    - text: Subclustering
+      href: 04_2_Protein_classification_subclustering.html
   - text: Main Figures
     menu:
-      - text: Overview
-        href: Figure_1.html
-      - text: Chemokines in Metastatic Melanoma
-        href: Figure_2.html
-      - text: Chemokine Communities
-        href: Figure_3.html
-      - text: T cell scoring
-        href: Figure_4.html
-      - text: Clinical comparison
-        href: Figure_5.html
+    - text: Overview
+      href: Figure_1.html
+    - text: Chemokines in Metastatic Melanoma
+      href: Figure_2.html
+    - text: Chemokine Communities
+      href: Figure_3.html
+    - text: T cell scoring
+      href: Figure_4.html
+    - text: Clinical comparison
+      href: Figure_5.html
   - text: Supplemental Figures
     menu:
-      - text: Supp-Figure 1
-        href: Supp-Figure_1.html
+    - text: Supp-Figure 1
+      href: Supp-Figure_1.html
   - text: License
     href: license.html
 output:
@@ -61,4 +61,3 @@ output:
     toc_float: yes
     theme: cosmo
     highlight: textmate
-

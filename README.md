@@ -1,4 +1,4 @@
-# Melanoma Cohort Publication
+# melanoma_publication_new_data
 
 A [workflowr][] project.
 
