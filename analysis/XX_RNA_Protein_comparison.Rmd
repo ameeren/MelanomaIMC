@@ -1,0 +1,163 @@
+---
+title: "XX_RNA_Protein_comparison"
+author: "toobiwankenobi"
+date: "2020-08-25"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+Here, we define chemokine-expressing cells 
+
+# Preparations
+
+## Load libraries
+
+```{r, message=F}
+library(SingleCellExperiment)
+library(ggplot2)
+library(ggpmisc)
+library(dplyr)
+library(gridExtra)
+```
+
+## Load the single cell experiment object and the image metadata
+
+```{r}
+sce_rna <- readRDS(file = "data/sce_RNA.rds")
+sce_prot <- readRDS(file = "data/sce_protein.rds")
+```
+
+## Comparison Plot 
+
+```{r}
+sub_sce_rna <- NULL
+sub_sce_prot <- NULL
+#sub_sce_rna <- sce_rna[,colData(sce_rna)$celltype %in% c("Tumor")]
+#sub_sce_prot <- sce_prot[,colData(sce_prot)$celltype %in% c("Tumor")]
+
+sub_sce_rna <- sce_rna
+sub_sce_prot <- sce_prot
+
+cur_rna <- data.frame(colData(sub_sce_rna))
+cur_prot <- data.frame(colData(sub_sce_prot))
+
+# cells per image - RNA
+cells_image_rna <- cur_rna %>%
+  group_by(Description) %>%
+  mutate(cells=n()) %>%
+  mutate(mean_cell_area = mean(Area)) %>%
+  distinct(Description, cells, mean_cell_area)
+
+# cells per image - Protein
+cells_image_prot <- cur_prot %>%
+  group_by(Description) %>%
+  mutate(cells=n()) %>%
+  mutate(mean_cell_area = mean(Area)) %>%
+  distinct(Description, cells, mean_cell_area)
+
+# data set id
+cells_image_rna$data_set <- "RNA"
+cells_image_prot$data_set <- "Protein"
+
+cells_image <- rbind(cells_image_prot, cells_image_rna)
+
+# measured area RNA and protein
+image_mat_rna <- read.csv(file = "data/rna/Image.csv", stringsAsFactors = FALSE)
+image_mat_prot <- read.csv(file = "data/protein/Image.csv", stringsAsFactors = FALSE)
+
+# diff in ablated area
+area_prot <- data.frame(image_area = image_mat_prot$Height_FullStack * image_mat_prot$Width_FullStack)
+area_prot$Description <- image_mat_prot$Metadata_Description
+area_prot$data_set <- "Protein"
+
+area_rna <- data.frame(image_area = image_mat_rna$Height_FullStack * image_mat_rna$Width_FullStack)
+area_rna$Description <- image_mat_rna$Metadata_Description
+area_rna$data_set <- "RNA"
+
+image_area <- rbind(area_rna, area_prot)
+
+# long format summary
+summary <- merge(cells_image, image_area)
+
+# Plot Cell Numbers
+a <- ggplot(data = summary, aes(x=interaction("cells",summary$data_set),y=log10(cells))) + 
+  geom_boxplot(aes(fill=data_set)) + 
+  geom_point(aes(group=data_set), alpha =0.3) + 
+  geom_line(aes(group=Description),alpha=0.2) + 
+  scale_x_discrete(labels = rep("cells", each = 2))
+
+# Plot Cell Numbers
+b <- ggplot(data = summary, aes(x=interaction("cells",summary$data_set),y=log10(mean_cell_area))) + 
+  geom_boxplot(aes(fill=data_set)) + 
+  geom_point(aes(group=data_set), alpha =0.3) + 
+  geom_line(aes(group=Description),alpha=0.2) + 
+  scale_x_discrete(labels = rep("mean_cell_area", each = 2))
+
+c <- ggplot(data = summary, aes(x=interaction("cells",summary$data_set),y=log10(image_area))) + 
+  geom_boxplot(aes(fill=data_set)) + 
+  geom_point(aes(group=data_set), alpha =0.3) + 
+  geom_line(aes(group=Description),alpha=0.2) + 
+  scale_x_discrete(labels = rep("total_image_size", each = 2))
+
+grid.arrange(a,b,c, nrow=1)
+```
+
+## Compare cell density in both data sets (cells per 1000µm2)
+
+```{r}
+summary[,-1] %>%
+  group_by(data_set) %>%
+  summarise_each(funs(sum)) %>%
+  mutate(cells_per_area = cells/image_area * (1000*1000))
+```
+
+## Cell Type Correlation between the two data sets
+Which celltypes can we identify in both data sets?
+
+- Tcytotoxic
+- Macrophages
+- Tumor cells
+- Neutrophils
+
+Other comparisons (HLA-DR/CD38 vs. B cells) might not be valid. 
+
+```{r}
+rna_sum <- cur_rna[cur_rna$celltype %in% c("Tcytotoxic", "Macrophage", "Tumor", "Neutrophil"),] %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "n", fill = 0)
+
+prot_sum <- cur_prot[cur_prot$celltype %in% c("Tcytotoxic", "Macrophage", "Tumor", "Neutrophil"),] %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "n", fill = 0)
+
+mean(c(cor(rna_sum$Macrophage, prot_sum$Macrophage, method = "pearson"), 
+       cor(rna_sum$Neutrophil, prot_sum$Neutrophil, method = "pearson"), 
+       cor(rna_sum$Tcytotoxic, prot_sum$Tcytotoxic, method = "pearson"), 
+       cor(rna_sum$Tumor, prot_sum$Tumor, method = "pearson")))
+
+corrplot::corrplot(cor(rna_sum[,-1], prot_sum[,-1], method = "pearson"), method = "number")
+```
+
+## Correlation of all celltypes
+
+What are CD38 cells in the RNA set? They don't really correlate with anything, hence, they don't seem to be of any value in the RNA cohort. 
+
+```{r}
+rna_sum <- cur_rna %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "n", fill = 0)
+
+prot_sum <- cur_prot %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "n", fill = 0)
+
+corrplot::corrplot(cor(rna_sum[,-1], prot_sum[,-1], method = "pearson"), method = "number")
+```
+
+

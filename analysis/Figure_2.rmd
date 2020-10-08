@@ -18,25 +18,77 @@ knitr::opts_chunk$set(warning = FALSE, message = FALSE, cache.lazy = FALSE)
 
 ## Load libraries
 ```{r, message=F}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
 library(SingleCellExperiment)
 library(ComplexHeatmap)
 library(data.table)
 library(dplyr)
 library(janitor)
+library(tidyr)
+library(ggpmisc)
+library(cowplot)
+library(corrplot)
+library(ggalluvial)
+library(ggbeeswarm)
+library(ggpubr)
+library(colorRamps)
 ```
 
 ## Load data
 
 ```{r}
-sce <- readRDS(file = "data/sce_RNA.rds")
-cur_dt <- as.data.table(colData(sce))
+sce_rna <- readRDS(file = "data/sce_RNA.rds")
+sce_prot <- readRDS(file= "data/sce_protein.rds")
+cur_dt <- as.data.table(colData(sce_rna))
+```
+
+# Chemokine Combinations
+
+## Most abundant combinations
+
+```{r}
+cur_df <- colData(sce_rna)
+cur_df <- as_tibble(cur_df)
+cur_df <- cur_df[,grepl("CCL|CXCL|Dap",colnames(cur_df))]
+
+
+for(i in colnames(cur_df)){
+  cur_df[[i]] <- ifelse(cur_df[[i]]== 1,i,"NA")
+}
+
+cur_df <- cur_df %>%
+  unite(expressor,sep = "_",na.rm =TRUE,remove=FALSE)
+
+cur_df$expressor <- gsub("NA_","",cur_df$expressor)
+cur_df$expressor <- gsub("_NA","",cur_df$expressor)
+
+# summary table of all combinations
+summary_cur_df <- table(cur_df$expressor)
+
+# order table according to abundance of combinations
+summary_cur_df<- summary_cur_df[order(-as.numeric(summary_cur_df))]
+
+# combinations with more than 600 occurrences
+targets <- names(which(summary_cur_df > 600))
+targets <- targets[!targets == "NA"]
+
+# add expressor info to sce object
+sce_rna$expressor <- cur_df$expressor
+
+# add color vector to metadata
+color_chemo <- primary.colors(length(targets))
+names(color_chemo) <- targets
+metadata(sce_rna)$colour_vectors$chemokine_combinations <- color_chemo
 ```
 
 # Plots
 
 ## UpSet plot with ComplexHeatmap - including CellType Annotation and Met Location (with controls)
 
-```{r upset_plot, message=F, fig.width=15, fig.height=13}
+```{r upset_plot, message=F, fig.width=14, fig.height=13, dev=c('png', 'pdf')}
+# remove control samples
+cur_dt <- cur_dt[MM_location_simplified != "control",]
+
 # extract chemokine columns
 chemokines <- cbind(cur_dt[,c("ImageNumber", "MM_location_simplified", "celltype")], cur_dt[,grepl(glob2rx("C*L*"),names(cur_dt)), with = F])
 
@@ -46,6 +98,9 @@ m <- make_comb_mat(chemokines, top_n_sets = 11)
 # filter based on combination size and combination degree
 m <- m[comb_size(m) >= 600 & comb_degree(m) > 0]
 
+# sort according to abundance
+m <- m[order(-comb_size(m))]
+
 # extract comb names
 comb_names <- comb_name(m)
 
@@ -53,6 +108,7 @@ comb_names <- comb_name(m)
 celltypes <- data.table()
 location <- data.table()
 
+# summarize statistics for each combination (celltype fractions, location)
 for (i in comb_names){
   # subset
   set <- chemokines[extract_comb(m, i)]
@@ -98,8 +154,10 @@ cs = comb_size(m)
 # legend for celltypes
 lgd1 = Legend(labels = colnames(celltypes[,-1]), 
              title = "Celltypes", 
-             legend_gp = gpar(fill = metadata(sce)$colour_vectors$celltype[colnames(celltypes[,-1])]),
+             legend_gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])]),
              nrow = 3)
+
+# legend for location
 lgd2 = Legend(labels = colnames(location[,-1]), 
              title = "Location of Metastasis", 
              legend_gp = gpar(fill = grDevices::hcl.colors(ncol(location[,-1]), palette = "Dark 2")),
@@ -113,7 +171,7 @@ ht = UpSet(m,
         "Combination Size" = anno_barplot(celltypes[,-1], 
             ylim = c(0, max(cs)*1.1),
             border = FALSE, 
-            gp = gpar(fill = metadata(sce)$colour_vectors$celltype[colnames(celltypes[,-1])]), 
+            gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])]), 
             height = unit(12, "cm"),
         ), 
         annotation_name_side = "left", 
@@ -134,12 +192,14 @@ ht = UpSet(m,
             just = "center",
             width = max_text_width(set_name(m)) + unit(4, "mm"))
     ),
-    bottom_annotation = HeatmapAnnotation("Median Number of Chemokine- \nProducing Cells per Tissue Type" = 
+    bottom_annotation = HeatmapAnnotation("Combination Coloring" = targets,
+                                          "Median Number of Chemokine- \nProducing Cells per Location" = 
                                             anno_barplot(location[,-1],
                                                          border = FALSE, 
                                                          gp = gpar(fill = grDevices::hcl.colors(ncol(location[,-1]), 
                                                                                                 palette = "Dark 2"))),
-                                          height = unit(5, "cm")),
+                                          height = unit(5, "cm"),
+                                          col = list("Combination Coloring" = metadata(sce_rna)$colour_vectors$chemokine_combinations)),
     right_annotation = NULL,
     show_row_names = FALSE,
     pt_size = unit(5, "mm"),
@@ -156,6 +216,149 @@ od = column_order(ht)
 decorate_annotation("Combination Size", {
   grid.text(cs[od], x = seq_along(cs), y = unit(cs[od], "native") + unit(2, "pt"), 
             default.units = "native", just = c("left", "bottom"), 
-            gp = gpar(fontsize = 8, col = "#404040"), rot = 45)
+            gp = gpar(fontsize = 12, col = "#404040"), rot = 45)
 })
+```
+
+## Normalized Expression per Metastasis Location
+
+```{r normalized_expression_met_location, fig.width=14, fig.height=9, dev=c('png', 'pdf')}
+# subset sce_rna to only contain met locations with at least 5 samples - REMOVE controls
+location_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, MM_location) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(MM_location) %>%
+  summarise(n=n()) %>%
+  filter(n>4 & MM_location != "")
+  
+  
+sce_rna_sub <- sce_rna[,sce_rna$MM_location %in% location_size$MM_location]
+
+# plots 
+p1 <- plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "MM_location",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+
+p2 <- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     colour_by = "expressor",
+                     split_by = "MM_location",
+                     imageID = "ImageNumber",
+                     proportion = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  theme(legend.position="none") +
+  theme(text = element_text(size=18))
+
+# legend only
+legend <- cowplot::get_legend(p1)
+
+plot_grid(p1+theme(legend.position="none"),p2,legend,rel_widths = c(2,2,2),ncol=3)
+```
+
+## Correlation of Chemokines with Celltypes
+
+```{r pearson_correlation_rna_prot_data, fig.width=9, fig.height=9, dev=c('png', 'pdf')}
+# top abundant chemokines
+cur_rna <- data.frame(colData(sce_rna))
+
+# protein data
+cur_prot <- data.frame(colData(sce_prot))
+
+# sum
+rna_sum <- cur_rna %>%
+  group_by(Description, expressor) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ expressor, value.var = "n", fill = 0) 
+
+# only keep highly abundant chemokines
+rna_sum <- rna_sum[,colnames(rna_sum) %in% targets]
+
+prot_sum <- cur_prot %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "n", fill = 0)
+
+# equal images
+all(rna_sum$Description == prot_sum$Description)
+
+# correlation
+cor <- cor(rna_sum[,-1], prot_sum[,-1], method = "pearson")
+
+corrplot(cor, 
+         addCoef.col = "white",
+         method = "circle",
+         tl.col="black")
+```
+
+## Alluvial Plot - Chemokine-Expressing Tumor Cells
+
+```{r alluvial_tumor_cells, fig.width=13, fig.height=8, dev=c('png', 'pdf')}
+cur_df <- data.frame(colData(sce_rna)) %>%
+  filter(celltype == "Tumor" & chemokine == 1 & Location != "CTRL") %>%
+  select(expressor, MM_location_simplified, Ki67_status) %>%
+  filter(expressor %in% c("CXCL10", "CCL2", "CXCL12", "CXCL8"))
+
+cur_df %>%
+  dplyr::count(expressor, Ki67_status, MM_location_simplified) %>%
+  ggplot(aes(axis2 = expressor, axis3 = Ki67_status, axis4 = MM_location_simplified, y=n))+
+  geom_alluvium(aes(fill=expressor), alpha=0.8)+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum)), size = 5) +
+  theme_minimal()+
+  theme(text = element_text(size=20),
+        axis.text.x = element_text(angle=45, hjust=1)) +
+  scale_x_discrete(limits = c( "Expressor","Ki67 Score", "Met Location"), expand = c(.2, .05)) + 
+  scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$chemokine_combinations),
+                        breaks = names(metadata(sce_rna)$colour_vectors$chemokine_combinations),
+                        labels = names(metadata(sce_rna)$colour_vectors$chemokine_combinations)) +
+  ylab("Number of Tumor Cells") +
+  theme(legend.position="none")
+```
+
+## Normalized Counts
+
+```{r normalized_counts_chemokines_tumor, fig.width=10, fig.height=8, dev=c('png', 'pdf')}
+plotCellCounts(sce = sce_rna[,which(sce_rna$celltype == "Tumor" & sce_rna$Location != "CTRL")], 
+               sce_sub = sce_rna[,which(sce_rna$expressor %in% targets & 
+                                          sce_rna$celltype == "Tumor" & 
+                                          sce_rna$Location != "CTRL")],
+               cellID = "cellID",
+               colour_by = "expressor",
+               split_by = "Ki67_status",
+               imageID = "ImageNumber",
+               normalize = TRUE,
+               colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=20)) +
+  theme(legend.position="none")
+```
+
+CXCL8 and CXCL10 seems to be a bit higher in high Ki67 status samples. We can check if there is an association between Ki67+ fraction and CXCL10+ / CXCL8+ fraction. 
+
+```{r cxcl10_tumor_ki67_score, fig.width=10, fig.height=8, dev=c('png', 'pdf')}
+# calculate percentage of positive tumor cells over all tumor cells
+cur_df <- data.frame(colData(sce_rna)) %>%
+  group_by(Description, celltype, CXCL10, Ki67_status) %>%
+  filter(celltype == "Tumor") %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description + Ki67_status ~ CXCL10, value.var = "n", fill = 0) %>%
+  group_by(Description) %>%
+  mutate(cxcl10_fraction_tumor = (`1` / (`0` + `1`)))
+
+#  
+ggplot(cur_df, aes(y=cxcl10_fraction_tumor, x = Ki67_status)) + 
+  geom_boxplot() + 
+  geom_beeswarm() + 
+  stat_compare_means(comparisons = list(c("high", "low")), label.y = 0.075) +
+  ylim(0,0.08) +
+  xlab("Ki67 Tumor Scoring per Image") +
+  ylab("CXCL10+ Tumor Cell Fraction per Image") +
+  theme_minimal() +
+  theme(text = element_text(size=20)) 
 ```

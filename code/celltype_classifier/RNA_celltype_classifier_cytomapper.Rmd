@@ -13,26 +13,27 @@ editor_options:
 devtools::install_github("https://github.com/BodenmillerGroup/cytomapper")
 library(SingleCellExperiment)
 library(cytomapper)
+library(stringr)
 ```
 
 # Read the data
 
 ```{r load data}
-sce = readRDS(file = "../../data/sce_RNA.rds")
+sce = readRDS(file = "/Volumes/thoch/Git/melanoma_publication_old_data/data/sce_RNA.rds")
 ```
 
 ## load the segmentation masks and the pixel-level information (IMC images)
 
 ```{r}
-all_mask <- loadImages(x = "/Volumes/server_homes/daniels/Data/Melanoma/12plex/RNA/cpout/",pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
-all_pixel <- loadImages(x = "/Volumes/server_homes/daniels/Data/Melanoma/12plex/RNA/tiffs/",pattern = "_full.tiff")
+all_mask <- loadImages(x = "/Volumes/thoch/Data/Analysis/melanoma_cohort_new_cp_pipeline/rna/cpout/",pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
+all_pixel <- loadImages(x = "/Volumes/thoch/Data/Analysis/melanoma_cohort_new_cp_pipeline/rna/tiffs/",pattern = "_full.tiff")
 ```
 
 ## add the respective ImageNumber as in the sce object to the all_mask object
 
 ```{r match image numbers}
 # we load the metadata for the images.
-image_mat <- as.data.frame(read.csv(file = "/Volumes/server_homes/daniels/Data/Melanoma/12plex/RNA/cpout/Image.csv",stringsAsFactors = FALSE))
+image_mat <- as.data.frame(read.csv(file = "/Volumes/thoch/Data/Analysis/melanoma_cohort_new_cp_pipeline/rna/cpout/Image.csv",stringsAsFactors = FALSE))
 
 # we extract only the FileNames of the masks as they are in the all_masks object
 cur_df <- data.frame(cellmask = image_mat$FileName_cellmask,
@@ -50,7 +51,7 @@ mcols(all_mask) <- cur_df[names(all_mask),]
 
 ```{r match image numbers}
 # we load the metadata for the images.
-image_mat <- as.data.frame(read.csv(file = "/Volumes/server_homes/daniels/Data/Melanoma/12plex/RNA/cpout/Image.csv",stringsAsFactors = FALSE))
+image_mat <- as.data.frame(read.csv(file = "/Volumes/thoch/Data/Analysis/melanoma_cohort_new_cp_pipeline/rna/cpout/Image.csv",stringsAsFactors = FALSE))
 
 # we extract only the FileNames of the stacks as they are in the all_pixel object
 cur_df <- data.frame(cellmask = image_mat$FileName_FullStack,

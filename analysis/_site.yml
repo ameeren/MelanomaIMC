@@ -51,6 +51,8 @@ navbar:
         href: Figure_5.html
   - text: Supplemental Figures
     menu:
+      - text: Supp-Figure 1
+        href: Supp-Figure_1.html
   - text: License
     href: license.html
 output:

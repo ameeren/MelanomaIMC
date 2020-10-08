@@ -34,8 +34,6 @@ library(tidyverse)
 ```{r load data}
 sce = readRDS(file = "data/sce_RNA.rds")
 
-colour_vector <- readRDS("data/colour_vector.rds")
-
 # import T_frac_score and add to sce object
 T_frac_score <- readRDS("data/T_frac_score_per_Description")
 
@@ -49,7 +47,6 @@ sce$T_frac_score_per_BlockID   <- T_frac_score[sce$BlockID]
 
 
 ```{r adapt T cell score to numbers, fig.height=10, fig.width=10}
-
 sce[,which(sce$T_frac_score_per_ImageNumber == "low" & sce$Location != "CTRL")]$T_frac_score_per_ImageNumber <- 0
 sce[,which(sce$T_frac_score_per_ImageNumber == "med" & sce$Location != "CTRL")]$T_frac_score_per_ImageNumber <- 1
 sce[,which(sce$T_frac_score_per_ImageNumber == "high" & sce$Location != "CTRL")]$T_frac_score_per_ImageNumber <- 2

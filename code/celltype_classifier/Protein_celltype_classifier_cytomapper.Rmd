@@ -13,6 +13,7 @@ editor_options:
 devtools::install_github("https://github.com/BodenmillerGroup/cytomapper")
 library(SingleCellExperiment)
 library(cytomapper)
+library(stringr)
 ```
 
 # Read the data

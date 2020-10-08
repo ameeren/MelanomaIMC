@@ -1,0 +1,94 @@
+---
+title: "06_Protein_Ki67status"
+author: "toobiwankenobi"
+date: "2020-09-28"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Preparations
+
+## Load libraries
+
+```{r message=F}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+library(ggridges)
+```
+
+## Load the single cell experiment object and the image metadata
+
+```{r}
+sce_protein <- readRDS(file = "data/sce_protein.rds")
+sce_rna <- readRDS(file = "data/sce_RNA.rds")
+```
+
+# Ki-67 status on tumor cells
+
+## Define Ki67+ cells
+
+```{r signal_strength_distrubution_Ki67}
+y <- c(rep(1:10,16),rep(11,7))
+
+# add the group information to the sce object
+sce_protein$groups <- y[colData(sce_protein)$ImageNumber]
+
+# now we use the function written by Nils
+plotDist(sce_protein["Ki67",], plot_type = "ridges", 
+         colour_by = "groups", split_by = "rows", 
+         exprs_values = "asinh") +
+  geom_vline(xintercept = 1)
+```
+
+We define the Ki67 treshold at 1 (asinh) count. This corresponds to a mean pixel count of 1.175 per cell. This is robust enough to detect all Ki67+ cells (verified using histoCAT web version). All cells that are visible identifiable as Ki67+ have a mean count of clearly more than 1. 
+
+```{r}
+sce_protein$Ki67 <- ifelse(assay(sce_protein["Ki67",], "asinh") > 1, "positive", "negative")
+
+# calculate percentage of positive tumor cells over all tumor cells
+cur_df <- data.frame(colData(sce_protein)) %>%
+  group_by(Description, celltype, Ki67) %>%
+  summarise(n = n()) %>%
+  filter(celltype == "Tumor") %>%
+  reshape2::dcast(Description ~ Ki67, value.var = "n", fill = 0) %>%
+  group_by(Description) %>%
+  mutate(Ki67_fraction = (positive / (positive + negative)))
+
+# add staging (<6% low, 6-10% intermediate, >10% high)
+cur_df$Ki67_status <- ""
+cur_df[cur_df$Ki67_fraction < 0.06,]$Ki67_status <- "low"
+cur_df[cur_df$Ki67_fraction >= 0.06 & cur_df$Ki67_fraction <= 0.1,]$Ki67_status <- "intermediate"
+cur_df[cur_df$Ki67_fraction > 0.1,]$Ki67_status <- "high"
+
+# remove unwanted columns from cur_df
+cur_df[,2:3] <- NULL
+
+# add to colData
+cur_prot <- data.frame(colData(sce_protein))
+cur_prot <- left_join(cur_prot, cur_df, by="Description")
+
+# add to rna set based on protein staging
+cur_rna <- data.frame(colData(sce_rna))
+cur_rna <- left_join(cur_rna, cur_df, by="Description")
+
+# add new column to SCE
+sce_protein$Ki67_status <- cur_prot$Ki67_status
+sce_rna$Ki67_status <- cur_rna$Ki67_status
+sce_protein$Ki67_fraction <- cur_prot$Ki67_fraction
+sce_rna$Ki67_fraction <- cur_rna$Ki67_fraction
+
+# relevel
+sce_protein$Ki67_status <- factor(sce_protein$Ki67_status, levels = c("low", "intermediate", "high"))
+sce_rna$Ki67_status <- factor(sce_rna$Ki67_status, levels = c("low", "intermediate", "high"))
+```
+
+## Save SCE
+
+```{r save updated sce file}
+saveRDS(sce_protein, file = "data/sce_protein.rds")
+saveRDS(sce_rna, file = "data/sce_RNA.rds")
+```

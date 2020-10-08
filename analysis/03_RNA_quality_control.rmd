@@ -48,7 +48,7 @@ assay(sce, "scaled_asinh") <- t(scale(t(assay(sce, "asinh"))))
 
 ```{r cell_counts_over_samples, fig.width=15, fig.height=10}
 # this function takes all the column metadata from the sce and plots parts thereof
-plotCellCounts(sce, colour_by = "Location", split_by = "ImageNumber")
+plotCellCounts(sce, colour_by = "Location", split_by = "ImageNumber", imageID = "ImageNumber")
 ```
 
 ## Image 57 has only a few cells and should probably be excluded.
@@ -135,7 +135,7 @@ set.seed(12345)
 
 # UMAP
 start = Sys.time()
-sce <- runUMAP(sce, exprs_values = "scaled_asinh", 
+sce <- runUMAP(sce, exprs_values = "scaled_counts", 
                      subset_row = rowData(sce)$good_marker)
 end = Sys.time()
 print(end-start)

@@ -1,6 +1,13 @@
-# this function generates a barplot from a sce object which can be celltype_subsetted to a specific celltype_subset. the fraction is then displayed as a fraction of all cells and not as a fraction of the celltype_subset
+# this function generates a barplot from a sce object which can be
+# celltype_subsetted to a specific celltype_subset.
+# the fraction is then displayed as a fraction of all cells and not as a fraction of the celltype_subset
 
-plotBarFracCluster <- function(x, colour_by = NULL, split_by = NULL, celltype_subset = NULL, celltype_cluster_col=NULL, scale=c("percent","count")){
+plotBarFracCluster <- function(x,
+                               colour_by = NULL,
+                               split_by = NULL,
+                               celltype_subset = NULL,
+                               celltype_cluster_col=NULL,
+                               scale=c("percent","count")){
 
   # Check if x is SingleCellExpriment
   .sceCheck(x)
@@ -28,12 +35,10 @@ plotBarFracCluster <- function(x, colour_by = NULL, split_by = NULL, celltype_su
     }
   }
 
+
   cur_df <- data.frame(split_by = as.factor(colData(x)[,split_by]))
-
   cur_df$colour_by <- as.factor(colData(x)[,colour_by])
-
   cur_df <- reshape2::dcast(cur_df,formula = " split_by ~ colour_by",fun.aggregate = length)
-
   cur_df <- melt(cur_df)
 
   if(is.null(celltype_subset)){

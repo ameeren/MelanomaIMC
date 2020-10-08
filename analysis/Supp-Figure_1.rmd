@@ -1,0 +1,373 @@
+---
+title: "Supplementary Figure 1"
+author: "Hoch et al"
+date: "2020-08-04"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+This script generates figures for Supplementary Figure 1. 
+
+# Preparations
+
+## Load libraries
+
+```{r}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(stringr)
+library(ggpubr)
+library(ComplexHeatmap)
+library(circlize)
+library(gridExtra)
+library(ggbeeswarm)
+```
+
+# Unspecific Binding Quantification
+
+## Load and process the data
+
+```{r}
+# load data
+cells1 = fread("/Volumes/thoch/Data/IMC/20190305_measurements/Analysis/cpout/cell.csv", header = T,sep=",")
+cells2 = fread("/Volumes/thoch/Data/IMC/20190306_measurements/Analysis/cpout/cell.csv", header = T,sep=",")
+meta1 = fread("/Volumes/thoch/Data/IMC/20190305_measurements/Analysis/cpout/Image.csv",header = T,sep=",")
+meta2 = fread("/Volumes/thoch/Data/IMC/20190306_measurements/Analysis/cpout/Image.csv",header = T,sep=",")
+panel = fread( "/Volumes/thoch/Data/IMC/20190305_measurements/20190305_A431_overexpression.csv")
+
+# extract replicate and stain info
+meta1 = meta1[,.(ImageNumber,FileName_CellImage, Group_Number, Metadata_Target)]
+meta1[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1)), by=ImageNumber]
+meta2 = meta2[,.(ImageNumber,FileName_CellImage, Group_Number, Metadata_Target)]
+meta2[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1)), by=ImageNumber]
+
+# sort Metal Number in same order than in the Image.csv file
+panel$`Metal Number` = str_extract(panel$`Metal Tag`, "[0-9]+")
+panel = panel[order(panel$`Metal Number`),]
+panel$channel = c(1:nrow(panel))
+
+cells_long1 = melt.data.table(cells1,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
+cells_long2 = melt.data.table(cells2,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
+
+# create unique ID with Image and ObjectNumber
+cells_long1[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+cells_long2[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+
+# multiply value by 2E16 since it divided by this number in CellProfiler
+cells_long1$value = cells_long1$value * 65535
+cells_long2$value = cells_long2$value * 65535
+
+# calculate counts_asinh
+cells_long1[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 counts_asinh = asinh(value/1)),
+                 by=id]
+cells_long2[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 counts_asinh = asinh(value/1)),
+                 by=id]
+
+# take only FullStack entries and not FullStackFiltered
+cells_long1[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+cells_long1[,signal_type:=getInfoFromString(variable,"_",2),by=variable]
+cells_long2[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+cells_long2[,signal_type:=getInfoFromString(variable,"_",2),by=variable]
+
+unique(cells_long1$signal_type)
+unique(cells_long2$signal_type)
+```
+
+## Merge meta data with cells data
+
+```{r}
+cells1 = merge(cells_long1, meta1,by="ImageNumber")
+cells2 = merge(cells_long2, meta2,by="ImageNumber")
+
+cells = rbind(cells1, cells2)
+```
+
+## Exclude DNA, Histone and panCytokeratin data and then get the info of PPIB staining
+
+```{r}
+# exclude some channels, make sure to exclude the right ones!
+cells_panel = merge(cells,panel[,.(channel,Target, `Metal Tag`, `Metal Number`)],by="channel")
+cells_panel = cells_panel[Target %in% c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),]
+cells_panel = cells_panel[measurement != "FullStack",]
+cells_panel = cells_panel[signal_type != "MeanIntensityCorrectedLS",]
+unique(cells_panel$signal_type)
+
+cells_panel_LScorrected = cells_panel[cells_panel$signal_type == "MeanIntensityCorrectedLS",]
+cells_panel_uncorrected = cells_panel[cells_panel$signal_type == "MeanIntensity",]
+cells_panel_corrected = cells_panel[cells_panel$signal_type == "MeanIntensityCorrected",]
+```
+
+## Unspecific Amplifier binding 
+
+```{r heatmap_unspecific_binding, dev=c('png', 'pdf')}
+results = matrix(nrow=12, ncol = 12)
+rownames(results) = unique(cells_panel$Target)
+colnames(results) = unique(cells_panel$Target)
+results = as.data.frame(results)
+
+cells_panel_corrected = as.data.frame(cells_panel_corrected)
+
+for(i in unique(cells_panel$Target)){
+  mean_target = mean(cells_panel_corrected[cells_panel_corrected["Metadata_Target"] == i & cells_panel_corrected["Target"] == i, "value"])
+  for(j in unique(cells_panel$Target)){
+    row_index = which(rownames(results) %in% i)
+    col_index = which(colnames(results) %in% j)
+    results[row_index, col_index] = mean(cells_panel_corrected[cells_panel_corrected["Metadata_Target"] == j & cells_panel_corrected["Target"] == i, "value"]) / mean_target * 100
+  }
+}
+
+a = Heatmap(as.matrix(results),
+        col = colorRamp2(c(0,1,3), c("white","blue", "red")),
+        row_order = order(as.numeric(gsub("T", "", unique(cells_panel_corrected$Target)))),
+        column_order =  order(as.numeric(gsub("T", "", unique(cells_panel_corrected$Target)))),
+        heatmap_legend_param = list(title = "% cross-talk", size =15),
+        column_names_side = "top",
+        column_names_rot = 0,
+        column_names_gp = gpar(fontsize = 15),
+        row_names_gp = gpar(fontsize = 0),
+        column_names_centered = T,
+        column_title = "Range of Unspecific Binding", 
+        column_title_gp = gpar(fontsize = 20, fontface = "bold"),
+        cell_fun = function(j, i, x, y, width, height, fill) {
+        grid.text(sprintf("%.1f", as.matrix(results)[i, j]), x, y, gp = gpar(fontsize = 10))
+})
+draw(a)
+```
+
+# Signal Intensity per Channel Quantificaiton
+
+## Remove previous data 
+
+```{r}
+rm(list = ls())
+
+# Reload helper functions
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+```
+
+## Load the data
+```{r}
+cells1 = fread("/Volumes/thoch/Data/IMC/20190208_measurements/normal_panel/Analysis/cpout/cell.csv", header = T,sep=",")
+#cells2 = fread("/Volumes/thoch/Data/IMC/20190212_measurements/Analysis/cpout/cell.csv", header = T,sep=",")
+cells3 = fread("/Volumes/thoch/Data/IMC/20190215_measurements/new_complete/Analysis/cpout/cell.csv", header = T,sep=",")
+cells4 = fread("/Volumes/thoch/Data/IMC/20190222_measurements/Analysis/cpout/cell.csv", header = T,sep=",")
+
+meta1 = fread("/Volumes/thoch/Data/IMC/20190208_measurements/normal_panel/Analysis/cpout/Image.csv",header = T,sep=",")
+#meta2 = fread("/Volumes/thoch/Data/IMC/20190212_measurements/Analysis/cpout/Image.csv",header = T,sep=",")
+meta3 = fread("/Volumes/thoch/Data/IMC/20190215_measurements/new_complete/Analysis/cpout/Image.csv",header = T,sep=",")
+meta4 = fread("/Volumes/thoch/Data/IMC/20190222_measurements/Analysis/cpout/Image.csv",header = T,sep=",")
+
+meta1 = meta1[,.(ImageNumber,FileName_CellImage)]
+#meta2 = meta2[,.(ImageNumber,FileName_CellImage)]
+meta3 = meta3[,.(ImageNumber,FileName_CellImage)]
+meta4 = meta4[,.(ImageNumber,FileName_CellImage)]
+
+meta1[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",6), 
+             secondary_stain = getInfoFromString(FileName_CellImage,"_",7)),by=ImageNumber]
+#meta2[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",6), 
+             #secondary_stain = getInfoFromString(FileName_CellImage,"_",7)),by=ImageNumber]
+meta3[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",6), 
+             secondary_stain = getInfoFromString(FileName_CellImage,"_",7)),by=ImageNumber]
+meta4[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",7), 
+             secondary_stain = getInfoFromString(FileName_CellImage,"_",8), 
+             another_stain = getInfoFromString(FileName_CellImage,"_",6)),by=ImageNumber]
+
+# rename positive stain 
+meta1[meta1$stain=="positive" & meta1$secondary_stain == "noAb",]$stain = "positive without Ab"
+meta1[meta1$stain=="positive" & meta1$secondary_stain == "withAb",]$stain = "positive with Ab"
+#meta2[meta2$stain=="positive" & meta2$secondary_stain == "noAb",]$stain = "positive without Ab"
+#meta2[meta2$stain=="positive" & meta2$secondary_stain == "withAb",]$stain = "positive with Ab"
+meta3[meta3$stain=="positive" & meta3$secondary_stain == "noAb",]$stain = "positive without Ab"
+meta3[meta3$stain=="positive" & meta3$secondary_stain == "withAb",]$stain = "positive with Ab"
+meta3[meta3$stain=="negative" & meta3$secondary_stain == "s0",]$stain = "negative 1st"
+meta3[meta3$stain=="negative" & meta3$secondary_stain == "new",]$stain = "negative"
+meta4[meta4$stain=="noAb",]$stain = "positive without Ab"
+meta4[meta4$stain=="withAb",]$stain = "positive with Ab"
+meta4[meta4$another_stain=="negative",]$stain = "negative"
+meta4[meta4$another_stain=="T12",]$stain = "T12"
+
+# change stain name
+meta3[meta3$stain=="T7new",]$stain = "T7"
+meta3[meta3$stain=="T5new",]$stain = "T5"
+meta3[meta3$stain=="T11new",]$stain = "T11"
+meta3[meta3$replicate =="20190221",]$replicate = "20190215"
+
+panel = fread( "/Volumes/thoch/Data/IMC/20190212_measurements/20190212_HeLa_12plex_validation.csv")
+
+# sort Metal Number in same order than in the Image.csv file!!
+panel$`Metal Number` = str_extract(panel$`Metal Tag`, "[0-9]+")
+panel = panel[order(panel$`Metal Number`),]
+panel$channel = c(1:nrow(panel))
+
+# melt table
+cells1_long = melt.data.table(cells1,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
+#cells2_long = melt.data.table(cells2,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
+cells3_long = melt.data.table(cells3,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
+cells4_long = melt.data.table(cells4,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
+
+# multiply value by 2E16 since it divided by this number in CellProfiler
+cells1_long$value = cells1_long$value * 65535
+#cells2_long$value = cells2_long$value * 65535
+cells3_long$value = cells3_long$value * 65535
+cells4_long$value = cells4_long$value * 65535
+
+cells1_long[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+cells1_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 counts_asinh = asinh(value/1)),
+                 by=id]
+
+#cells2_long[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+#cells2_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 #counts_asinh = asinh(value/1)),
+                 #by=id]
+
+cells3_long[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+cells3_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 counts_asinh = asinh(value/1)),
+                 by=id]
+
+cells4_long[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+cells4_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 counts_asinh = asinh(value/1)),
+                 by=id]
+
+# take only FullStack entries and not FullStackFiltered (not possible with RNA measurement, only with Ab's)
+cells1_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+#cells2_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+cells3_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+cells4_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+
+cells1_long = cells1_long[measurement=="FullStack",]
+#cells2_long = cells2_long[measurement=="FullStack",]
+cells3_long = cells3_long[measurement=="FullStack",]
+cells4_long = cells4_long[measurement=="FullStack",]
+```
+
+## Merge meta dat with cells data and then then merge all the files to have one file with all three replicates
+
+```{r}
+cells1_long = merge(cells1_long,meta1,by="ImageNumber")
+#cells2_long = merge(cells2_long,meta2,by="ImageNumber")
+cells3_long = merge(cells3_long,meta3,by="ImageNumber")
+cells4_long = merge(cells4_long,meta4,by="ImageNumber")
+
+# select only 1 negative measuremenet in 3th measurement
+cells3_long = cells3_long[cells3_long$stain != "negative 1st", ]
+
+# remove additional columns which are not needed
+cells1_long = cells1_long[,!("secondary_stain")]
+#cells2_long = cells2_long[,!("secondary_stain")]
+cells3_long = cells3_long[,!("secondary_stain")]
+cells4_long = cells4_long[,!("secondary_stain")]
+cells4_long = cells4_long[,!("another_stain")]
+
+
+#cells = rbind(cells1_long,cells2_long)
+cells = rbind(cells1_long, cells3_long)
+cells = rbind(cells, cells4_long)
+```
+
+## Merge cells and panel data and exclude non-relevant channels
+
+```{r}
+# exclude certain channels, make sure to exclude the right ones!
+cells_panel = merge(cells,panel[,.(channel,Target)],by="channel")
+cells_panel = cells_panel[Target %in% c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),]
+```
+
+
+## Load data frolm 8plex validation and make it comparable
+
+```{r}
+# import data from 8plex validation
+cells_panel_8plex = readRDS(file = "/Volumes/thoch/Data/Analysis/12plex_validation/HeLa_measurements/2018_data_8plex_validation_DS.rds")
+
+# make both data.frames same so they can be merged
+cells_panel = cells_panel[, !("measurement")]
+cells_panel_8plex = cells_panel_8plex[, !("AreaShape_Area")]
+
+# rename the stains in the 8plex data
+unique(cells_panel_8plex$stain)
+cells_panel_8plex = cells_panel_8plex[!(stain %in% ("oldMix")), ]
+cells_panel_8plex[stain == "C1", ]$stain = "T1"
+cells_panel_8plex[stain == "C2", ]$stain = "T4"
+cells_panel_8plex[stain == "C3", ]$stain = "T3"
+cells_panel_8plex[stain == "C4", ]$stain = "T8"
+cells_panel_8plex[stain == "C5", ]$stain = "T12"
+cells_panel_8plex[stain == "C6", ]$stain = "T2"
+cells_panel_8plex[stain == "C7", ]$stain = "T9"
+cells_panel_8plex[stain == "C8", ]$stain = "T6"
+cells_panel_8plex[stain == "all", ]$stain = "positive with Ab"
+cells_panel_8plex[stain == "neg", ]$stain = "negative"
+cells_panel_8plex[Target == "C1", ]$Target = "T1"
+cells_panel_8plex[Target == "C2", ]$Target = "T4"
+cells_panel_8plex[Target == "C3", ]$Target = "T3"
+cells_panel_8plex[Target == "C4", ]$Target = "T8"
+cells_panel_8plex[Target == "C5", ]$Target = "T12"
+cells_panel_8plex[Target == "C6", ]$Target = "T2"
+cells_panel_8plex[Target == "C7", ]$Target = "T9"
+cells_panel_8plex[Target == "C8", ]$Target = "T6"
+
+# check
+unique(cells_panel_8plex$stain)
+unique(cells_panel_8plex$Target)
+all(colnames(cells_panel) == colnames(cells_panel_8plex))
+
+# merge both files
+cells_panel_12plex = rbind(cells_panel, cells_panel_8plex)
+```
+
+
+## Throw out the DNA, histone and panCytokeratin data and then get the info of PPIB staining
+
+```{r merged_comparison_per_channel, fig.width=10, fig.height=7, dev=c('png', 'pdf')}
+# subset
+cells_panel_12plex_sub = cells_panel_12plex[stain == Target,]
+
+# relevel factor
+cells_panel_12plex_sub$Target <- factor(cells_panel_12plex_sub$Target, levels = c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"))
+
+# check out difference in signal intensity for PPIB in the different channels
+
+ggplot(data = cells_panel_12plex_sub[Target %in%c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),], aes(x=as.factor(Target),y=counts_asinh)) +
+  geom_boxplot(size=0.5)+
+  theme(text = element_text(size=25), axis.text.x = element_text(angle = 90, hjust = 1))+
+  ggtitle("Single-probe measurements merged") + 
+  ylab("Mean Intensity Count per cell [asinh]") + 
+  xlab("Target Channels") + 
+  scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T11","T10", "T12"),
+                      labels= c("T1 PPIB","T2 PPIB","T3 PPIB", "T4 PPIB", "T5 PPIB","T6 PPIB","T7 PPIB","T8 PPIB","T9 PPIB","T10 PPIB", "T11 PPIB", "T12 PPIB")) 
+```
+
+## Compare median
+
+```{r median_comparison_per_replicate, fig.width=10, fig.height=8, dev=c('png', 'pdf')}
+# compare medians per replicate
+summarized = cells_panel_12plex_sub %>% 
+  group_by(replicate, stain) %>% 
+  summarise(median_signal_per_replicate = median(counts_asinh))
+
+# relevel factor
+summarized$stain <- factor(summarized$stain, levels = c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"))
+
+ggplot(data = summarized, aes(x=stain,y=median_signal_per_replicate)) +
+  geom_boxplot(size=0.5) +
+  geom_point(aes(col=replicate)) + 
+  theme(text = element_text(size=25), axis.text.x = element_text(angle = 90, hjust = 1))+ 
+  scale_fill_discrete(name = "Replicate") +
+  ggtitle("Statistical comparison of channel intensities") + 
+  ylab("Median Intensity Count per Replicate [asinh]") +
+  scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T11","T10", "T12"),
+                      labels= c("T1 PPIB","T2 PPIB","T3 PPIB", "T4 PPIB", "T5 PPIB","T6 PPIB","T7 PPIB","T8 PPIB","T9 PPIB","T10 PPIB", "T11 PPIB", "T12 PPIB")) +
+  geom_hline(yintercept = mean(summarized$median_signal_per_replicate), linetype = 2) +
+  stat_compare_means(method = "anova", label.y = 2.4) +      # Add global p-value
+  stat_compare_means(label = "p.signif", method = "t.test", ref.group = ".all.", hide.ns = TRUE, label.y = 2.4, size=10) +
+  xlab("Target Channels") +
+  ylim(0,2.6)
+```

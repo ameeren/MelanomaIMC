@@ -130,6 +130,20 @@ cur_sce <- left_join(cur_sce, cur_meta[,c("ImageNumber", "treatment_group_after_
 colData(sce)$treatment_group_after_surgery <- cur_sce$treatment_group_after_surgery
 ```
 
+## Create binarized grouping based on number of treatments before surgery
+
+```{r}
+cur_meta$treatment_status_before_surgery <- NA
+cur_meta[cur_meta$Location == "CTRL",]$treatment_status_before_surgery <- "control"
+cur_meta[cur_meta$Location != "CTRL",]$treatment_status_before_surgery <- ifelse(cur_meta[cur_meta$Location != "CTRL",]$Nr_treatments_before_surgery == 0, "naive", "non-naive")
+
+# add treatment type to cur_sce
+cur_sce <- left_join(cur_sce, cur_meta[,c("ImageNumber", "treatment_status_before_surgery")])
+
+# add to SCE
+colData(sce)$treatment_status_before_surgery <- cur_sce$treatment_status_before_surgery
+```
+
 ## Create Death grouping
 
 ```{r}

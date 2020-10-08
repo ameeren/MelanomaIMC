@@ -1,15 +1,110 @@
 ---
-title: "Figure_1"
-author: "toobiwankenobi"
+title: "Figure 1B and 1C"
+author: "Hoch et al"
 date: "2020-08-04"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
 ---
 
-## Introduction
+# Introduction
+This script generates figures for Figure 1B and Figure 1C. 
+
+# Preparations
+
+## Load libraries
 
 ```{r}
+library(SingleCellExperiment)
+library(scater)
+library(ggplot2)
+library(dittoSeq)
+```
 
+## Load data
+
+```{r}
+sce_rna <- readRDS("data/sce_RNA.rds")
+sce_prot <- readRDS("data/sce_protein.rds")
+```
+
+# Figure 1B - Plots for RNA TMA
+
+## Subset SCE for UMAP visualizations
+
+```{r}
+cur_sce <- sce_rna
+cur_sce$ImageNumber <- as.character(cur_sce$ImageNumber)
+```
+
+## UMAP showing Patient ID distribution
+
+```{r Fig_1B_UMAP_celltype_RNA, fig.width=7, fig.height=5, dev=c('png', 'pdf')}
+dittoDimPlot(cur_sce, 
+             reduction.use = "UMAP", 
+             var = "celltype", 
+             size = 0.7,
+             main = NULL,
+             opacity = 0.1,
+             color.panel = metadata(cur_sce)$colour_vectors$celltype)  +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size=3)))
+```
+
+## Heatmap showing marker expression of celltypes
+
+```{r Fig_1B_Scaled_Heatmap_RNA, fig.width=6, fig.height=5, dev=c('png', 'pdf')}
+# aggregate celltypes
+agr_sce <- aggregateAcrossCells(sce_rna, ids = colData(sce_rna)[,"celltype"], 
+                                average = TRUE)
+# asinh transformation
+assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
+
+# Centered and scaled Heatmap
+dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
+            annot.by = c("celltype"), 
+            cluster_rows = TRUE,
+            annotation_colors = list(celltype = metadata(sce_rna)$colour_vectors$celltype),
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3, 3, length.out = 101))
+```
+
+# Figure 1C - Plots for Protein TMA
+
+## Subset SCE for UMAP visualizations
+
+```{r}
+cur_sce <- sce_prot
+cur_sce$ImageNumber <- as.character(cur_sce$ImageNumber)
+```
+
+## UMAP showing Patient ID distribution
+
+```{r Fig_1B_UMAP_celltype_Protein, fig.width=7, fig.height=5, dev=c('png', 'pdf')}
+dittoDimPlot(cur_sce, 
+             reduction.use = "UMAP", 
+             var = "celltype", 
+             size = 0.7,
+             main = NULL,
+             opacity = 0.1,
+             color.panel = metadata(cur_sce)$colour_vectors$celltype) +
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size=3)))
+```
+
+## Heatmap showing marker expression of celltypes
+
+```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=6, fig.height=6, dev=c('png', 'pdf')}
+# aggregate celltypes
+agr_sce <- aggregateAcrossCells(sce_prot, ids = colData(sce_prot)[,"celltype"], 
+                                average = TRUE)
+# asinh transformation
+assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
+
+# Centered and scaled Heatmap
+dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
+            annot.by = c("celltype"), 
+            cluster_rows = TRUE,
+            annotation_colors = list(celltype = metadata(sce_prot)$colour_vectors$celltype),
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3, 3, length.out = 101))
 ```
 

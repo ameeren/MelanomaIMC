@@ -1,5 +1,5 @@
 ---
-title: "Figure_4"
+title: "Figure 4"
 author: "toobiwankenobi"
 date: "2020-08-04"
 output: workflowr::wflow_html
@@ -7,9 +7,311 @@ editor_options:
   chunk_output_type: console
 ---
 
-## Introduction
+# Introduction
 
-```{r}
+# Preparations
 
+## Load libraries
+
+First, we will load the libraries needed for this part of the analysis.
+
+```{r load-libraries, message=FALSE}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(reshape2)
+library(tidyverse)
+library(dplyr)
+library(data.table) 
+library(ggplot2)
+library(gridExtra)
+library(cba)
+library(ComplexHeatmap)
+library(colorRamps)
+library(circlize)
+library(RColorBrewer)
+library(ggpubr)
+library(ggbeeswarm)
+library(survminer)
+library(coxme)
 ```
 
+## Read the data
+
+```{r load data}
+sce_rna = readRDS(file = "data/sce_RNA.rds")
+sce_prot = readRDS(file = "data/sce_protein.rds")
+
+# survival data
+data <- read.csv("data/survdat_for_modelling.csv")
+```
+
+# Cytotoxic T cell abundance per BlockID
+
+## Barplot with Clinical Annotation 
+
+```{r barplot_clinical_annotation, dev=c('png', 'pdf'), fig.height=10, fig.width=15}
+set.seed(362)
+patient_meta <- data.frame(E_I_D = sce_prot$E_I_D,
+                     BlockID = sce_prot$BlockID,
+                     celltype = sce_prot$celltype,
+                     Tcell_score = sce_prot$T_frac_score_per_BlockID,
+                     infiltration = sce_prot$infiltration,
+                     MM_location = sce_prot$MM_location,
+                     Mutation = sce_prot$Mutation,
+                     Death = sce_prot$Death,
+                     treatment_status_before_surgery = sce_prot$treatment_status_before_surgery,
+                     relapse = sce_prot$relapse)
+
+cur_df <- patient_meta[which(patient_meta$MM_location != ""),]
+
+# unique entry for each BlockID
+patient_meta$celltype <- NULL
+patient_meta$infiltration <- NULL
+patient_meta$E_I_D <- NULL
+patient_meta <- unique(patient_meta)
+
+cur_df <- reshape2::dcast(cur_df, formula = "BlockID + Tcell_score  ~ celltype", 
+                                fun.aggregate = length, value.var = "BlockID")
+cur_df <- as_tibble(cur_df)
+
+# calculate the fraction of Tcytotoxic cells
+cur_df <- cur_df %>%
+  mutate(Tcytotoxic_fraction = (Tcytotoxic/rowSums(cur_df[,-c(1,2)]))) 
+
+# construct matrix with fractions and sort from lowest to highest  
+matrixrownames <- as.character(cur_df$BlockID)
+m <- as.matrix(cur_df$Tcytotoxic_fraction)
+rownames(m) <- matrixrownames
+m <- m[order(m[,1]),]
+
+# construct color vector for Tcell score
+count_vec <- as.vector(m)
+Tcell_score_col <- c(rep("red",length(unique(sce_prot[,which(sce_prot$T_frac_score_per_BlockID == "low" & ! sce_prot$Location == "CTRL")]$BlockID))),
+                         rep("orange",length(unique(sce_prot[,which(sce_prot$T_frac_score_per_BlockID == "med"& ! sce_prot$Location == "CTRL")]$BlockID))),
+                         rep("darkgreen",length(unique(sce_prot[,which(sce_prot$T_frac_score_per_BlockID == "high"& ! sce_prot$Location == "CTRL")]$BlockID))))
+
+# plot Fractions as barplot
+ha <- rowAnnotation(`Fraction of cytotoxic T cells` = anno_barplot(m,gp=gpar(fill=Tcell_score_col),
+                                                                   bar_width = 1,
+                                                                   height = unit(30,"cm"),
+                                                                   width = unit(15,"cm"),
+                                                                   show_row_names =FALSE))
+# create patient_meta matrix
+patient_meta <- patient_meta[which(patient_meta$Mutation != ""),]
+mrownames <- patient_meta$BlockID 
+patient_meta_matrix <- as.matrix(patient_meta)
+rownames(patient_meta_matrix) <- mrownames
+patient_meta_matrix <- patient_meta_matrix[names(m),]
+
+# heatmap consisting of BlockIDs
+h1 = Heatmap(patient_meta_matrix[,"Death"],
+             col = structure(c("gainsboro", "deepskyblue"), names = c("no", "yes")),
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = TRUE, 
+             heatmap_legend_param = list(title = "Death"),
+             show_row_names = FALSE,
+             column_labels = "Death",
+             right_annotation =  ha)
+
+h2 = Heatmap(patient_meta_matrix[,"treatment_status_before_surgery"], 
+             col = structure(c("gainsboro", "deepskyblue"), names = c("naive", "non-naive")),
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = TRUE,
+             heatmap_legend_param = list(title = "Treatment Status before Surgery"),
+             show_row_names = FALSE,
+             column_labels = "Treatment Status")
+
+h3 = Heatmap(patient_meta_matrix[,"relapse"], 
+             col = structure(c("gainsboro", "deepskyblue", "black"), names = c("no relapse", "relapse", "untreated/lost")),
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = TRUE,
+             heatmap_legend_param = list(title = "Relapse Status"),
+             show_row_names = FALSE,
+             column_labels = "Relapse")
+
+ht = grid.grabExpr(draw(h2+h3+h1))
+grid.newpage()
+pushViewport(viewport(angle = 270))
+grid.draw(ht)
+```
+
+## Hazard-Ratios
+
+```{r hazard_ratios, dev=c('png', 'pdf'), fig.width=16}
+# add treatment before surgery grouping
+data$`Treatment Status` <- ifelse(data$Number.of.treatments.before.surgery == 0, "naive", "non-naive")
+data$`Cytotoxic T cell Grouping` <- factor(data$Frac_Tcyt_score, levels = c("low", "med", "high"))
+
+# fit model
+fit <- coxph(Surv(time = Time_to_death_or_last_PET, event = censoring_death) ~ `Cytotoxic T cell Grouping` +
+               `Treatment Status`, data = data)
+
+# forest plot
+ggforest(fit, data=data,
+         fontsize = 1.5,
+         main = NULL,
+         refLabel = "Reference")
+```
+
+# Heatmap with Community Modules
+
+## Prepare Data for Heatmap
+
+```{r}
+cur_dt <- as.data.table(colData(sce_rna))
+cur_dt_prot <- as.data.table(colData(sce_prot))
+cur_dt_prot <- distinct(cur_dt_prot, ImageNumber, .keep_all = T)
+
+# add T cell scoring from protein data set
+cur_dt <- left_join(cur_dt, cur_dt_prot[,c("Description", "T_frac_score_per_ImageNumber", 
+                                           "T_frac_score_per_BlockID", "T_frac_score_per_PatientID", 
+                                           "infiltration")],
+                    by = "Description")
+
+## wide table for communities - filter undefined or unclear E_I_D scores
+cur_dt_wide <- cur_dt %>%
+  group_by(ImageNumber, community_module) %>%
+  #filter(!(E_I_D %in% c("1_2", ""))) %>%
+  distinct(ImageNumber, chemokine_community, .keep_all = T) %>%
+  group_by(ImageNumber, community_module, E_I_D, infiltration,
+           MM_location_simplified, MM_location, T_frac_score_per_ImageNumber, relapse, treatment_status_before_surgery) %>%
+  summarise(number_of_modules = n(), .groups = "drop") %>%
+  reshape2::dcast(., ImageNumber + E_I_D + infiltration + MM_location_simplified + MM_location + 
+                     T_frac_score_per_ImageNumber + relapse + treatment_status_before_surgery ~ community_module, 
+                  value.var = 'number_of_modules', fill = 0)
+
+# calculate row proportions (hard coded for 9 community modules,1-9)
+cur_dt_wide[,as.character(1:9)] <- cur_dt_wide[,as.character(1:9)] / rowSums(cur_dt_wide[,as.character(1:9)])
+
+is.nan.data.frame <- function(x)
+do.call(cbind, lapply(x, is.nan))
+
+cur_dt_wide[is.nan(cur_dt_wide)] <- 0
+
+# rename global infiltration score to match the local one
+cur_dt_wide[cur_dt_wide$E_I_D == "1",]$E_I_D <- "Excluded"
+cur_dt_wide[cur_dt_wide$E_I_D == "2",]$E_I_D <- "Inflamed"
+cur_dt_wide[cur_dt_wide$E_I_D == "3",]$E_I_D <- "Deserted"
+cur_dt_wide[cur_dt_wide$E_I_D == "1_2",]$E_I_D <- "Excluded/Inflamed"
+cur_dt_wide[cur_dt_wide$E_I_D == "",]$E_I_D <- "Control"
+
+# order according to image inflamamtion score
+cur_dt_wide <- cur_dt_wide[order(cur_dt_wide$infiltration),]
+
+# chemokines per image
+total_chemokines <- cur_dt %>%
+  group_by(ImageNumber, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n/sum(n)) %>%
+  filter(chemokine == TRUE)
+
+# community vs single producer - fraction per image
+cur_dt$in_community <- ifelse(cur_dt$chemokine_cluster > 0, TRUE, FALSE)
+
+fractions <- cur_dt %>%
+  filter(chemokine == TRUE) %>%
+  group_by(ImageNumber, in_community) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber ~ in_community, value.var = "fraction")
+
+names(fractions)[2:3] <- c("single", "community")
+fractions[, 2:3][is.na(fractions[, 2:3])] <- 0
+
+# chemokines per image (regardless of combination, multi-producing cells count more than once)
+chemokines <- cbind(cur_dt[,c("ImageNumber", "in_community")], cur_dt[,grepl(glob2rx("C*L*"),names(cur_dt)), with = F])
+
+# reshape
+chemokines <- reshape2::melt(chemokines, id.vars = c("ImageNumber", "in_community"), variable.name = "chemokine", value.name = "n") %>%
+  group_by(ImageNumber, in_community, chemokine) %>%
+  summarise(total = sum(n)) %>%
+  reshape2::dcast(ImageNumber + chemokine ~ in_community, value.var = "total") %>%
+  replace(is.na(.), 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber", "chemokine"), variable.name = "in_community", value.name = "n")
+
+# join with wide table
+cur_dt_wide <- left_join(cur_dt_wide, fractions)
+cur_dt_wide <- left_join(cur_dt_wide, total_chemokines)
+```
+
+## Plot Heatmap
+
+```{r heatmap_modules_infiltration, fig.height=10, fig.width=14, dev=c('png', 'pdf')}
+# subset df
+cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$E_I_D != "Control",]
+
+# relevel factor
+cur_dt_wide_sub$T_frac_score_per_ImageNumber <- factor(cur_dt_wide_sub$T_frac_score_per_ImageNumber, levels = c("low", "med", "high"))
+
+# define subgroups to split  heatmap
+subgroup = cur_dt_wide_sub[,"T_frac_score_per_ImageNumber"]
+
+# heatmap annotation
+row_ha2 = rowAnnotation("Composition of Chemokine- \n Producing Cells" = anno_barplot(cur_dt_wide_sub[,c("single", "community")], 
+                                                     gp = gpar(fill = c("#F8766D", "#00BFC4")), width = unit(1.5, "cm")),
+                        "Fraction of Chemokine- \n Producing Cells" = anno_barplot(cur_dt_wide_sub[,"fraction"],
+                                                                   width = unit(1.5, "cm")),
+                       annotation_name_rot = 90, gap = unit(3, "mm"),
+                       col = list(Relapse = c("no relapse" = "orange", "relapse" = "black", "untreated/lost" = "grey")))
+
+# manual legends
+lgd1 = Legend(labels = c("Stand-alone", "Cluster"), title = "Production Setting", legend_gp = gpar(fill = c("#F8766D", "#00BFC4")))
+lgd2 = Legend(col_fun = colorRamp2(c(0, 0.5, 1), c("blue", "white", "red")), title = "Community Proportions")
+lgd_list = list(lgd1, lgd2)
+
+panel_fun_chemokines = function(index, nm) {
+    image_number = cur_dt_wide_sub[index,"ImageNumber"]
+    if(length(unique(image_number)) > 9){
+      df = chemokines[chemokines$ImageNumber %in% image_number, ]
+      g = ggplot(df, aes(x = factor(chemokine), y = log10(n+1), fill=in_community)) + 
+      geom_boxplot() + 
+      xlab("Chemokine") + 
+      ylab("# Cells (log10(n+1))") +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+            legend.position = "none") +
+      ylim(0,3)
+      g = grid.grabExpr(print(g))
+      pushViewport(viewport())
+      grid.rect()
+      grid.draw(g)
+      popViewport()
+    }
+}
+
+# zoom-in 
+zoom = anno_zoom(align_to = subgroup, 
+                 which = "row", panel_fun = panel_fun_chemokines, 
+                 size = unit(6, "cm"), 
+                 gap = unit(0.5, "cm"), 
+                 width = unit(10, "cm"))
+
+# heatmap
+ht1 = Heatmap(as.matrix(cur_dt_wide_sub[,as.character(1:9)]), 
+        col = colorRamp2(c(0,0.5, 1), c("blue", "white", "red")),
+        left_annotation = row_ha2,
+        right_annotation = rowAnnotation(foo = zoom),
+        row_split = subgroup,
+        row_title_side = "left",
+        border = T,
+        row_gap = unit(3, "mm"),
+        cluster_rows = T,
+        cluster_columns = F,
+        cluster_row_slices = F,
+        show_heatmap_legend = FALSE,
+        column_order = sort(colnames(cur_dt_wide_sub[,as.character(1:9)])),
+        show_row_dend = FALSE,
+        name = "Community Proportions",
+        column_title = "Community Modules", column_title_side = "bottom",
+        column_title_gp = gpar(fontsize=20),
+        row_labels = cur_dt_wide_sub[,1],
+        row_names_gp = gpar(cex=0.4),
+        row_names_side = "left",
+        width = unit(15,"cm"))
+
+draw(ht1,heatmap_legend_side = "left", annotation_legend_side = "left", annotation_legend_list = lgd_list)
+```

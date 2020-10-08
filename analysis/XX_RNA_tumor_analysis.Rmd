@@ -1,0 +1,65 @@
+---
+title: "XX_RNA_tumor_analysis"
+author: "toobiwankenobi"
+date: "2020-10-02"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# Preparations
+
+## Load packages and helper functions
+
+```{r message=F}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(ggplot2)
+library(reshape2)
+library(cowplot)
+library(dplyr)
+library(sf)
+library(gridExtra)
+```
+
+## Load data
+
+```{r load data}
+sce_rna = readRDS(file = "data/sce_rna.rds")
+```
+
+# Tumor Analysis
+
+## Tumor Markers in Samples with CXCL13+CD8+ cells (dysfunctional T cells)
+
+```{r}
+cur_df <- data.frame(colData(sce_rna)) %>%
+  filter(celltype == "Tcytotoxic") %>%
+  group_by(Description,T_frac_score_per_ImageNumber, CXCL13, celltype) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(Description + T_frac_score_per_ImageNumber ~ CXCL13, value.var = "n", fill = 0) %>%
+  mutate(cxcl13_cyto_fraction = `1` / `0`)
+
+# cxcl13 score
+cur_df$cxcl13_score <- ""
+cur_df$cxcl13_score <- ifelse(cur_df$T_frac_score_per_ImageNumber %in% c("med", "high") & cur_df$cxcl13_cyto_fraction > 0.05, "cxcl13+", "cxcl13-")
+
+tumor_dat <- data.frame(t(assay(sce_rna["S100", sce_rna$celltype == "Tumor"], "asinh")))
+tumor_dat$cellID <- rownames(tumor_dat)
+tumor_dat <- left_join(tumor_dat, data.frame(colData(sce_rna))[,c("cellID", "Description")])
+
+# left_join with scoring data
+tumor_dat <- left_join(tumor_dat, cur_df[,c("Description", "T_frac_score_per_ImageNumber", "cxcl13_score")])
+
+# boxplot
+ggplot(tumor_dat, aes(x=T_frac_score_per_ImageNumber, y=S100, col=cxcl13_score)) + 
+  geom_boxplot()
+```
+

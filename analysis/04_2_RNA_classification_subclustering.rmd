@@ -42,8 +42,12 @@ sce <- readRDS(file = "data/sce_RNA.rds")
 ## Define Superclasses for subclustering
 
 ```{r}
-sce[,sce$celltype %in% c("exhausted Tcytotoxic", "Tcytotoxic")]$celltype <- "Tcytotoxic"
-sce[,sce$celltype %in% c("CD134+ Tcell", "CD134- Tcell")]$celltype <- "Tcell"
+# store labels from randomForest separately
+sce$celltype_rf <- sce$celltype
+
+# assign superclasses
+sce[,sce$celltype_rf %in% c("exhausted Tcytotoxic", "Tcytotoxic")]$celltype <- "Tcytotoxic"
+sce[,sce$celltype_rf %in% c("CD134+ Tcell", "CD134- Tcell")]$celltype <- "Tcell"
 ```
 
 ## Define color vector for superclasses
@@ -61,6 +65,7 @@ celltype_color["Vasculature"] <- "red2"
 celltype_color["Stroma"] <- "tomato"
 celltype_color["Tcytotoxic"] <- "deepskyblue"
 celltype_color["Tumor"] <- "sienna4"
+celltype_color["unknown"] <- "darkgray"
 
 # Save in SCE object
 metadata(sce)$colour_vectors$celltype <- celltype_color
@@ -104,6 +109,8 @@ marker_list$`HLA-DR` <- c("HLADR","CD68","CD3","CCR2","T5_CCL4","T7_CCL18","T1_C
 marker_list$CD38 <- c("HLADR","CD38","CD3","CCR2","CD163","CD68","T5_CCL4","T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13",
                        "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
 
+marker_list$unknown <- rownames(sce[rowData(sce)$good_marker,])
+
 # check if the names of the marker list match the names of the classified cells
 all(names(marker_list) %in% unique(sce$celltype))
 ```
@@ -121,7 +128,7 @@ rowData(sce)$marker_class <- "state"
 # vector for clustering
 fs_clustering <- vector(length = ncol(sce))
 
-# Macrophage, Bcells, Thelper, Tcytotoxic, Tother and BnT cells will be clustered for a total of 6 clustes each
+# Macrophage, Tcell, Tcytotoxic, Tumor will be clustered for a total of 6 clustes each
 set.seed(12345)
 
 # 6 clusters
@@ -134,10 +141,10 @@ for(i in c("Tcell","Macrophage","Tcytotoxic","Tumor")){
 }
 
 # 4 clusters
-for(i in c("Neutrophil","CD38","Stroma","Vasculature","HLA-DR")){
+for(i in c("Neutrophil","CD38","Stroma","Vasculature","HLA-DR", "unknown")){
   cur_sce <- sce[,sce$celltype == i]
   names(assays(cur_sce)) <-  c("counts", "exprs","scaled_counts", "scaled_asinh")
-  cur_sce <- cluster(cur_sce,features = marker_list[i][[1]],ydim = 2,xdim = 2,maxK = 3)
+  cur_sce <- CATALYST::cluster(cur_sce, features = marker_list[i][[1]], ydim = 2, xdim = 2, maxK = 3)
   fs_clustering[sce$celltype == i] <- cur_sce$cluster_id
 }
 
@@ -155,7 +162,6 @@ sce$celltype_clustered <- paste0(sce$celltype, "_", sce$celltype_clustered)
 # Aggregate the counts
 mean_sce <- calculateSummary(sce, split_by = c("celltype_clustered", "celltype"), 
                              exprs_values = "counts")
-
 # Exclude bad markers
 mean_sce <- mean_sce[rowData(sce)$good_marker,]
 
@@ -171,7 +177,6 @@ plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",
             color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             zlim = c(-4, 4),legend = TRUE)
 ```
-
 
 ## Numbers of cells per cluster
 
@@ -224,13 +229,12 @@ plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",
 # Density of Expression in different Tcytotoxic clusters vs. manually gated Lag3+ cells
 cur_sce <- data.frame(colData(sce))
 cur_exprs <- data.frame(t(assays(sce)[[2]]))
-cur_exprs <- cbind(cur_exprs, cur_sce[,c("celltype", "celltypes_layer1", "celltype_clustered")])
+cur_exprs <- cbind(cur_exprs, cur_sce[,c("celltype", "celltype_rf", "celltype_clustered")])
 cur_exprs$cellID <- rownames(cur_exprs)
 
 cur_exprs <- cur_exprs %>%
-  reshape2::melt(id.vars = c("cellID", "celltype", "celltypes_layer1", "celltype_clustered"), 
+  reshape2::melt(id.vars = c("cellID", "celltype", "celltype_rf", "celltype_clustered"), 
                  variable.name = "marker", value.name = "asinh")
-
 
 # clustering
 a <- cur_exprs %>%
@@ -243,13 +247,15 @@ a <- cur_exprs %>%
 # manual gating
 b <- cur_exprs %>%
   filter(celltype == "Tcytotoxic" & marker %in% marker_list$Tcytotoxic) %>%
-  ggplot(data=., aes(asinh, color = celltypes_layer1)) + 
+  ggplot(data=., aes(asinh, color = celltype_rf)) + 
   geom_density() +
   xlim(0,4) + 
   facet_wrap(~marker)
 
 grid.arrange(a, b, ncol = 2)
 ```
+
+Conclusion: if you want to catch REAL biological signal than flowSOM clustering isn't gonna do it!
 
 ## Tcell
 
@@ -265,7 +271,7 @@ a <- cur_exprs %>%
 # manual gating
 b <- cur_exprs %>%
   filter(celltype == "Tcell" & marker %in% marker_list$Tcell) %>%
-  ggplot(data=., aes(asinh, color = celltypes_layer1)) + 
+  ggplot(data=., aes(asinh, color = celltype_rf)) + 
   geom_density() +
   xlim(0,4) + 
   facet_wrap(~marker)
@@ -315,6 +321,18 @@ cur_exprs %>%
 # clustering
 cur_exprs %>%
   filter(celltype == "CD38" & marker %in% marker_list$CD38) %>%
+  ggplot(data=., aes(asinh, color = celltype_clustered)) + 
+  geom_density() +
+  xlim(0,4) + 
+  facet_wrap(~marker)
+```
+
+## unknown
+
+```{r density_marker_unknown, fig.width=10, fig.height=10}
+# clustering
+cur_exprs %>%
+  filter(celltype == "unknown" & marker %in% marker_list$unknown) %>%
   ggplot(data=., aes(asinh, color = celltype_clustered)) + 
   geom_density() +
   xlim(0,4) + 

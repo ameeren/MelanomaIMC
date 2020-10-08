@@ -1,0 +1,303 @@
+---
+title: "XX_Protein_p75_analysis"
+author: "toobiwankenobi"
+date: "2020-10-07"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# Preparations
+
+## Load packages and helper functions
+
+```{r message=F}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(ggplot2)
+library(reshape2)
+library(cowplot)
+library(dplyr)
+library(sf)
+library(gridExtra)
+library(scater)
+library(dittoSeq)
+```
+
+## Load data
+
+```{r load data}
+sce_protein = readRDS(file = "data/sce_protein.rds")
+```
+
+# p75 Analysis
+
+## p75 Defintion
+
+```{r}
+# 
+p75_vec <- assay(sce_protein["p75",],"asinh")>1.5
+
+class_vec <- vector(length = length(unique(sce_protein$cellID)))
+class_vec[p75_vec] <- "p75pos"
+class_vec[class_vec == "FALSE"] <- "p75neg"
+
+sce_protein$p75 <- class_vec
+
+# p75 Tumor
+sce_protein[,which(sce_protein$p75 == "p75pos" & sce_protein$celltype == "Tumor")]$p75 <- "p75pos_Tumor"
+```
+
+## Run Cluster/Community Detection on p75+ Tumor Cells
+
+```{r}
+# find p75 tumor clusters
+sce_protein <- findClusters(sce_protein, sce_protein[,colData(sce_protein)$p75 == "p75pos_Tumor"]$cellID , 
+                    'cellID', 
+                    'Center_X', 'Center_Y', 
+                    'ImageNumber', 
+                    distance = 30, 
+                    min_clust_size = 5,
+                    output_colname = "p75_Tumor_cluster")
+
+# number of p75 tumor clusters
+length(unique(sce_protein$p75_Tumor_cluster))
+
+# define community
+sce_protein <- findCommunity(sce_protein, 
+                     'cellID', 
+                     'Center_X', 'Center_Y', 
+                     'ImageNumber', 
+                     'p75_Tumor_cluster', 
+                     distance = 30,
+                     output_colname = "p75_Tumor_community",
+                     plot = FALSE)
+
+
+# number of chemokine communities
+length(unique(sce_protein$p75_Tumor_community))
+```
+
+## Run Cluster/Community Detection on p75- Tumor Cells
+
+```{r}
+# define some control images without p75+ tumor cells
+control_samples <- data.frame(colData(sce_protein)) %>%
+  filter(p75 == "p75neg" & Location != "CTRL" & MM_location != "LN") %>%
+  distinct(Description, MM_location) %>%
+  sample_n(10)
+
+# find tumor clusters 
+sce_protein <- findClusters(sce_protein, 
+                            sce_protein[,sce_protein$celltype == "Tumor" & sce_protein$Description %in% control_samples$Description]$cellID, 
+                            'cellID', 
+                            'Center_X', 'Center_Y', 
+                            'ImageNumber', 
+                            distance = 30, 
+                            min_clust_size = 15,
+                            output_colname = "control_Tumor_cluster")
+
+# number of control clusters
+length(unique(sce_protein$control_Tumor_cluster))
+
+# define community
+sce_protein <- findCommunity(sce_protein, 
+                     'cellID', 
+                     'Center_X', 'Center_Y', 
+                     'ImageNumber', 
+                     'control_Tumor_cluster', 
+                     distance = 30,
+                     output_colname = "control_Tumor_community",
+                     plot = FALSE)
+
+# number of chemokine communities
+length(unique(sce_protein$control_Tumor_community))
+```
+
+## Compare communities from p75+ and control tumors
+
+```{r UMAP}
+sce_p75 <- sce_protein[,sce_protein$celltype != "Tumor" & sce_protein$p75_Tumor_community > 0 & sce_protein$p75_Tumor_cluster == 0]
+
+# create UAMP
+sce_p75 <- runUMAP(sce_p75, exprs_values = "scaled_asinh", 
+                   subset_row = rowData(sce_p75)$good_marker,
+                   n_neighbors = 10)
+
+# plot UMAP
+a <- dittoDimPlot(sce_p75, 
+             reduction.use = "UMAP", 
+             var = "celltype", 
+             color.panel = metadata(sce_p75)$colour_vector$celltype,
+             size = 2,
+             legend.show = TRUE,
+             main = "Immune cells from p75+ communities",
+             opacity = 0.5) + 
+  guides(colour = guide_legend(override.aes = list(alpha = 1, size=3)))
+
+# control
+sce_control <- sce_protein[,sce_protein$celltype != "Tumor" & sce_protein$control_Tumor_community > 0 & sce_protein$control_Tumor_cluster == 0]
+
+# create UAMP
+sce_control <- runUMAP(sce_control, exprs_values = "scaled_asinh", 
+                   subset_row = rowData(sce_control)$good_marker,
+                   n_neighbors = 10)
+
+# plot UMAP
+b <- dittoDimPlot(sce_control, 
+             reduction.use = "UMAP", 
+             var = "celltype", 
+             color.panel = metadata(sce_control)$colour_vector$celltype,
+             size = 2,
+             legend.show = TRUE,
+             main =  "Immune cells from p75- communities",
+             opacity = 0.5)
+
+
+leg <- cowplot::get_legend(a) 
+
+grid.arrange(a + theme(legend.position = "none"), 
+             b + theme(legend.position = "none"), 
+             leg,
+             ncol = 2)
+```
+
+## Celltypes Proportions
+
+```{r}
+data.frame(colData(sce_protein)) %>%
+  filter(p75_Tumor_community > 0) %>%
+  group_by(Description) %>%
+  summarise(n=n()) %>%
+  distinct(Description, .keep_all = T)
+```
+
+
+```{r celltype_fractions}
+ctrl <- data.frame(colData(sce_protein)) %>%
+  filter(control_Tumor_community > 0) %>%
+  filter(celltype != "Tumor") %>%
+  group_by(celltype, Description) %>%
+  summarise(n=n()) %>%
+  group_by(Description) %>%
+  mutate(fraction= n / sum(n))
+
+ctrl$type = "p75- communities"
+
+p75 <- data.frame(colData(sce_protein)) %>%
+  filter(p75_Tumor_community > 0) %>%
+  filter(celltype != "Tumor") %>%
+  group_by(celltype, Description) %>%
+  summarise(n=n()) %>%
+  group_by(Description) %>%
+  mutate(fraction= n / sum(n))
+
+p75$type <- "p75+ communities"
+
+compare <- rbind(ctrl, p75)
+
+ggplot(compare, aes(x=Description, y=fraction, fill=celltype)) + 
+  geom_bar(stat = "identity") + 
+        scale_fill_manual(values = unname(metadata(sce_protein)$colour_vector$celltype),
+                        breaks = names(metadata(sce_protein)$colour_vector$celltype),
+                        labels = names(metadata(sce_protein)$colour_vector$celltype)) +
+        theme(
+        axis.text.x = element_text(angle = 45, hjust = 1),
+        axis.title.x = element_blank(),
+        panel.background = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.grid.major.x = element_blank(),
+        panel.grid.major.y = element_line(color = "grey", size = .3)) +
+  facet_wrap(~type, scales = "free")
+```
+
+# NeighbouRhood analysis
+
+## Specify the input
+
+```{r}
+# Load and prepare
+dat_cells = fread(file = "data/protein/cell.csv",stringsAsFactors = FALSE)
+dat_relation = fread(file = "data/protein/Object relationships.csv",stringsAsFactors = FALSE)
+
+n_perm = 1000
+
+# Number of cores used for multicore:
+ncores=7
+```
+
+## Start the analysis
+
+```{r}
+# add same cellID to dat_cells as in sce object
+dat_cells$cellID <- paste("protein_", paste(dat_cells$ImageNumber, dat_cells$ObjectNumber, sep = "_"), sep = "")
+
+# add p75 status to celltype annotaiton
+sce_info <- as.data.frame(colData(sce_protein))[,c("cellID", "celltype", "p75")]
+sce_info <- sce_info %>%
+  mutate(celltype = ifelse(p75 == "p75pos_Tumor", paste(celltype, "p75+", sep = "_"), celltype)) %>%
+  select(c("cellID", "celltype"))
+
+# add celltype information
+dat_cells <- left_join(dat_cells, sce_info, by = "cellID")
+
+#assing labels and groups
+dat_cells <- as.data.table(dat_cells)
+dat_cells[, label := celltype]
+dat_cells[, group := ImageNumber]
+
+# Prepare the data
+d = prepare_tables(dat_cells, dat_relation)
+
+# Calculate the baseline statistics
+dat_baseline = apply_labels(d[[1]], d[[2]]) %>%
+  aggregate_histo()
+
+# Calculate the permutation statistics
+# This will run the test using parallel computing. The name of the idcol does actually not matter.
+
+set.seed(12312)
+dat_perm = rbindlist(mclapply(1:n_perm, function(x){
+  dat_labels = shuffle_labels(d[[1]])
+  apply_labels(dat_labels, d[[2]]) %>%
+    aggregate_histo()
+},mc.cores = ncores
+), idcol = 'run') 
+
+# Calculate p-values
+dat_p <- calc_p_vals(dat_baseline, dat_perm, n_perm = 1000, p_tresh = 0.01) 
+
+# Heatmap
+pmat = dcast(dat_p, 'FirstLabel ~ SecondLabel', value.var = 'sigval', fun.aggregate = sum,
+             fill=0, drop=F)
+
+rname = pmat$FirstLabel
+
+pmat = pmat %>%
+  select(-c('FirstLabel')) %>%
+  as.matrix()
+
+row.names(pmat) <- rname
+
+cols = rev(brewer.pal(11,'Spectral'))
+cmap = colorRampPalette(cols)
+
+
+hr <- hclust(dist(pmat), method="ward.D")
+heatmap.2(pmat,
+          Colv = as.dendrogram(hr),
+          Rowv = as.dendrogram(hr),
+          trace = "none",
+          col=cmap(75),
+          density.info ='none'
+          #comments = data.frame(names = row.names(tab_Prot))
+)
+```
+

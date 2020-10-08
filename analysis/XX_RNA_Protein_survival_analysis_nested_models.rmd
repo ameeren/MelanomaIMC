@@ -1,0 +1,134 @@
+---
+title: "XX_RNA_Protein_survival_analysis_nested_models"
+author: "toobiwankenobi"
+date: "2020-09-10"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Introduction
+
+# Preparations
+
+## Load libraries
+```{r}
+library(lme4)
+library(ggplot2)
+library(coxme)
+library(dplyr)
+library(SingleCellExperiment)
+```
+
+## Load data
+```{r}
+# load the data that contains the time to event and censoring
+data <- read.csv("~/Downloads/survdat_for_modelling.csv")
+sce_rna <- readRDS(file = "data/sce_RNA.rds")
+```
+
+## Define Tcytotoxic fraction per Image
+
+```{r}
+# define CXCL13+CD8+ fraction
+frac <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber) %>%
+  mutate(n_image = n()) %>%
+  filter(celltype == "Tcytotoxic") %>%
+  group_by(ImageNumber, BlockID, celltype, n_image) %>%
+  summarise(n = n()) %>%
+  mutate(Fraction_Tcyt_image = n / n_image)
+
+names(data)[3] <- "BlockID"
+
+frac <- left_join(frac[,c("ImageNumber", "BlockID", "Fraction_Tcyt_image")], data)
+
+#
+frac$number_of_treatments_before_grouping <- ifelse(frac$Number.of.treatments.before.surgery == 0, "naive", "non-naive")
+```
+
+## Full model with all variables
+
+```{r}
+# only naive patients
+#frac <- frac[frac$number_of_treatments_before_grouping == "naive",]
+
+unique(frac$number_of_treatments_before_grouping)
+
+# random effect: multiple images per block/patient
+full.model <- coxme(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~
+                      Fraction_Tcyt_image +
+                      number_of_treatments_before_grouping +
+                      IHC.T.cell.scoring +
+                      Mutation +
+                      Cancer.Stage +
+                      #melanoma.subtype..site.of.primary.tumor. +
+                      #MM.location +
+                      #Age.range +
+                      #Gender +
+                      Treatment_type + 
+                      (1 | Internal.Pat..ID / BlockID), data = frac)
+
+reduced.model1 <- coxme(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~
+                      #Fraction_Tcyt_image +
+                      number_of_treatments_before_grouping +
+                      #IHC.T.cell.scoring +
+                      #Mutation +
+                      #Cancer.Stage +
+                      #melanoma.subtype..site.of.primary.tumor. +
+                      #MM.location +
+                      #Age.range +
+                      #Gender +
+                      #Treatment_type + 
+                      (1 | Internal.Pat..ID / BlockID), data = frac)
+
+summary(full.model)
+a <- anova(reduced.model1, full.model)
+a$`P(>|Chi|)`[2]
+anova(mod5, full.model)
+```
+
+```{r}
+find_cox_model <- function(survival_object, fixed_effects, random_effects, data) {
+  
+  # create formula for full model
+  fixed_effects_formula <- paste(fixed_effects,collapse = " + ")
+  random_effects_formula <- paste(random_effects,collapse = " + ")
+  explanatory_variables <- paste(fixed_effects_formula, random_effects_formula, sep = " + ")
+  formula <- as.formula(paste("survival_object", explanatory_variables, sep = " ~ "))
+  
+  # run full model
+  full.model <- coxme(formula = formula, data = data)
+  return(full.model)
+  
+  # iterate through fixed_effects to see which model contains the significant variables
+  for(i in 1:length(fixed_effects)) {
+      fixed_effects_partial <- fixed_effects[-i]
+      fixed_effects_formula <- paste(fixed_effects_partial,collapse = " + ")
+      explanatory_variables <- paste(fixed_effects_formula, random_effects_formula, sep = " + ")
+      formula <- as.formula(paste("survival_object", explanatory_variables, sep = " ~ "))
+      
+      # run full model
+      partial.model <- coxme(formula = formula, data = data)
+      
+      # compare models - if change is not significant -> remove variable from formula 
+      #anova(full.model)
+      #anova(partial.model, full.model)
+      #a <- anova(partial.model, full.model)
+      #if a$`P(>|Chi|)`[2] > 0.05 {
+        #fixed_effects <- fixed_effects[-i]
+      #}
+  }
+}
+
+surv_model <- Surv(time = frac$Time_to_.progression_or_last_PET, event = frac$censoring_progression)
+
+
+frac$mm
+a  <- find_cox_model(survival_object = surv_model, 
+               fixed_effects = c("Fraction_Tcyt_image", "Gender"),
+               random_effects = c("(1 | Internal.Pat..ID / BlockID)"),
+               data = frac)
+anova(a)
+```
+

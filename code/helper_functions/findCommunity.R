@@ -7,18 +7,20 @@
 #' @param cluster column name for cell cluster IDs
 #' @param distance (numeric) distance to enlarge (buffer) the cluster
 #' @param convex (optional) logical, should the cluster be enlarged based on its convex or concave hull? default = FALSE (concave)
+#' @param plot logical, plot images showing cluster and communtiy borders using ggplot. default = FALSE
 #' @param output_colname (optional) column name for the community ID column, defalut = "community"
 #' @return new colData entries called "community" and "closest_community". Relevant is basically only the closest_community since an object can be part of multiple communities.
 #' @export
 
-findCommunity <- function(input_sce, 
-                          cellID, 
-                          X_coord, Y_coord, 
-                          ImageNumber, 
-                          cluster, 
-                          distance, 
+findCommunity <- function(input_sce,
+                          cellID,
+                          X_coord, Y_coord,
+                          ImageNumber,
+                          cluster,
+                          distance,
                           convex = F,
-                          output_colname = "community"){
+                          output_colname = "community",
+                          plot = FALSE){
   # start time
   start = Sys.time()
 
@@ -51,6 +53,9 @@ findCommunity <- function(input_sce,
     # create data.frame for all community cells
     community_cells = data.table::copy(border_cells_clusters)
 
+    # create list for plots/polygon objects
+    polygon_plots = ggplot()
+
     # loop through all clusters and identify community of each cluster
     for(i in unique(input_df[input_df$ImageNumber == j & input_df$cluster != 0,]$cluster)){
       # remove cluster 0
@@ -64,40 +69,40 @@ findCommunity <- function(input_sce,
         polygon = sf::st_point(as.matrix(cur_df[,2:3]))
         border_cells_clusters <- rbind(border_cells_clusters, cur_df)
       }
-      
+
       ## case where cluster includes two cells - no hull can be computed
       if (nrow(cur_df) == 2){
         polygon = sf::st_multipoint(as.matrix(cur_df[,2:3]))
         border_cells_clusters <- rbind(border_cells_clusters, cur_df)
       }
-      
+
       ## more than 2 cells - hull can be computed
       if (nrow(cur_df) > 2){
         ## compute hull of cluster (default is concave)
         if(convex == TRUE){
           # find convex hull
           hull = grDevices::chull(x = cur_df$X, y = cur_df$Y)
-          
+
           # cells that build the border of a cluster
           border_cells = cur_df[hull,]
-          
+
           # add cells to the list for the whole image
           border_cells_clusters = rbind(border_cells_clusters, border_cells)
           coordinates = as.matrix(border_cells[,2:3])
-          
+
           # close the polygon (first row = last row)
           coordinates = rbind(coordinates, coordinates[1,])
-          
+
           # create polygon object
           polygon = sf::st_polygon(list(coordinates))
         }
-        
+
         if(convex == FALSE){
           # compute concave hull
           coords <- as.matrix(cbind(cur_df$X, cur_df$Y))
           hull = data.table::as.data.table(concaveman::concaveman(coords, concavity = 1))
           colnames(hull) <- c("X", "Y")
-          
+
           # return common rows between input and the hull
           # first, we need to round the digits of cur_df since concaveman does not return full-length coordinates
           # (see github issue https://github.com/joelgombin/concaveman/issues/13)
@@ -105,16 +110,16 @@ findCommunity <- function(input_sce,
           cur_df_2 <- data.table::copy(cur_df)
           cur_df_2$X <- round(cur_df_2$X, digits = 4)
           cur_df_2$Y <- round(cur_df_2$Y, digits = 4)
-          
+
           # find common rows
           border_cells <- dplyr::inner_join(hull, cur_df_2, by = c("X", "Y"))
-          
+
           # return original rows from data set with full-length cooridantes
           border_cells <- cur_df[cur_df$cellID %in% border_cells$cellID,]
-          
+
           # add cells to the list for the whole image
           border_cells_clusters = rbind(border_cells_clusters, border_cells)
-          
+
           # create polygon object
           polygon = sf::st_polygon(list(as.matrix(hull)))
         }
@@ -123,6 +128,12 @@ findCommunity <- function(input_sce,
       # buffer/enlarge polygon by "distance" pixels
       polygon_buff = sf::st_buffer(polygon, distance)
       polygon_buff_sfc = sf::st_sfc(polygon_buff)
+
+      if(plot == TRUE){
+      polygon_plots <- polygon_plots +
+        geom_sf(data = polygon, fill = NA, size = 4, col = "deepskyblue2") +
+        geom_sf(data = polygon_buff_sfc, fill = NA, size=4, col = "blue")
+      }
 
       # return coordinates of the enlarged polygon
       enlarged_coordinates = as.data.frame(polygon_buff[1])
@@ -161,6 +172,16 @@ findCommunity <- function(input_sce,
       # first column of nn.idx is the row-index of the border_cell with the lowest distance
       input_df[input_df$cellID %in% multi_community$cellID,]$unique_community <- border_cells_clusters[nn$nn.idx[,1],]$cluster
     }
+
+    if(plot == TRUE){
+      # all cluster cells
+      clust_cells <- input_df[input_df$ImageNumber == j & input_df$cluster != 0,]
+      p <- polygon_plots +
+             geom_sf(data = cells_sfc, color=alpha("black",0.3)) +
+             geom_point(data = clust_cells, aes(x=X, y=Y), color="red") +
+             ggtitle(paste(ImageNumber, j, sep = ": "))
+      plot(p + theme_void() + theme(plot.title = element_text(hjust = 0.5)))
+    }
   }
 
   # assign for each cell a unique community
@@ -178,7 +199,7 @@ findCommunity <- function(input_sce,
       colData(input_sce)$closest_community <- NULL
     }
     colData(input_sce)$closest_community <- input_df$unique_community
-    # overwrite column name of community ID column 
+    # overwrite column name of community ID column
     names(colData(input_sce))[length(names(colData(input_sce)))] <- output_colname
     print("communities successfully added to sce object")
     return(input_sce)

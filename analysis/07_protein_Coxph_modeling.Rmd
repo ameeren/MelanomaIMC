@@ -47,27 +47,29 @@ survdat %>%
 ## coxph modeling for E_I_D status
 
 ```{r Hazard ratio for E_I_D score}
-
 Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression)
 
 # add factor for T cell scoring
 survdat$IHC.T.cell.scoring <- factor(survdat$IHC.T.cell.scoring,levels = c("E","I","D","E/D","I/E"))
   
-res <- coxph(Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression) ~ IHC.T.cell.scoring,data = survdat)
+res <- coxph(Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression) ~
+               IHC.T.cell.scoring, data = survdat)
 
-
-td_res = tidy(res, exponentiate = TRUE)
+td_res = broom::tidy(res, exponentiate = TRUE, conf.int = TRUE)
 
 # Make sure plot is ordered according to increasing HRs
-td_res = td_res %>% arrange(estimate) %>% mutate(term = factor(term,levels = term))
+td_res = td_res %>% 
+  arrange(estimate) %>%
+  mutate(term = factor(term,levels = term))
+
 # Visualize hazard ratios
 ggplot(td_res, aes(x = term, y = estimate,color =p.value < 0.05)) +
-geom_point(size = 4) +
-geom_errorbar(aes(ymax = conf.high, ymin = conf.low))+
-scale_color_manual(values = c('lightblue','red'))+
-coord_flip()+
-geom_hline(yintercept = 1,color = 'blue')+
-scale_y_continuous(trans='log')
+  geom_point(size = 4) +
+  geom_errorbar(aes(ymax = conf.high, ymin = conf.low))+
+  scale_color_manual(values = c('lightblue','red'))+
+  coord_flip()+
+  geom_hline(yintercept = 1,color = 'blue')+
+  scale_y_continuous(trans='log')
 ```
 
 
@@ -91,11 +93,11 @@ survdat$Tcell_density_per_BlockID <- factor(survdat$Tcell_density_per_BlockID,le
   
 res <- coxph(Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression) ~ Tcell_density_per_BlockID,data = survdat)
 
-
-td_res = tidy(res, exponentiate = TRUE)
+td_res = tidy(res, exponentiate = TRUE, conf.int = TRUE)
 
 # Make sure plot is ordered according to increasing HRs
 td_res = td_res %>% arrange(estimate) %>% mutate(term = factor(term,levels = term))
+
 # Visualize hazard ratios
 ggplot(td_res, aes(x = term, y = estimate,color =p.value < 0.05)) +
 geom_point(size = 4) +
@@ -103,7 +105,6 @@ geom_errorbar(aes(ymax = conf.high, ymin = conf.low))+
 scale_color_manual(values = c('lightblue','red'))+
 coord_flip()+
 geom_hline(yintercept = 1,color = 'blue')
-
 ```
 
 ```{r Hazard ratio for T cell fraction score}
@@ -124,10 +125,11 @@ survdat$Tcell_fraction_per_BlockID <- factor(survdat$Tcell_fraction_per_BlockID,
 res <- coxph(Surv(survdat$Time_to_.progression_or_last_PET,survdat$censoring_progression) ~ Tcell_fraction_per_BlockID,data = survdat)
 
 
-td_res = tidy(res, exponentiate = TRUE)
+td_res = tidy(res, exponentiate = TRUE, conf.int = TRUE)
 
 # Make sure plot is ordered according to increasing HRs
 td_res = td_res %>% arrange(estimate) %>% mutate(term = factor(term,levels = term))
+
 # Visualize hazard ratios
 ggplot(td_res, aes(x = term, y = estimate,color =p.value < 0.05)) +
 geom_point(size = 4) +
@@ -135,7 +137,6 @@ geom_errorbar(aes(ymax = conf.high, ymin = conf.low))+
 scale_color_manual(values = c('lightblue','red'))+
 coord_flip()+
 geom_hline(yintercept = 1,color = 'blue')
-
 ```
 
 ## Kaplan Meier plot for Death split by Tcell density score
@@ -357,7 +358,7 @@ legend("topright",1,names(cols),fill=cols)
 survdat$MM.location <- factor(survdat$MM.location,levels = unique(survdat$MM.location))
 
 # generate survival object
-Surv_RFS <- Surv(survdat[which(survdat$Cancer.Stage %in% c("III","IV")),]$Time_to_death_or_last_PET,survdat[which(survdat$Cancer.Stage %in% c("III","IV")),]$censoring_death)
+Surv_RFS <- Surv(survdat[which(survdat$Cancer.Stage %in% c("III","IV")),]$Time_to_death_or_last_PET, survdat[which(survdat$Cancer.Stage %in% c("III","IV")),]$censoring_death)
 
 KM_all <- survfit(Surv_RFS ~ 1)
 
@@ -376,4 +377,86 @@ plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "Sur
 legend("topright",1,names(cols),fill=cols)
 ```
 
+## Kaplan Meier plot for Pre-Treatments
+
+```{r Kaplan_Meier_for pre-treatment, fig.height=8, fig.width=12}
+# add binary grouping for number of pre-treatments
+survdat$treatment_naive <- ifelse(survdat$Number.of.treatments.before.surgery == 0, TRUE, FALSE)
+
+# generate survival object
+Surv_RFS <- Surv(time = survdat$Time_to_death_or_last_PET,
+                 event = survdat$censoring_death)
+
+KM_all <- survfit(Surv_RFS ~ 1)
+
+KM_groups <- survfit(Surv_RFS ~ survdat$treatment_naive)
+
+cols <- c("red","blue")
+names(cols) <- c("non-naive","treatment naive")
+
+#survdat[survdat$Number.of.treatments.before.surgery == 0,]$censoring_death
+
+plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=3)
+par(new=TRUE)
+plot(KM_all,mark.time = T,col = "black",conf.int = T, xlab = "days", ylab = "Survival (%)")
+legend("topright",1,names(cols),fill=cols)
+```
+
+## Kaplan Meier plot for treatment-naive patients using cytotoxic Tcell fraction
+
+```{r Kaplan_Meier_naive_Tcell_fraction, fig.height=8, fig.width=12}
+# subset survdat for treatment-naive patients
+survdat_sub <- survdat[survdat$treatment_naive == FALSE,]
+
+# generate survival object
+Surv_RFS <- Surv(time = survdat_sub$Time_to_.progression_or_last_PET,
+                 event = survdat_sub$censoring_progression)
+
+KM_all <- survfit(Surv_RFS ~ 1)
+
+KM_groups <- survfit(Surv_RFS ~ survdat_sub$Tcell_fraction_per_BlockID)
+
+
+cols = brewer.pal(3,"Dark2")
+names(cols) <- levels(survdat_sub$Tcell_fraction_per_BlockID)
+
+plot(KM_groups,mark.time = T,col = cols,conf.int = F, lwd=5, 
+     cex.axis=1.5, cex.lab = 1.5)
+par(new=TRUE)
+plot(KM_all,mark.time = T,col = "black",conf.int = T, 
+     xlab = "days", ylab = "RFS (%)", lwd=2,
+     cex.axis=1.5, cex.lab = 1.5)
+legend("topright",1,names(cols),fill=cols,cex = 2)
+```
+
+## Coxph modeling for treatment-naive patients 
+
+```{r}
+# relevel survdat Tcell_fraction_per_BlockID
+survdat_sub$Tcell_fraction_per_BlockID <- factor(survdat_sub$Tcell_fraction_per_BlockID, 
+                                                 levels = c("low", "med", "high"))
+
+# coxph model
+res <- coxph(Surv(survdat_sub$Time_to_.progression_or_last_PET,survdat_sub$censoring_progression) ~
+               Tcell_fraction_per_BlockID, data = survdat_sub)
+
+# exp(confintevals)
+td_res = tidy(res, exponentiate = TRUE, conf.int = TRUE)
+
+# Make sure plot is ordered according to increasing HRs
+td_res = td_res %>% 
+  arrange(estimate) %>% 
+  mutate(term = factor(term,levels = term))
+
+# Visualize hazard ratios
+ggplot(td_res, aes(x = term, y = estimate, color = p.value < 0.05)) +
+  geom_point(size = 4) +
+  geom_errorbar(aes(ymax = conf.high, ymin = conf.low))+
+  scale_color_manual(values = c('lightblue','red'))+
+  geom_hline(yintercept = 1, color = 'blue')  +
+  scale_x_discrete(labels = c("Tcell_fraction_per_BlockIDhigh" = "high fraction",
+                              "Tcell_fraction_per_BlockIDmed" = "medium fraction")) +
+  xlab("cytotoxic Tcell fraction per BlockID") +
+  ylab("Cox Regression Hazard Ratio")
+```
 

@@ -31,7 +31,7 @@ library(doParallel)
 sce <- readRDS("data/sce_RNA.rds")
 
 # load all subsetted sce object from hierarchichal gating and combine them
-path = "data/rna/new_classifier/"
+path = "data/rna/celltype_classifier/"
 file.names <- dir(path, pattern =".rds")
 
 # loop through all files and combine sce objects
@@ -63,15 +63,6 @@ label_vector <- rep("unlabelled", ncol(sce))
 names(label_vector) <- colnames(sce)
 label_vector[colnames(unique_labels)] <- unique_labels$cytomapper_CellLabel
 
-# rename labeles
-label_vector[label_vector == "CD68+"] <- "Macrophage"
-label_vector[label_vector == "CD15+MPO+"] <- "Neutrophil"
-label_vector[label_vector == "HLA-DR+CD68-"] <- "HLA-DR"
-label_vector[label_vector == "CD3+CD8-CD134+"] <- "CD134+ Tcell"
-label_vector[label_vector == "CD3+CD8-CD134-"] <- "CD134- Tcell"
-label_vector[label_vector == "CD3+CD8+LAG3+"] <- "exhausted Tcytotoxic"
-label_vector[label_vector == "CD3+CD8+LAG3-"] <- "Tcytotoxic"
-
 # unique cell labels
 unique(label_vector)
 
@@ -98,6 +89,7 @@ layer1_colours["Stroma"] <- "tomato"
 layer1_colours["Tcytotoxic"] <- "deepskyblue"
 layer1_colours["exhausted Tcytotoxic"] <- "deeppink"
 layer1_colours["Tumor"] <- "sienna4"
+layer1_colours["unknown"] <- "darkgray"
 layer1_colours["unlabelled"] <- "gray"
 
 # Save in SCE object
@@ -129,7 +121,6 @@ as_tibble(colData(sce)) %>%
   summarise(labelled_cells = sum(layer_1_gated != "unlabelled")) %>%
   ungroup() %>%
   summarise(labelled_images = sum(labelled_cells != 0)/n()) * 100
-
 
 # Percent of cells labelled per image
 as_tibble(colData(sce)) %>% 
@@ -179,7 +170,9 @@ dittoHeatmap(agr_sce[cur_markers,], assay = "asinh",
             order.by = "layer_1_gated", cluster_rows = FALSE,
             scale = "none", heatmap.colors = viridis(100), 
             annotation_colors = list(layer_1_gated = metadata(sce)$colour_vectors$layer_1))
+```
 
+````{r}
 # Centered and scaled
 dittoHeatmap(agr_sce[cur_markers,], assay = "scaled_asinh",
             annot.by = c("ImageNumber", "layer_1_gated"), 
@@ -187,7 +180,9 @@ dittoHeatmap(agr_sce[cur_markers,], assay = "scaled_asinh",
             annotation_colors = list(layer_1_gated = metadata(sce)$colour_vectors$layer_1),
             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             breaks = seq(-3, 3, length.out = 101))
+```
 
+```{r}
 unlab_sce <- sce[,sce$layer_1_gated == "unlabelled"]
 
 ggplot() +
@@ -433,6 +428,7 @@ layer1_colours["Stroma"] <- "tomato"
 layer1_colours["Tcytotoxic"] <- "deepskyblue"
 layer1_colours["exhausted Tcytotoxic"] <- "deeppink"
 layer1_colours["Tumor"] <- "sienna4"
+layer1_colours["unknown"] <- "darkgray"
 
 # Save in SCE object
 metadata(sce)$colour_vectors$classified_celltypes <- layer1_colours
