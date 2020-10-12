@@ -23,8 +23,10 @@ navbar:
       href: 05_RNA_chemokine_expressing_cells.html
     - text: Mixed Chemokine Communities
       href: 06_RNA_chemokine_community_definition.html
+    - text: Clustering of Mixed Chemokine Communities
+      href: 07_RNA_chemokine_community_clustering.html
     - text: Pure Chemokine Communities
-      href: 07_RNA_neighbourhood_analysis_chemokines.html
+      href: 08_RNA_neighbourhood_analysis_chemokines.html
   - text: Preparations Protein TMA
     menu:
     - text: Read Data
@@ -37,6 +39,10 @@ navbar:
       href: 04_1_Protein_celltype_classification.html
     - text: Subclustering
       href: 04_2_Protein_classification_subclustering.html
+    - text: Cytotoxic T cell Quantification
+      href: 05_Protein_Tcell_quantification.html
+    - text: Ki67 Scoring
+      href: 06_Protein_Ki67status.html
   - text: Main Figures
     menu:
     - text: Overview
@@ -47,8 +53,6 @@ navbar:
       href: Figure_3.html
     - text: T cell scoring
       href: Figure_4.html
-    - text: Clinical comparison
-      href: Figure_5.html
   - text: Supplemental Figures
     menu:
     - text: Supp-Figure 1

@@ -290,7 +290,7 @@ d = prepare_tables(dat_cells_sub, dat_relation_sub)
 
 # Calculate the baseline statistics
 dat_baseline = apply_labels(d[[1]], d[[2]]) %>%
-  aggregate_classic()
+  aggregate_histo()
 
 # Calculate the permutation statistics
 # This will run the test using parallel computing. The name of the idcol does actually not matter.
@@ -299,7 +299,7 @@ set.seed(12312)
 dat_perm = rbindlist(mclapply(1:n_perm, function(x){
   dat_labels = shuffle_labels(d[[1]])
   apply_labels(dat_labels, d[[2]]) %>%
-    aggregate_classic()
+    aggregate_histo()
 },mc.cores = ncores
 ), idcol = 'run') 
 
@@ -395,11 +395,3 @@ example <- findCommunity(sce_protein[,sce_protein$Description %in% "F9"],
                      output_colname = "p75_Tumor_community1",
                      plot = TRUE)
 ```
-
-```{r}
-data.frame(colData(sce_protein)) %>%
-  select(Description, T_frac_score_per_ImageNumber, infiltration) %>%
-  distinct(Description, .keep_all = T) %>%
-  write.csv("~/Desktop/scoring_melanoma_cohort.csv")
-```
-
