@@ -27,6 +27,9 @@ library(cowplot)
 library(dplyr)
 library(sf)
 library(gridExtra)
+library(ggpmisc)
+library(survival)
+library(survminer)
 ```
 
 ## Load data
@@ -41,25 +44,152 @@ sce_rna = readRDS(file = "data/sce_rna.rds")
 
 ```{r}
 cur_df <- data.frame(colData(sce_rna)) %>%
-  filter(celltype == "Tcytotoxic") %>%
-  group_by(Description,T_frac_score_per_ImageNumber, CXCL13, celltype) %>%
+  filter(celltype == "Tcytotoxic" & Location != "CTRL") %>%
+  group_by(Description,T_frac_score_per_ImageNumber, CXCL13, celltype, BlockID) %>%
   summarise(n=n()) %>%
-  reshape2::dcast(Description + T_frac_score_per_ImageNumber ~ CXCL13, value.var = "n", fill = 0) %>%
-  mutate(cxcl13_cyto_fraction = `1` / `0`)
+  reshape2::dcast(Description + T_frac_score_per_ImageNumber + celltype + BlockID ~ CXCL13, value.var = "n", fill = 0) %>%
+  mutate(cxcl13_cyto_fraction = `1` / (`0` + `1`))
 
 # cxcl13 score
 cur_df$cxcl13_score <- ""
-cur_df$cxcl13_score <- ifelse(cur_df$T_frac_score_per_ImageNumber %in% c("med", "high") & cur_df$cxcl13_cyto_fraction > 0.05, "cxcl13+", "cxcl13-")
+cur_df$cxcl13_score <- ifelse(cur_df$T_frac_score_per_ImageNumber %in% c("med", "high") & cur_df$cxcl13_cyto_fraction > 0.05 & cur_df$`1` > 20, "CXCL13+", "CXCL13-")
 
-tumor_dat <- data.frame(t(assay(sce_rna["S100", sce_rna$celltype == "Tumor"], "asinh")))
+tumor_dat <- data.frame(t(assay(sce_rna["B2M", sce_rna$celltype == "Tumor" & sce_rna$Location != "CTRL"], "asinh")))
 tumor_dat$cellID <- rownames(tumor_dat)
 tumor_dat <- left_join(tumor_dat, data.frame(colData(sce_rna))[,c("cellID", "Description")])
 
 # left_join with scoring data
 tumor_dat <- left_join(tumor_dat, cur_df[,c("Description", "T_frac_score_per_ImageNumber", "cxcl13_score")])
 
+# images with no Tcytoxotic cells
+tumor_dat[is.na(tumor_dat$T_frac_score_per_ImageNumber), ]$T_frac_score_per_ImageNumber <- "low"
+tumor_dat[is.na(tumor_dat$cxcl13_score), ]$cxcl13_score <- "CXCL13-"
+
+tumor_dat$T_frac_score_per_ImageNumber <- factor(tumor_dat$T_frac_score_per_ImageNumber, levels = c("low", "med", "high"))
+
 # boxplot
-ggplot(tumor_dat, aes(x=T_frac_score_per_ImageNumber, y=S100, col=cxcl13_score)) + 
-  geom_boxplot()
+ggplot(tumor_dat, aes(x=T_frac_score_per_ImageNumber, y=B2M, fill=cxcl13_score)) + 
+  geom_boxplot() +
+  theme(text = element_text(size=20)) +
+  guides(fill=guide_legend(title="CXCL13 Scoring")) +
+  xlab("Cytotoxic T cell Score per Image") + 
+  ylab("Mean B2M in Tumor Cells (asinh)")
 ```
+
+Clearly, B2M expression on tumor cells is associated with cytotoxic T cell infiltration and potentialy also with the abundance of dysfunctinal cytotoxic T cells. 
+
+## Check Survival of Patients with CXCL13+ Score
+
+```{r}
+# create CXCL13+ per BlockID
+block_score <- cur_df %>%
+  group_by(BlockID, cxcl13_score) %>% 
+  summarise(n = n()) %>%
+  ungroup() %>%
+  complete(BlockID, cxcl13_score, fill = list(n = 0)) %>% 
+  reshape2::dcast(BlockID ~ cxcl13_score, value.var = "n") %>%
+  mutate(block_score = ifelse(`CXCL13+` > `CXCL13-`, "CXCL13+", "CXCL13-")) %>%
+  mutate(Block.ID = BlockID)
+
+data <- read.csv("data/survdat_for_modelling.csv")
+
+data_sub <- data#[data$number_of_treatments_before_grouping == "naive",]
+
+# add block score
+data_sub <- left_join(data_sub, block_score[,c("Block.ID", "block_score")])
+
+data_sub$block_score <- factor(data_sub$block_score, levels = c("CXCL13-", "CXCL13+"))
+
+fit <- survfit(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~ 
+                 block_score, data = data_sub)
+
+ggsurvplot(fit, data = data_sub,
+ conf.int = FALSE,
+ pval = TRUE,
+ fun = "pct",
+ risk.table = TRUE,
+ size = 1,
+ linetype = "strata",
+ legend = "bottom",
+ legend.title = "CXCL13 Scoring",
+ legend.labs = c("CXCL13-","CXCL13+"))
+
+fit <- coxph(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~ 
+               block_score,
+             data = data_sub)
+ggforest(fit, data=data_sub)
+```
+
+
+## Correlation with mean B2M expression and T cell density
+
+```{r}
+tumor_dat <- data.frame(t(assay(sce_rna["B2M", sce_rna$celltype == "Tumor" & sce_rna$Location != "CTRL"], "asinh")))
+tumor_dat$Description <- sce_rna[, sce_rna$celltype == "Tumor" & sce_rna$Location != "CTRL"]$Description
+
+tumor_dat <- tumor_dat %>%
+  group_by(Description) %>%
+  summarise(mean_B2M = mean(B2M))
+
+cur_df <- data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(Description, celltype, BlockID) %>%
+  summarise(n=n()) %>%
+  ungroup() %>%
+  complete(Description, celltype, fill = list(n = 0)) %>%
+  filter(celltype == "Tcytotoxic")
+
+tumor_dat <- left_join(tumor_dat, cur_df)
+
+# boxplot
+ggplot(tumor_dat, aes(y=mean_B2M, x=log10(n+1))) + 
+  geom_point() +
+  geom_smooth(method = "lm") +
+  stat_poly_eq(formula = y ~ x, 
+                aes(label =  ..rr.label..), 
+                parse = TRUE) +
+  ylab("Mean B2M Expression on Tumor Cells per Image (asinh)") +
+  xlab("Number of Cytotoxic T cells per Image (log10+1)") +
+  theme(text = element_text(size=20))
+```
+
+## Check Survival of Patients with B2M high tumors
+
+```{r}
+# create CXCL13+ per BlockID
+block_score <- tumor_dat %>%
+  group_by(BlockID) %>% 
+  summarise(mean_B2M_block = mean(mean_B2M)) %>%
+  mutate(block_score = ifelse(mean_B2M_block > 2, "B2M_high", "B2M_low")) %>%
+  mutate(Block.ID = BlockID)
+
+data <- read.csv("data/survdat_for_modelling.csv")
+
+data_sub <- data#[data$number_of_treatments_before_grouping == "naive",]
+
+# add block score
+data_sub <- left_join(data_sub, block_score[,c("Block.ID", "block_score")])
+
+data_sub$block_score <- factor(data_sub$block_score, levels = c("B2M_low", "B2M_high"))
+
+fit <- survfit(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~ 
+                 block_score, data = data_sub)
+
+ggsurvplot(fit, data = data_sub,
+ conf.int = FALSE,
+ pval = TRUE,
+ fun = "pct",
+ risk.table = TRUE,
+ size = 1,
+ linetype = "strata",
+ legend = "bottom",
+ legend.title = "B2M Scoring",
+ legend.labs = c("B2M_low","B2M_high"))
+
+fit <- coxph(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~ 
+               block_score,
+             data = data_sub)
+ggforest(fit, data=data_sub)
+```
+
 

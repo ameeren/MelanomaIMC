@@ -224,15 +224,16 @@ cur_df <- data.frame(inside_tumor = sce$in_tumor,
                      E_I_D = sce$E_I_D,
                      ImageNumber = sce$ImageNumber,
                      celltype = sce$celltype,
+                     Location = sce$Location,
                      Tcell_density_score_image = sce$Tcell_density_score_image)
 
-cur_df <- reshape2::dcast(cur_df,formula = "ImageNumber + E_I_D + inside_tumor + Tcell_density_score_image ~ celltype")
+cur_df <- reshape2::dcast(cur_df,formula = "ImageNumber + E_I_D + inside_tumor + Tcell_density_score_image + Location ~ celltype")
 
-cur_df <- cur_df[,c("ImageNumber","E_I_D","inside_tumor", "Tcell_density_score_image","Tcytotoxic")]
+cur_df <- cur_df[,c("ImageNumber","E_I_D","inside_tumor", "Tcell_density_score_image","Tcytotoxic", "Location")]
 
-cur_df <- reshape2::dcast(cur_df,formula = "ImageNumber + E_I_D + Tcell_density_score_image~ inside_tumor")
+cur_df <- reshape2::dcast(cur_df,formula = "ImageNumber + E_I_D + Tcell_density_score_image + Location ~ inside_tumor", value.var = "Tcytotoxic")
 
-colnames(cur_df) <- c("ImageNumber" , "E_I_D" ,"Tcell_density_score_image", "outside_tumor", "inside_tumor")
+colnames(cur_df) <- c("ImageNumber" , "E_I_D" ,"Tcell_density_score_image", "Location", "outside_tumor", "inside_tumor")
 
 # convert NAs to 0
 cur_df[is.na(cur_df$outside_tumor),]$outside_tumor <- 0
@@ -249,6 +250,9 @@ cur_df[cur_df$Tcell_density_score_image == "absent",]$infiltration <- "Deserted"
 cur_df[(cur_df$Tcell_density_score_image %in% c("low","med","high") & cur_df$infiltration_ratio < 0.5),]$infiltration <- "Excluded"
 
 cur_df[cur_df$Tcell_density_score_image %in% c("low","med","high") & cur_df$infiltration_ratio > 0.5 | cur_df$inside_tumor > 200,]$infiltration <- "Inflamed"
+
+# control samples
+cur_df[cur_df$Location == "CTRL",]$infiltration <- "Control"
 
 # incorporate the information into the single cell experiment
 sce$infiltration <- cur_df$infiltration[sce$ImageNumber]

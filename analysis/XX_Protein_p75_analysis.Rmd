@@ -29,6 +29,9 @@ library(sf)
 library(gridExtra)
 library(scater)
 library(dittoSeq)
+library(RColorBrewer)
+library(neighbouRhood)
+library(ComplexHeatmap)
 ```
 
 ## Load data
@@ -42,7 +45,7 @@ sce_protein = readRDS(file = "data/sce_protein.rds")
 ## p75 Defintion
 
 ```{r}
-# 
+# create manual cut-off for p75+ cells
 p75_vec <- assay(sce_protein["p75",],"asinh")>1.5
 
 class_vec <- vector(length = length(unique(sce_protein$cellID)))
@@ -85,14 +88,43 @@ sce_protein <- findCommunity(sce_protein,
 length(unique(sce_protein$p75_Tumor_community))
 ```
 
-## Run Cluster/Community Detection on p75- Tumor Cells
+## p75+ tumors and control tumors
+
+```{r}
+data.frame(colData(sce_protein)) %>%
+  filter(p75_Tumor_community > 0) %>%
+  group_by(Description, MM_location, Location, PatientID) %>%
+  summarise(n=n()) %>%
+  distinct(Description, .keep_all = T)
+
+# these images show a high amount of p75 communities
+p75_tumor_images <- c("B9", "E9", "F9", "M9", "N5", "N9", "P5")
+
+# 3 LN, 2 skin_subcutaneous, 2 visceral
+
+# select random samples from control groups
+control_tumor_images <- data.frame(colData(sce_protein)) %>%
+  filter(!(Description %in% p75_tumor_images)) %>%
+  filter(p75 != "p75pos_Tumor") %>%
+  filter(MM_location %in% c("LN", "visceral", "skin_subcutaneous")) %>%
+  distinct(Description, .keep_all = T) %>%
+  group_by(Description) %>%
+  select(Description, MM_location)
+
+ctrl_LN <- sample(control_tumor_images[control_tumor_images$MM_location == "LN",]$Description, 6)
+ctrl_skin <- sample(control_tumor_images[control_tumor_images$MM_location == "skin_subcutaneous",]$Description, 4)
+ctrl_visceral <- sample(control_tumor_images[control_tumor_images$MM_location == "visceral",]$Description, 4)
+
+control_tumor_images <- c(ctrl_LN, ctrl_skin, ctrl_visceral)
+```
+
+## Run Cluster/Community Detection on Control Tumor Cells
 
 ```{r}
 # define some control images without p75+ tumor cells
 control_samples <- data.frame(colData(sce_protein)) %>%
-  filter(p75 == "p75neg" & Location != "CTRL" & MM_location != "LN") %>%
-  distinct(Description, MM_location) %>%
-  sample_n(10)
+  filter(Description %in% control_tumor_images) %>%
+  distinct(Description, MM_location)
 
 # find tumor clusters 
 sce_protein <- findClusters(sce_protein, 
@@ -163,20 +195,12 @@ b <- dittoDimPlot(sce_control,
 
 leg <- cowplot::get_legend(a) 
 
+pdf("~/Desktop/community_UMAP.pdf", width = 10, height = 8)
 grid.arrange(a + theme(legend.position = "none"), 
              b + theme(legend.position = "none"), 
              leg,
              ncol = 2)
-```
-
-## Celltypes Proportions
-
-```{r}
-data.frame(colData(sce_protein)) %>%
-  filter(p75_Tumor_community > 0) %>%
-  group_by(Description) %>%
-  summarise(n=n()) %>%
-  distinct(Description, .keep_all = T)
+dev.off()
 ```
 
 
@@ -193,6 +217,7 @@ ctrl$type = "p75- communities"
 
 p75 <- data.frame(colData(sce_protein)) %>%
   filter(p75_Tumor_community > 0) %>%
+  filter(Description %in% p75_tumor_images) %>%
   filter(celltype != "Tumor") %>%
   group_by(celltype, Description) %>%
   summarise(n=n()) %>%
@@ -203,6 +228,7 @@ p75$type <- "p75+ communities"
 
 compare <- rbind(ctrl, p75)
 
+pdf("~/Desktop/community_proportions.pdf", width = 10, height = 8)
 ggplot(compare, aes(x=Description, y=fraction, fill=celltype)) + 
   geom_bar(stat = "identity") + 
         scale_fill_manual(values = unname(metadata(sce_protein)$colour_vector$celltype),
@@ -215,7 +241,9 @@ ggplot(compare, aes(x=Description, y=fraction, fill=celltype)) +
         panel.grid.minor = element_blank(),
         panel.grid.major.x = element_blank(),
         panel.grid.major.y = element_line(color = "grey", size = .3)) +
-  facet_wrap(~type, scales = "free")
+  ylab("Celltype Proportions") + 
+  facet_wrap(~type, scales = "free") 
+dev.off()
 ```
 
 # NeighbouRhood analysis
@@ -240,25 +268,29 @@ ncores=7
 dat_cells$cellID <- paste("protein_", paste(dat_cells$ImageNumber, dat_cells$ObjectNumber, sep = "_"), sep = "")
 
 # add p75 status to celltype annotaiton
-sce_info <- as.data.frame(colData(sce_protein))[,c("cellID", "celltype", "p75")]
+sce_info <- as.data.frame(colData(sce_protein))[,c("cellID", "celltype", "p75", "Description")]
 sce_info <- sce_info %>%
   mutate(celltype = ifelse(p75 == "p75pos_Tumor", paste(celltype, "p75+", sep = "_"), celltype)) %>%
-  select(c("cellID", "celltype"))
+  select(c("cellID", "celltype", "Description"))
 
 # add celltype information
 dat_cells <- left_join(dat_cells, sce_info, by = "cellID")
 
-#assing labels and groups
-dat_cells <- as.data.table(dat_cells)
-dat_cells[, label := celltype]
-dat_cells[, group := ImageNumber]
+# keep p75+ and control images
+dat_cells_sub <- dat_cells[dat_cells$Description %in% c(control_tumor_images, p75_tumor_images), ]
+dat_relation_sub <- dat_relation[dat_relation$`First Image Number` %in% dat_cells_sub$ImageNumber,]
+
+#assign labels and groups
+dat_cells_sub <- as.data.table(dat_cells_sub)
+dat_cells_sub[, label := celltype]
+dat_cells_sub[, group := ImageNumber]
 
 # Prepare the data
-d = prepare_tables(dat_cells, dat_relation)
+d = prepare_tables(dat_cells_sub, dat_relation_sub)
 
 # Calculate the baseline statistics
 dat_baseline = apply_labels(d[[1]], d[[2]]) %>%
-  aggregate_histo()
+  aggregate_classic()
 
 # Calculate the permutation statistics
 # This will run the test using parallel computing. The name of the idcol does actually not matter.
@@ -267,37 +299,107 @@ set.seed(12312)
 dat_perm = rbindlist(mclapply(1:n_perm, function(x){
   dat_labels = shuffle_labels(d[[1]])
   apply_labels(dat_labels, d[[2]]) %>%
-    aggregate_histo()
+    aggregate_classic()
 },mc.cores = ncores
 ), idcol = 'run') 
 
-# Calculate p-values
+dat_p <- calc_p_vals(dat_baseline, dat_perm, n_perm = 1000, p_tresh = 0.01) 
+```
+
+## Heatmap per Sample (FirstLabel == Tumor)
+
+```{r}
+dat_p$first_second <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "__")
+
+# only keep Tumor cells as FirstLabel
+dat_p <- dat_p[dat_p$FirstLabel %in% c("Tumor", "Tumor_p75+")]
+
+pmat = dcast(dat_p, 'group ~ first_second', value.var = 'sigval', fill=0, drop=F)
+names(pmat)[1] <- "ImageNumber"
+
+# add Description
+pmat <- left_join(data.frame(pmat),distinct(dat_cells_sub[,c("ImageNumber", "Description")], ImageNumber, .keep_all = TRUE))
+
+pmat$class <- ""
+pmat[pmat$Description %in% p75_tumor_images,]$class <- "p75+ Tumor"
+pmat[pmat$Description %in% control_tumor_images,]$class <- "Control Tumor"
+
+pmat$ImageNumber <- as.character(pmat$ImageNumber)
+
+pmat_num <- pmat %>%
+  select_if(is.numeric) %>%
+  colnames(.)
+
+m <- t(pmat[,pmat_num])
+ha1 <- HeatmapAnnotation("Sample ID" = anno_text(pmat$Description, which = "column", gp = gpar(cex=0.7)))
+
+pdf("~/Desktop/neighboRhood_p75_firstlabel.pdf", width = 8, height = 8)
+Heatmap(m = m, name = "+1 Attraction, \n-1 Avoidance",
+        row_names_gp = gpar(cex=1),
+        top_annotation = ha1,
+        cluster_columns = TRUE,
+        column_split = pmat$class,
+        row_split = sapply(strsplit(rownames(m), "__"), "[", 1))
+dev.off()
+```
+
+## Heatmap per Sample (SecondLabel == Tumor)
+
+```{r}
+# calc p values
 dat_p <- calc_p_vals(dat_baseline, dat_perm, n_perm = 1000, p_tresh = 0.01) 
 
-# Heatmap
-pmat = dcast(dat_p, 'FirstLabel ~ SecondLabel', value.var = 'sigval', fun.aggregate = sum,
-             fill=0, drop=F)
+dat_p$first_second <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "__")
 
-rname = pmat$FirstLabel
+# only keep Tumor cells as FirstLabel
+dat_p <- dat_p[dat_p$SecondLabel %in% c("Tumor", "Tumor_p75+")]
 
-pmat = pmat %>%
-  select(-c('FirstLabel')) %>%
-  as.matrix()
+pmat = dcast(dat_p, 'group ~ first_second', value.var = 'sigval', fill=0, drop=F)
+names(pmat)[1] <- "ImageNumber"
 
-row.names(pmat) <- rname
+# add Description
+pmat <- left_join(data.frame(pmat),distinct(dat_cells_sub[,c("ImageNumber", "Description")], ImageNumber, .keep_all = TRUE))
 
-cols = rev(brewer.pal(11,'Spectral'))
-cmap = colorRampPalette(cols)
+pmat$class <- ""
+pmat[pmat$Description %in% p75_tumor_images,]$class <- "p75+ Tumor"
+pmat[pmat$Description %in% control_tumor_images,]$class <- "Control Tumor"
 
+pmat$ImageNumber <- as.character(pmat$ImageNumber)
 
-hr <- hclust(dist(pmat), method="ward.D")
-heatmap.2(pmat,
-          Colv = as.dendrogram(hr),
-          Rowv = as.dendrogram(hr),
-          trace = "none",
-          col=cmap(75),
-          density.info ='none'
-          #comments = data.frame(names = row.names(tab_Prot))
-)
+pmat_num <- pmat %>%
+  select_if(is.numeric) %>%
+  colnames(.)
+
+m <- t(pmat[,pmat_num])
+ha1 <- HeatmapAnnotation("Sample ID" = anno_text(pmat$Description, which = "column", gp = gpar(cex=0.7)))
+
+pdf("~/Desktop/neighboRhood_p75_secondlabel.pdf", width = 8, height = 8)
+Heatmap(m = m, name = "+1 Attraction, \n-1 Avoidance",
+        row_names_gp = gpar(cex=1),
+        top_annotation = ha1,
+        cluster_columns = TRUE,
+        column_split = pmat$class,
+        row_split = sapply(strsplit(rownames(m), "__"), "[", 2))
+dev.off()
+```
+
+## Plot p75 communities
+
+```{r}
+example <- findCommunity(sce_protein[,sce_protein$Description %in% "F9"], 
+                     'cellID', 
+                     'Center_X', 'Center_Y', 
+                     'ImageNumber', 
+                     'p75_Tumor_cluster', 
+                     distance = 30,
+                     output_colname = "p75_Tumor_community1",
+                     plot = TRUE)
+```
+
+```{r}
+data.frame(colData(sce_protein)) %>%
+  select(Description, T_frac_score_per_ImageNumber, infiltration) %>%
+  distinct(Description, .keep_all = T) %>%
+  write.csv("~/Desktop/scoring_melanoma_cohort.csv")
 ```
 
