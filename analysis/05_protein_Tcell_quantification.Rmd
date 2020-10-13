@@ -227,12 +227,10 @@ cur_df <- data.frame(inside_tumor = sce$in_tumor,
                      Location = sce$Location,
                      Tcell_density_score_image = sce$Tcell_density_score_image)
 
+# reshaping
 cur_df <- reshape2::dcast(cur_df,formula = "ImageNumber + E_I_D + inside_tumor + Tcell_density_score_image + Location ~ celltype")
-
 cur_df <- cur_df[,c("ImageNumber","E_I_D","inside_tumor", "Tcell_density_score_image","Tcytotoxic", "Location")]
-
 cur_df <- reshape2::dcast(cur_df,formula = "ImageNumber + E_I_D + Tcell_density_score_image + Location ~ inside_tumor", value.var = "Tcytotoxic")
-
 colnames(cur_df) <- c("ImageNumber" , "E_I_D" ,"Tcell_density_score_image", "Location", "outside_tumor", "inside_tumor")
 
 # convert NAs to 0
@@ -276,6 +274,16 @@ sce_rna$T_frac_score_per_BlockID <- col_rna$T_frac_score_per_BlockID
 sce_rna$T_frac_score_per_PatientID <- col_rna$T_frac_score_per_PatientID
 sce_rna$infiltration <- col_rna$infiltration
 ```
+
+## Write .csv for Levesque group
+
+```{r}
+test <- data.frame(colData(sce)) %>%
+  select(Description, T_frac_score_per_ImageNumber, infiltration) %>%
+  distinct(Description, .keep_all = T) %>%
+  write.csv(.,"data/fraction_and_infiltration_scoring.csv")
+```
+
 
 ## Save updated SCE
 

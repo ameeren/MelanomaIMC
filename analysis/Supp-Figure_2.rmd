@@ -1,0 +1,115 @@
+---
+title: "Supp-Figure_2"
+author: "toobiwankenobi"
+date: "2020-10-13"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+This script gives an overview over the clinical data and generates statistics used in the manuscript.
+
+# Preparations
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Load libraries
+
+```{r load libraries}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(data.table)
+library(survival)
+library(ggplot2)
+library(broom)
+library(dplyr)
+library(RColorBrewer)
+library(ggalluvial)
+library(tidyverse)
+library(cowplot)
+```
+
+## Load Data
+
+```{r}
+# clinical data
+dat <- read_csv("data/protein/clinical_data_protein.csv")
+
+# SCE object
+sce = readRDS(file = "data/sce_protein.rds")
+```
+
+# Analysis
+
+## Clinical features of the cohort 
+
+Note: as the cohort is very diverse, we are using the BlockID as the minimal unit since clinical parameters are described per BlockID. However, sometimes we do have patients of which we have multiple FFPE blocks (BlockIDs). Nonetheless, clinical parameters are not given per patient but per patient FFPE block and are therefore considered the minimial unit.
+
+## Number of Samples
+
+```{r Supp_Figure_2A, fig.height=8, fig.width=18}
+dat[dat$BlockID %in% unique(sce[,sce$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
+
+# remove control samples
+dat <- dat[dat$BlockID %in% unique(sce[,sce$Location != "CTRL"]$BlockID),]
+
+p1 <- unique(dat[,c("BlockID","MM_location")]) %>%
+  ggplot()+
+  geom_bar(aes(y=MM_location),stat ="count") +
+  xlab("BlockIDs per Location") +
+  ylab("Metastasis Location") +
+  theme(text = element_text(size=18))
+  
+p2 <- dat %>%
+  ggplot()+
+  geom_bar(aes(x=BlockID, fill=(MM_location)),stat="count")+
+  theme(axis.text.x = element_text(angle = 90,vjust = 0.5)) + 
+  ylab("Number of Samples") +
+  guides(fill=guide_legend(title="Metasis Location")) +
+  theme(text = element_text(size=18))
+
+plot_grid(p1,p2,rel_widths = c(1,3))  
+```
+
+## Location Information
+
+```{r Supp_Figure_2B, fig.height=11,fig.width=14}
+cur_df <- dat %>%
+  select(BlockID,Nr_treatments_before_surgery,MM_location,Treatment_after_surgery, Status_at_3m, Date_death,Location,Cancer_Stage, E_I_D)
+cur_df <- unique(cur_df)
+cur_df$Death <- "Dead"
+cur_df[which(is.na(cur_df$Date_death)),]$Death <- "Alive"
+
+# Alluvial plot
+cur_df %>%
+  dplyr::count(MM_location,Cancer_Stage,Location,E_I_D) %>%
+  ggplot(aes(axis1 = MM_location, axis2 = Cancer_Stage, axis3 = Location,axis4 = E_I_D,y=n))+
+  geom_alluvium(aes(fill=as.factor(MM_location)))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal()+
+  scale_x_discrete(limits = c("Met Location", "Cancer Stage", "Punch position", "Global Infiltration"), expand = c(.2, .05)) +
+  theme(text = element_text(size=18)) +
+  guides(fill=guide_legend(title="Metasis Location")) +
+  ylab("Number of Samples")
+```
+
+## Treamtents before Surgery
+
+```{r Supp_Figure_2C, fig.height=11,fig.width=14}
+cur_df %>%
+  dplyr::count(MM_location, Nr_treatments_before_surgery, Cancer_Stage,Death) %>%
+  ggplot(aes(axis1 = MM_location, axis2 = Nr_treatments_before_surgery, axis3 = Cancer_Stage,axis4 = Death,y=n))+
+  geom_alluvium(aes(fill=as.factor(Death)))+
+  geom_stratum()+
+  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
+  theme_minimal()+
+  scale_x_discrete(limits = c("Met Location", "# Previous Treatments", "Cancer Stage", "Outcome"), expand = c(.2, .05)) +
+  theme(text = element_text(size=18)) +
+  guides(fill=guide_legend(title="Outcome")) +
+  ylab("Number of Samples")
+```
+

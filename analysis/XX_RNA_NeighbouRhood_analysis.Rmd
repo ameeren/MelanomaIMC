@@ -1,0 +1,170 @@
+---
+title: "XX_RNA_NeighbouRhood_analysis"
+author: "toobiwankenobi"
+date: "2020-10-13"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+
+# Introduction
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+# Preparations
+
+## Load packages and helper functions
+
+```{r message=F}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(ggplot2)
+library(reshape2)
+library(cowplot)
+library(dplyr)
+library(sf)
+library(gridExtra)
+library(scater)
+library(dittoSeq)
+library(RColorBrewer)
+library(neighbouRhood)
+library(ComplexHeatmap)
+```
+
+## Load data
+
+```{r load data}
+sce_rna = readRDS(file = "data/sce_RNA.rds")
+```
+
+# NeighbouRhood analysis
+
+## Specify the input
+
+```{r}
+# Load and prepare
+dat_cells = fread(file = "data/rna/cell.csv",stringsAsFactors = FALSE)
+dat_relation = fread(file = "data/rna/Object relationships.csv",stringsAsFactors = FALSE)
+
+n_perm = 1000
+
+# Number of cores used for multicore:
+ncores=7
+```
+
+## Most abundant combinations
+
+```{r}
+cur_df <- colData(sce_rna)
+cur_df <- as_tibble(cur_df)
+cur_df <- cur_df[,grepl("CCL|CXCL|Dap",colnames(cur_df))]
+
+for(i in colnames(cur_df)){
+  cur_df[[i]] <- ifelse(cur_df[[i]]== 1,i,"NA")
+}
+
+cur_df <- cur_df %>%
+  unite(expressor,sep = "_",na.rm =TRUE,remove=FALSE)
+
+cur_df$expressor <- gsub("NA_","",cur_df$expressor)
+cur_df$expressor <- gsub("_NA","",cur_df$expressor)
+
+# summary table of all combinations
+summary_cur_df <- table(cur_df$expressor)
+
+# order table according to abundance of combinations
+summary_cur_df<- summary_cur_df[order(-as.numeric(summary_cur_df))]
+
+# combinations with more than 600 occurrences
+targets <- names(which(summary_cur_df > 600))
+targets <- targets[!targets == "NA"]
+
+# add expressor info to sce object
+sce_rna$expressor <- cur_df$expressor
+```
+
+## Start the analysis
+
+```{r}
+# add same cellID to dat_cells as in sce object
+dat_cells$cellID <- paste("RNA_", paste(dat_cells$ImageNumber, dat_cells$ObjectNumber, sep = "_"), sep = "")
+
+# add chemokine info to celltype
+sce_info <- as.data.frame(colData(sce_rna))[,c("cellID", "celltype", "Description", "expressor")]
+
+sce_info <- sce_info %>%
+  mutate(celltype = ifelse(expressor %in% targets, paste(celltype, expressor, sep = "_"), celltype)) %>%
+  select(c("cellID", "celltype", "Description"))
+
+# add celltype information
+dat_cells <- left_join(dat_cells, sce_info, by = "cellID")
+
+#assign labels and groups
+dat_cells <- as.data.table(dat_cells)
+dat_cells[, label := celltype]
+dat_cells[, group := ImageNumber]
+
+# Prepare the data
+d = prepare_tables(dat_cells, dat_relation)
+
+# Calculate the baseline statistics
+dat_baseline = apply_labels(d[[1]], d[[2]]) %>%
+  aggregate_classic()
+
+# Calculate the permutation statistics
+# This will run the test using parallel computing. The name of the idcol does actually not matter.
+
+set.seed(12312)
+dat_perm = rbindlist(mclapply(1:n_perm, function(x){
+  dat_labels = shuffle_labels(d[[1]])
+  apply_labels(dat_labels, d[[2]]) %>%
+    aggregate_classic()
+},mc.cores = ncores
+), idcol = 'run')
+```
+
+## Heatmap per Sample (FirstLabel == Tumor)
+
+```{r}
+# calc p values
+dat_p <- calc_p_vals(dat_baseline, dat_perm, n_perm = 1000, p_tresh = 0.01) 
+
+dat_p$first_second <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "__")
+
+# only keep Tumor cells as FirstLabel
+#dat_p <- dat_p[dat_p$FirstLabel %in% c("Tumor")]
+
+pmat = dcast(dat_p, 'group ~ first_second', value.var = 'sigval', fill=0, drop=F)
+names(pmat)[1] <- "ImageNumber"
+
+# add Description
+pmat <- left_join(data.frame(pmat),distinct(dat_cells[,c("ImageNumber", "Description")], ImageNumber, .keep_all = TRUE))
+
+# add class info 
+pmat$class <- ""
+pmat[pmat$Description %in% sce_rna[,sce_rna$T_frac_score_per_ImageNumber == "low"]$Description,]$class <- "low"
+pmat[pmat$Description %in% sce_rna[,sce_rna$T_frac_score_per_ImageNumber == "med"]$Description,]$class <- "med"
+pmat[pmat$Description %in% sce_rna[,sce_rna$T_frac_score_per_ImageNumber == "high"]$Description,]$class <- "high"
+#pmat[pmat$Description %in% sce_protein[,sce_protein$infiltration == "Control"]$Description,]$class <- "Control"
+
+pmat$ImageNumber <- as.character(pmat$ImageNumber)
+
+pmat_num <- pmat %>%
+  select_if(is.numeric) %>%
+  colnames(.)
+
+m <- t(pmat[,pmat_num])
+ha1 <- HeatmapAnnotation("Sample ID" = anno_text(pmat$Description, which = "column", gp = gpar(cex=0.3)))
+
+pdf("~/Desktop/neighboRhood_celltype.pdf", width = 9, height = 10)
+Heatmap(m = m, name = "+1 Attraction, \n-1 Avoidance",
+        row_names_gp = gpar(cex=0.5),
+        top_annotation = ha1,
+        #column_split = pmat$class,
+        cluster_columns = TRUE)
+dev.off()
+```

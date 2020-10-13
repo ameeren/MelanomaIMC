@@ -47,6 +47,12 @@ plotDist(sce_protein["Ki67",], plot_type = "ridges",
 We define the Ki67 treshold at 1 (asinh) count. This corresponds to a mean pixel count of 1.175 per cell. This is robust enough to detect all Ki67+ cells (verified using histoCAT web version). All cells that are visible identifiable as Ki67+ have a mean count of clearly more than 1. 
 
 ```{r}
+# remove exisiting columns
+sce_rna$Ki67_fraction <- NULL
+sce_rna$Ki67_status <- NULL
+sce_protein$Ki67_fraction <- NULL
+sce_protein$Ki67_status <- NULL
+
 sce_protein$Ki67 <- ifelse(assay(sce_protein["Ki67",], "asinh") > 1, "positive", "negative")
 
 # calculate percentage of positive tumor cells over all tumor cells
