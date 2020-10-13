@@ -1,5 +1,5 @@
 ---
-title: "Supp-Figure_2"
+title: "Supplementary Figure 2"
 author: "toobiwankenobi"
 date: "2020-10-13"
 output: workflowr::wflow_html
@@ -50,7 +50,7 @@ Note: as the cohort is very diverse, we are using the BlockID as the minimal uni
 
 ## Number of Samples
 
-```{r Supp_Figure_2A, fig.height=8, fig.width=18}
+```{r Supp_Figure_2A, fig.height=8, fig.width=19, dev=c('png', 'pdf')}
 dat[dat$BlockID %in% unique(sce[,sce$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
 
 # remove control samples
@@ -76,12 +76,18 @@ plot_grid(p1,p2,rel_widths = c(1,3))
 
 ## Location Information
 
-```{r Supp_Figure_2B, fig.height=11,fig.width=14}
+```{r Supp_Figure_2B, fig.height=14,fig.width=20, dev=c('png', 'pdf')}
 cur_df <- dat %>%
   select(BlockID,Nr_treatments_before_surgery,MM_location,Treatment_after_surgery, Status_at_3m, Date_death,Location,Cancer_Stage, E_I_D)
 cur_df <- unique(cur_df)
 cur_df$Death <- "Dead"
 cur_df[which(is.na(cur_df$Date_death)),]$Death <- "Alive"
+
+# rename E_I_D scoring
+cur_df[cur_df$E_I_D == "1",]$E_I_D <- "Excluded"
+cur_df[cur_df$E_I_D == "2",]$E_I_D <- "Inflamed"
+cur_df[cur_df$E_I_D == "3",]$E_I_D <- "Deserted"
+cur_df[cur_df$E_I_D == "1_2",]$E_I_D <- "Excluded/Inflamed"
 
 # Alluvial plot
 cur_df %>%
@@ -92,14 +98,14 @@ cur_df %>%
   geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
   theme_minimal()+
   scale_x_discrete(limits = c("Met Location", "Cancer Stage", "Punch position", "Global Infiltration"), expand = c(.2, .05)) +
-  theme(text = element_text(size=18)) +
+  theme(text = element_text(size=20)) +
   guides(fill=guide_legend(title="Metasis Location")) +
   ylab("Number of Samples")
 ```
 
 ## Treamtents before Surgery
 
-```{r Supp_Figure_2C, fig.height=11,fig.width=14}
+```{r Supp_Figure_2C, fig.height=14,fig.width=20, dev=c('png', 'pdf')}
 cur_df %>%
   dplyr::count(MM_location, Nr_treatments_before_surgery, Cancer_Stage,Death) %>%
   ggplot(aes(axis1 = MM_location, axis2 = Nr_treatments_before_surgery, axis3 = Cancer_Stage,axis4 = Death,y=n))+
@@ -108,7 +114,7 @@ cur_df %>%
   geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
   theme_minimal()+
   scale_x_discrete(limits = c("Met Location", "# Previous Treatments", "Cancer Stage", "Outcome"), expand = c(.2, .05)) +
-  theme(text = element_text(size=18)) +
+  theme(text = element_text(size=20)) +
   guides(fill=guide_legend(title="Outcome")) +
   ylab("Number of Samples")
 ```
