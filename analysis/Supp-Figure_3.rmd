@@ -1,0 +1,81 @@
+---
+title: "Supplementary Figure 3"
+author: "toobiwankenobi"
+date: "2020-10-14"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+This script generates plots for Supplementary Figure 3.
+
+# Preparations
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Load libraries
+
+```{r load libraries}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(dittoSeq)
+library(scater)
+```
+
+## Load Data
+
+```{r}
+# SCE object
+sce_protein = readRDS(file = "data/sce_protein.rds")
+sce_rna = readRDS(file = "data/sce_RNA.rds")
+```
+
+# Heatmaps
+
+## Protein Data Scaled Heatmap
+
+```{r Supp_Figure_1A, fig.width=10, fig.height=10, dev=c('png', 'pdf')}
+# Aggregate the counts
+mean_sce <- calculateSummary(sce_protein, split_by = c("celltype","celltype_clustered"), 
+                             exprs_values = "counts")
+
+# Exclude bad channels
+mean_sce <- mean_sce[rownames(sce_protein)[rowData(sce_protein)$good_marker],]
+
+# Transform and scale
+assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
+assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+
+plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c("celltype"), 
+            labels_col = mean_sce$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE)
+```
+
+## RNA Data Scaled Heatmap
+
+```{r Supp_Figure_1B, fig.width=10, fig.height=10, dev=c('png', 'pdf')}
+# Aggregate the counts
+mean_sce <- calculateSummary(sce_rna, split_by = c("celltype","celltype_clustered"), 
+                             exprs_values = "counts")
+
+# Exclude bad channels
+mean_sce <- mean_sce[rownames(sce_rna)[rowData(sce_rna)$good_marker],]
+
+# Transform and scale
+assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
+assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+
+plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
+            colour_columns_by = c("celltype"), 
+            labels_col = mean_sce$celltype_clustered,
+            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
+            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            zlim = c(-4, 4),legend = TRUE)
+```

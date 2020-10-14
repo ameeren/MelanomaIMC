@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-Here, we define chemokine-expressing cells. 
+This script generates plots for Figure 2.
 
 ```{r}
 knitr::opts_chunk$set(warning = FALSE, message = FALSE, cache.lazy = FALSE)

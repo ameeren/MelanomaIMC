@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script gives an overview over the clinical data and generates statistics used in the manuscript.
+This script generates plots for Supplementary Figure 2.
 
 # Preparations
 
@@ -90,7 +90,7 @@ cur_df[cur_df$E_I_D == "3",]$E_I_D <- "Deserted"
 cur_df[cur_df$E_I_D == "1_2",]$E_I_D <- "Excluded/Inflamed"
 
 # Alluvial plot
-cur_df %>%
+b<- cur_df %>%
   dplyr::count(MM_location,Cancer_Stage,Location,E_I_D) %>%
   ggplot(aes(axis1 = MM_location, axis2 = Cancer_Stage, axis3 = Location,axis4 = E_I_D,y=n))+
   geom_alluvium(aes(fill=as.factor(MM_location)))+
@@ -101,12 +101,13 @@ cur_df %>%
   theme(text = element_text(size=20)) +
   guides(fill=guide_legend(title="Metasis Location")) +
   ylab("Number of Samples")
+plot(b)
 ```
 
 ## Treamtents before Surgery
 
 ```{r Supp_Figure_2C, fig.height=14,fig.width=20, dev=c('png', 'pdf')}
-cur_df %>%
+c <- cur_df %>%
   dplyr::count(MM_location, Nr_treatments_before_surgery, Cancer_Stage,Death) %>%
   ggplot(aes(axis1 = MM_location, axis2 = Nr_treatments_before_surgery, axis3 = Cancer_Stage,axis4 = Death,y=n))+
   geom_alluvium(aes(fill=as.factor(Death)))+
@@ -117,5 +118,6 @@ cur_df %>%
   theme(text = element_text(size=20)) +
   guides(fill=guide_legend(title="Outcome")) +
   ylab("Number of Samples")
+plot(c)
 ```
 

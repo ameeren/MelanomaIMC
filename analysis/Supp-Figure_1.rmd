@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates figures for Supplementary Figure 1. 
+This script generates plots for Supplementary Figure 1.
 
 # Preparations
 

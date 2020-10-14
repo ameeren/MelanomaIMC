@@ -1,0 +1,107 @@
+---
+title: "Supplementary Figure 4"
+author: "toobiwankenobi"
+date: "2020-10-14"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+This script generates plots for Supplementary Figure 4.
+
+# Preparations
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Load libraries
+
+```{r load libraries}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(ggplot2)
+library(gridExtra)
+library(data.table)
+```
+
+## Load Data
+
+```{r}
+sce_rna <- readRDS(file = "data/sce_RNA.rds")
+```
+
+# Detect Chemokine Expressing Cells
+
+## Detection of chemokine expressing cells
+
+for the detection of chemokine expressing cells we make use of the fact that we also measured a negative control (DapB). 
+
+```{r}
+# get the names of the chemokine channels without the negative control channel
+chemokine_channels = rownames(sce_rna[which(grepl("T\\d+_",rownames(sce_rna)) & ! grepl("DapB",rownames(sce_rna))),])
+chemokine_channels_sub <- c("T8_CXCL13", "T2_CCL22")
+
+
+# run function to define chemokine expressing cells 
+output_list <- compute_difference(sce_rna, 
+                          cellID = "cellID", 
+                          assay_name = "asinh", 
+                          threshold = 0.01, 
+                          mRNA_channels = chemokine_channels_sub, 
+                          negative_control = "T6_DapB", 
+                          return_calc_metrics = TRUE)
+```
+
+## Plot Results from Chemokine Detection
+
+```{r Supp_Fig_1A_1B,fig.height=15, fig.width=10, dev=c("png", "pdf")}
+# check difference between DapB and signal (histogram)
+
+plot_list = list()
+for(i in chemokine_channels_sub){
+  
+  # subset whole data set for visualization purposes
+  diff_chemo <- output_list[[i]]
+  diff_chemo_sub <- diff_chemo[sample(nrow(diff_chemo), nrow(diff_chemo)*0.1), ]
+  
+  a <- ggplot(data = diff_chemo_sub, aes(x=diff)) + 
+  geom_histogram(binwidth = 0.05) + 
+  xlab(paste("DapB mRNA signal subtracted from", i, sep = " ")) + ggtitle("Raw distribution") + 
+    theme(plot.title = element_text(hjust = 0.5, size = 35), 
+          axis.title = element_text(size = 25), 
+          axis.text =  element_text(size = 15))
+
+  b <- ggplot(data = diff_chemo_sub, aes(x=scaled_diff)) + 
+  geom_histogram(binwidth = 0.05, aes(fill = 
+                                       ifelse(padj <= 0.01 & scaled_diff > 0, 'p<0.01', 'n.s.'))) + 
+  xlab(paste("DapB mRNA signal subtracted from", i, sep = " ")) + ggtitle("Scaled distribution") + 
+    xlim(-5,7) +
+    scale_fill_manual(values = c("black", "deepskyblue1")) +
+        theme(plot.title = element_text(hjust = 0.5, size = 35), 
+          axis.title = element_text(size = 25), 
+          legend.position = "none",
+          axis.text =  element_text(size = 15))
+  
+  # significant cells defined by subtraction
+  c <- ggplot(data=diff_chemo_sub, aes(x=mean_negative_control, y=mean_chemokine)) + 
+    geom_point(alpha=0.2, aes(col = 
+                                ifelse(padj <= 0.01 & scaled_diff > 0, 'p<0.01', 'n.s.'))) + 
+    scale_color_manual(values = c("black", "deepskyblue1"), 
+                       name = "Legend") +
+    guides(color = guide_legend(override.aes = list(alpha=1, size=3))) +
+    xlim(0,5.5) + ylim(0,5.5) +
+    ylab(paste("Mean expression of", i, sep=" ")) +
+    xlab("Mean DapB mRNAexpression") +
+    ggtitle(paste("DapB mRNA vs.", i, sep = " ")) + 
+    theme(plot.title = element_text(hjust = 0.5, size = 35), 
+          axis.title = element_text(size = 25), 
+          legend.text = element_text(size = 20), 
+          legend.title = element_text(size=20),
+          axis.text =  element_text(size = 15))
+  
+  grid.arrange(a,b,c, nrow = 3, ncol=1)
+}
+```

@@ -160,7 +160,7 @@ pmat_num <- pmat %>%
 m <- t(pmat[,pmat_num])
 ha1 <- HeatmapAnnotation("Sample ID" = anno_text(pmat$Description, which = "column", gp = gpar(cex=0.3)))
 
-pdf("~/Desktop/neighboRhood_celltype.pdf", width = 9, height = 10)
+pdf("~/Desktop/neighboRhood_celltype_RNA.pdf", width = 9, height = 10)
 Heatmap(m = m, name = "+1 Attraction, \n-1 Avoidance",
         row_names_gp = gpar(cex=0.5),
         top_annotation = ha1,

@@ -7,16 +7,9 @@ editor_options:
   chunk_output_type: console
 ---
 
----
-title: "08_chemokine_community_analysis"
-author: "Tobias Hoch"
-date: "2020-05-12"
-output: workflowr::wflow_html
-editor_options:
-  chunk_output_type: console
----
 
 # Introduction
+This script generates plots for Figure 3.
 
 # Preparations
 

@@ -8,6 +8,7 @@ editor_options:
 ---
 
 # Introduction
+This script generates plots for Figure 4.
 
 # Preparations
 
