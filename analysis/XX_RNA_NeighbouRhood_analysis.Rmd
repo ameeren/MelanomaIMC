@@ -33,6 +33,7 @@ library(dittoSeq)
 library(RColorBrewer)
 library(neighbouRhood)
 library(ComplexHeatmap)
+library(tidyr)
 ```
 
 ## Load data
@@ -142,7 +143,7 @@ pmat = dcast(dat_p, 'group ~ first_second', value.var = 'sigval', fill=0, drop=F
 names(pmat)[1] <- "ImageNumber"
 
 # add Description
-pmat <- left_join(data.frame(pmat),distinct(dat_cells[,c("ImageNumber", "Description")], ImageNumber, .keep_all = TRUE))
+pmat <- left_join(data.frame(pmat),distinct(dat_cells[,c("ImageNumber", "Description")], ImageNumber, .keep_all = TRUE), by = "ImageNumber")
 
 # add class info 
 pmat$class <- ""

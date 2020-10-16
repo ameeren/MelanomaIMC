@@ -1,0 +1,187 @@
+---
+title: "Supplementary Figure 5"
+author: "toobiwankenobi"
+date: "2020-10-16"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+This script generates plots for Supplementary Figure 5.
+
+# Preparations
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Load libraries
+
+```{r load libraries}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(ggplot2)
+library(gridExtra)
+library(data.table)
+```
+
+## Load Data
+
+```{r}
+sce_rna <- readRDS(file = "data/sce_RNA.rds")
+```
+
+## Prep Data
+
+```{r}
+## Most abundant combinations
+cur_df <- colData(sce_rna)
+cur_df <- as_tibble(cur_df)
+cur_df <- cur_df[,grepl("CCL|CXCL|Dap",colnames(cur_df))]
+
+for(i in colnames(cur_df)){
+  cur_df[[i]] <- ifelse(cur_df[[i]]== 1,i,"NA")
+}
+
+cur_df <- cur_df %>%
+  unite(expressor,sep = "_",na.rm =TRUE,remove=FALSE)
+
+cur_df$expressor <- gsub("NA_","",cur_df$expressor)
+cur_df$expressor <- gsub("_NA","",cur_df$expressor)
+
+# summary table of all combinations
+summary_cur_df <- table(cur_df$expressor)
+
+# order table according to abundance of combinations
+summary_cur_df<- summary_cur_df[order(-as.numeric(summary_cur_df))]
+
+# combinations with more than 600 occurrences
+targets <- names(which(summary_cur_df > 600))
+targets <- targets[!targets == "NA"]
+
+# add expressor info to sce object
+sce_rna$expressor <- cur_df$expressor
+```
+
+
+# Chemokine Expression by Different Clinical Parameters
+
+## Mutational Status
+
+```{r Fig_5A_mutational_status_normalized, dev=c('pdf')}
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Mutation) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Mutation) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Mutation != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Mutation %in% group_size$Mutation]
+
+plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "Mutation",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+```
+
+## Mutational Status - Celltype 
+
+```{r Fig_5B_mutational_status_proportions, dev=c('pdf')}
+plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+               cellID = "cellID",
+               colour_by = "MM_location",
+               split_by = "Mutation",
+               imageID = "ImageNumber",
+               #normalize = TRUE,
+               proportion = TRUE,
+               colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Celltype")) +
+  theme(text = element_text(size=18))
+```
+
+
+## Cancer Stage
+
+```{r Fig_5C_cancer_stage, dev=c('pdf')}
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Cancer_Stage) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Cancer_Stage) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Cancer_Stage != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Cancer_Stage %in% group_size$Cancer_Stage]
+
+plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "Cancer_Stage",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+```
+
+## Age
+
+```{r Fig_5D_age, dev=c('pdf')}
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Age) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Age) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Age != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Age %in% group_size$Age]
+
+plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "Age",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+```
+
+## Gender
+
+```{r Fig_5E_gender, dev=c('pdf')}
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Gender) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Gender) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Gender != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Gender %in% group_size$Gender]
+
+plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "Gender",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+```
+
+

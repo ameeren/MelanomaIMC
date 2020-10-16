@@ -57,7 +57,7 @@ output_list <- compute_difference(sce_rna,
 
 ## Plot Results from Chemokine Detection
 
-```{r Supp_Fig_1A_1B,fig.height=15, fig.width=10, dev=c("png", "pdf")}
+```{r Supp_Fig_4A4B_chemokine_detection,fig.height=15, fig.width=10, dev=c("pdf")}
 # check difference between DapB and signal (histogram)
 
 plot_list = list()

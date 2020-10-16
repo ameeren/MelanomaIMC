@@ -39,7 +39,7 @@ cur_sce$ImageNumber <- as.character(cur_sce$ImageNumber)
 
 ## UMAP showing Patient ID distribution
 
-```{r Fig_1B_UMAP_celltype_RNA, fig.width=7, fig.height=5, dev=c('png', 'pdf')}
+```{r Fig_1B_UMAP_celltype_RNA, fig.width=7, fig.height=5, dev=c('pdf')}
 dittoDimPlot(cur_sce, 
              reduction.use = "UMAP", 
              var = "celltype", 
@@ -52,7 +52,7 @@ dittoDimPlot(cur_sce,
 
 ## Heatmap showing marker expression of celltypes
 
-```{r Fig_1B_Scaled_Heatmap_RNA, fig.width=6, fig.height=5, dev=c('png', 'pdf')}
+```{r Fig_1B_Scaled_Heatmap_RNA, fig.width=6, fig.height=5, dev=c('pdf')}
 # aggregate celltypes
 agr_sce <- aggregateAcrossCells(sce_rna, ids = colData(sce_rna)[,"celltype"], 
                                 average = TRUE)
@@ -79,7 +79,7 @@ cur_sce$ImageNumber <- as.character(cur_sce$ImageNumber)
 
 ## UMAP showing Patient ID distribution
 
-```{r Fig_1B_UMAP_celltype_Protein, fig.width=7, fig.height=5, dev=c('png', 'pdf')}
+```{r Fig_1C_UMAP_celltype_Protein, fig.width=7, fig.height=5, dev=c('pdf')}
 dittoDimPlot(cur_sce, 
              reduction.use = "UMAP", 
              var = "celltype", 
@@ -92,7 +92,7 @@ dittoDimPlot(cur_sce,
 
 ## Heatmap showing marker expression of celltypes
 
-```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=6, fig.height=6, dev=c('png', 'pdf')}
+```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=6, fig.height=6, dev=c('pdf')}
 # aggregate celltypes
 agr_sce <- aggregateAcrossCells(sce_prot, ids = colData(sce_prot)[,"celltype"], 
                                 average = TRUE)

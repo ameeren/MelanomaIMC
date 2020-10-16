@@ -54,7 +54,7 @@ cell_mask <- loadImages("/Volumes/thoch/Data/Analysis/melanoma_cohort_new_cp_pip
 
 ## Example of Chemokine Cluster and corresponding Community
 
-```{r clusters_and_communities, fig.width=10, fig.height=10, dev=c('png', 'pdf')}
+```{r Fig_3A_clusters_and_communities, fig.width=10, fig.height=10, dev=c('pdf')}
 example <- findClusters(sce[,sce$ImageNumber == 137], sce[,sce$chemokine == 1]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
@@ -73,61 +73,9 @@ example <- findCommunity(example,
               plot = TRUE)
 ```
 
-## Plots Chemokine-Producing Cells using cytomapper
-
-```{r chemokine_cluster, dev=c('png', 'pdf')}
-# scale mask
-cell_mask <- scaleImages(cell_mask,2^16-1)
-
-# add metadata to cell mask
-mcols(cell_mask) <- data.frame(cellmask = names(cell_mask),
-                     ImageNumber = 137,
-                     Description = unique(example$Description))
-
-# create color palette
-color <- rainbow(n = length(unique(example[,example$chemokine_cluster != "0"]$chemokine_cluster)))
-names(color) <- unique(example[,example$chemokine_cluster != "0"]$chemokine_cluster)
-
-color_list <- list()
-color_list$chemokine_cluster <- color
-
-# plot 
-plotCells(cell_mask, 
-          example[,example$chemokine_cluster != "0"],
-          cell_id = "CellNumber",
-          img_id = "ImageNumber", 
-          colour_by = "chemokine_cluster",
-          colour = color_list,
-          legend = NULL)
-
-```
-
-## Plot corresponding Communities
- 
-```{r chemokine_community, dev=c('png', 'pdf')}
-# create color palette
-color <- rainbow(n = length(unique(sce[,sce$chemokine_community != "0" & sce$ImageNumber == 137]$chemokine_community)))
-names(color) <- unique(sce[,sce$chemokine_community != "0" & sce$ImageNumber == 137]$chemokine_community)
-
-color_list <- list()
-color_list$chemokine_community <- color
-
-# plot 
-plotCells(cell_mask, 
-          sce[,sce$chemokine_community != "0" & sce$ImageNumber == 137],
-          cell_id = "CellNumber",
-          img_id = "ImageNumber", 
-          colour_by = "chemokine_community",
-          colour = color_list,
-          legend = NULL)
-```
-
-
-## Plot Cells using cytomapper
-
 ## Community analysis - Chemokine-producing cells
 
-```{r}
+```{r calculate_frequencies}
 # Subset sce object to only contain chemokine producing cells
 cur_sce <- sce[,sce$chemokine_cluster != 0]
 
@@ -166,7 +114,7 @@ colnames(umap$layout) <- c("UMAP1", "UMAP2", "chemokine_cluster", "community_mod
 
 ## UMAP combined with kmeans cluster
 
-```{r UMAP_kmeans_cluster_chemokines_abundance, dev=c('png', 'pdf')}
+```{r Fig_3B_UMAP_kmeans_cluster_chemokines_abundance, dev=c('pdf')}
 # find center of clusters
 centers <- umap$layout[,-3] %>%
   group_by(community_module) %>%
@@ -185,7 +133,7 @@ ggplot(data=left_join(freqs_long, umap$layout), aes(x=UMAP1, y=UMAP2, col=commun
 
 ## Boxplot with frequencies per community module
 
-```{r community_modules_chemokines_abundance_boxplot, fig.height=6.5, fig.width=16, dev=c('png', 'pdf')}
+```{r Fig_3C_community_modules_chemokines_abundance_boxplot, fig.height=6.5, fig.width=16, dev=c('pdf')}
 freqs_long %>%
   ggplot(., aes(x=community_module, y=fraction)) + 
   geom_boxplot(aes(fill=celltype)) + 
@@ -199,7 +147,7 @@ freqs_long %>%
 
 ## Example of CXCL13-Clusters
 
-```{r cxcl13_clusters, fig.width=10, fig.height=10, dev=c('png', 'pdf')}
+```{r cxcl13_clusters, fig.width=10, fig.height=10, dev=c('pdf')}
 example <- findClusters(sce[,sce$ImageNumber == 137], sce[,sce$CXCL13 == 1]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
@@ -220,7 +168,7 @@ example <- findCommunity(example,
 
 ## UMAP for Producing Cells
 
-```{r UMAP_producing_cells, fig.height=10, fig.width=10,dev=c('png', 'pdf')}
+```{r Fig_3D_UMAP_producing_cells, fig.height=10, fig.width=10, dev=c('pdf')}
 # loop through all pure clusters 
 for(i in c("cxcl13only_clust")){
   # subset sce object to only contain community cells
@@ -281,7 +229,7 @@ for(i in c("cxcl13only_clust")){
 
 ## UMAP for Neighbouring Cells
 
-```{r UMAP_neighbouring_producing_cells, fig.height=10, fig.width=10,dev=c('png', 'pdf')}
+```{r Fig_3E_UMAP_neighbouring_producing_cells, fig.height=10, fig.width=10,dev=c('pdf')}
 # loop through all pure clusters 
 for(i in c("ccl22only_clust")){
   chemo_name <- str_split(i, "_")[[1]][1]

@@ -34,11 +34,11 @@ sce_prot <- readRDS(file = "data/sce_protein.rds")
 ```{r}
 sub_sce_rna <- NULL
 sub_sce_prot <- NULL
-#sub_sce_rna <- sce_rna[,colData(sce_rna)$celltype %in% c("Tumor")]
-#sub_sce_prot <- sce_prot[,colData(sce_prot)$celltype %in% c("Tumor")]
+sub_sce_rna <- sce_rna[,colData(sce_rna)$celltype %in% c("Neutrophil")]
+sub_sce_prot <- sce_prot[,colData(sce_prot)$celltype %in% c("Neutrophil")]
 
-sub_sce_rna <- sce_rna
-sub_sce_prot <- sce_prot
+#sub_sce_rna <- sce_rna
+#sub_sce_prot <- sce_prot
 
 cur_rna <- data.frame(colData(sub_sce_rna))
 cur_prot <- data.frame(colData(sub_sce_prot))
@@ -82,20 +82,20 @@ image_area <- rbind(area_rna, area_prot)
 summary <- merge(cells_image, image_area)
 
 # Plot Cell Numbers
-a <- ggplot(data = summary, aes(x=interaction("cells",summary$data_set),y=log10(cells))) + 
+a <- ggplot(data = summary, aes(x=interaction("cells",data_set),y=log10(cells))) + 
   geom_boxplot(aes(fill=data_set)) + 
   geom_point(aes(group=data_set), alpha =0.3) + 
   geom_line(aes(group=Description),alpha=0.2) + 
   scale_x_discrete(labels = rep("cells", each = 2))
 
 # Plot Cell Numbers
-b <- ggplot(data = summary, aes(x=interaction("cells",summary$data_set),y=log10(mean_cell_area))) + 
+b <- ggplot(data = summary, aes(x=interaction("cells",data_set),y=log10(mean_cell_area))) + 
   geom_boxplot(aes(fill=data_set)) + 
   geom_point(aes(group=data_set), alpha =0.3) + 
   geom_line(aes(group=Description),alpha=0.2) + 
   scale_x_discrete(labels = rep("mean_cell_area", each = 2))
 
-c <- ggplot(data = summary, aes(x=interaction("cells",summary$data_set),y=log10(image_area))) + 
+c <- ggplot(data = summary, aes(x=interaction("cells",data_set),y=log10(image_area))) + 
   geom_boxplot(aes(fill=data_set)) + 
   geom_point(aes(group=data_set), alpha =0.3) + 
   geom_line(aes(group=Description),alpha=0.2) + 
@@ -138,8 +138,6 @@ mean(c(cor(rna_sum$Macrophage, prot_sum$Macrophage, method = "pearson"),
        cor(rna_sum$Neutrophil, prot_sum$Neutrophil, method = "pearson"), 
        cor(rna_sum$Tcytotoxic, prot_sum$Tcytotoxic, method = "pearson"), 
        cor(rna_sum$Tumor, prot_sum$Tumor, method = "pearson")))
-
-corrplot::corrplot(cor(rna_sum[,-1], prot_sum[,-1], method = "pearson"), method = "number")
 ```
 
 ## Correlation of all celltypes

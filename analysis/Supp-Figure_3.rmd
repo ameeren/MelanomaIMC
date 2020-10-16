@@ -38,7 +38,7 @@ sce_rna = readRDS(file = "data/sce_RNA.rds")
 
 ## Protein Data Scaled Heatmap
 
-```{r Supp_Figure_1A, fig.width=10, fig.height=10, dev=c('png', 'pdf')}
+```{r Supp_Fig_3A_RNA_heatmap, fig.width=10, fig.height=10, dev=c('pdf')}
 # Aggregate the counts
 mean_sce <- calculateSummary(sce_protein, split_by = c("celltype","celltype_clustered"), 
                              exprs_values = "counts")
@@ -60,7 +60,7 @@ plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",
 
 ## RNA Data Scaled Heatmap
 
-```{r Supp_Figure_1B, fig.width=10, fig.height=10, dev=c('png', 'pdf')}
+```{r Supp_Fig_3B_RNA_heatmap, fig.width=10, fig.height=10, dev=c('pdf')}
 # Aggregate the counts
 mean_sce <- calculateSummary(sce_rna, split_by = c("celltype","celltype_clustered"), 
                              exprs_values = "counts")

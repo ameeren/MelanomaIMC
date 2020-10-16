@@ -50,7 +50,7 @@ data <- read.csv("data/survdat_for_modelling.csv")
 
 ## Barplot with Clinical Annotation 
 
-```{r barplot_clinical_annotation, dev=c('png', 'pdf'), fig.height=10, fig.width=15}
+```{r Fig_4A_barplot_clinical_annotation, dev=c('pdf'), fig.height=10, fig.width=15}
 set.seed(362)
 patient_meta <- data.frame(E_I_D = sce_prot$E_I_D,
                      BlockID = sce_prot$BlockID,
@@ -141,7 +141,7 @@ grid.draw(ht)
 
 ## Hazard-Ratios
 
-```{r hazard_ratios, dev=c('png', 'pdf'), fig.width=16}
+```{r Fig_4A_hazard_ratios, dev=c('pdf'), fig.width=16}
 # add treatment before surgery grouping
 data$`Treatment Status` <- ifelse(data$Number.of.treatments.before.surgery == 0, "naive", "non-naive")
 data$`Cytotoxic T cell Grouping` <- factor(data$Frac_Tcyt_score, levels = c("low", "med", "high"))
@@ -161,7 +161,7 @@ ggforest(fit, data=data,
 
 ## Prepare Data for Heatmap
 
-```{r}
+```{r prepare_heatmap_data}
 cur_dt <- as.data.table(colData(sce_rna))
 cur_dt_prot <- as.data.table(colData(sce_prot))
 cur_dt_prot <- distinct(cur_dt_prot, ImageNumber, .keep_all = T)
@@ -242,7 +242,7 @@ cur_dt_wide <- left_join(cur_dt_wide, total_chemokines)
 
 ## Plot Heatmap
 
-```{r heatmap_modules_infiltration, fig.height=10, fig.width=14, dev=c('png', 'pdf')}
+```{r Fig_4B_heatmap_modules_infiltration, fig.height=10, fig.width=14, dev=c('pdf')}
 # subset df
 cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$E_I_D != "Control",]
 

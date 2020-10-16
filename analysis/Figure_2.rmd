@@ -39,7 +39,6 @@ library(colorRamps)
 ```{r}
 sce_rna <- readRDS(file = "data/sce_RNA.rds")
 sce_prot <- readRDS(file= "data/sce_protein.rds")
-cur_dt <- as.data.table(colData(sce_rna))
 ```
 
 # Chemokine Combinations
@@ -50,7 +49,6 @@ cur_dt <- as.data.table(colData(sce_rna))
 cur_df <- colData(sce_rna)
 cur_df <- as_tibble(cur_df)
 cur_df <- cur_df[,grepl("CCL|CXCL|Dap",colnames(cur_df))]
-
 
 for(i in colnames(cur_df)){
   cur_df[[i]] <- ifelse(cur_df[[i]]== 1,i,"NA")
@@ -79,13 +77,19 @@ sce_rna$expressor <- cur_df$expressor
 color_chemo <- primary.colors(length(targets))
 names(color_chemo) <- targets
 metadata(sce_rna)$colour_vectors$chemokine_combinations <- color_chemo
+
+# replace order of chemokines to match order without control samples (ATTENTION! HARD CODED)
+color_chemo <- replace(color_chemo, c("CXCL8", "CCL18"), color_chemo[c("CCL18", "CXCL8")])
+metadata(sce_rna)$colour_vectors$chemokine_combinations_no_control <- color_chemo
 ```
 
 # Plots
 
 ## UpSet plot with ComplexHeatmap - including CellType Annotation and Met Location (with controls)
 
-```{r upset_plot, message=F, fig.width=14, fig.height=13, dev=c('png', 'pdf')}
+```{r Fig_2A_upset_plot, message=F, fig.width=14, fig.height=13, dev=c('pdf')}
+cur_dt <- as.data.table(colData(sce_rna))
+
 # remove control samples
 cur_dt <- cur_dt[MM_location_simplified != "control",]
 
@@ -199,7 +203,7 @@ ht = UpSet(m,
                                                          gp = gpar(fill = grDevices::hcl.colors(ncol(location[,-1]), 
                                                                                                 palette = "Dark 2"))),
                                           height = unit(5, "cm"),
-                                          col = list("Combination Coloring" = metadata(sce_rna)$colour_vectors$chemokine_combinations)),
+                                          col = list("Combination Coloring" = metadata(sce_rna)$colour_vectors$chemokine_combinations_no_control)),
     right_annotation = NULL,
     show_row_names = FALSE,
     pt_size = unit(5, "mm"),
@@ -222,7 +226,7 @@ decorate_annotation("Combination Size", {
 
 ## Normalized Expression per Metastasis Location
 
-```{r normalized_expression_met_location, fig.width=14, fig.height=9, dev=c('png', 'pdf')}
+```{r Fig_2B_normalized_expression_met_location, fig.width=14, fig.height=9, dev=c('pdf')}
 # subset sce_rna to only contain met locations with at least 5 samples - REMOVE controls
 location_size <- data.frame(colData(sce_rna)) %>%
   group_by(ImageNumber, MM_location) %>%
@@ -263,7 +267,7 @@ plot_grid(p1+theme(legend.position="none"),p2,legend,rel_widths = c(2,2,2),ncol=
 
 ## Correlation of Chemokines with Celltypes
 
-```{r pearson_correlation_rna_prot_data, fig.width=9, fig.height=9, dev=c('png', 'pdf')}
+```{r Fig_2C_pearson_correlation_rna_prot_data, fig.width=9, fig.height=9, dev=c('pdf')}
 # top abundant chemokines
 cur_rna <- data.frame(colData(sce_rna))
 
@@ -298,7 +302,7 @@ corrplot(cor,
 
 ## Alluvial Plot - Chemokine-Expressing Tumor Cells
 
-```{r alluvial_tumor_cells, fig.width=13, fig.height=8, dev=c('png', 'pdf')}
+```{r Fig_2D_alluvial_tumor_cells, fig.width=13, fig.height=8, dev=c('pdf')}
 cur_df <- data.frame(colData(sce_rna)) %>%
   filter(celltype == "Tumor" & chemokine == 1 & Location != "CTRL") %>%
   select(expressor, MM_location_simplified, Ki67_status) %>%
@@ -323,7 +327,7 @@ cur_df %>%
 
 ## Normalized Counts
 
-```{r normalized_counts_chemokines_tumor, fig.width=10, fig.height=8, dev=c('png', 'pdf')}
+```{r normalized_counts_chemokines_tumor, fig.width=10, fig.height=8, dev=c('pdf')}
 plotCellCounts(sce = sce_rna[,which(sce_rna$celltype == "Tumor" & sce_rna$Location != "CTRL")], 
                sce_sub = sce_rna[,which(sce_rna$expressor %in% targets & 
                                           sce_rna$celltype == "Tumor" & 
@@ -341,7 +345,7 @@ plotCellCounts(sce = sce_rna[,which(sce_rna$celltype == "Tumor" & sce_rna$Locati
 
 CXCL8 and CXCL10 seems to be a bit higher in high Ki67 status samples. We can check if there is an association between Ki67+ fraction and CXCL10+ / CXCL8+ fraction. 
 
-```{r cxcl10_tumor_ki67_score, fig.width=10, fig.height=8, dev=c('png', 'pdf')}
+```{r cxcl10_tumor_ki67_score, fig.width=10, fig.height=8, dev=c('pdf')}
 # calculate percentage of positive tumor cells over all tumor cells
 cur_df <- data.frame(colData(sce_rna)) %>%
   group_by(Description, celltype, CXCL10, Ki67_status) %>%

@@ -9,7 +9,7 @@ output:
 ---
 
 # Introduction
-This script gives an overview over the clinical data and generates statistics used in the manuscript.
+This script gives an overview over the clinical data and generates statistics used in the manuscript. 
 
 # Preparations
 
@@ -23,14 +23,8 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```{r load libraries}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
 library(data.table)
-library(survival)
-library(ggplot2)
-library(broom)
 library(dplyr)
-library(RColorBrewer)
-library(ggalluvial)
-library(tidyverse)
-library(cowplot)
+library(SingleCellExperiment)
 ```
 
 ## Load Data
@@ -76,5 +70,104 @@ data.frame(colData(sce_rna)) %>%
   filter(Location != "CTRL") %>%
   group_by(celltype) %>%
   summarise(n=n())
+```
+
+## Number of Chemokine Expressing Cells
+
+```{r}
+# Percentage of Chemokine Producing Cells
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(chemokine) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round((n / sum(n)) *100,1))
+
+# Chemokines by Celltype
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  filter(chemokine == 1) %>%
+  group_by(celltype) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round((n / sum(n)) *100,1))
+```
+
+## Chemokine Expression in Tumor Cells
+
+```{r}
+# CXCL10 in Tumor cells
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  filter(CXCL10 == 1) %>%
+  group_by(celltype) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round((n / sum(n)) *100,1))
+
+# CCL2 in Tumor cells
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  filter(CCL2 == 1) %>%
+  group_by(celltype) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round((n / sum(n)) *100,1))
+
+# CXCL8 in Tumor cells
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  filter(CXCL8 == 1) %>%
+  group_by(celltype) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round((n / sum(n)) *100,1))
+
+# CXCL12 in Tumor cells
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  filter(CXCL12 == 1) %>%
+  group_by(celltype) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round((n / sum(n)) *100,1))
+```
+
+## Chemokine Expression in Locations
+
+```{r}
+# overall chemokine expression
+data.frame(colData(sce_rna)) %>%
+  filter(Location == "CTRL") %>%
+  group_by(chemokine, TissueType) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(TissueType ~ chemokine, value.var = "n", fill = 0) %>%
+  mutate(percentage_expressing = round(`TRUE` / (`FALSE`+`TRUE`) * 100,1))
+
+# CXCL13 expression in control samples
+data.frame(colData(sce_rna)) %>%
+  filter(Location == "CTRL") %>%
+  group_by(CXCL13, TissueType) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(TissueType ~ CXCL13, value.var = "n", fill = 0) %>%
+  mutate(percentage_expressing = round(`1` / (`0`+`1`) * 100,1))
+
+# CXCL13 expression in tumor samples
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(CXCL13, MM_location) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(MM_location ~ CXCL13, value.var = "n", fill = 0) %>%
+  mutate(percentage_expressing = round(`1` / (`0`+`1`) * 100,1))
+
+# CXCL10 expression in control samples
+data.frame(colData(sce_rna)) %>%
+  filter(Location == "CTRL") %>%
+  group_by(CXCL10, TissueType) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(TissueType ~ CXCL10, value.var = "n", fill = 0) %>%
+  mutate(percentage_expressing = round(`1` / (`0`+`1`) * 100,1))
+
+# CXCL10 expression in tumor samples
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(CXCL10, MM_location) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(MM_location ~ CXCL10, value.var = "n", fill = 0) %>%
+  mutate(percentage_expressing = round(`1` / (`0`+`1`) * 100,1))
 ```
 

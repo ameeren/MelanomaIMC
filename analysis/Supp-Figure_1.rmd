@@ -105,7 +105,7 @@ cells_panel_corrected = cells_panel[cells_panel$signal_type == "MeanIntensityCor
 
 ## Unspecific Amplifier binding 
 
-```{r heatmap_unspecific_binding, dev=c('png', 'pdf')}
+```{r Supp_Fig_1A_heatmap_unspecific_binding, dev=c('pdf')}
 results = matrix(nrow=12, ncol = 12)
 rownames(results) = unique(cells_panel$Target)
 colnames(results) = unique(cells_panel$Target)
@@ -323,10 +323,9 @@ all(colnames(cells_panel) == colnames(cells_panel_8plex))
 cells_panel_12plex = rbind(cells_panel, cells_panel_8plex)
 ```
 
-
 ## Throw out the DNA, histone and panCytokeratin data and then get the info of PPIB staining
 
-```{r merged_comparison_per_channel, fig.width=10, fig.height=7, dev=c('png', 'pdf')}
+```{r Supp_Fig_1B_merged_comparison_per_channel, fig.width=10, fig.height=7, dev=c('pdf')}
 # subset
 cells_panel_12plex_sub = cells_panel_12plex[stain == Target,]
 
@@ -334,20 +333,20 @@ cells_panel_12plex_sub = cells_panel_12plex[stain == Target,]
 cells_panel_12plex_sub$Target <- factor(cells_panel_12plex_sub$Target, levels = c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"))
 
 # check out difference in signal intensity for PPIB in the different channels
-
 ggplot(data = cells_panel_12plex_sub[Target %in%c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),], aes(x=as.factor(Target),y=counts_asinh)) +
   geom_boxplot(size=0.5)+
   theme(text = element_text(size=25), axis.text.x = element_text(angle = 90, hjust = 1))+
   ggtitle("Single-probe measurements merged") + 
   ylab("Mean Intensity Count per cell [asinh]") + 
   xlab("Target Channels") + 
-  scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T11","T10", "T12"),
+  geom_hline(yintercept = mean(cells_panel_12plex_sub$counts_asinh), linetype = 2) +
+  scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T10","T11", "T12"),
                       labels= c("T1 PPIB","T2 PPIB","T3 PPIB", "T4 PPIB", "T5 PPIB","T6 PPIB","T7 PPIB","T8 PPIB","T9 PPIB","T10 PPIB", "T11 PPIB", "T12 PPIB")) 
 ```
 
 ## Compare median
 
-```{r median_comparison_per_replicate, fig.width=10, fig.height=8, dev=c('png', 'pdf')}
+```{r Supp_Fig_1C_median_comparison_per_replicate, fig.width=10, fig.height=8, dev=c('pdf')}
 # compare medians per replicate
 summarized = cells_panel_12plex_sub %>% 
   group_by(replicate, stain) %>% 
@@ -363,7 +362,7 @@ ggplot(data = summarized, aes(x=stain,y=median_signal_per_replicate)) +
   scale_fill_discrete(name = "Replicate") +
   ggtitle("Statistical comparison of channel intensities") + 
   ylab("Median Intensity Count per Replicate [asinh]") +
-  scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T11","T10", "T12"),
+  scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T10","T11", "T12"),
                       labels= c("T1 PPIB","T2 PPIB","T3 PPIB", "T4 PPIB", "T5 PPIB","T6 PPIB","T7 PPIB","T8 PPIB","T9 PPIB","T10 PPIB", "T11 PPIB", "T12 PPIB")) +
   geom_hline(yintercept = mean(summarized$median_signal_per_replicate), linetype = 2) +
   stat_compare_means(method = "anova", label.y = 2.4) +      # Add global p-value
@@ -371,3 +370,13 @@ ggplot(data = summarized, aes(x=stain,y=median_signal_per_replicate)) +
   xlab("Target Channels") +
   ylim(0,2.6)
 ```
+
+## Signal range
+
+```{r}
+cells_panel_12plex_sub %>%
+  group_by(stain) %>%
+  summarize(mean_per_channel = mean(counts_asinh)) %>%
+  mutate(sd = sd(mean_per_channel), mean = mean(mean_per_channel), min = min(mean_per_channel), max = max(mean_per_channel))
+```
+
