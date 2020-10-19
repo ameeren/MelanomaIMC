@@ -166,12 +166,6 @@ cur_dt <- as.data.table(colData(sce_rna))
 cur_dt_prot <- as.data.table(colData(sce_prot))
 cur_dt_prot <- distinct(cur_dt_prot, ImageNumber, .keep_all = T)
 
-# add T cell scoring from protein data set
-cur_dt <- left_join(cur_dt, cur_dt_prot[,c("Description", "T_frac_score_per_ImageNumber", 
-                                           "T_frac_score_per_BlockID", "T_frac_score_per_PatientID", 
-                                           "infiltration")],
-                    by = "Description")
-
 ## wide table for communities - filter undefined or unclear E_I_D scores
 cur_dt_wide <- cur_dt %>%
   group_by(ImageNumber, community_module) %>%

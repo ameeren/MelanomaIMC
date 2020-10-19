@@ -25,6 +25,8 @@ library(SingleCellExperiment)
 library(ggplot2)
 library(gridExtra)
 library(data.table)
+library(tibble)
+library(tidyr)
 ```
 
 ## Load Data

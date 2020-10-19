@@ -17,7 +17,7 @@ First, we will load the libraries needed for this part of the analysis.
 
 ```{r load-libraries, message=FALSE}
 library(SingleCellExperiment)
-library(dtplyr)
+library(dplyr)
 library(ggplot2)
 ```
 
@@ -28,7 +28,7 @@ sce_rna = readRDS(file = "data/sce_RNA.rds")
 sce_prot = readRDS(file = "data/sce_protein.rds")
 ```
 
-# 
+# Analysis
 
 ## Abundance of CXCL13+CD8+ cells
 
