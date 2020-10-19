@@ -7,7 +7,7 @@ navbar:
     href: index.html
   - text: About
     href: about.html
-  - text: Preparations RNA TMA
+  - text: RNA TMA
     menu:
     - text: Read Data
       href: 01_RNA_read_data.html
@@ -27,7 +27,7 @@ navbar:
       href: 07_RNA_chemokine_community_clustering.html
     - text: Pure Chemokine Communities
       href: 08_RNA_neighbourhood_analysis_chemokines.html
-  - text: Preparations Protein TMA
+  - text: Protein TMA
     menu:
     - text: Read Data
       href: 01_Protein_read_data.html
@@ -45,13 +45,13 @@ navbar:
       href: 06_Protein_Ki67status.html
   - text: Main Figures
     menu:
-    - text: Overview
+    - text: Figure 1
       href: Figure_1.html
-    - text: Chemokines in Metastatic Melanoma
+    - text: Figure 2
       href: Figure_2.html
-    - text: Chemokine Communities
+    - text: Figure 3
       href: Figure_3.html
-    - text: T cell scoring
+    - text: Figure 4
       href: Figure_4.html
   - text: Supplemental Figures
     menu:
@@ -59,6 +59,12 @@ navbar:
       href: Supp-Figure_1.html
     - text: Supp-Figure 2
       href: Supp-Figure_2.html
+    - text: Supp-Figure 3
+      href: Supp-Figure_3.html
+    - text: Supp-Figure 4
+      href: Supp-Figure_4.html
+    - text: Supp-Figure 5
+      href: Supp-Figure_5.html
   - text: License
     href: license.html
 output:

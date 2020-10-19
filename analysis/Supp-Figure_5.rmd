@@ -27,6 +27,7 @@ library(gridExtra)
 library(data.table)
 library(tibble)
 library(tidyr)
+library(dplyr)
 ```
 
 ## Load Data
@@ -72,7 +73,7 @@ sce_rna$expressor <- cur_df$expressor
 
 ## Mutational Status
 
-```{r Fig_5A_mutational_status_normalized, dev=c('pdf')}
+```{r Fig_5A_mutational_status_normalized, dev=c('pdf'), fig.width=7, fig.height=8}
 # subset sce_rna
 group_size <- data.frame(colData(sce_rna)) %>%
   group_by(ImageNumber, Mutation) %>%
@@ -97,7 +98,7 @@ plotCellCounts(sce = sce_rna_sub,
 
 ## Mutational Status - Celltype 
 
-```{r Fig_5B_mutational_status_proportions, dev=c('pdf')}
+```{r Fig_5B_mutational_status_proportions, dev=c('pdf'), fig.width=7, fig.height=8}
 plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
                cellID = "cellID",
                colour_by = "MM_location",
@@ -106,14 +107,14 @@ plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
                #normalize = TRUE,
                proportion = TRUE,
                colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  guides(fill=guide_legend("Celltype")) +
+  guides(fill=guide_legend("Location")) +
   theme(text = element_text(size=18))
 ```
 
 
 ## Cancer Stage
 
-```{r Fig_5C_cancer_stage, dev=c('pdf')}
+```{r Fig_5C_cancer_stage, dev=c('pdf'), fig.width=7, fig.height=8}
 # subset sce_rna
 group_size <- data.frame(colData(sce_rna)) %>%
   group_by(ImageNumber, Cancer_Stage) %>%
@@ -138,7 +139,7 @@ plotCellCounts(sce = sce_rna_sub,
 
 ## Age
 
-```{r Fig_5D_age, dev=c('pdf')}
+```{r Fig_5D_age, dev=c('pdf'), fig.width=7, fig.height=8}
 # subset sce_rna
 group_size <- data.frame(colData(sce_rna)) %>%
   group_by(ImageNumber, Age) %>%
@@ -163,7 +164,7 @@ plotCellCounts(sce = sce_rna_sub,
 
 ## Gender
 
-```{r Fig_5E_gender, dev=c('pdf')}
+```{r Fig_5E_gender, dev=c('pdf'), fig.width=7, fig.height=8}
 # subset sce_rna
 group_size <- data.frame(colData(sce_rna)) %>%
   group_by(ImageNumber, Gender) %>%

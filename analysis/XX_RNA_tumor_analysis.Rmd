@@ -30,6 +30,8 @@ library(gridExtra)
 library(ggpmisc)
 library(survival)
 library(survminer)
+library(scater)
+library(dittoSeq)
 ```
 
 ## Load data
@@ -78,48 +80,19 @@ ggplot(tumor_dat, aes(x=T_frac_score_per_ImageNumber, y=B2M, fill=cxcl13_score))
 
 Clearly, B2M expression on tumor cells is associated with cytotoxic T cell infiltration and potentialy also with the abundance of dysfunctinal cytotoxic T cells. 
 
-## Check Survival of Patients with CXCL13+ Score
+## Tumor Markers and Cancer Stage
 
 ```{r}
-# create CXCL13+ per BlockID
-block_score <- cur_df %>%
-  group_by(BlockID, cxcl13_score) %>% 
-  summarise(n = n()) %>%
-  ungroup() %>%
-  complete(BlockID, cxcl13_score, fill = list(n = 0)) %>% 
-  reshape2::dcast(BlockID ~ cxcl13_score, value.var = "n") %>%
-  mutate(block_score = ifelse(`CXCL13+` > `CXCL13-`, "CXCL13+", "CXCL13-")) %>%
-  mutate(Block.ID = BlockID)
+tumor_dat <- data.frame(t(assay(sce_rna["S100", sce_rna$celltype == "Tumor" & sce_rna$Location != "CTRL"], "asinh")))
+tumor_dat$cellID <- rownames(tumor_dat)
+tumor_dat <- left_join(tumor_dat, data.frame(colData(sce_rna))[,c("cellID", "Cancer_Stage")])
 
-data <- read.csv("data/survdat_for_modelling.csv")
-
-data_sub <- data#[data$number_of_treatments_before_grouping == "naive",]
-
-# add block score
-data_sub <- left_join(data_sub, block_score[,c("Block.ID", "block_score")])
-
-data_sub$block_score <- factor(data_sub$block_score, levels = c("CXCL13-", "CXCL13+"))
-
-fit <- survfit(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~ 
-                 block_score, data = data_sub)
-
-ggsurvplot(fit, data = data_sub,
- conf.int = FALSE,
- pval = TRUE,
- fun = "pct",
- risk.table = TRUE,
- size = 1,
- linetype = "strata",
- legend = "bottom",
- legend.title = "CXCL13 Scoring",
- legend.labs = c("CXCL13-","CXCL13+"))
-
-fit <- coxph(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~ 
-               block_score,
-             data = data_sub)
-ggforest(fit, data=data_sub)
+ggplot(tumor_dat, aes(x=Cancer_Stage, y=S100)) + 
+  geom_boxplot() +
+  theme(text = element_text(size=20)) +
+  xlab("Cancer Stage") + 
+  ylab("Mean B2M in Tumor Cells (asinh)")
 ```
-
 
 ## Correlation with mean B2M expression and T cell density
 
@@ -175,21 +148,255 @@ data_sub$block_score <- factor(data_sub$block_score, levels = c("B2M_low", "B2M_
 fit <- survfit(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~ 
                  block_score, data = data_sub)
 
-ggsurvplot(fit, data = data_sub,
- conf.int = FALSE,
- pval = TRUE,
- fun = "pct",
- risk.table = TRUE,
- size = 1,
- linetype = "strata",
- legend = "bottom",
- legend.title = "B2M Scoring",
- legend.labs = c("B2M_low","B2M_high"))
-
 fit <- coxph(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~ 
                block_score,
              data = data_sub)
 ggforest(fit, data=data_sub)
 ```
 
+# Tumor and Chemokine Analysis
+
+## UMAP 
+
+```{r UMAP_chemokine_tumor, dev=('pdf'), fig.width=8, fig.height=6}
+tumor_chemokine <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tumor" & sce_rna$chemokine == 1]))[,"cellID"]
+control_tumor <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tumor" & sce_rna$chemokine == 0]))
+
+# sample same amount of control tumor cells
+control_tumor <- control_tumor[sample(nrow(control_tumor), length(tumor_chemokine)), "cellID"]
+cur_sce <- sce_rna[,sce_rna$cellID %in% cbind(tumor_chemokine, control_tumor)]
+
+# tumor marker
+tumor_marker <- c("HLADR", "S100", "B2M", "GLUT1", "SOX10", "Mart1", "pRB", "cleavedPARP")
+
+# UMAP
+cur_sce <- runUMAP(cur_sce, exprs_values = "asinh", 
+               subset_row = (rownames(cur_sce) %in% tumor_marker),
+               n_neighbors = 10)
+
+# plot UMAP
+a <- dittoDimPlot(cur_sce,
+             reduction.use = "UMAP",
+             var = "chemokine", 
+             size = 2,
+             legend.show = TRUE,
+             opacity = 0.5,
+             max.color = "red", min.color = "azure3",
+             main = NULL) +
+    theme_minimal() +
+    theme(text = element_text(size=25)) +
+    guides(color = guide_legend(override.aes = list(alpha=1, size=5))) +
+    guides(fill=guide_legend("Chemokine"))
+
+# plot marker on UMAP
+p.list <- list()
+for(i in tumor_marker){
+  p.list[[i]] <- dittoDimPlot(cur_sce, i, size = 1, assay = "asinh")
+}
+
+b <- plot_grid(plotlist = p.list, ncol = 2)
+
+grid.arrange(a,b, ncol = 2)
+```
+
+It seems that HLADR and B2M is elevated in cells that produce chemokines. Lets check this with a boxplot.
+
+```{r boxplot_HLADR_B2M, dev=('pdf'), fig.width=8, fig.height=6}
+cur_sce <- sce_rna[,sce_rna$cellID %in% cbind(tumor_chemokine, control_tumor)]
+
+tumor_dat <- data.frame(t(assay(cur_sce["HLADR", cur_sce$celltype == "Tumor" & cur_sce$Location != "CTRL"], "asinh")))
+tumor_dat$cellID <- rownames(tumor_dat)
+tumor_dat <- left_join(tumor_dat, data.frame(colData(sce_rna))[,c("cellID", "chemokine")])
+
+a <- ggplot(tumor_dat, aes(x=chemokine, y=HLADR)) + 
+  geom_boxplot() +
+  theme(text = element_text(size=20)) +
+  xlab("Chemokine Production in Tumor Cells") + 
+  ylab("Mean HLA-DR in Tumor Cells (asinh)")
+
+tumor_dat <- data.frame(t(assay(cur_sce["B2M", cur_sce$celltype == "Tumor" & cur_sce$Location != "CTRL"], "asinh")))
+tumor_dat$cellID <- rownames(tumor_dat)
+tumor_dat <- left_join(tumor_dat, data.frame(colData(sce_rna))[,c("cellID", "chemokine")])
+
+b <- ggplot(tumor_dat, aes(x=chemokine, y=B2M)) + 
+  geom_boxplot() +
+  theme(text = element_text(size=20)) +
+  xlab("Chemokine Production in Tumor Cells") + 
+  ylab("Mean HLA-DR in Tumor Cells (asinh)")
+
+grid.arrange(a,b, ncol =2)
+```
+
+Clearly, chemokine+ tumor cells have a different marker profile than chemokine- cells. What does this mean biologically? Do they really produce chemokines or is this tumor profile associated with immune cell infiltration and upon contact with a tumor cell with chemokine expression? Maybe the expression happens in vicinicty to tumor cells and tumor cells are then falsely detected as chemokine+ cell. We can check this if we look at direct neighbours of chemokine+ cells. 
+
+## Neighbourhood of chemokine+ tumor cells
+
+```{r}
+dat_relation = fread(file = "data/rna/Object relationships.csv",stringsAsFactors = FALSE)
+
+dat_relation$cellID_first <- paste("RNA", paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = "_"), sep = "_")
+dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
+
+# only chemokine+ tumor cells as first object
+dat_relation_sub <- dat_relation[dat_relation$cellID_first %in% tumor_chemokine,]
+interacting_cells <- dat_relation_sub$cellID_second
+
+data.frame(colData(sce_rna[,sce_rna$cellID %in% interacting_cells])) %>%
+  group_by(celltype, chemokine) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(celltype ~ chemokine, value.var = "n", fill=0) %>%
+  mutate(percentage_chemokine = round(`TRUE` / (`FALSE` + `TRUE`)*100,1))
+
+# subset relation table
+dat_relation_sub <- dat_relation[dat_relation$cellID_first %in% tumor_chemokine,]
+interacting_cells <- dat_relation_sub$cellID_second
+
+data.frame(colData(sce_rna[,sce_rna$cellID %in% interacting_cells])) %>%
+  group_by(celltype, chemokine) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(celltype ~ chemokine, value.var = "n", fill=0) %>%
+  mutate(percentage_chemokine = round(`TRUE` / (`FALSE` + `TRUE`)*100,1))
+```
+
+## What kind of chemokine do the neighbouring cells "produce"? 
+If it is a different chemokine, than we know that tumor cells really produce a certain chemokine. Alternatively, we could also only take tumor cells that produce a chemokine but not its neighbours as "ground truth" for analyses such as marker expression comparison etc. 
+
+```{r}
+cur_df <- colData(sce_rna)
+cur_df <- as_tibble(cur_df)
+cur_df <- cur_df[,grepl("CCL|CXCL|Dap",colnames(cur_df))]
+
+for(i in colnames(cur_df)){
+  cur_df[[i]] <- ifelse(cur_df[[i]]== 1,i,"NA")
+}
+
+cur_df <- cur_df %>%
+  unite(expressor,sep = "_",na.rm =TRUE,remove=FALSE)
+
+cur_df$expressor <- gsub("NA_","",cur_df$expressor)
+cur_df$expressor <- gsub("_NA","",cur_df$expressor)
+
+# summary table of all combinations
+summary_cur_df <- table(cur_df$expressor)
+
+# order table according to abundance of combinations
+summary_cur_df<- summary_cur_df[order(-as.numeric(summary_cur_df))]
+
+# combinations with more than 600 occurrences
+targets <- names(which(summary_cur_df > 600))
+targets <- targets[!targets == "NA"]
+
+# add expressor info to sce object
+sce_rna$expressor <- cur_df$expressor
+```
+
+
+```{r}
+dat_relation_sub <- dat_relation[dat_relation$cellID_first %in% tumor_chemokine,]
+dat_relation_sub <- dat_relation_sub[!(dat_relation_sub$cellID_second %in% tumor_chemokine),]
+dat_relation_sub <- dat_relation_sub[dat_relation_sub$cellID_second %in% sce_rna[,sce_rna$chemokine == 1]$cellID, ]
+
+# add expressor status to first and second label
+expressor_first <- data.frame(colData(sce_rna))[,c("cellID", "expressor")]
+colnames(expressor_first) <- c("cellID_first", "expressor_tumor")
+expressor_second <- data.frame(colData(sce_rna))[,c("cellID", "expressor")]
+colnames(expressor_second) <- c("cellID_second", "expressor_neighbour")
+dat_relation_sub <- left_join(dat_relation_sub, expressor_first, by = "cellID_first")
+dat_relation_sub <- left_join(dat_relation_sub, expressor_second, by = "cellID_second")
+
+# count occurences of case where first label has (partially) same chemokine as non-tumor neighbouring cell
+shared_chemokine <- dat_relation_sub %>%
+  group_by(cellID_first) %>%
+  mutate(shared_chemokine = ifelse(all(str_split(expressor_tumor, "_")[[1]] %in% str_split(expressor_neighbour, "_")[[1]]), TRUE, FALSE))
+  
+# what are the most abundant combinations of chemokines in tumor cells that only occur in this tumor cell but not in neighbouring non-tumor cells?  
+shared_chemokine %>%
+  group_by(shared_chemokine) %>%
+  filter(shared_chemokine == FALSE) %>%
+  group_by(expressor_tumor) %>%
+  summarise(n=n()) %>%
+  arrange(-n)
+
+ids <- shared_chemokine %>%
+  filter(shared_chemokine == FALSE) %>%
+  select(cellID_first)
+
+cur_col <- data.frame(colData(sce_rna))
+cur_col$standalone_tumor <- ifelse(cur_col$cellID %in% ids$cellID_first, TRUE, FALSE)
+colData(sce_rna)$standalone_tumor <- cur_col$standalone_tumor
+```
+
+## run UMAP again on stand-alone expressing tumor cells and control group
+
+```{r}
+tumor_chemokine <- data.frame(colData(sce_rna[, sce_rna$standalone_tumor == TRUE]))[,"cellID"]
+control_tumor <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tumor" & sce_rna$chemokine == 0]))
+
+# sample same amount of control tumor cells
+control_tumor <- control_tumor[sample(nrow(control_tumor), length(tumor_chemokine)), "cellID"]
+cur_sce <- sce_rna[,sce_rna$cellID %in% cbind(tumor_chemokine, control_tumor)]
+
+# UMAP
+cur_sce <- runUMAP(cur_sce, exprs_values = "asinh", 
+               subset_row = (rownames(cur_sce) %in% tumor_marker),
+               n_neighbors = 15)
+
+# plot UMAP
+a <- dittoDimPlot(cur_sce,
+             reduction.use = "UMAP",
+             var = "standalone_tumor", 
+             size = 2,
+             legend.show = TRUE,
+             opacity = 1,
+             max.color = "red", min.color = "azure3",
+             main = NULL) +
+    theme_minimal() +
+    theme(text = element_text(size=25)) +
+    guides(color = guide_legend(override.aes = list(alpha=1, size=5))) +
+    guides(fill=guide_legend("Chemokine"))
+
+p.list <- list()
+for(i in tumor_marker){
+  p.list[[i]] <- dittoDimPlot(cur_sce, i, size = 1, assay = "asinh")
+}
+
+b <- plot_grid(plotlist = p.list, ncol = 2)
+
+grid.arrange(a,b, ncol = 2)
+```
+
+It seems that HLADR and B2M is elevated in cells that produce chemokines. Lets check this with a boxplot.
+
+```{r boxplot_HLADR_B2M_no_shared, dev=('pdf'), fig.width=8, fig.height=6}
+cur_sce <- sce_rna[,sce_rna$cellID %in% cbind(tumor_chemokine, control_tumor)]
+
+tumor_dat <- data.frame(t(assay(cur_sce["HLADR", cur_sce$celltype == "Tumor" & cur_sce$Location != "CTRL"], "scaled_asinh")))
+tumor_dat$cellID <- rownames(tumor_dat)
+tumor_dat <- left_join(tumor_dat, data.frame(colData(sce_rna))[,c("cellID", "standalone_tumor")])
+
+tumor_dat$standalone_tumor <- as.character(tumor_dat$standalone_tumor)
+
+a <- ggplot(tumor_dat, aes(x=standalone_tumor, y=HLADR)) + 
+  geom_boxplot() +
+  theme(text = element_text(size=20)) +
+  xlab("Chemokine Production in Tumor Cells") + 
+  ylab("Mean HLA-DR in Tumor Cells (asinh)") +
+  stat_compare_means(comparison = list(c("FALSE", "TRUE")), method = "t.test", aes(label=..p.adj..),
+                     p.adjust.methods = "fdr")
+
+
+
+tumor_dat <- data.frame(t(assay(cur_sce["B2M", cur_sce$celltype == "Tumor" & cur_sce$Location != "CTRL"], "asinh")))
+tumor_dat$cellID <- rownames(tumor_dat)
+tumor_dat <- left_join(tumor_dat, data.frame(colData(sce_rna))[,c("cellID", "standalone_tumor")])
+
+b <- ggplot(tumor_dat, aes(x=standalone_tumor, y=B2M)) + 
+  geom_boxplot() +
+  theme(text = element_text(size=20)) +
+  xlab("Chemokine Production in Tumor Cells") + 
+  ylab("Mean HLA-DR in Tumor Cells (asinh)") +
+  stat_compare_means(comparison = list(c("FALSE", "TRUE")), method = "wilcox.test", aes(label=..p.adj..))
+
+grid.arrange(a,b, ncol =2)
+```
 
