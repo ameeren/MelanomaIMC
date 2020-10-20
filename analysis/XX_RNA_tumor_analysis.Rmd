@@ -25,13 +25,16 @@ library(ggplot2)
 library(reshape2)
 library(cowplot)
 library(dplyr)
-library(sf)
 library(gridExtra)
 library(ggpmisc)
 library(survival)
 library(survminer)
 library(scater)
 library(dittoSeq)
+library(tidyr)
+library(data.table)
+library(stringr)
+library(grDevices)
 ```
 
 ## Load data
@@ -222,7 +225,7 @@ b <- ggplot(tumor_dat, aes(x=chemokine, y=B2M)) +
   geom_boxplot() +
   theme(text = element_text(size=20)) +
   xlab("Chemokine Production in Tumor Cells") + 
-  ylab("Mean HLA-DR in Tumor Cells (asinh)")
+  ylab("Mean B2M in Tumor Cells (asinh)")
 
 grid.arrange(a,b, ncol =2)
 ```
@@ -370,7 +373,7 @@ It seems that HLADR and B2M is elevated in cells that produce chemokines. Lets c
 ```{r boxplot_HLADR_B2M_no_shared, dev=('pdf'), fig.width=8, fig.height=6}
 cur_sce <- sce_rna[,sce_rna$cellID %in% cbind(tumor_chemokine, control_tumor)]
 
-tumor_dat <- data.frame(t(assay(cur_sce["HLADR", cur_sce$celltype == "Tumor" & cur_sce$Location != "CTRL"], "scaled_asinh")))
+tumor_dat <- data.frame(t(assay(cur_sce["HLADR", cur_sce$celltype == "Tumor" & cur_sce$Location != "CTRL"], "asinh")))
 tumor_dat$cellID <- rownames(tumor_dat)
 tumor_dat <- left_join(tumor_dat, data.frame(colData(sce_rna))[,c("cellID", "standalone_tumor")])
 
@@ -394,8 +397,75 @@ b <- ggplot(tumor_dat, aes(x=standalone_tumor, y=B2M)) +
   geom_boxplot() +
   theme(text = element_text(size=20)) +
   xlab("Chemokine Production in Tumor Cells") + 
-  ylab("Mean HLA-DR in Tumor Cells (asinh)") +
+  ylab("Mean B2M in Tumor Cells (asinh)") +
   stat_compare_means(comparison = list(c("FALSE", "TRUE")), method = "wilcox.test", aes(label=..p.adj..))
+
+grid.arrange(a,b, ncol =2)
+```
+
+## Analyse (non-tumor) Neighbouring Cells of Producing vs Non Tumor Cells
+
+```{r}
+standalone_tumor <- data.frame(colData(sce_rna[, sce_rna$standalone_tumor == TRUE & sce_rna$chemokine == 1]))[,"cellID"]
+standalone_neighbours <- dat_relation[dat_relation$cellID_first %in% standalone_tumor,]$cellID_second
+
+control_tumor <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tumor" & sce_rna$chemokine == 0]))
+control_tumor <- control_tumor[sample(nrow(control_tumor), length(standalone_tumor)), "cellID"]
+control_neighbours <- dat_relation[dat_relation$cellID_first %in% control_tumor,]$cellID_second
+
+# sample same amount of control tumor cells
+cur_sce <- sce_rna[,sce_rna$cellID %in% c(standalone_neighbours, control_neighbours)]
+
+# add info if the tumor cell is producing a chemokine or not (STANDALONE)
+cur_df <- data.frame(colData(cur_sce))
+cur_df$tumor_producing <- ifelse(cur_df$cellID %in% standalone_neighbours, "producing neighbour", "non-producing neighbour")
+colData(cur_sce)$tumor_producing <- cur_df$tumor_producing
+
+# plot proportions
+plotCellCounts(cur_sce, proportion = TRUE, 
+               colour_by = "celltype", 
+               split_by = "tumor_producing",
+               imageID = "ImageNumber",
+               colour_vector = metadata(cur_sce)$colour_vector$celltype)
+```
+
+## UMAP of non-tumor cells only
+
+````{r}
+# remove tumor neighbouring cells - we are only interested in non-tumor cells
+cur_sce <- cur_sce[,cur_sce$celltype != "Tumor"]
+
+# UMAP
+cur_sce <- runUMAP(cur_sce, exprs_values = "asinh", 
+               subset_row = rowData(cur_sce)$good_marker,
+               n_neighbors = 10)
+
+# plot UMAP
+a <- dittoDimPlot(cur_sce,
+             reduction.use = "UMAP",
+             var = "celltype", 
+             size = 2,
+             legend.show = TRUE,
+             opacity = 0.5,
+             max.color = "red", min.color = "azure3",
+             main = NULL) +
+    theme_minimal() +
+    theme(text = element_text(size=25)) +
+    guides(color = guide_legend(override.aes = list(alpha=1, size=5))) +
+    guides(fill=guide_legend("Celltype"))
+
+b <- dittoDimPlot(cur_sce,
+             reduction.use = "UMAP",
+             var = "tumor_producing", 
+             size = 1,
+             legend.show = TRUE,
+             opacity = 0.5,
+             max.color = "red", min.color = "azure3",
+             main = NULL) +
+    theme_minimal() +
+    theme(text = element_text(size=25)) +
+    guides(color = guide_legend(override.aes = list(alpha=1, size=5))) +
+    guides(fill=guide_legend("Celltype"))
 
 grid.arrange(a,b, ncol =2)
 ```

@@ -42,8 +42,9 @@ plotCellCounts <- function(sce,
 
   # create color vector if none is provided
   if(is.null(colour_vector)){
+    color = grDevices::colors()[grep('gr(a|e)y', grDevices::colors(), invert = T)]
     n <- length(unique(colData(sce)[,colour_by]))
-    colour_vector = randomcoloR::distinctColorPalette(n)
+    colour_vector=sample(color, n)
     names(colour_vector) <- unique(colData(sce)[,colour_by])
     }
 
