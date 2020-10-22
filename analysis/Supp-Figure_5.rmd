@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates plots for Supplementary Figure 5.
+This script generates plots for Supplementary Figure 5 and computes statistical results for the manuscript.
 
 # Preparations
 
@@ -34,40 +34,8 @@ library(dplyr)
 
 ```{r}
 sce_rna <- readRDS(file = "data/sce_RNA.rds")
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 ```
-
-## Prep Data
-
-```{r}
-## Most abundant combinations
-cur_df <- colData(sce_rna)
-cur_df <- as_tibble(cur_df)
-cur_df <- cur_df[,grepl("CCL|CXCL|Dap",colnames(cur_df))]
-
-for(i in colnames(cur_df)){
-  cur_df[[i]] <- ifelse(cur_df[[i]]== 1,i,"NA")
-}
-
-cur_df <- cur_df %>%
-  unite(expressor,sep = "_",na.rm =TRUE,remove=FALSE)
-
-cur_df$expressor <- gsub("NA_","",cur_df$expressor)
-cur_df$expressor <- gsub("_NA","",cur_df$expressor)
-
-# summary table of all combinations
-summary_cur_df <- table(cur_df$expressor)
-
-# order table according to abundance of combinations
-summary_cur_df<- summary_cur_df[order(-as.numeric(summary_cur_df))]
-
-# combinations with more than 600 occurrences
-targets <- names(which(summary_cur_df > 600))
-targets <- targets[!targets == "NA"]
-
-# add expressor info to sce object
-sce_rna$expressor <- cur_df$expressor
-```
-
 
 # Chemokine Expression by Different Clinical Parameters
 
@@ -94,6 +62,15 @@ plotCellCounts(sce = sce_rna_sub,
                      colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
   guides(fill=guide_legend("Chemokine")) +
   theme(text = element_text(size=18))
+
+t <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(ImageNumber, Mutation, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Mutation ~ chemokine, value.var = "fraction")
+
+round(kruskal.test(x = t$`TRUE`, g = t$Mutation)$p.value,3)
 ```
 
 ## Mutational Status - Celltype 
@@ -101,16 +78,14 @@ plotCellCounts(sce = sce_rna_sub,
 ```{r Fig_5B_mutational_status_proportions, dev=c('pdf'), fig.width=7, fig.height=8}
 plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
                cellID = "cellID",
-               colour_by = "MM_location",
+               colour_by = "celltype",
                split_by = "Mutation",
                imageID = "ImageNumber",
-               #normalize = TRUE,
                proportion = TRUE,
-               colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+               colour_vector = metadata(sce_rna)$colour_vectors$celltype) + 
   guides(fill=guide_legend("Location")) +
   theme(text = element_text(size=18))
 ```
-
 
 ## Cancer Stage
 
@@ -135,6 +110,15 @@ plotCellCounts(sce = sce_rna_sub,
                      colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
   guides(fill=guide_legend("Chemokine")) +
   theme(text = element_text(size=18))
+
+t <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(ImageNumber, Cancer_Stage, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Cancer_Stage ~ chemokine, value.var = "fraction")
+
+round(wilcox.test(t$`TRUE` ~ t$Cancer_Stage)$p.value,3)
 ```
 
 ## Age
@@ -149,6 +133,10 @@ group_size <- data.frame(colData(sce_rna)) %>%
   filter(n>10 & Age != "")
 
 sce_rna_sub <- sce_rna[,sce_rna$Age %in% group_size$Age]
+sce_rna_sub[,sce_rna_sub$Age == "?60"]$Age <- "60+"
+
+# relevel age factor
+sce_rna_sub$Age <- factor(sce_rna_sub$Age, levels = c("<45", "45-59", "60+"))
 
 plotCellCounts(sce = sce_rna_sub, 
                      sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
@@ -160,6 +148,15 @@ plotCellCounts(sce = sce_rna_sub,
                      colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
   guides(fill=guide_legend("Chemokine")) +
   theme(text = element_text(size=18))
+
+t <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(ImageNumber, Age, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Age ~ chemokine, value.var = "fraction")
+
+round(kruskal.test(x = t$`TRUE`, g = t$Age)$p.value,3)
 ```
 
 ## Gender
@@ -185,6 +182,13 @@ plotCellCounts(sce = sce_rna_sub,
                      colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
   guides(fill=guide_legend("Chemokine")) +
   theme(text = element_text(size=18))
+
+t <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(ImageNumber, Gender, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Gender ~ chemokine, value.var = "fraction")
+
+round(wilcox.test(t$`TRUE` ~ t$Gender)$p.value,3)
 ```
-
-

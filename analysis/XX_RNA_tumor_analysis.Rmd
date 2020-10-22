@@ -169,11 +169,14 @@ control_tumor <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tumor" & sce_
 control_tumor <- control_tumor[sample(nrow(control_tumor), length(tumor_chemokine)), "cellID"]
 cur_sce <- sce_rna[,sce_rna$cellID %in% cbind(tumor_chemokine, control_tumor)]
 
+# redo scaling of markers 
+assay(cur_sce, "scaled_asinh") <- t(scale(t(assay(cur_sce, "asinh"))))
+
 # tumor marker
 tumor_marker <- c("HLADR", "S100", "B2M", "GLUT1", "SOX10", "Mart1", "pRB", "cleavedPARP")
 
 # UMAP
-cur_sce <- runUMAP(cur_sce, exprs_values = "asinh", 
+cur_sce <- runUMAP(cur_sce, exprs_values = "scaled_asinh", 
                subset_row = (rownames(cur_sce) %in% tumor_marker),
                n_neighbors = 10)
 
@@ -194,7 +197,7 @@ a <- dittoDimPlot(cur_sce,
 # plot marker on UMAP
 p.list <- list()
 for(i in tumor_marker){
-  p.list[[i]] <- dittoDimPlot(cur_sce, i, size = 1, assay = "asinh")
+  p.list[[i]] <- dittoDimPlot(cur_sce, i, size = 1, assay = "scaled_asinh")
 }
 
 b <- plot_grid(plotlist = p.list, ncol = 2)
@@ -204,7 +207,7 @@ grid.arrange(a,b, ncol = 2)
 
 It seems that HLADR and B2M is elevated in cells that produce chemokines. Lets check this with a boxplot.
 
-```{r boxplot_HLADR_B2M, dev=('pdf'), fig.width=8, fig.height=6}
+```{r boxplot_HLADR_B2M, dev=('pdf'), fig.width=11, fig.height=6}
 cur_sce <- sce_rna[,sce_rna$cellID %in% cbind(tumor_chemokine, control_tumor)]
 
 tumor_dat <- data.frame(t(assay(cur_sce["HLADR", cur_sce$celltype == "Tumor" & cur_sce$Location != "CTRL"], "asinh")))
@@ -331,7 +334,7 @@ colData(sce_rna)$standalone_tumor <- cur_col$standalone_tumor
 
 ## run UMAP again on stand-alone expressing tumor cells and control group
 
-```{r}
+```{r UMAP_chemokine_stand_tumor, dev=('pdf'), fig.width=8, fig.height=6}
 tumor_chemokine <- data.frame(colData(sce_rna[, sce_rna$standalone_tumor == TRUE]))[,"cellID"]
 control_tumor <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tumor" & sce_rna$chemokine == 0]))
 
@@ -339,8 +342,11 @@ control_tumor <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tumor" & sce_
 control_tumor <- control_tumor[sample(nrow(control_tumor), length(tumor_chemokine)), "cellID"]
 cur_sce <- sce_rna[,sce_rna$cellID %in% cbind(tumor_chemokine, control_tumor)]
 
+# redo scaling of markers 
+assay(cur_sce, "scaled_asinh") <- t(scale(t(assay(cur_sce, "asinh"))))
+
 # UMAP
-cur_sce <- runUMAP(cur_sce, exprs_values = "asinh", 
+cur_sce <- runUMAP(cur_sce, exprs_values = "scaled_asinh", 
                subset_row = (rownames(cur_sce) %in% tumor_marker),
                n_neighbors = 15)
 
@@ -360,7 +366,7 @@ a <- dittoDimPlot(cur_sce,
 
 p.list <- list()
 for(i in tumor_marker){
-  p.list[[i]] <- dittoDimPlot(cur_sce, i, size = 1, assay = "asinh")
+  p.list[[i]] <- dittoDimPlot(cur_sce, i, size = 1, assay = "scaled_asinh")
 }
 
 b <- plot_grid(plotlist = p.list, ncol = 2)
@@ -370,7 +376,7 @@ grid.arrange(a,b, ncol = 2)
 
 It seems that HLADR and B2M is elevated in cells that produce chemokines. Lets check this with a boxplot.
 
-```{r boxplot_HLADR_B2M_no_shared, dev=('pdf'), fig.width=8, fig.height=6}
+```{r boxplot_HLADR_B2M_no_shared, dev=('pdf'), fig.width=11, fig.height=6}
 cur_sce <- sce_rna[,sce_rna$cellID %in% cbind(tumor_chemokine, control_tumor)]
 
 tumor_dat <- data.frame(t(assay(cur_sce["HLADR", cur_sce$celltype == "Tumor" & cur_sce$Location != "CTRL"], "asinh")))
@@ -386,8 +392,6 @@ a <- ggplot(tumor_dat, aes(x=standalone_tumor, y=HLADR)) +
   ylab("Mean HLA-DR in Tumor Cells (asinh)") +
   stat_compare_means(comparison = list(c("FALSE", "TRUE")), method = "t.test", aes(label=..p.adj..),
                      p.adjust.methods = "fdr")
-
-
 
 tumor_dat <- data.frame(t(assay(cur_sce["B2M", cur_sce$celltype == "Tumor" & cur_sce$Location != "CTRL"], "asinh")))
 tumor_dat$cellID <- rownames(tumor_dat)
@@ -422,21 +426,32 @@ cur_df$tumor_producing <- ifelse(cur_df$cellID %in% standalone_neighbours, "prod
 colData(cur_sce)$tumor_producing <- cur_df$tumor_producing
 
 # plot proportions
-plotCellCounts(cur_sce, proportion = TRUE, 
+a <- plotCellCounts(cur_sce, proportion = TRUE, 
                colour_by = "celltype", 
                split_by = "tumor_producing",
                imageID = "ImageNumber",
                colour_vector = metadata(cur_sce)$colour_vector$celltype)
+
+b <- plotCellCounts(cur_sce, proportion = TRUE, 
+               colour_by = "chemokine", 
+               split_by = "tumor_producing",
+               imageID = "ImageNumber")
+
+grid.arrange(a,b, ncol=2)
 ```
+
 
 ## UMAP of non-tumor cells only
 
-````{r}
+````{r dev=('pdf'), fig.width=8, fig.height=6}
 # remove tumor neighbouring cells - we are only interested in non-tumor cells
 cur_sce <- cur_sce[,cur_sce$celltype != "Tumor"]
 
+# redo scaling of markers 
+assay(cur_sce, "scaled_asinh") <- t(scale(t(assay(cur_sce, "asinh"))))
+
 # UMAP
-cur_sce <- runUMAP(cur_sce, exprs_values = "asinh", 
+cur_sce <- runUMAP(cur_sce, exprs_values = "scaled_asinh", 
                subset_row = rowData(cur_sce)$good_marker,
                n_neighbors = 10)
 
@@ -468,5 +483,116 @@ b <- dittoDimPlot(cur_sce,
     guides(fill=guide_legend("Celltype"))
 
 grid.arrange(a,b, ncol =2)
+```
+
+## Check HLADR levels of neighboring cells (maybe HLADR in tumor comes from neighbors)
+
+```{r}
+# sample same amount of control tumor cells
+cur_sce <- sce_rna[,sce_rna$cellID %in% c(standalone_neighbours, standalone_tumor)]
+
+# add info if the tumor cell is producing a chemokine or not (STANDALONE)
+cur_df <- data.frame(colData(cur_sce))
+cur_df$tumor_neighbor <- ifelse(cur_df$cellID %in% standalone_neighbours, "neighbouring cell", "tumor cell")
+colData(cur_sce)$tumor_neighbor <- cur_df$tumor_neighbor
+
+neighbor_dat <- data.frame(t(assay(cur_sce["HLADR", cur_sce$Location != "CTRL"], "asinh")))
+neighbor_dat$cellID <- rownames(neighbor_dat)
+neighbor_dat <- left_join(neighbor_dat, data.frame(colData(cur_sce))[,c("cellID", "tumor_neighbor")])
+
+a <- ggplot(neighbor_dat, aes(x=tumor_neighbor, y=HLADR)) + 
+  geom_boxplot() +
+  theme(text = element_text(size=20)) +
+  xlab("Chemokine Production in Tumor Cells") + 
+  ylab("Mean HLA-DR in Cells (asinh)")
+
+# sample same amount of control tumor cells
+cur_sce <- sce_rna[,sce_rna$cellID %in% c(control_neighbours, control_tumor)]
+
+# add info if the tumor cell is producing a chemokine or not (STANDALONE)
+cur_df <- data.frame(colData(cur_sce))
+cur_df$tumor_neighbor <- ifelse(cur_df$cellID %in% control_neighbours, "neighbouring cell", "tumor cell")
+colData(cur_sce)$tumor_neighbor <- cur_df$tumor_neighbor
+
+neighbor_dat <- data.frame(t(assay(cur_sce["HLADR", cur_sce$Location != "CTRL"], "asinh")))
+neighbor_dat$cellID <- rownames(neighbor_dat)
+neighbor_dat <- left_join(neighbor_dat, data.frame(colData(cur_sce))[,c("cellID", "tumor_neighbor")])
+
+b <- ggplot(neighbor_dat, aes(x=tumor_neighbor, y=HLADR)) + 
+  geom_boxplot() +
+  theme(text = element_text(size=20)) +
+  xlab("No Production in Tumor Cells") + 
+  ylab("Mean HLA-DR in cells (asinh)")
+
+grid.arrange(a,b,ncol=2)
+```
+
+## Check B2M levels of neighboring cells
+
+```{r}
+# sample same amount of control tumor cells
+cur_sce <- sce_rna[,sce_rna$cellID %in% c(standalone_neighbours, standalone_tumor)]
+
+# add info if the tumor cell is producing a chemokine or not (STANDALONE)
+cur_df <- data.frame(colData(cur_sce))
+cur_df$tumor_neighbor <- ifelse(cur_df$cellID %in% standalone_neighbours, "neighbouring cell", "tumor cell")
+colData(cur_sce)$tumor_neighbor <- cur_df$tumor_neighbor
+
+neighbor_dat <- data.frame(t(assay(cur_sce["B2M", cur_sce$Location != "CTRL"], "asinh")))
+neighbor_dat$cellID <- rownames(neighbor_dat)
+neighbor_dat <- left_join(neighbor_dat, data.frame(colData(cur_sce))[,c("cellID", "tumor_neighbor")])
+
+a <- ggplot(neighbor_dat, aes(x=tumor_neighbor, y=B2M)) + 
+  geom_boxplot() +
+  theme(text = element_text(size=20)) +
+  xlab("Chemokine Production in Tumor Cells") + 
+  ylab("Mean B2M in Cells (asinh)")
+
+# sample same amount of control tumor cells
+cur_sce <- sce_rna[,sce_rna$cellID %in% c(control_neighbours, control_tumor)]
+
+# add info if the tumor cell is producing a chemokine or not (STANDALONE)
+cur_df <- data.frame(colData(cur_sce))
+cur_df$tumor_neighbor <- ifelse(cur_df$cellID %in% control_neighbours, "neighbouring cell", "tumor cell")
+colData(cur_sce)$tumor_neighbor <- cur_df$tumor_neighbor
+
+neighbor_dat <- data.frame(t(assay(cur_sce["B2M", cur_sce$Location != "CTRL"], "asinh")))
+neighbor_dat$cellID <- rownames(neighbor_dat)
+neighbor_dat <- left_join(neighbor_dat, data.frame(colData(cur_sce))[,c("cellID", "tumor_neighbor")])
+
+b <- ggplot(neighbor_dat, aes(x=tumor_neighbor, y=B2M)) + 
+  geom_boxplot() +
+  theme(text = element_text(size=20)) +
+  xlab("No Production in Tumor Cells") + 
+  ylab("Mean B2M in cells (asinh)")
+
+grid.arrange(a,b,ncol=2)
+```
+
+## Marker Heat Map of Neighbouring Cells
+
+```{r}
+cur_sce <- sce_rna[,sce_rna$cellID %in% c(standalone_neighbours, control_neighbours)]
+
+# add info if the tumor cell is producing a chemokine or not (STANDALONE)
+cur_df <- data.frame(colData(cur_sce))
+cur_df$tumor_neighbor <- ifelse(cur_df$cellID %in% standalone_neighbours, "producing tumor", "non-producing")
+colData(cur_sce)$tumor_neighbor <- cur_df$tumor_neighbor
+
+cur_sce$celltype_standalone <- paste(cur_sce$celltype, cur_sce$tumor_neighbor)
+
+# aggregate celltypes
+agr_sce <- aggregateAcrossCells(cur_sce, ids = colData(cur_sce)[,c("celltype_standalone")], 
+                                average = TRUE)
+# asinh transformation
+assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
+
+# Centered and scaled Heatmap
+dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
+            annot.by = c("celltype_standalone"), 
+            cluster_rows = TRUE,
+            #annotation_colors = list(celltype = metadata(sce_rna)$colour_vectors$celltype),
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3, 3, length.out = 101))
 ```
 

@@ -30,6 +30,8 @@ library(corrplot)
 library(pheatmap)
 library(grid)
 library(gridExtra)
+library(tidyr)
+library(colorRamps)
 ```
 
 ## Load the single cell experiment object and the image metadata
@@ -185,6 +187,49 @@ idx <- match(chemokine_channels, colnames(colData(sce)))
 for(i in idx){
   colnames(colData(sce))[i] <- strsplit(colnames(colData(sce))[i], split = "_")[[1]][2]
 }
+```
+
+## Add expressor info and colour_vector (with control samples)
+
+```{r}
+cur_df <- colData(sce)
+cur_df <- as_tibble(cur_df)
+cur_df <- cur_df[,grepl("CCL|CXCL|Dap",colnames(cur_df))]
+
+for(i in colnames(cur_df)){
+  cur_df[[i]] <- ifelse(cur_df[[i]]== 1,i,"NA")
+}
+
+cur_df <- cur_df %>%
+  unite(expressor,sep = "_",na.rm =TRUE,remove=FALSE)
+
+cur_df$expressor <- gsub("NA_","",cur_df$expressor)
+cur_df$expressor <- gsub("_NA","",cur_df$expressor)
+
+# summary table of all combinations
+summary_cur_df <- table(cur_df$expressor)
+
+# order table according to abundance of combinations
+summary_cur_df<- summary_cur_df[order(-as.numeric(summary_cur_df))]
+
+# combinations with more than 600 occurrences
+targets <- names(which(summary_cur_df > 600))
+targets <- targets[!targets == "NA"]
+
+# add expressor info to sce object
+sce$expressor <- cur_df$expressor
+
+# add color vector to metadata
+color_chemo <- primary.colors(length(targets))
+names(color_chemo) <- targets
+metadata(sce)$colour_vectors$chemokine_combinations <- color_chemo
+
+# replace order of chemokines to match order without control samples for upset plot only (ATTENTION! HARD CODED)
+color_chemo <- replace(color_chemo, c("CXCL8", "CCL18"), color_chemo[c("CCL18", "CXCL8")])
+metadata(sce)$colour_vectors$chemokine_combinations_no_control_UPSETplot <- color_chemo
+
+# add target list to metadata
+metadata(sce)$chemokines_morethan600_withcontrol <- targets
 ```
 
 ## Save SCE object
