@@ -88,7 +88,7 @@ plotCellCounts <- function(sce,
                         breaks = names(colour_vector),
                         labels = names(colour_vector)) +
       scale_x_discrete(breaks = unique(df_sum$split_by),
-                       labels = paste(unique(df_sum$split_by), sample_size$n, sep = ", n = ")) +
+                       labels = paste(unique(df_sum$split_by), sample_size$n, sep = "\n#Samples = ")) +
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title.x = element_blank(),
@@ -131,7 +131,7 @@ plotCellCounts <- function(sce,
                         breaks = names(colour_vector),
                         labels = names(colour_vector)) +
       scale_x_discrete(breaks = unique(df_norm$split_by),
-                       labels = paste(unique(df_norm$split_by), sample_size$n, sep = ", n = ")) +
+                       labels = paste(unique(df_norm$split_by), sample_size$n, sep = "\n#Samples = ")) +
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title.x = element_blank(),
@@ -149,7 +149,7 @@ plotCellCounts <- function(sce,
                         breaks = names(colour_vector),
                         labels = names(colour_vector)) +
       scale_x_discrete(breaks = unique(cur_df$split_by),
-                       labels = paste(unique(cur_df$split_by), sample_size$n, sep = ", n = ")) +
+                       labels = paste(unique(cur_df$split_by), sample_size$n, sep = "\n#Samples = ")) +
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title.x = element_blank(),

@@ -19,6 +19,8 @@ library(SingleCellExperiment)
 library(scater)
 library(ggplot2)
 library(dittoSeq)
+library(cba)
+library(ComplexHeatmap)
 ```
 
 ## Load data
@@ -32,22 +34,103 @@ sce_prot <- readRDS("data/sce_protein.rds")
 
 ## Subset SCE for UMAP visualizations
 
-```{r}
-cur_sce <- sce_rna
-cur_sce$ImageNumber <- as.character(cur_sce$ImageNumber)
+## Barplot containing Cell Types per Image
+
+```{r Fig_1B_RNA_Barplot, fig.width=15, fig.height=13, dev=c('pdf')}
+# Create table with celltype fractions
+cur_df <- data.frame(celltype = sce_rna$celltype,
+                     Description= sce_rna$Description)
+
+# respahe to wide format
+cur_df <- reshape2::dcast(cur_df,formula = "Description ~ celltype", fun.aggregate = length)
+matrixrownames <- cur_df$Description
+
+# scale
+cur_df_wide <- t(scale(t(as.matrix(cur_df[,-1])), center = FALSE, 
+               scale = rowSums(cur_df[,-1])))
+
+
+# now we create a matrix from the data and cluster the data based on the cell fractions
+hm_dat = as.matrix(cur_df_wide)
+rownames(hm_dat) <- as.character(matrixrownames)
+
+# calculate distance and then cluster images based on cluster fraction
+dd <- dist((hm_dat), method = "euclidean")
+hc <- hclust(dd, method = "ward.D2")
+
+# order optimal orders the "leafs" of the cluster tree optimally to achieve smooth transitions
+hc$order = order.optimal(dd, hc$merge)$order
+row_sorted <- hc$labels[hc$order]
+
+# now we generate the clinical metadata and order it in the same way as the celltype data
+patient_meta <- metadata(sce_rna)
+patient_meta <- data.frame(patient_meta[c("Description", "MM_location_simplified")])
+
+mrownames <- patient_meta$Description
+patient_meta <- as.matrix(patient_meta)
+rownames(patient_meta) <- mrownames
+patient_meta <- patient_meta[row_sorted,]
+
+# generate the barplot. this is generated as the annotation for the heatmap of the Patient_ID that is generated below.
+m <- as.matrix(cur_df_wide)
+rownames(m) <- cur_df$Description
+m <- m[row_sorted,]
+hm_dat <- hm_dat[row_sorted,]
+
+col_vector <- metadata(sce_rna)$colour_vector$celltype[colnames(hm_dat)]
+col_vector_location <- structure(c("black", "blue", "red", "green"), 
+                                 names = c("control", "LN", "other", "skin"))
+
+# create annotation with cell type proportions
+ha <- rowAnnotation(`Cell Type Proportion` =
+                      anno_barplot(hm_dat, 
+                                   gp=gpar(fill=col_vector),
+                                   bar_width = 1,
+                                   height = unit(30,"cm"),
+                                   width = unit(15,"cm"),
+                                   show_row_names = FALSE))
+
+lgd = Legend(labels = names(col_vector), 
+             title = "Cell Type", 
+             legend_gp = gpar(fill = col_vector),
+             ncol = 2, 
+             title_position = "topcenter")
+
+# heatmap consisting of the patient_IDs. one color per patient
+h1 = Heatmap(patient_meta[,"MM_location_simplified"], 
+             col = col_vector_location,
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = FALSE, 
+             heatmap_legend_param = list(title = "Met Location"),
+             show_row_names = TRUE,
+             row_names_gp = gpar(cex=0.5),
+             column_labels = "Met Location",
+             right_annotation =  ha)
+
+# plot the data
+ht = grid.grabExpr(draw(h1))
+grid.newpage()
+pushViewport(viewport(angle = 270))
+grid.draw(ht)
 ```
 
-## UMAP showing Patient ID distribution
+## Legend for Barplot
 
-```{r Fig_1B_UMAP_celltype_RNA, fig.width=7, fig.height=5, dev=c('pdf')}
-dittoDimPlot(cur_sce, 
-             reduction.use = "UMAP", 
-             var = "celltype", 
-             size = 0.7,
-             main = NULL,
-             opacity = 0.1,
-             color.panel = metadata(cur_sce)$colour_vectors$celltype)  +
-  guides(colour = guide_legend(override.aes = list(alpha = 1, size=3)))
+```{r Fig_1B_RNA_Barplot_Legend, fig.width=2, fig.height=4, dev=c('pdf')}
+lgd1 <- Legend(labels = names(col_vector), 
+             title = "Cell Type", 
+             legend_gp = gpar(fill = col_vector),
+             ncol = 1)
+
+lgd2 <- Legend(labels = names(col_vector_location), 
+             legend_gp = gpar(fill = unname(col_vector_location)),
+             title = "Met Location",
+             ncol = 1)
+
+pd = packLegend(lgd1, lgd2, direction = "vertical", 
+    column_gap = unit(0.5, "cm"))
+draw(pd)
 ```
 
 ## Heatmap showing marker expression of celltypes
@@ -65,29 +148,101 @@ dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
             cluster_rows = TRUE,
             annotation_colors = list(celltype = metadata(sce_rna)$colour_vectors$celltype),
             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(-3, 3, length.out = 101))
+            breaks = seq(-3, 3, length.out = 101),
+            annotation_legend = 0)
 ```
 
 # Figure 1C - Plots for Protein TMA
 
-## Subset SCE for UMAP visualizations
+## Barplot containing Cell Types per Image
 
-```{r}
-cur_sce <- sce_prot
-cur_sce$ImageNumber <- as.character(cur_sce$ImageNumber)
+```{r Fig_1C_Protein_Barplot, fig.width=15, fig.height=13, dev=c('pdf')}
+# Create table with celltype fractions
+cur_df <- data.frame(celltype = sce_prot$celltype,
+                     Description= sce_prot$Description)
+
+# respahe to wide format
+cur_df <- reshape2::dcast(cur_df,formula = "Description ~ celltype", fun.aggregate = length)
+matrixrownames <- cur_df$Description
+
+# scale
+cur_df_wide <- t(scale(t(as.matrix(cur_df[,-1])), center = FALSE, 
+               scale = rowSums(cur_df[,-1])))
+
+
+# now we create a matrix from the data and cluster the data based on the cell fractions
+hm_dat = as.matrix(cur_df_wide)
+rownames(hm_dat) <- as.character(matrixrownames)
+
+# calculate distance and then cluster images based on cluster fraction
+dd <- dist((hm_dat), method = "euclidean")
+hc <- hclust(dd, method = "ward.D2")
+
+# order optimal orders the "leafs" of the cluster tree optimally to achieve smooth transitions
+hc$order = order.optimal(dd, hc$merge)$order
+row_sorted <- hc$labels[hc$order]
+
+# now we generate the clinical metadata and order it in the same way as the celltype data
+patient_meta <- metadata(sce_prot)
+patient_meta <- data.frame(patient_meta[c("Description", "MM_location_simplified")])
+
+mrownames <- patient_meta$Description
+patient_meta <- as.matrix(patient_meta)
+rownames(patient_meta) <- mrownames
+patient_meta <- patient_meta[row_sorted,]
+
+# generate the barplot. this is generated as the annotation for the heatmap of the Patient_ID that is generated below.
+m <- as.matrix(cur_df_wide)
+rownames(m) <- cur_df$Description
+m <- m[row_sorted,]
+hm_dat <- hm_dat[row_sorted,]
+
+col_vector <- metadata(sce_prot)$colour_vector$celltype[colnames(hm_dat)]
+
+# create annotation with cell type proportions
+ha <- rowAnnotation(`Cell Type Proportion` =
+                      anno_barplot(hm_dat, 
+                                   gp=gpar(fill=col_vector),
+                                   bar_width = 1,
+                                   height = unit(30,"cm"),
+                                   width = unit(15,"cm"),
+                                   show_row_names = FALSE))
+
+# heatmap consisting of the patient_IDs. one color per patient
+h1 = Heatmap(patient_meta[,"MM_location_simplified"], 
+             col = col_vector_location, 
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = FALSE, 
+             heatmap_legend_param = list(title = "Met Location"),
+             show_row_names = TRUE,
+             row_names_gp = gpar(cex=0.5),
+             column_labels = "Met Location",
+             right_annotation =  ha)
+
+# plot the data
+ht = grid.grabExpr(draw(h1))
+grid.newpage()
+pushViewport(viewport(angle = 270))
+grid.draw(ht)
 ```
 
-## UMAP showing Patient ID distribution
+## Legend for Barplot
 
-```{r Fig_1C_UMAP_celltype_Protein, fig.width=7, fig.height=5, dev=c('pdf')}
-dittoDimPlot(cur_sce, 
-             reduction.use = "UMAP", 
-             var = "celltype", 
-             size = 0.7,
-             main = NULL,
-             opacity = 0.1,
-             color.panel = metadata(cur_sce)$colour_vectors$celltype) +
-  guides(colour = guide_legend(override.aes = list(alpha = 1, size=3)))
+```{r Fig_1C_Protein_Barplot_Legend, fig.width=2, fig.height=4, dev=c('pdf')}
+lgd1 <- Legend(labels = names(col_vector), 
+             title = "Cell Type", 
+             legend_gp = gpar(fill = col_vector),
+             ncol = 1)
+
+lgd2 <- Legend(labels = names(col_vector_location), 
+             legend_gp = gpar(fill = unname(col_vector_location)),
+             title = "Met Location",
+             ncol = 1)
+
+pd = packLegend(lgd1, lgd2, direction = "vertical", 
+    column_gap = unit(0.5, "cm"))
+draw(pd)
 ```
 
 ## Heatmap showing marker expression of celltypes
@@ -105,6 +260,7 @@ dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
             cluster_rows = TRUE,
             annotation_colors = list(celltype = metadata(sce_prot)$colour_vectors$celltype),
             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(-3, 3, length.out = 101))
+            breaks = seq(-3, 3, length.out = 101),
+            annotation_legend = 0)
 ```
 

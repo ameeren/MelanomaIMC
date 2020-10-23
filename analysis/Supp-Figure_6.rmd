@@ -34,6 +34,7 @@ library(cowplot)
 library(data.table)
 library(stringr)
 library(grDevices)
+library(ggpubr)
 ```
 
 ## Load Data
@@ -124,10 +125,9 @@ cur_col$standalone_tumor <- ifelse(cur_col$cellID %in% ids$cellID_first, TRUE, F
 colData(sce_rna)$standalone_tumor <- cur_col$standalone_tumor
 ```
 
+## run UMAP on stand-alone expressing tumor cells and control group
 
-## run UMAP again on stand-alone expressing tumor cells and control group
-
-```{r Fig_6A_UMAP_standalone_tumor, dev=('pdf'), fig.width=8, fig.height=6}
+```{r Fig_6A_UMAP_standalone_tumor, dev=('pdf'), fig.width=11, fig.height=6}
 tumor_chemokine <- data.frame(colData(sce_rna[, sce_rna$standalone_tumor == TRUE]))[,"cellID"]
 control_tumor <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tumor" & sce_rna$chemokine == 0]))
 
@@ -153,9 +153,9 @@ a <- dittoDimPlot(cur_sce,
              max.color = "red", min.color = "azure3",
              main = NULL) +
     theme_minimal() +
-    theme(text = element_text(size=25)) +
-    guides(color = guide_legend(override.aes = list(alpha=1, size=5))) +
-    guides(fill=guide_legend("Chemokine"))
+    theme(text = element_text(size=20)) +
+    guides(color = guide_legend("Chemokine", override.aes = list(alpha=1, size=5)))
+    
 
 p.list <- list()
 for(i in tumor_marker){
@@ -190,12 +190,18 @@ a <- plotCellCounts(cur_sce, proportion = TRUE,
                colour_by = "celltype", 
                split_by = "tumor_producing",
                imageID = "ImageNumber",
-               colour_vector = metadata(cur_sce)$colour_vector$celltype)
+               colour_vector = metadata(cur_sce)$colour_vector$celltype) +
+  guides(fill=guide_legend("Cell Type"))
+
+col_vec <- c("lightblue", "darkblue")
+names(col_vec) <- c(FALSE, TRUE)
 
 b <- plotCellCounts(cur_sce, proportion = TRUE, 
                colour_by = "chemokine", 
                split_by = "tumor_producing",
-               imageID = "ImageNumber")
+               imageID = "ImageNumber",
+               colour_vector = col_vec)   +
+  guides(fill=guide_legend("Chemokine"))
 
 grid.arrange(a,b, ncol=2)
 ```
@@ -235,7 +241,7 @@ grid.arrange(a,b, ncol =2)
 
 ## Heatmap
 
-```{r Fig_6D_heatmap, dev=('pdf'), fig.width=11, fig.height=6}
+```{r Fig_6D_heatmap, dev=('pdf'), fig.width=11, fig.height=9}
 standalone_tumor <- data.frame(colData(sce_rna[, sce_rna$standalone_tumor == TRUE & sce_rna$chemokine == 1]))[,"cellID"]
 standalone_neighbours <- dat_relation[dat_relation$cellID_first %in% standalone_tumor,]$cellID_second
 
@@ -260,9 +266,9 @@ assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
 
 # Centered and scaled Heatmap
 dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
-            annot.by = c("celltype_standalone"), 
+            annot.by = c("celltype", "tumor_neighbor"), 
             cluster_rows = TRUE,
-            #annotation_colors = list(celltype = metadata(sce_rna)$colour_vectors$celltype),
+            annotation_colors = list(celltype = metadata(sce_rna)$colour_vectors$celltype),
             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             breaks = seq(-3, 3, length.out = 101))
 ```
