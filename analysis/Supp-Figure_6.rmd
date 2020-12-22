@@ -200,7 +200,8 @@ b <- plotCellCounts(cur_sce, proportion = TRUE,
                colour_by = "chemokine", 
                split_by = "tumor_producing",
                imageID = "ImageNumber",
-               colour_vector = col_vec)   +
+               colour_vector = col_vec,
+               show_n = FALSE)   +
   guides(fill=guide_legend("Chemokine"))
 
 grid.arrange(a,b, ncol=2)

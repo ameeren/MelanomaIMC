@@ -10,11 +10,12 @@ editor_options:
 # Introduction
 This script generates plots for Figure 2.
 
-```{r}
-knitr::opts_chunk$set(warning = FALSE, message = FALSE, cache.lazy = FALSE)
-```
-
 # Preparation
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
 
 ## Load libraries
 ```{r, message=F}
@@ -28,10 +29,13 @@ library(tidyr)
 library(ggpmisc)
 library(cowplot)
 library(corrplot)
+library(gridExtra)
 library(ggalluvial)
 library(ggbeeswarm)
 library(ggpubr)
+library(RColorBrewer)
 library(colorRamps)
+library(circlize)
 ```
 
 ## Load data
@@ -39,56 +43,29 @@ library(colorRamps)
 ```{r}
 sce_rna <- readRDS(file = "data/sce_RNA.rds")
 sce_prot <- readRDS(file= "data/sce_protein.rds")
+
+# meta data
+dat_relation = fread(file = "data/rna/Object relationships.csv",stringsAsFactors = FALSE)
 ```
 
-# Chemokine Combinations
-
-## Most abundant combinations
+## Prepare Relation Table
 
 ```{r}
-cur_df <- colData(sce_rna)
-cur_df <- as_tibble(cur_df)
-cur_df <- cur_df[,grepl("CCL|CXCL|Dap",colnames(cur_df))]
-
-for(i in colnames(cur_df)){
-  cur_df[[i]] <- ifelse(cur_df[[i]]== 1,i,"NA")
-}
-
-cur_df <- cur_df %>%
-  unite(expressor,sep = "_",na.rm =TRUE,remove=FALSE)
-
-cur_df$expressor <- gsub("NA_","",cur_df$expressor)
-cur_df$expressor <- gsub("_NA","",cur_df$expressor)
-
-# summary table of all combinations
-summary_cur_df <- table(cur_df$expressor)
-
-# order table according to abundance of combinations
-summary_cur_df<- summary_cur_df[order(-as.numeric(summary_cur_df))]
-
-# combinations with more than 600 occurrences
-targets <- names(which(summary_cur_df > 600))
-targets <- targets[!targets == "NA"]
-
-# add expressor info to sce object
-sce_rna$expressor <- cur_df$expressor
-
-# add color vector to metadata
-color_chemo <- primary.colors(length(targets))
-names(color_chemo) <- targets
-metadata(sce_rna)$colour_vectors$chemokine_combinations <- color_chemo
-
-# replace order of chemokines to match order without control samples (ATTENTION! HARD CODED)
-color_chemo <- replace(color_chemo, c("CXCL8", "CCL18"), color_chemo[c("CCL18", "CXCL8")])
-metadata(sce_rna)$colour_vectors$chemokine_combinations_no_control <- color_chemo
+# prepare data 
+dat_relation$cellID_first <- paste("RNA", paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = "_"), sep = "_")
+dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
 ```
 
 # Plots
 
 ## UpSet plot with ComplexHeatmap - including CellType Annotation and Met Location (with controls)
 
-```{r Fig_2A_upset_plot, message=F, fig.width=14, fig.height=13, dev=c('pdf')}
+```{r Fig_2A_upset_plot, message=F, fig.width=10, fig.height=12, dev=c('pdf')}
 cur_dt <- as.data.table(colData(sce_rna))
+
+# combinations with more than 600 occurrences
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+targets_no_control <- replace(targets, match(c("CXCL8", "CCL18"),targets), c("CCL18", "CXCL8"))
 
 # remove control samples
 cur_dt <- cur_dt[MM_location_simplified != "control",]
@@ -155,18 +132,6 @@ location[is.na(location)] <- 0
 ss = set_size(m)
 cs = comb_size(m)
 
-# legend for celltypes
-lgd1 = Legend(labels = colnames(celltypes[,-1]), 
-             title = "Celltypes", 
-             legend_gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])]),
-             nrow = 3)
-
-# legend for location
-lgd2 = Legend(labels = colnames(location[,-1]), 
-             title = "Location of Metastasis", 
-             legend_gp = gpar(fill = grDevices::hcl.colors(ncol(location[,-1]), palette = "Dark 2")),
-             nrow = 4)
-
 # create plot
 ht = UpSet(m, 
     set_order = order(ss),
@@ -175,7 +140,9 @@ ht = UpSet(m,
         "Combination Size" = anno_barplot(celltypes[,-1], 
             ylim = c(0, max(cs)*1.1),
             border = FALSE, 
-            gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])]), 
+            gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])],
+                      fontsize = 18), 
+            axis_param = list(gp = gpar(fontsize=18)),
             height = unit(12, "cm"),
         ), 
         annotation_name_side = "left", 
@@ -188,81 +155,523 @@ ht = UpSet(m,
                 labels = c(0, 5000, 10000, 15000),
                 labels_rot = 0),
             border = FALSE, 
-            gp = gpar(fill = "black"), 
-            width = unit(5, "cm")
+            gp = gpar(fill = "black",
+                      fontsize = 18), 
+            width = unit(5, "cm"),
         ),
         set_name = anno_text(set_name(m), 
             location = 0.5, 
             just = "center",
             width = max_text_width(set_name(m)) + unit(4, "mm"))
     ),
-    bottom_annotation = HeatmapAnnotation("Combination Coloring" = targets,
-                                          "Median Number of Chemokine- \nProducing Cells per Location" = 
-                                            anno_barplot(location[,-1],
-                                                         border = FALSE, 
-                                                         gp = gpar(fill = grDevices::hcl.colors(ncol(location[,-1]), 
-                                                                                                palette = "Dark 2"))),
-                                          height = unit(5, "cm"),
-                                          col = list("Combination Coloring" = metadata(sce_rna)$colour_vectors$chemokine_combinations_no_control)),
     right_annotation = NULL,
     show_row_names = FALSE,
     pt_size = unit(5, "mm"),
     lwd = 2,
-    width = unit(20, "cm"),
-    height = unit(10, "cm")
+    row_title_gp = gpar(fontsize = 50),
+    width = unit(12, "cm"),
+    height = unit(14, "cm")
     )
 
 # draw heatmap
-ht = draw(ht, heatmap_legend_list = list(lgd1, lgd2), heatmap_legend_side = "top")
+ht = draw(ht)
 
 # add absolute numbers on top of barplot
 od = column_order(ht)
 decorate_annotation("Combination Size", {
   grid.text(cs[od], x = seq_along(cs), y = unit(cs[od], "native") + unit(2, "pt"), 
             default.units = "native", just = c("left", "bottom"), 
-            gp = gpar(fontsize = 12, col = "#404040"), rot = 45)
+            gp = gpar(fontsize = 15, col = "#404040"), rot = 45)
 })
 ```
 
-## Normalized Expression per Metastasis Location
+## Legend for Figure
 
-```{r Fig_2B_normalized_expression_met_location, fig.width=14, fig.height=9, dev=c('pdf')}
-# subset sce_rna to only contain met locations with at least 5 samples - REMOVE controls
-location_size <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber, MM_location) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(MM_location) %>%
-  summarise(n=n()) %>%
-  filter(n>4 & MM_location != "")
+```{r Fig_2A_legend, dev=c('pdf'), fig.height=1, fig.width=2}
+# legend for celltypes
+lgd1 = Legend(labels = colnames(celltypes[,-1]), 
+             title = "Celltypes", 
+             legend_gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])],
+                              fontsize = 18),
+             nrow = 5)
+
+draw(packLegend(lgd1,column_gap = unit(0.5, "cm"),
+                max_height = unit(7, "cm")))
+```
+
+# Marker Profile of Chemokine Producing Cells and Neighboring Cells
+
+## Interaction Analysis
+
+```{r Fig_2F_heatmap_producing_neighboring_cells, dev=("pdf"), fig.width=13, fig.height=11}
+cur_dt <- data.frame(colData(sce_rna))
+
+# prepare subsetted relation table (only interactions that occur between chemokine producing cells and their neighboring cells)
+relation_total <- data.frame()
+for(i in colnames(cur_dt[,grepl(glob2rx("C*L*"),names(cur_dt))])){
+  expressor_first <- data.frame(colData(sce_rna))[,c("cellID", i, "celltype", "chemokine")]
+  colnames(expressor_first) <- c("cellID_first", "expressor_first", "celltype_first", "chemokine_first")
+  expressor_second <- data.frame(colData(sce_rna))[,c("cellID", i, "celltype", "chemokine")]
+  colnames(expressor_second) <- c("cellID_second", "expressor_second", "celltype_second", "chemokine_second")
+  dat_relation_sub <- left_join(dat_relation, expressor_first, by = "cellID_first")
+  dat_relation_sub <- left_join(dat_relation_sub, expressor_second, by = "cellID_second")
   
+  # subset relation to only contain chemokine+ first cells
+  dat_relation_sub <- dat_relation_sub[dat_relation_sub$expressor_first == 1]
   
-sce_rna_sub <- sce_rna[,sce_rna$MM_location %in% location_size$MM_location]
+  dat_relation_sub$expressor_first <- ifelse(dat_relation_sub$expressor_first == 1, i, NA)
+  dat_relation_sub$expressor_second <- ifelse(dat_relation_sub$expressor_second == 1, i, NA)
+  
+  dat_relation_sub <- dat_relation_sub %>%
+    select(cellID_first, expressor_first, celltype_first, chemokine_first, cellID_second, expressor_second, celltype_second, chemokine_second)
+  
+  # retain top 3 celltype (producer and neighbor)
+  top3_first <- dat_relation_sub %>%
+    distinct(cellID_first, .keep_all = TRUE) %>%
+    group_by(celltype_first) %>%
+    summarise(n=n()) %>%
+    top_n(n=3, wt=n) %>%
+    ungroup()
+  
+  top3_second <- dat_relation_sub %>%
+    distinct(cellID_second, .keep_all = TRUE) %>%
+    group_by(celltype_second) %>%
+    summarise(n=n()) %>%
+    top_n(n=3, wt=n) %>%
+    ungroup()
+  
+  dat_relation_sub <- dat_relation_sub[dat_relation_sub$celltype_first %in% top3_first$celltype_first & 
+                                         dat_relation_sub$celltype_second %in% top3_second$celltype_second, ]
+  
+  producer <- dat_relation_sub[,1:4]
+  producer$type <- "Producer"
+  producer$group <- i
+  neighbor <- dat_relation_sub[,5:8]
+  neighbor$type <- "Neighbor"
+  neighbor$group <- i 
+  
+  cur_rel <- rbind(producer, neighbor, use.names = FALSE)
+  colnames(cur_rel) <- c("cellID", "expressor", "celltype", "chemokine", "type", "group")
+  
+  relation_total <- rbind(relation_total, cur_rel)
+}
 
-# plots 
-p1 <- plotCellCounts(sce = sce_rna_sub, 
-                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
-                     cellID = "cellID",
-                     colour_by = "expressor",
-                     split_by = "MM_location",
-                     imageID = "ImageNumber",
-                     normalize = TRUE,
-                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=18))
+# add marker expression to cells
+marker_expression <- data.frame(t(assay(sce_rna[rowData(sce_rna)$good_marker,], "asinh")))
+marker_expression$cellID <- rownames(marker_expression)
+dat <- left_join(relation_total, marker_expression, by = "cellID")
 
-p2 <- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
-                     colour_by = "expressor",
-                     split_by = "MM_location",
-                     imageID = "ImageNumber",
-                     proportion = TRUE,
-                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  theme(legend.position="none") +
-  theme(text = element_text(size=18))
+# number of cells per group
+group_size <- dat %>%
+  group_by(group, type, celltype) %>%
+  distinct(cellID, .keep_all = TRUE) %>%
+  summarise(total_group=n(), .groups = "drop") %>%
+  mutate(group_type = paste(group, type, sep = "_")) %>%
+  select(group_type, celltype, total_group)
 
-# legend only
-legend <- cowplot::get_legend(p1)
+# number of neighboring cells that produce the same chemokine
+same_chemo <- dat %>%
+  filter(type == "Neighbor") %>%
+  group_by(group, type, expressor, celltype) %>%
+  distinct(cellID, .keep_all = TRUE) %>%
+  summarise(same_chemo= n(), .groups = "drop") %>%
+  filter(is.na(expressor) == FALSE) %>%
+  mutate(group_type = paste(group, type, sep = "_")) %>%
+  select(group_type, celltype, same_chemo)
 
-plot_grid(p1+theme(legend.position="none"),p2,legend,rel_widths = c(2,2,2),ncol=3)
+# number of neighboring cells that produce a chemokine
+other_chemo <- dat %>%
+  filter(type == "Neighbor") %>%
+  group_by(group, type, chemokine, celltype) %>%
+  distinct(cellID, .keep_all = TRUE) %>%
+  summarise(producer= n(), .groups = "drop") %>%
+  filter(chemokine == "TRUE") %>%
+  mutate(group_type = paste(group, type, sep = "_"))  %>%
+  select(group_type, celltype, producer)
+
+summary <- left_join(group_size, same_chemo, by=c("group_type", "celltype"))
+summary <- left_join(summary, other_chemo, by=c("group_type", "celltype"))
+
+summary <- summary %>%
+  mutate_if(is.numeric,coalesce,0)
+
+# remove same_chemo from total_chemo (redundant) and both from total group
+summary$producer <- summary$producer - summary$same_chemo 
+summary$total_group <- summary$total_group - (summary$same_chemo + summary$producer)
+
+# prepare stats table with total group size and proportions
+stats <- summary[,3:5] 
+stats$non_chemo <- stats$total_group - (stats$same_chemo + stats$producer)
+stats[stats$same_chemo == 0 & stats$producer == 0,]$same_chemo <- stats[stats$same_chemo == 0 & stats$producer == 0,]$total_group
+stats[stats$same_chemo == stats$total_group,]$non_chemo <- 0
+
+# calculate proportions
+stats[,2:4] <- stats[,2:4] / t(stats[,1])
+all(rowSums(stats[,2:4]) == 1)
+
+# remove not needed columns
+dat$cellID <- NULL
+dat$expressor <- NULL
+dat$chemokine <- NULL
+
+# aggregate data
+dat_aggr <- dat %>%
+  group_by(group, type, celltype) %>%
+  summarise_all(funs(mean))
+
+# scale and center expression
+dat_aggr[,-c(1:3)] <- scale(dat_aggr[,-c(1:3)])
+
+# prepare matrix for heatmap
+m <- as.matrix(t(dat_aggr[,-c(1:3)]))
+colnames(m) <- dat_aggr$group
+
+# create top annotations
+ha <- HeatmapAnnotation("Function" = dat_aggr$type,
+                        "Cell Type" = dat_aggr$celltype,
+                        "Cell Numbers (log10)" = anno_points(log10(stats[,1]),
+                                                     height = unit(1.5,"cm")),
+                        "Chemokine\nInformation" = anno_barplot(stats[,-1],
+                                                                 gp = gpar(fill = 2:4),
+                                                                 height = unit(2,"cm")),
+                        col = list("Cell Type" = metadata(sce_rna)$colour_vectors$celltype,
+                                   "Function" = setNames(c("blue", "black"), 
+                                                         c("Producer", "Neighbor"))),
+                        show_legend = FALSE)
+# create heatmap
+h <- Heatmap(m, name = "Scaled\nExpression",
+        cluster_columns = FALSE,
+        show_column_names = FALSE,
+        top_annotation = ha,
+        show_heatmap_legend = FALSE,
+        column_split = colnames(m),
+        col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
+        height = unit(20, "cm"),
+        width = unit(25,"cm"))
+
+# draw heatmap
+draw(h)
+```
+
+## Legend
+
+```{r Fig_2F_legend, dev="pdf", fig.height=2, fig.width=7}
+lgd1 = color_mapping_legend(h@matrix_color_mapping, plot = FALSE, legend_direction = "horizontal", legend_width=unit(3,"cm"))
+lgd2 = color_mapping_legend(ha@anno_list$Function@color_mapping, plot = FALSE, legend_direction = "horizontal")
+lgd3 = color_mapping_legend(ha@anno_list$`Cell Type`@color_mapping, plot = FALSE, legend_direction = "horizontal")
+lgd4 = Legend(labels = c("Same Chemokine", "Other Chemokine", "No Chemokine"), 
+                                     title = "Chemokine\nInformation", 
+                                     legend_gp = gpar(fill = 2:4),
+              direction = "horizontal")
+lgd_list = packLegend(lgd1,lgd2,lgd3,lgd4, direction = "horizontal", gap = unit(1,"cm"))
+draw(lgd_list)
+```
+
+## Heatmap v2
+
+```{r, eval=F}
+# add marker expression to cells
+marker_expression <- data.frame(t(assay(sce_rna[rowData(sce_rna)$good_marker,], "asinh")))
+marker_expression$cellID <- rownames(marker_expression)
+dat <- left_join(relation_total, marker_expression, by = "cellID")
+
+# number of cells per group
+group_size <- dat %>%
+  group_by(group, type, celltype) %>%
+  distinct(cellID, .keep_all = TRUE) %>%
+  summarise(total_group=n(), .groups = "drop") %>%
+  mutate(group_type = paste(group, type, sep = "_")) %>%
+  select(group, type, group_type, celltype, total_group)
+
+# number of neighboring cells that produce the same chemokine
+same_chemo <- dat %>%
+  filter(type == "Neighbor") %>%
+  group_by(group, type, expressor, celltype) %>%
+  distinct(cellID, .keep_all = TRUE) %>%
+  summarise(same_chemo= n(), .groups = "drop") %>%
+  filter(is.na(expressor) == FALSE) %>%
+  mutate(group_type = paste(group, type, sep = "_")) %>%
+  select(group, type, group_type, celltype, same_chemo)
+
+# number of neighboring cells that produce a chemokine
+other_chemo <- dat %>%
+  filter(type == "Neighbor") %>%
+  group_by(group, type, chemokine, celltype) %>%
+  distinct(cellID, .keep_all = TRUE) %>%
+  summarise(producer= n(), .groups = "drop") %>%
+  filter(chemokine == "TRUE") %>%
+  mutate(group_type = paste(group, type, sep = "_"))  %>%
+  select(group, type, group_type, celltype, producer)
+
+summary <- left_join(group_size, same_chemo, by=c("group_type", "celltype", "group", "type"))
+summary <- left_join(summary, other_chemo, by=c("group_type", "celltype", "group", "type"))
+
+summary <- summary %>%
+  mutate_if(is.numeric,coalesce,0)
+
+# ordering of summary
+summary <- summary %>%
+  arrange(type, celltype, group)
+
+# remove same_chemo from total_chemo (redundant) and both from total group
+summary$producer <- summary$producer - summary$same_chemo 
+summary$total_group <- summary$total_group - (summary$same_chemo + summary$producer)
+
+# prepare stats table with total group size and proportions
+stats <- summary[,5:7] 
+stats$non_chemo <- stats$total_group - (stats$same_chemo + stats$producer)
+stats[stats$same_chemo == 0 & stats$producer == 0,]$same_chemo <- stats[stats$same_chemo == 0 & stats$producer == 0,]$total_group
+stats[stats$same_chemo == stats$total_group,]$non_chemo <- 0
+
+# calculate proportions
+stats[,2:4] <- stats[,2:4] / t(stats[,1])
+all(rowSums(stats[,2:4]) == 1)
+
+# remove not needed columns
+dat$cellID <- NULL
+dat$expressor <- NULL
+dat$chemokine <- NULL
+
+# aggregate data
+dat_aggr <- dat %>%
+  group_by(group, type, celltype) %>%
+  summarise_all(funs(mean))
+
+# scale and center expression
+dat_aggr[,-c(1:3)] <- scale(dat_aggr[,-c(1:3)])
+
+# prepare matrix for heatmap
+dat_aggr <- dat_aggr %>%
+  arrange(type, celltype, group)
+
+
+m <- as.matrix(t(dat_aggr[,-c(1:3)]))
+colnames(m) <- dat_aggr$type
+
+# create top annotations
+ha <- HeatmapAnnotation("Cell Type" = dat_aggr$celltype,
+                        "Chemokine" = dat_aggr$group,
+                        "Cell Numbers (log10)" = anno_points(log10(stats[,1]),
+                                                     height = unit(1.5,"cm")),
+                        "Chemokine\nInformation" = anno_barplot(stats[,-1],
+                                                                 gp = gpar(fill = 2:4),
+                                                                 height = unit(2,"cm")),
+                        col = list("Cell Type" = metadata(sce_rna)$colour_vectors$celltype),
+                        show_legend = TRUE)
+# create heatmap
+h <- Heatmap(m, name = "Scaled\nExpression",
+        cluster_columns = FALSE,
+        show_column_names = FALSE,
+        top_annotation = ha,
+        show_heatmap_legend = TRUE,
+        column_split = colnames(m),
+        col = colorRamp2(c(-4, 0, 4), c("blue", "white", "red")),
+        height = unit(20, "cm"),
+        width = unit(25,"cm"))
+
+# draw heatmap
+draw(h)
+```
+
+## Heatmap v3
+
+```{r, Fig_2X_heatmap_marker_producing_cells, fig.width=12, fig.height=10, dev=("pdf")}
+# add marker expression to cells
+marker_expression <- data.frame(t(assay(sce_rna[rowData(sce_rna)$good_marker,], "asinh")))
+marker_expression$cellID <- rownames(marker_expression)
+dat <- left_join(relation_total, marker_expression, by = "cellID")
+
+# number of cells per group
+group_size <- dat %>%
+  group_by(group, type, celltype) %>%
+  distinct(cellID, .keep_all = TRUE) %>%
+  summarise(total_group=n(), .groups = "drop") %>%
+  mutate(group_type = paste(group, type, sep = "_")) %>%
+  select(group, type, group_type, celltype, total_group)
+
+# number of neighboring cells that produce the same chemokine
+same_chemo <- dat %>%
+  filter(type == "Neighbor") %>%
+  group_by(group, type, expressor, celltype) %>%
+  distinct(cellID, .keep_all = TRUE) %>%
+  summarise(same_chemo= n(), .groups = "drop") %>%
+  filter(is.na(expressor) == FALSE) %>%
+  mutate(group_type = paste(group, type, sep = "_")) %>%
+  select(group, type, group_type, celltype, same_chemo)
+
+# number of neighboring cells that produce a chemokine
+other_chemo <- dat %>%
+  filter(type == "Neighbor") %>%
+  group_by(group, type, chemokine, celltype) %>%
+  distinct(cellID, .keep_all = TRUE) %>%
+  summarise(producer= n(), .groups = "drop") %>%
+  filter(chemokine == "TRUE") %>%
+  mutate(group_type = paste(group, type, sep = "_"))  %>%
+  select(group, type, group_type, celltype, producer)
+
+summary <- left_join(group_size, same_chemo, by=c("group_type", "celltype", "group", "type"))
+summary <- left_join(summary, other_chemo, by=c("group_type", "celltype", "group", "type"))
+
+summary <- summary %>%
+  mutate_if(is.numeric,coalesce,0)
+
+#summary <- summary %>%
+  #filter(type == "Producer")
+
+# ordering of summary
+summary <- summary %>%
+  arrange(type, celltype, group) %>%
+  filter(type == "Producer")
+
+# remove same_chemo from total_chemo (redundant) and both from total group
+summary$producer <- summary$producer - summary$same_chemo 
+summary$total_group <- summary$total_group - (summary$same_chemo + summary$producer)
+
+# prepare stats table with total group size and proportions
+stats <- summary[,5:7] 
+stats$non_chemo <- stats$total_group - (stats$same_chemo + stats$producer)
+stats[stats$same_chemo == 0 & stats$producer == 0,]$same_chemo <- stats[stats$same_chemo == 0 & stats$producer == 0,]$total_group
+stats[stats$same_chemo == stats$total_group,]$non_chemo <- 0
+
+# calculate proportions
+stats[,2:4] <- stats[,2:4] / t(stats[,1])
+all(rowSums(stats[,2:4]) == 1)
+
+# remove not needed columns
+dat$cellID <- NULL
+dat$expressor <- NULL
+dat$chemokine <- NULL
+
+# aggregate data
+dat_aggr <- dat %>%
+  filter(type == "Producer") %>%
+  group_by(group, type, celltype) %>%
+  summarise_all(funs(mean))
+
+# scale and center expression
+dat_aggr[,-c(1:3)] <- scale(dat_aggr[,-c(1:3)])
+
+# prepare matrix for heatmap
+dat_aggr <- dat_aggr %>%
+  arrange(type, celltype, group)
+
+m <- as.matrix(t(dat_aggr[,-c(1:3)]))
+colnames(m) <- dat_aggr$celltype
+
+# create top annotations
+ha <- HeatmapAnnotation("Chemokine" = dat_aggr$group,
+                        "Cells" = anno_barplot(stats[,1],
+                                                     height = unit(1.5,"cm")),
+                        "Cell Numbers" = anno_text(t(stats[,1]), 
+                                                   which = "column", 
+                                                   rot = 0, 
+                                                   just = "center", 
+                                                   location = 0.5,
+                                                   gp = gpar(fontsize=8)),
+                        show_legend = FALSE)
+# create heatmap
+h <- Heatmap(m, name = "Scaled\nExpression",
+        cluster_columns = FALSE,
+        show_column_names = FALSE,
+        top_annotation = ha,
+        show_heatmap_legend = FALSE,
+        column_split = colnames(m),
+        cluster_column_slices = TRUE,
+        col = colorRamp2(c(-3, 0, 3), c("blue", "white", "red")),
+        height = unit(20, "cm"),
+        width = unit(25,"cm"))
+
+# draw heatmap
+draw(h)
+```
+
+## Legend v3
+
+```{r Fig_2XX_legend_heatmap, dev="pdf", fig.height=2, fig.width=7}
+lgd1 = color_mapping_legend(h@matrix_color_mapping, plot = FALSE, legend_direction = "horizontal", legend_width=unit(3,"cm"))
+lgd2 = color_mapping_legend(ha@anno_list$Chemokine@color_mapping, plot = FALSE, legend_direction = "horizontal", nrow = 4)
+
+lgd_list = packLegend(lgd1,lgd2,direction = "horizontal", gap = unit(1,"cm"))
+draw(lgd_list)
+```
+
+## Generate adjacency matrix for all images
+
+```{r Fig_3E_interaction_CD8CXCL13, fig.height=3, fig.width=5, dev=c('pdf')}
+layout(matrix(1:2,1,2))
+
+dat_relation$celltype_expressor_first <- paste(dat_relation$celltype_first, dat_relation$expressor_first, sep = "_")
+dat_relation$celltype_expressor_second <- paste(dat_relation$celltype_second, dat_relation$expressor_second, sep = "_")
+```
+
+## Marker Profile for Expressor Celltypes
+
+```{r eval=F}
+cur_dt <- data.frame(colData(sce_rna))
+
+cur_dt <- cur_dt %>%
+  mutate(celltype_expressor = ifelse(cur_dt$chemokine == 0, celltype, paste(celltype, expressor, sep = "_")))
+
+cur_sce <- sce_rna
+cur_sce$celltype_expressor <- cur_dt$celltype_expressor
+
+groups <- cur_dt %>%
+  group_by(celltype, expressor, celltype_expressor) %>%
+  summarise(n = n()) %>%
+  filter(n>1200) %>%
+  arrange(-n) %>%
+  ungroup() %>%
+  group_by(celltype) %>%
+  mutate(groupSize = n()) %>%
+  filter(groupSize>1)
+
+cur_sce <- cur_sce[, cur_sce$celltype_expressor %in% groups$celltype_expressor]
+
+# aggregate celltypes
+agr_sce <- aggregateAcrossCells(cur_sce, ids = colData(cur_sce)[,"celltype_expressor"], 
+                                average = TRUE)
+# asinh transformation
+assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
+
+# Centered and scaled Heatmap
+colvec_expressor <- metadata(sce_rna)$colour_vectors$chemokine_combinations[unique(cur_sce[,cur_sce$chemokine==1]$expressor)]
+names(colvec_expressor["<NA>"]) <- "white"
+
+dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
+            annot.by = c("celltype", "expressor"), 
+            cluster_rows = TRUE,
+            annotation_colors = list(celltype = metadata(sce_rna)$colour_vectors$celltype[unique(cur_sce$celltype)],
+                                     expressor = colvec_expressor),
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3, 3, length.out = 101),
+            annotation_legend = 0)
+```
+
+# Correlations
+
+## Correlation of Chemokines with Celltypes
+
+```{r Fig_2B_correlation_chemokines, fig.width=9, fig.height=9, dev=c('pdf')}
+# top abundant chemokines
+cur_rna <- data.frame(colData(sce_rna))
+
+# sum
+rna_sum <- cur_rna %>%
+  group_by(Description, expressor) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ expressor, value.var = "n", fill = 0) 
+
+# only keep highly abundant chemokines
+rna_sum <- rna_sum[,colnames(rna_sum) %in% targets]
+
+# correlation
+cor <- cor(rna_sum, rna_sum, method = "pearson")
+
+corrplot(cor, 
+         order = "FPC",
+         addCoef.col = "white",
+         method = "circle",
+         tl.col="black")
 ```
 
 ## Correlation of Chemokines with Celltypes
@@ -292,7 +701,7 @@ prot_sum <- cur_prot %>%
 all(rna_sum$Description == prot_sum$Description)
 
 # correlation
-cor <- cor(rna_sum[,-1], prot_sum[,-1], method = "pearson")
+cor <- cor(rna_sum, prot_sum[,-1], method = "pearson")
 
 corrplot(cor, 
          addCoef.col = "white",
@@ -300,69 +709,363 @@ corrplot(cor,
          tl.col="black")
 ```
 
-## Alluvial Plot - Chemokine-Expressing Tumor Cells
 
-```{r Fig_2D_alluvial_tumor_cells, fig.width=13, fig.height=8, dev=c('pdf')}
-cur_df <- data.frame(colData(sce_rna)) %>%
-  filter(celltype == "Tumor" & chemokine == 1 & Location != "CTRL") %>%
-  select(expressor, MM_location_simplified, Ki67_status) %>%
-  filter(expressor %in% c("CXCL10", "CCL2", "CXCL12", "CXCL8"))
+# Met Location
 
-cur_df %>%
-  dplyr::count(expressor, Ki67_status, MM_location_simplified) %>%
-  ggplot(aes(axis2 = expressor, axis3 = Ki67_status, axis4 = MM_location_simplified, y=n))+
-  geom_alluvium(aes(fill=expressor), alpha=0.8)+
-  geom_stratum()+
-  geom_text(stat = "stratum", aes(label = after_stat(stratum)), size = 5) +
-  theme_minimal()+
-  theme(text = element_text(size=20),
-        axis.text.x = element_text(angle=45, hjust=1)) +
-  scale_x_discrete(limits = c( "Expressor","Ki67 Score", "Met Location"), expand = c(.2, .05)) + 
-  scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$chemokine_combinations),
-                        breaks = names(metadata(sce_rna)$colour_vectors$chemokine_combinations),
-                        labels = names(metadata(sce_rna)$colour_vectors$chemokine_combinations)) +
-  ylab("Number of Tumor Cells") +
-  theme(legend.position="none")
+## Patients per Location
+
+```{r}
+sce_rna$MM_location <- ifelse(sce_rna$MM_location %in% c("skin", "skin_undefine"), "skin_undefined", sce_rna$MM_location)
+
+groups <- data.frame(colData(sce_rna)) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(MM_location) %>%
+  distinct(PatientID, .keep_all = T) %>%
+  summarise(n=n()) %>%
+  filter(n>=5) %>%
+  arrange(-n)
 ```
 
-## Normalized Counts
+## Boxplot/Barplot per Location for every chemokine combination
 
-```{r normalized_counts_chemokines_tumor, fig.width=10, fig.height=8, dev=c('pdf')}
-plotCellCounts(sce = sce_rna[,which(sce_rna$celltype == "Tumor" & sce_rna$Location != "CTRL")], 
-               sce_sub = sce_rna[,which(sce_rna$expressor %in% targets & 
-                                          sce_rna$celltype == "Tumor" & 
-                                          sce_rna$Location != "CTRL")],
-               cellID = "cellID",
-               colour_by = "expressor",
-               split_by = "Ki67_status",
-               imageID = "ImageNumber",
-               normalize = TRUE,
-               colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=20)) +
-  theme(legend.position="none")
-```
+```{r}
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 
-CXCL8 and CXCL10 seems to be a bit higher in high Ki67 status samples. We can check if there is an association between Ki67+ fraction and CXCL10+ / CXCL8+ fraction. 
-
-```{r cxcl10_tumor_ki67_score, fig.width=10, fig.height=8, dev=c('pdf')}
-# calculate percentage of positive tumor cells over all tumor cells
-cur_df <- data.frame(colData(sce_rna)) %>%
-  group_by(Description, celltype, CXCL10, Ki67_status) %>%
-  filter(celltype == "Tumor") %>%
+fractions_per_image <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, MM_location, expressor, celltype) %>%
   summarise(n = n()) %>%
-  reshape2::dcast(Description + Ki67_status ~ CXCL10, value.var = "n", fill = 0) %>%
-  group_by(Description) %>%
-  mutate(cxcl10_fraction_tumor = (`1` / (`0` + `1`)))
+  group_by(ImageNumber) %>%
+  mutate(total_cells = sum(n)) %>%
+  mutate(fraction_per_image = n / total_cells) %>%
+  group_by(ImageNumber, expressor) %>%
+  mutate(group_fraction = sum(fraction_per_image)) %>%
+  ungroup() %>%
+  filter(expressor %in% targets & MM_location %in% groups$MM_location)
 
-#  
-ggplot(cur_df, aes(y=cxcl10_fraction_tumor, x = Ki67_status)) + 
-  geom_boxplot() + 
-  geom_beeswarm() + 
-  stat_compare_means(comparisons = list(c("high", "low")), label.y = 0.075) +
-  ylim(0,0.08) +
-  xlab("Ki67 Tumor Scoring per Image") +
-  ylab("CXCL10+ Tumor Cell Fraction per Image") +
-  theme_minimal() +
-  theme(text = element_text(size=20)) 
+# fraction of expressor cells per image 
+fraction_expressor_per_image <- fractions_per_image %>%
+  distinct(ImageNumber, MM_location, expressor, .keep_all = T) %>%
+  reshape2::dcast(ImageNumber + MM_location ~ expressor, value.var = "group_fraction", fill = 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber", "MM_location"), variable.name = "expressor", value.name = "fraction_per_image")
+
+# fraction of celltype expressing a certain combi per image
+median_celltype_fraction <- fractions_per_image %>%
+  distinct(ImageNumber, celltype, expressor, .keep_all = T) %>%
+  reshape2::dcast(ImageNumber + MM_location + expressor ~ celltype, value.var = "fraction_per_image", fill = 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber", "MM_location", "expressor"), 
+                 variable.name = "celltype", value.name = "fraction_per_image") %>%
+  reshape2::dcast(ImageNumber + MM_location + celltype ~ expressor, value.var = "fraction_per_image", fill = 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber", "MM_location", "celltype"), 
+                 variable.name = "expressor", value.name = "fraction_per_image") %>%
+  group_by(MM_location, expressor, celltype) %>%
+  summarise(sum_fraction = sum(fraction_per_image)) %>%
+  group_by(MM_location, expressor) %>%
+  mutate(proportions = sum_fraction / sum(sum_fraction))
 ```
+
+```{r Fig_2D_expression_per_location, dev=c('pdf')}
+plot_list <- list()
+for(i in groups$MM_location) {
+  a <- fraction_expressor_per_image %>%
+    filter(MM_location == i) %>%  
+    group_by(ImageNumber, expressor) %>%
+    ggplot(., aes(y=expressor, x=fraction_per_image)) + 
+    geom_boxplot() + 
+    geom_point(alpha=0.2) +
+    theme_bw() +
+    theme(axis.title.y = element_blank(),
+          axis.text.y = element_text(hjust=0.5)) +
+    #annotation_logticks(sides = "bottom") + 
+    xlab("Cell Fraction per Image") +
+    xlim(0,0.15)
+  
+  b <- median_celltype_fraction %>%
+    filter(MM_location == i) %>%  
+    ggplot(., aes(y=expressor, x=-proportions, fill=celltype)) + 
+    geom_bar(stat = "identity") +
+    theme_bw() +
+    theme(axis.text.y = element_blank(),
+          axis.title.y = element_blank(),
+          legend.position = "none") +
+    xlab("Producing Cell Types") +
+          scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype),
+                        breaks = names(metadata(sce_rna)$colour_vectors$celltype),
+                        labels = names(metadata(sce_rna)$colour_vectors$celltype)) +
+    scale_x_continuous(breaks=c(-1.00,-0.75,-0.5, -0.25, 0.00),
+                     labels=c("100%", "75%", "50%", "25%", "0%"))
+  
+  grid.arrange(b,a,nrow=1,
+               widths = c(.75,1),
+               top = i)
+}
+```
+
+## Normalized Total Expression per Metastasis Location
+
+```{r Fig_2E_total_chemokines_MM_location, dev=c('pdf'), fig.height=8}
+dat <- data.frame(colData(sce_rna[, sce_rna$MM_location %in% c("LN", "skin_subcutaneous")])) %>%
+  #filter(manual_scoring != "no assessment possible") %>%
+  group_by(ImageNumber, Location, MM_location, chemokine) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + MM_location + Location ~ chemokine, value.var = "fraction", fill = 0) %>%
+  select(ImageNumber, Location, MM_location, `TRUE`)
+
+ggplot(dat, aes(x=MM_location, y=`TRUE`)) + 
+  geom_boxplot() + 
+  geom_quasirandom(aes(col=Location), size=2) +
+  stat_compare_means(comparisons = list(c("LN", "skin_subcutaneous"))) +
+  theme_bw() + 
+  theme(text = element_text(size=15)) + 
+  guides(col=guide_legend("Punch\nLocation")) +
+  xlab("") + ylab("Fraction of Chemokine-Producing Cells per Image") 
+```
+
+# Chemokine Expression by Mutational Status 
+
+## Patients per Location
+
+```{r}
+groups <- data.frame(colData(sce_rna)) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Mutation) %>%
+  distinct(PatientID, .keep_all = T) %>%
+  summarise(n=n()) %>%
+  filter(n>=5) %>%
+  arrange(-n)
+```
+
+## Boxplot/Barplot per Location for every chemokine combination
+
+```{r}
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
+fractions_per_image <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Mutation, expressor, celltype) %>%
+  summarise(n = n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(total_cells = sum(n)) %>%
+  mutate(fraction_per_image = n / total_cells) %>%
+  group_by(ImageNumber, expressor) %>%
+  mutate(group_fraction = sum(fraction_per_image)) %>%
+  ungroup() %>%
+  filter(expressor %in% targets & Mutation %in% groups$Mutation)
+
+# fraction of expressor cells per image 
+fraction_expressor_per_image <- fractions_per_image %>%
+  distinct(ImageNumber, Mutation, expressor, .keep_all = T) %>%
+  reshape2::dcast(ImageNumber + Mutation ~ expressor, value.var = "group_fraction", fill = 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber", "Mutation"), variable.name = "expressor", value.name = "fraction_per_image")
+
+# fraction of celltype expressing a certain combi per image
+median_celltype_fraction <- fractions_per_image %>%
+  distinct(ImageNumber, celltype, expressor, .keep_all = T) %>%
+  reshape2::dcast(ImageNumber + Mutation + expressor ~ celltype, value.var = "fraction_per_image", fill = 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber", "Mutation", "expressor"), 
+                 variable.name = "celltype", value.name = "fraction_per_image") %>%
+  reshape2::dcast(ImageNumber + Mutation + celltype ~ expressor, value.var = "fraction_per_image", fill = 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber", "Mutation", "celltype"), 
+                 variable.name = "expressor", value.name = "fraction_per_image") %>%
+  group_by(Mutation, expressor, celltype) %>%
+  summarise(sum_fraction = sum(fraction_per_image)) %>%
+  group_by(Mutation, expressor) %>%
+  mutate(proportions = sum_fraction / sum(sum_fraction))
+```
+
+```{r Fig_2F_expression_per_mutation, dev=c('pdf')}
+plot_list <- list()
+for(i in groups$Mutation) {
+  a <- fraction_expressor_per_image %>%
+    filter(Mutation == i) %>%  
+    group_by(ImageNumber, expressor) %>%
+    ggplot(., aes(y=expressor, x=fraction_per_image)) + 
+    geom_boxplot() + 
+    geom_point(alpha=0.2) +
+    theme_bw() +
+    theme(axis.title.y = element_blank(),
+          axis.text.y = element_text(hjust=0.5)) +
+    #annotation_logticks(sides = "bottom") + 
+    xlab("Cell Fraction per Image") +
+    xlim(0,0.1)
+  
+  b <- median_celltype_fraction %>%
+    filter(Mutation == i) %>%  
+    ggplot(., aes(y=expressor, x=-proportions, fill=celltype)) + 
+    geom_bar(stat = "identity") +
+    theme_bw() +
+    theme(axis.text.y = element_blank(),
+          axis.title.y = element_blank(),
+          legend.position = "none") +
+    xlab("Producing Cell Types") +
+          scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype),
+                        breaks = names(metadata(sce_rna)$colour_vectors$celltype),
+                        labels = names(metadata(sce_rna)$colour_vectors$celltype)) +
+    scale_x_continuous(breaks=c(-1.00,-0.75,-0.5, -0.25, 0.00),
+                     labels=c("100%", "75%", "50%", "25%", "0%"))
+  
+  grid.arrange(b,a,nrow=1,
+               widths = c(.75,1),
+               top = i)
+}
+```
+
+## Mutational Status - Normalized Chemokines 
+
+```{r Fig_2E_normalized_chemokines, dev=c('pdf'), fig.width=7, fig.height=8, eval = F}
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Mutation) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Mutation) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Mutation != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Mutation %in% group_size$Mutation]
+
+plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "Mutation",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+
+t <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(ImageNumber, Mutation, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Mutation ~ chemokine, value.var = "fraction")
+
+round(kruskal.test(x = t$`TRUE`, g = t$Mutation)$p.value,3)
+```
+
+```{r Fig_2G_total_chemokines_mutation, dev=c('pdf'), fig.height=8}
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Mutation) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Mutation) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Mutation != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Mutation %in% group_size$Mutation]
+
+dat <- data.frame(colData(sce_rna_sub)) %>%
+  #filter(manual_scoring != "no assessment possible") %>%
+  group_by(ImageNumber, Mutation, MM_location_simplified, chemokine) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Mutation + MM_location_simplified ~ chemokine, value.var = "fraction", fill = 0) %>%
+  select(ImageNumber, Mutation, MM_location_simplified, `TRUE`)
+
+ggplot(dat, aes(x=Mutation, y=`TRUE`)) + 
+  geom_boxplot() + 
+  geom_quasirandom(aes(col=MM_location_simplified), size=2) +
+  stat_compare_means(comparisons = list(c("BRAF", "NRAS"), c("BRAF", "wt"), c("NRAS", "wt"))) +
+  theme_bw() + 
+  theme(text = element_text(size=15)) + 
+  guides(col=guide_legend("Met Location\nGroups")) +
+  xlab("") + ylab("Fraction of Chemokine-Producing Cells per Image") 
+```
+
+## Mutational Status - MM_location Proportions
+
+```{r Fig_2E_mutational_status_proportions, dev=c('pdf'), fig.width=7, fig.height=8, eval=F}
+sce_rna_sub <- sce_rna[,sce_rna$MM_location != ""]
+
+col_vec <- brewer.pal(length(unique(sce_rna_sub$MM_location)), "Set3")
+names(col_vec) <- unique(sce_rna_sub$MM_location)
+
+plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$Mutation %in% groups$Mutation)],
+               cellID = "cellID",
+               colour_by = "MM_location",
+               split_by = "Mutation",
+               imageID = "ImageNumber",
+               proportion = TRUE,
+               show_n = FALSE,
+               colour_vector = col_vec) + 
+  guides(fill=guide_legend("Met Location")) +
+  theme(text = element_text(size=18))
+```
+
+```{r Fig_2E_legend, dev=c('pdf'), fig.height=1, fig.width=2, eval=F}
+# legend for celltypes
+lgd1 = Legend(labels = names(col_vec), 
+             title = "Met Location", 
+             legend_gp = gpar(fill = unname(col_vec),
+                              fontsize = 18),
+             ncol = 1)
+
+draw(packLegend(lgd1,column_gap = unit(0.5, "cm"),
+                max_height = unit(7, "cm")))
+```
+
+## T cells (CD8+/CD8-) in mutational groups
+
+```{r Fig_2G_mutational_status_Tcells, dev=c('pdf'), fig.width=9, fig.height=8, eval=F}
+data.frame(colData(sce_rna_sub)) %>%
+  group_by(Description, Mutation, celltype) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(celltype %in% c("Tcytotoxic")) %>%
+  mutate(sum_fraction = sum(fraction)) %>%
+  distinct(Description, .keep_all = TRUE) %>%
+  ggplot(aes(x=Mutation, y=sum_fraction)) +
+  geom_boxplot(outlier.shape = NA, position = position_dodge(width=1)) +
+  geom_quasirandom(dodge.width=1, groupOnX=TRUE, alpha=.5) +
+  theme_bw() + 
+  theme(
+      axis.text.x = element_text(size=12,angle = 45, hjust = 1),
+      axis.title.y = element_text(size=15),
+      axis.text.y = element_text(size=12),
+      axis.title.x = element_blank(),
+      legend.position = "none",
+      panel.background = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_blank(),
+      panel.grid.major.y = element_line(color = "grey", size = .3)
+    ) + 
+  ylab("Cytotoxic T Cell Fraction per Image") +
+  stat_compare_means(label.y = 0.3, label.x = 0.5, size=8) 
+```
+
+## Fraction of Tumor Cells that express chemokines
+
+```{r Fig_2X_tumor_cells_chemokine, dev=("pdf"), fig.width=8}
+cur_dat <- data.frame(colData(sce_rna))
+cur_dat <- cur_dat %>%
+  filter(celltype == "Tumor") %>%
+  filter(Location != "CTRL")
+
+cur_dat <- cur_dat[,c("ImageNumber", "Mutation", colnames(cur_dat)[grepl(glob2rx("C*L*"),names(cur_dat))])]
+
+# colSums of Chemokines in Tumor Cells (Multiple Producer count more than once)
+cur_dat <- cur_dat %>%
+  group_by(ImageNumber, Mutation) %>%
+  mutate(cells = n()) %>%
+  group_by(ImageNumber, cells, Mutation) %>%
+  summarise_each(funs(sum))
+
+# compute fractions
+cur_dat[,4:14] <- cur_dat[,4:14] / t(cur_dat$cells)
+
+cur_dat <- cur_dat %>%
+  filter(cells > 200) %>%
+  reshape2::melt(id.vars=c("ImageNumber", "cells", "Mutation"), variable.name="chemokine", value.name="fraction")
+
+ggplot(cur_dat,aes(x=chemokine, y=fraction)) + 
+  geom_boxplot(alpha=.5) +
+  geom_quasirandom(alpha=.2) +
+  theme_bw() + 
+  theme(text=element_text(size=13)) +
+  ylab("Fraction of Producing Tumor Cells [log10]") +
+  xlab("") +
+  scale_y_log10() +
+  annotation_logticks(sides = "l") +
+  geom_hline(yintercept = median(cur_dat$fraction), linetype = 2)
+```
+

@@ -1,9 +1,19 @@
-# function to plot (boxplot) the fraction of each celltype for all images in an single cell experiment.
-# fractions can be colored according to Image level colData in the single cell experiment
+#' helper function to generate boxplot split_by colData.
+#' @param sce SingleCellExperiment object
+#' @param cell_class colData entry with celltype information stored
+#' @param celltype_subset subset entry of `cell_class` for plotting
+#' @param split_by split plots by variable
 
-plotCellFracGroupsSubset <- function(x,CellClass,split_by, celltype_subset,cluster_col) {
+#' @return ggplot objects
+#' @export
+
+plotCellFracGroupsSubset <- function(sce,
+                                     CellClass,
+                                     split_by,
+                                     celltype_subset,
+                                     cluster_col) {
   # check if x is SingleCellExperiment
-  .sceCheck(x)
+  .sceCheck(sce)
 
   if (is.null(CellClass)) {
     stop("Provide Cell class from column metadata")
@@ -21,7 +31,7 @@ plotCellFracGroupsSubset <- function(x,CellClass,split_by, celltype_subset,clust
 
 
   # check if selected variables exist
-  entries <- colnames(colData(x))
+  entries <- colnames(colData(sce))
   if (! is.null(CellClass)) {
     if (! CellClass %in% entries) {
       stop("The entry for CellClass is not a colData slot of the object.")
@@ -36,17 +46,17 @@ plotCellFracGroupsSubset <- function(x,CellClass,split_by, celltype_subset,clust
 
 
 
-  cur_df <- data.frame(ImageNumber = (colData(x)[,"ImageNumber"]))
+  cur_df <- data.frame(ImageNumber = (colData(sce)[,"ImageNumber"]))
 
-  cur_df$split_by <- (colData(x)[,split_by])
+  cur_df$split_by <- (colData(sce)[,split_by])
 
-  #cur_df$colour_by <- as.factor(colData(x)[,colour_by])
+  #cur_df$colour_by <- as.factor(colData(sce)[,colour_by])
 
-  cur_df$cluster <- (colData(x)[,cluster_col])
+  cur_df$cluster <- (colData(sce)[,cluster_col])
 
-  cur_df <- dcast(cur_df,formula = " ImageNumber + split_by ~ cluster",fun.aggregate = length)
+  cur_df <- reshape2::dcast(cur_df,formula = " ImageNumber + split_by ~ cluster",fun.aggregate = length)
 
-  cur_df <- melt(cur_df,id.vars = c("ImageNumber","split_by"))
+  cur_df <- reshape2::melt(cur_df,id.vars = c("ImageNumber","split_by"))
 
   cur_df <- cur_df %>%
     group_by(ImageNumber) %>%

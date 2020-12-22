@@ -45,9 +45,6 @@ library(dittoSeq)
 ```{r load data}
 sce = readRDS(file = "data/sce_RNA.rds")
 sce_prot = readRDS(file = "data/sce_protein.rds")
-
-# Load cell mask for example image
-cell_mask <- loadImages("/Volumes/thoch/Data/Analysis/melanoma_cohort_new_cp_pipeline/rna/cpout/20190809_ZTMA256.1_slide2_TH_s1_p4_r47_a47_ac_ilastik_s2_Probabilities_equalized_cellmask.tiff")
 ```
 
 # Community Analysis
@@ -73,7 +70,7 @@ example <- findCommunity(example,
               plot = TRUE)
 ```
 
-## Community analysis - Chemokine-producing cells
+## Chemokine-producing cells
 
 ```{r calculate_frequencies}
 # Subset sce object to only contain chemokine producing cells
@@ -103,7 +100,7 @@ colnames(freqs_long) <- c("chemokine_cluster", "community_module", "celltype", "
 set.seed(12345)
 start_time_umap <- Sys.time()
 umap = freqs_wide[, -(1:2)] %>%
-  umap(method = 'umap-learn')
+  umap()
 end_time_umap <- Sys.time()
 print(end_time_umap - start_time_umap)
 
@@ -145,27 +142,6 @@ freqs_long %>%
 
 # Pure Clusters
 
-## Example of CXCL13-Clusters
-
-```{r cxcl13_clusters, fig.width=10, fig.height=10, dev=c('pdf')}
-example <- findClusters(sce[,sce$ImageNumber == 137], sce[,sce$CXCL13 == 1]$cellID, 
-                    'cellID', 
-                    'Center_X', 'Center_Y', 
-                    'ImageNumber', 
-                    distance = 20, 
-                    min_clust_size = 1,
-                    output_colname = "example_cluster")
-
-example <- findCommunity(example, 
-              'cellID', 
-              'Center_X', 'Center_Y', 
-              'ImageNumber', 
-              'example_cluster', 
-              distance = 30,
-              output_colname = "chemokine_community_i",
-              plot = TRUE)
-```
-
 ## UMAP for Producing Cells
 
 ```{r Fig_3D_UMAP_producing_cells, fig.height=10, fig.width=10, dev=c('pdf')}
@@ -173,11 +149,13 @@ example <- findCommunity(example,
 for(i in c("cxcl13only_clust")){
   # subset sce object to only contain community cells
   sce_sub <- sce[,colData(sce)[,i] > 0]
+
+  assay(sce_sub, "scaled_asinh") <- t(scale(t(assay(sce_sub, "asinh"))))
   
   # create UAMP
   sce_sub <- runUMAP(sce_sub, exprs_values = "scaled_asinh", 
                subset_row = rowData(sce_sub)$good_marker,
-               n_neighbors = 10)
+               n_neighbors = 15)
   
   # add cluster size to 
   cur_df <- data.frame(colData(sce_sub))
@@ -198,7 +176,7 @@ for(i in c("cxcl13only_clust")){
                     size = 3,
                     legend.show = TRUE,
                     opacity = 0.3,
-                    max.color = "red", min.color = "azure3",
+                    max.color = "blue", min.color = "gray88",
                     main = NULL) +
     theme_minimal() +
     theme(text = element_text(size=25))
@@ -211,7 +189,7 @@ for(i in c("cxcl13only_clust")){
              size = 3,
              legend.show = TRUE,
              main = NULL,
-             opacity = 0.5) +
+             opacity = 0.1) +
     theme_minimal() +
     theme(text = element_text(size=25)) + 
     guides(colour = guide_legend(override.aes = list(alpha = 1, size=3)))
@@ -237,10 +215,12 @@ for(i in c("ccl22only_clust")){
   # subset sce object to only contain community cells
   sce_sub <- sce[,colData(sce)[,i] == 0 & colData(sce)[,paste(chemo_name, "comm", sep = "_")] > 0]
 
+  assay(sce_sub, "scaled_asinh") <- t(scale(t(assay(sce_sub, "asinh"))))
+  
   # create UAMP
   sce_sub <- runUMAP(sce_sub, exprs_values = "scaled_asinh", 
                subset_row = rowData(sce_sub)$good_marker,
-               n_neighbors = 10)
+               n_neighbors = 5)
   
   # add cluster size to 
   clust_size <- data.frame(colData(sce[,colData(sce)[,i] > 0])) %>%
@@ -260,7 +240,7 @@ for(i in c("ccl22only_clust")){
                     size = 3,
                     legend.show = TRUE,
                     opacity = 0.3,
-                    max.color = "red", min.color = "azure3",
+                    max.color = "blue", min.color = "gray88",
                     main = NULL) +
     theme_minimal() +
     theme(text = element_text(size=25)) +
@@ -270,7 +250,7 @@ for(i in c("ccl22only_clust")){
   b <- dittoDimPlot(sce_sub, 
              reduction.use = "UMAP", 
              var = "celltype", 
-             opacity = 0.5,
+             opacity = 0.1,
              color.panel = metadata(sce_sub)$colour_vector$celltype,
              size = 3,
              legend.show = TRUE,

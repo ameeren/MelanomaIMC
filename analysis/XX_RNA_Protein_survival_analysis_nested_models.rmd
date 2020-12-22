@@ -23,25 +23,21 @@ library(SingleCellExperiment)
 ## Load data
 ```{r}
 # load the data that contains the time to event and censoring
-data <- read.csv("~/Downloads/survdat_for_modelling.csv")
+data <- read.csv("data/survdat_for_modelling.csv")
 sce_rna <- readRDS(file = "data/sce_RNA.rds")
 ```
 
-## Define Tcytotoxic fraction per Image
+## Define Tcytotoxic density per Image
 
 ```{r}
-# define CXCL13+CD8+ fraction
+# cytotoxic density per image
 frac <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber) %>%
-  mutate(n_image = n()) %>%
-  filter(celltype == "Tcytotoxic") %>%
-  group_by(ImageNumber, BlockID, celltype, n_image) %>%
-  summarise(n = n()) %>%
-  mutate(Fraction_Tcyt_image = n / n_image)
+  distinct(ImageNumber, .keep_all = TRUE) %>%
+  group_by(BlockID) %>%
+  mutate(cyto_density_block = mean(cyotoxic_density_image)) %>%
+  distinct(BlockID, cyto_density_block)
 
-names(data)[3] <- "BlockID"
-
-frac <- left_join(frac[,c("ImageNumber", "BlockID", "Fraction_Tcyt_image")], data)
+frac <- left_join(frac[,c("BlockID", "cyto_density_block")], data)
 
 #
 frac$number_of_treatments_before_grouping <- ifelse(frac$Number.of.treatments.before.surgery == 0, "naive", "non-naive")
@@ -50,42 +46,15 @@ frac$number_of_treatments_before_grouping <- ifelse(frac$Number.of.treatments.be
 ## Full model with all variables
 
 ```{r}
-# only naive patients
-#frac <- frac[frac$number_of_treatments_before_grouping == "naive",]
+cph_standard <- cph(formula = Surv(time = Time_to_death_or_last_PET, event = censoring_death) ~ 
+                      rcs(cyto_density_block,3) + 
+                      number_of_treatments_before_grouping, 
+                    x = TRUE, y = TRUE, data = frac)
 
-unique(frac$number_of_treatments_before_grouping)
+dd <- datadist(frac)
+options(datadist="dd")
 
-# random effect: multiple images per block/patient
-full.model <- coxme(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~
-                      Fraction_Tcyt_image +
-                      number_of_treatments_before_grouping +
-                      IHC.T.cell.scoring +
-                      Mutation +
-                      Cancer.Stage +
-                      #melanoma.subtype..site.of.primary.tumor. +
-                      #MM.location +
-                      #Age.range +
-                      #Gender +
-                      Treatment_type + 
-                      (1 | Internal.Pat..ID / BlockID), data = frac)
-
-reduced.model1 <- coxme(Surv(time = Time_to_.progression_or_last_PET, event = censoring_progression) ~
-                      #Fraction_Tcyt_image +
-                      number_of_treatments_before_grouping +
-                      #IHC.T.cell.scoring +
-                      #Mutation +
-                      #Cancer.Stage +
-                      #melanoma.subtype..site.of.primary.tumor. +
-                      #MM.location +
-                      #Age.range +
-                      #Gender +
-                      #Treatment_type + 
-                      (1 | Internal.Pat..ID / BlockID), data = frac)
-
-summary(full.model)
-a <- anova(reduced.model1, full.model)
-a$`P(>|Chi|)`[2]
-anova(mod5, full.model)
+summary <- summary(cph_standard)
 ```
 
 ```{r}

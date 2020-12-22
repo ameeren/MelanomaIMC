@@ -7,9 +7,9 @@
 #' @param cluster column name for cell cluster IDs
 #' @param distance (numeric) distance to enlarge (buffer) the cluster
 #' @param convex (optional) logical, should the cluster be enlarged based on its convex or concave hull? default = FALSE (concave)
-#' @param plot logical, plot images showing cluster and communtiy borders using ggplot. default = FALSE
+#' @param plot logical, plot images showing cluster and community borders using ggplot. default = FALSE
 #' @param output_colname (optional) column name for the community ID column, defalut = "community"
-#' @return new colData entries called "community" and "closest_community". Relevant is basically only the closest_community since an object can be part of multiple communities.
+#' @return new colData entry with community ID.
 #' @export
 
 findCommunity <- function(input_sce,
@@ -166,7 +166,7 @@ findCommunity <- function(input_sce,
     #print(paste("Number of cells with multiple communities: ", nrow(multi_community), sep = ""))
 
     # nearest neighbour search (for k = number of border cells)
-    if(nrow(multi_community > 0)){
+    if(nrow(multi_community) > 0){
       nn <- RANN::nn2(data = border_cells_clusters[,2:3], query = multi_community[,2:3], k=nrow(border_cells_clusters))
 
       # first column of nn.idx is the row-index of the border_cell with the lowest distance

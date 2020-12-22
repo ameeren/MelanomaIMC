@@ -11,6 +11,11 @@ editor_options:
 
 # Preparations
 
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
 ## Load libraries
 
 ```{r, message=F}
@@ -64,6 +69,49 @@ for(i in names(cur_sce[,grepl(glob2rx("C*L*"),names(cur_sce))])) {
 } 
 end = Sys.time()
 print(end-start)
+```
+
+## Define pure clusters that contain more than 10 producing cells
+
+```{r}
+cur_sce <- data.frame(colData(sce))
+clust_sum <- data.frame()
+
+for(i in names(cur_sce[,grepl(glob2rx("*only_clust"),names(cur_sce))])) {
+  # select cluster with more than 10 producing cells
+  clust <- cur_sce %>%
+    group_by_at(i) %>%
+    summarise(n=n()) %>%
+    distinct_at(i, .keep_all = TRUE) %>%
+    filter(n>10)
+  
+  # remove cluster 0
+  clust <- clust[clust[,i] > 0,]
+  
+  # create new column
+  name <- str_split(i, "_")[[1]][1]
+  name <- paste0(name,"_pure")
+  cur_sce[,name] <- 0
+  
+  # add cluster id to new column for all cells (producing AND non-producing) that are part of that community
+  if(nrow(clust) > 0){
+    colname_comm <- paste0(str_split(i, "_")[[1]][1],"_comm")
+    cur_sce[cur_sce[,colname_comm] %in% clust[,i][[1]], name] <- as.numeric(cur_sce[cur_sce[,colname_comm] %in% clust[,i][[1]], colname_comm])
+  }
+}
+
+# add to sce
+sce$ccl4_pure <- cur_sce$ccl4only_pure
+sce$ccl18_pure <- cur_sce$ccl18only_pure
+sce$cxcl8_pure <- cur_sce$cxcl8only_pure
+sce$cxcl10_pure <- cur_sce$cxcl10only_pure
+sce$cxcl12_pure <- cur_sce$cxcl12only_pure
+sce$cxcl13_pure <- cur_sce$cxcl13only_pure
+sce$ccl2_pure <- cur_sce$ccl2only_pure
+sce$ccl22_pure <- cur_sce$ccl22only_pure
+sce$cxcl9_pure <- cur_sce$cxcl9only_pure
+sce$ccl8_pure <- cur_sce$ccl8only_pure
+sce$ccl19_pure <- cur_sce$ccl19only_pure
 ```
 
 ## Save SCE

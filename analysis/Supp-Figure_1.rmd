@@ -16,6 +16,7 @@ This script generates plots for Supplementary Figure 1.
 
 ```{r}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
 library(data.table)
 library(ggplot2)
 library(dplyr)
@@ -25,6 +26,9 @@ library(ComplexHeatmap)
 library(circlize)
 library(gridExtra)
 library(ggbeeswarm)
+library(ggrepel)
+library(ggpmisc)
+library(ggrastr)
 ```
 
 # Unspecific Binding Quantification
@@ -33,11 +37,11 @@ library(ggbeeswarm)
 
 ```{r}
 # load data
-cells1 = fread("/Volumes/thoch/Data/IMC/20190305_measurements/Analysis/cpout/cell.csv", header = T,sep=",")
-cells2 = fread("/Volumes/thoch/Data/IMC/20190306_measurements/Analysis/cpout/cell.csv", header = T,sep=",")
-meta1 = fread("/Volumes/thoch/Data/IMC/20190305_measurements/Analysis/cpout/Image.csv",header = T,sep=",")
-meta2 = fread("/Volumes/thoch/Data/IMC/20190306_measurements/Analysis/cpout/Image.csv",header = T,sep=",")
-panel = fread( "/Volumes/thoch/Data/IMC/20190305_measurements/20190305_A431_overexpression.csv")
+cells1 = fread("data/12plex_validation/overexpression/20190305/cell.csv", header = T,sep=",")
+cells2 = fread("data/12plex_validation/overexpression/20190306/cell.csv", header = T,sep=",")
+meta1 = fread("data/12plex_validation/overexpression/20190305/Image.csv",header = T,sep=",")
+meta2 = fread("data/12plex_validation/overexpression/20190306/Image.csv",header = T,sep=",")
+panel = fread( "data/12plex_validation/overexpression/20190305/20190305_A431_overexpression.csv")
 
 # extract replicate and stain info
 meta1 = meta1[,.(ImageNumber,FileName_CellImage, Group_Number, Metadata_Target)]
@@ -103,7 +107,7 @@ cells_panel_uncorrected = cells_panel[cells_panel$signal_type == "MeanIntensity"
 cells_panel_corrected = cells_panel[cells_panel$signal_type == "MeanIntensityCorrected",]
 ```
 
-## Unspecific Amplifier binding 
+## Unspecific Amplifier Binding 
 
 ```{r Supp_Fig_1A_heatmap_unspecific_binding, dev=c('pdf')}
 results = matrix(nrow=12, ncol = 12)
@@ -113,6 +117,7 @@ results = as.data.frame(results)
 
 cells_panel_corrected = as.data.frame(cells_panel_corrected)
 
+# calculate percentage of unspecific binding
 for(i in unique(cells_panel$Target)){
   mean_target = mean(cells_panel_corrected[cells_panel_corrected["Metadata_Target"] == i & cells_panel_corrected["Target"] == i, "value"])
   for(j in unique(cells_panel$Target)){
@@ -121,6 +126,9 @@ for(i in unique(cells_panel$Target)){
     results[row_index, col_index] = mean(cells_panel_corrected[cells_panel_corrected["Metadata_Target"] == j & cells_panel_corrected["Target"] == i, "value"]) / mean_target * 100
   }
 }
+
+# set crosstalk to 0 from one channel to same channel
+results[results == 100] <- 0
 
 a = Heatmap(as.matrix(results),
         col = colorRamp2(c(0,1,3), c("white","blue", "red")),
@@ -132,8 +140,6 @@ a = Heatmap(as.matrix(results),
         column_names_gp = gpar(fontsize = 15),
         row_names_gp = gpar(fontsize = 0),
         column_names_centered = T,
-        column_title = "Range of Unspecific Binding", 
-        column_title_gp = gpar(fontsize = 20, fontface = "bold"),
         cell_fun = function(j, i, x, y, width, height, fill) {
         grid.text(sprintf("%.1f", as.matrix(results)[i, j]), x, y, gp = gpar(fontsize = 10))
 })
@@ -153,25 +159,20 @@ sapply(list.files("code/helper_functions", full.names = TRUE), source)
 
 ## Load the data
 ```{r}
-cells1 = fread("/Volumes/thoch/Data/IMC/20190208_measurements/normal_panel/Analysis/cpout/cell.csv", header = T,sep=",")
-#cells2 = fread("/Volumes/thoch/Data/IMC/20190212_measurements/Analysis/cpout/cell.csv", header = T,sep=",")
-cells3 = fread("/Volumes/thoch/Data/IMC/20190215_measurements/new_complete/Analysis/cpout/cell.csv", header = T,sep=",")
-cells4 = fread("/Volumes/thoch/Data/IMC/20190222_measurements/Analysis/cpout/cell.csv", header = T,sep=",")
+cells1 = fread("data/12plex_validation/HeLa/20190208/cell.csv", header = T,sep=",")
+cells3 = fread("data/12plex_validation/HeLa/20190215/cell.csv", header = T,sep=",")
+cells4 = fread("data/12plex_validation/HeLa/20190222/cell.csv", header = T,sep=",")
 
-meta1 = fread("/Volumes/thoch/Data/IMC/20190208_measurements/normal_panel/Analysis/cpout/Image.csv",header = T,sep=",")
-#meta2 = fread("/Volumes/thoch/Data/IMC/20190212_measurements/Analysis/cpout/Image.csv",header = T,sep=",")
-meta3 = fread("/Volumes/thoch/Data/IMC/20190215_measurements/new_complete/Analysis/cpout/Image.csv",header = T,sep=",")
-meta4 = fread("/Volumes/thoch/Data/IMC/20190222_measurements/Analysis/cpout/Image.csv",header = T,sep=",")
+meta1 = fread("data/12plex_validation/HeLa/20190208/Image.csv",header = T,sep=",")
+meta3 = fread("data/12plex_validation/HeLa/20190215/Image.csv",header = T,sep=",")
+meta4 = fread("data/12plex_validation/HeLa/20190222/Image.csv",header = T,sep=",")
 
 meta1 = meta1[,.(ImageNumber,FileName_CellImage)]
-#meta2 = meta2[,.(ImageNumber,FileName_CellImage)]
 meta3 = meta3[,.(ImageNumber,FileName_CellImage)]
 meta4 = meta4[,.(ImageNumber,FileName_CellImage)]
 
 meta1[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",6), 
              secondary_stain = getInfoFromString(FileName_CellImage,"_",7)),by=ImageNumber]
-#meta2[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",6), 
-             #secondary_stain = getInfoFromString(FileName_CellImage,"_",7)),by=ImageNumber]
 meta3[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",6), 
              secondary_stain = getInfoFromString(FileName_CellImage,"_",7)),by=ImageNumber]
 meta4[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",7), 
@@ -198,7 +199,7 @@ meta3[meta3$stain=="T5new",]$stain = "T5"
 meta3[meta3$stain=="T11new",]$stain = "T11"
 meta3[meta3$replicate =="20190221",]$replicate = "20190215"
 
-panel = fread( "/Volumes/thoch/Data/IMC/20190212_measurements/20190212_HeLa_12plex_validation.csv")
+panel = fread( "data/12plex_validation/HeLa/20190212_HeLa_12plex_validation.csv")
 
 # sort Metal Number in same order than in the Image.csv file!!
 panel$`Metal Number` = str_extract(panel$`Metal Tag`, "[0-9]+")
@@ -207,13 +208,11 @@ panel$channel = c(1:nrow(panel))
 
 # melt table
 cells1_long = melt.data.table(cells1,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
-#cells2_long = melt.data.table(cells2,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
 cells3_long = melt.data.table(cells3,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
 cells4_long = melt.data.table(cells4,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
 
 # multiply value by 2E16 since it divided by this number in CellProfiler
 cells1_long$value = cells1_long$value * 65535
-#cells2_long$value = cells2_long$value * 65535
 cells3_long$value = cells3_long$value * 65535
 cells4_long$value = cells4_long$value * 65535
 
@@ -221,11 +220,6 @@ cells1_long[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
 cells1_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
                  counts_asinh = asinh(value/1)),
                  by=id]
-
-#cells2_long[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
-#cells2_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
-                 #counts_asinh = asinh(value/1)),
-                 #by=id]
 
 cells3_long[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
 cells3_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
@@ -239,12 +233,10 @@ cells4_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",str
 
 # take only FullStack entries and not FullStackFiltered (not possible with RNA measurement, only with Ab's)
 cells1_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
-#cells2_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
 cells3_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
 cells4_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
 
 cells1_long = cells1_long[measurement=="FullStack",]
-#cells2_long = cells2_long[measurement=="FullStack",]
 cells3_long = cells3_long[measurement=="FullStack",]
 cells4_long = cells4_long[measurement=="FullStack",]
 ```
@@ -253,7 +245,6 @@ cells4_long = cells4_long[measurement=="FullStack",]
 
 ```{r}
 cells1_long = merge(cells1_long,meta1,by="ImageNumber")
-#cells2_long = merge(cells2_long,meta2,by="ImageNumber")
 cells3_long = merge(cells3_long,meta3,by="ImageNumber")
 cells4_long = merge(cells4_long,meta4,by="ImageNumber")
 
@@ -262,13 +253,11 @@ cells3_long = cells3_long[cells3_long$stain != "negative 1st", ]
 
 # remove additional columns which are not needed
 cells1_long = cells1_long[,!("secondary_stain")]
-#cells2_long = cells2_long[,!("secondary_stain")]
 cells3_long = cells3_long[,!("secondary_stain")]
 cells4_long = cells4_long[,!("secondary_stain")]
 cells4_long = cells4_long[,!("another_stain")]
 
 
-#cells = rbind(cells1_long,cells2_long)
 cells = rbind(cells1_long, cells3_long)
 cells = rbind(cells, cells4_long)
 ```
@@ -277,8 +266,8 @@ cells = rbind(cells, cells4_long)
 
 ```{r}
 # exclude certain channels, make sure to exclude the right ones!
-cells_panel = merge(cells,panel[,.(channel,Target)],by="channel")
-cells_panel = cells_panel[Target %in% c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),]
+cells_panel <- merge(cells,panel[,.(channel,Target)],by="channel")
+cells_panel <- cells_panel[Target %in% c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),]
 ```
 
 
@@ -286,7 +275,7 @@ cells_panel = cells_panel[Target %in% c("T1","T2","T3","T4","T5","T6","T7","T8",
 
 ```{r}
 # import data from 8plex validation
-cells_panel_8plex = readRDS(file = "/Volumes/thoch/Data/Analysis/12plex_validation/HeLa_measurements/2018_data_8plex_validation_DS.rds")
+cells_panel_8plex = readRDS(file = "data/12plex_validation/HeLa/2018_data_8plex_validation_DS.rds")
 
 # make both data.frames same so they can be merged
 cells_panel = cells_panel[, !("measurement")]
@@ -325,7 +314,7 @@ cells_panel_12plex = rbind(cells_panel, cells_panel_8plex)
 
 ## Throw out the DNA, histone and panCytokeratin data and then get the info of PPIB staining
 
-```{r Supp_Fig_1B_merged_comparison_per_channel, fig.width=10, fig.height=7, dev=c('pdf')}
+```{r Supp_Fig_1B_merged_comparison_per_channel, fig.width=10, fig.height=8, dev=c('pdf')}
 # subset
 cells_panel_12plex_sub = cells_panel_12plex[stain == Target,]
 
@@ -334,41 +323,14 @@ cells_panel_12plex_sub$Target <- factor(cells_panel_12plex_sub$Target, levels = 
 
 # check out difference in signal intensity for PPIB in the different channels
 ggplot(data = cells_panel_12plex_sub[Target %in%c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),], aes(x=as.factor(Target),y=counts_asinh)) +
-  geom_boxplot(size=0.5)+
-  theme(text = element_text(size=25), axis.text.x = element_text(angle = 90, hjust = 1))+
-  ggtitle("Single-probe measurements merged") + 
-  ylab("Mean Intensity Count per cell [asinh]") + 
+  geom_boxplot(fill="deepskyblue1")+
+  theme_minimal()+
+  theme(text = element_text(size=25), axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Mean Intensity Count per Cell [asinh]") + 
   xlab("Target Channels") + 
   geom_hline(yintercept = mean(cells_panel_12plex_sub$counts_asinh), linetype = 2) +
   scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T10","T11", "T12"),
                       labels= c("T1 PPIB","T2 PPIB","T3 PPIB", "T4 PPIB", "T5 PPIB","T6 PPIB","T7 PPIB","T8 PPIB","T9 PPIB","T10 PPIB", "T11 PPIB", "T12 PPIB")) 
-```
-
-## Compare median
-
-```{r Supp_Fig_1C_median_comparison_per_replicate, fig.width=10, fig.height=8, dev=c('pdf')}
-# compare medians per replicate
-summarized = cells_panel_12plex_sub %>% 
-  group_by(replicate, stain) %>% 
-  summarise(median_signal_per_replicate = median(counts_asinh))
-
-# relevel factor
-summarized$stain <- factor(summarized$stain, levels = c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"))
-
-ggplot(data = summarized, aes(x=stain,y=median_signal_per_replicate)) +
-  geom_boxplot(size=0.5) +
-  geom_point(aes(col=replicate)) + 
-  theme(text = element_text(size=25), axis.text.x = element_text(angle = 90, hjust = 1))+ 
-  scale_fill_discrete(name = "Replicate") +
-  ggtitle("Statistical comparison of channel intensities") + 
-  ylab("Median Intensity Count per Replicate [asinh]") +
-  scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T10","T11", "T12"),
-                      labels= c("T1 PPIB","T2 PPIB","T3 PPIB", "T4 PPIB", "T5 PPIB","T6 PPIB","T7 PPIB","T8 PPIB","T9 PPIB","T10 PPIB", "T11 PPIB", "T12 PPIB")) +
-  geom_hline(yintercept = mean(summarized$median_signal_per_replicate), linetype = 2) +
-  stat_compare_means(method = "anova", label.y = 2.4) +      # Add global p-value
-  stat_compare_means(label = "p.signif", method = "t.test", ref.group = ".all.", hide.ns = TRUE, label.y = 2.4, size=10) +
-  xlab("Target Channels") +
-  ylim(0,2.6)
 ```
 
 ## Signal range
@@ -378,5 +340,150 @@ cells_panel_12plex_sub %>%
   group_by(stain) %>%
   summarize(mean_per_channel = mean(counts_asinh)) %>%
   mutate(sd = sd(mean_per_channel), mean = mean(mean_per_channel), min = min(mean_per_channel), max = max(mean_per_channel))
+```
+
+# Antibody Incubation
+
+## Influence of Antibody Incubation
+
+```{r Supp_Fig_1C_overnight_Ab_incubation, fig.width=10, fig.height=8, dev=c('pdf')}
+dd = cells_panel[stain == "positive without Ab" | stain == "positive with Ab",]
+
+# relevel factor
+dd$Target <- factor(dd$Target, levels = c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"))
+dd$stain <- ifelse(dd$stain == "positive with Ab", "+ Antibodies", "- Antibodies")
+
+# plot
+ggplot(data=dd, aes(x=Target, y=counts_asinh, fill = stain)) + 
+  geom_boxplot() +
+  scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T11","T10", "T12"),
+                      labels= c("T1 POLR2A","T2 PPIB","T3 UBC", "T4 HPRT1", "T5 TUB","T6 RPL28","T7 RPL5","T8 B2M","T9 ACTB","T10 LDHA", "T11 RPLP0", "T12 GAPDH")) +
+  theme_minimal()+
+  theme(text = element_text(size=25), axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylab("Mean Intensity Count per Cell [asinh]") +
+  xlab("Target Channels") + 
+  scale_fill_discrete(name = "Protocol Type") 
+```
+
+# RNAScope vs. RNA-Seq
+
+## Compare Positive Controls with RNAseq data
+
+```{r Supp_Fig_1D_correlation_with_RNAseq, fig.width=8, fig.height=7, dev=c('pdf')}
+# add gene name
+cells_panel_12plex$gene <- ""
+cells_panel_12plex[cells_panel_12plex$Target == "T1",]$gene <- "POLR2A"
+cells_panel_12plex[cells_panel_12plex$Target == "T2",]$gene <- "PPIB"
+cells_panel_12plex[cells_panel_12plex$Target == "T3",]$gene <- "UBC"
+cells_panel_12plex[cells_panel_12plex$Target == "T4",]$gene <- "HPRT1"
+cells_panel_12plex[cells_panel_12plex$Target == "T5",]$gene <- "TUB"
+cells_panel_12plex[cells_panel_12plex$Target == "T6",]$gene <- "RPL28"
+cells_panel_12plex[cells_panel_12plex$Target == "T7",]$gene <- "RPL5"
+cells_panel_12plex[cells_panel_12plex$Target == "T8",]$gene <- "B2M"
+cells_panel_12plex[cells_panel_12plex$Target == "T9",]$gene <- "ACTB"
+cells_panel_12plex[cells_panel_12plex$Target == "T10",]$gene <- "LDHA"
+cells_panel_12plex[cells_panel_12plex$Target == "T11",]$gene <- "RPLP0"
+cells_panel_12plex[cells_panel_12plex$Target == "T12",]$gene <- "GAPDH"
+
+median_per_gene <- cells_panel_12plex %>%
+  filter(stain == "positive with Ab") %>%
+  filter(replicate %in% c("20190208", "20190215", "20190222")) %>%
+  group_by(gene) %>%
+  summarise(expression_RNAScope = median(counts_asinh))
+
+# data from human protein atlas
+rna_seq <- data.frame(median_per_gene$gene)
+colnames(rna_seq) <- "gene"
+
+# Normalized Expression Data from Human Protein Atlas 
+rna_seq$expression_RNAseq <- c(145.3, 89.2, 217.1, 21.3, 74.9, 1.2, 54.7, 87.9, 83.6, 72.4, 23.9, 62.9)
+
+# merge
+sum <- left_join(median_per_gene, rna_seq)
+
+# plot 
+ggplot(sum, aes(x=expression_RNAseq, y=expression_RNAScope, label=gene)) + 
+  geom_label_repel(size=7, fill="deepskyblue1") + 
+  geom_smooth(method = "lm") +
+  xlab("Normalized Expression RNA-Seq") +
+  ylab("Median Expression RNAScope [asinh]") + 
+   stat_poly_eq(formula = y ~ x, 
+                aes(label = ..rr.label..), 
+                parse = TRUE, size=10) +
+  theme_minimal() + 
+  theme(text = element_text(size=20)) 
+```
+
+## Correlation
+
+```{r}
+# correlation of the two technologies
+cor(sum$expression_RNAScope, sum$expression_RNAseq, method = c("spearman"))
+```
+
+# Chemokine Detection Method
+
+## Load Data
+
+```{r}
+sce_rna <- readRDS("data/sce_RNA.rds")
+```
+
+## Detection of chemokine expressing cells
+
+for the detection of chemokine expressing cells we make use of the fact that we also measured a negative control (DapB).
+
+```{r}
+# get the names of the chemokine channels without the negative control channel
+chemokine_channels = rownames(sce_rna[which(grepl("T\\d+_",rownames(sce_rna)) & ! grepl("DapB",rownames(sce_rna))),])
+chemokine_channels_sub <- c("T2_CCL22")
+
+# run function to define chemokine expressing cells 
+output_list <- compute_difference(sce_rna, 
+                          cellID = "cellID", 
+                          assay_name = "asinh", 
+                          threshold = 0.01, 
+                          mRNA_channels = chemokine_channels_sub, 
+                          negative_control = "T6_DapB", 
+                          return_calc_metrics = TRUE)
+```
+
+## Plot Results from Chemokine Detection
+
+```{r Supp_Fig_1E1F_chemokine_detection,fig.height=7, fig.width=17, dev=c("pdf"), dpi=25}
+# check difference between DapB and signal (histogram)
+plot_list = list()
+for(i in chemokine_channels_sub){
+  
+  # subset whole data set for visualization purposes
+  diff_chemo <- output_list[[i]]
+  diff_chemo_sub <- diff_chemo[sample(nrow(diff_chemo), nrow(diff_chemo)*0.5), ]
+
+  a <- ggplot(data = diff_chemo_sub, aes(x=scaled_diff)) + 
+  geom_histogram(binwidth = 0.05, aes(fill = 
+                                       ifelse(padj <= 0.01 & scaled_diff > 0, 'p<0.01', 'n.s.'))) + 
+  xlab(paste(paste("Scaled Difference ", i, sep = " "), " - DapB", sep = "")) + 
+    xlim(-5,7) +
+    theme_minimal() + 
+    theme(text = element_text(size=20),
+          legend.position = "none") + 
+    scale_fill_manual(values = c("black", "deepskyblue1"))
+  
+  # significant cells defined by subtraction
+  b <- ggplot(data=diff_chemo_sub, aes(x=mean_negative_control, y=mean_chemokine)) + 
+    geom_point_rast(alpha=0.2, aes(col = 
+                                ifelse(padj <= 0.01 & scaled_diff > 0, 'p<0.01', 'n.s.'))) + 
+    scale_color_manual(values = c("black", "deepskyblue1"), 
+                       name = "Legend") +
+    guides(color = guide_legend(override.aes = list(alpha=1, size=3))) +
+    xlim(0,5.5) + ylim(0,5.5) +
+    ylab(paste("Mean expression of", i, sep=" ")) +
+    xlab("Mean DapB mRNA expression") +
+    theme_minimal() + 
+    theme(text = element_text(size=20)) 
+
+  
+  grid.arrange(a,b, nrow = 1, ncol=2)
+}
 ```
 

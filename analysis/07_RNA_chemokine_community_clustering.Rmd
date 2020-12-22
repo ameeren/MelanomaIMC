@@ -11,6 +11,11 @@ editor_options:
 
 # Preparations
 
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
 ## Load libraries
 
 First, we will load the libraries needed for this part of the analysis.

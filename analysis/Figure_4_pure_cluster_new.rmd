@@ -1,0 +1,794 @@
+---
+title: "Figure 4"
+author: "toobiwankenobi"
+date: "2020-08-04"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+This script generates plots for Figure 4.
+
+# Preparations
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Load libraries
+
+First, we will load the libraries needed for this part of the analysis.
+
+```{r, message=FALSE}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(reshape2)
+library(tidyverse)
+library(dplyr)
+library(data.table) 
+library(ggplot2)
+library(cba)
+library(ComplexHeatmap)
+library(colorRamps)
+library(circlize)
+library(RColorBrewer)
+library(ggpubr)
+library(ggbeeswarm)
+library(gridExtra)
+library(tidyr)
+library(ggpmisc)
+library(circlize)
+library(coxme)
+library(dittoSeq)
+library(scater)
+library(cowplot)
+library(survminer)
+```
+
+## Read the data
+
+```{r}
+sce_rna = readRDS(file = "data/sce_RNA.rds")
+sce_prot = readRDS(file = "data/sce_protein.rds")
+
+# meta data
+dat_relation = fread(file = "data/protein/Object relationships.csv",stringsAsFactors = FALSE)
+dat_relation_rna = fread(file = "data/RNA/Object relationships.csv",stringsAsFactors = FALSE)
+dat_inflammation = fread(file = "data/manual_infiltration_scoring_BlockID.csv", header = TRUE)
+```
+
+## Prepare Relation Data Protein
+
+```{r}
+# prepare data and add cellID
+dat_relation$cellID_first <- paste("protein", paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = "_"), sep = "_")
+dat_relation$cellID_second <- paste("protein", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
+
+# add celltype status to first and second label
+celltype_first <- data.frame(colData(sce_prot))[,c("cellID", "celltype", "celltype_clustered")]
+colnames(celltype_first) <- c("cellID_first", "celltype_first", "celltype_clust_first")
+celltype_second <- data.frame(colData(sce_prot))[,c("cellID", "celltype", "celltype_clustered")]
+colnames(celltype_second) <- c("cellID_second", "celltype_second", "celltype_clust_second")
+
+dat_relation <- left_join(dat_relation, celltype_first, by = "cellID_first")
+dat_relation <- left_join(dat_relation, celltype_second, by = "cellID_second")
+
+colnames(dat_relation)[5] <- "FirstImageNumber"
+```
+
+## Prepare Relation Data RNA
+
+```{r}
+# prepare data and add cellID
+dat_relation_rna$cellID_first <- paste("RNA", paste(dat_relation_rna$`First Image Number`, dat_relation_rna$`First Object Number`, sep = "_"), sep = "_")
+dat_relation_rna$cellID_second <- paste("RNA", paste(dat_relation_rna$`Second Image Number`, dat_relation_rna$`Second Object Number`, sep = "_"), sep = "_")
+
+# add celltype status to first and second label
+celltype_first <- data.frame(colData(sce_rna))[,c("cellID", "celltype", "celltype_clustered")]
+colnames(celltype_first) <- c("cellID_first", "celltype_first", "celltype_clust_first")
+celltype_second <- data.frame(colData(sce_rna))[,c("cellID", "celltype", "celltype_clustered")]
+colnames(celltype_second) <- c("cellID_second", "celltype_second", "celltype_clust_second")
+
+dat_relation_rna <- left_join(dat_relation_rna, celltype_first, by = "cellID_first")
+dat_relation_rna <- left_join(dat_relation_rna, celltype_second, by = "cellID_second")
+
+colnames(dat_relation_rna)[5] <- "FirstImageNumber"
+```
+
+## Correlation with mean B2M expression and T cell density
+
+```{r Fig_4B_B2M_correlation, fig.height=7, fig.width=12, dev=c('pdf')}
+tumor_dat <- data.frame(t(assay(sce_rna["B2M", sce_rna$celltype == "Tumor" & sce_rna$Location != "CTRL"], "asinh")))
+tumor_dat$Description <- sce_rna[, sce_rna$celltype == "Tumor" & sce_rna$Location != "CTRL"]$Description
+
+tumor_dat <- tumor_dat %>%
+  group_by(Description) %>%
+  summarise(mean_B2M = mean(B2M))
+
+cur_df <- data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(Description, celltype, BlockID, manual_scoring) %>%
+  summarise(n=n()) %>%
+  ungroup() %>%
+  complete(Description, celltype, fill = list(n = 0)) %>%
+  filter(celltype == "Tcytotoxic")
+
+cur_df_chemokine <- data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(Description, chemokine) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(Description ~ chemokine, value.var = "n", fill = 0) %>%
+  mutate(fraction_positive = `TRUE` / (`FALSE` + `TRUE`))
+  
+tumor_dat <- left_join(tumor_dat, cur_df)
+tumor_dat_chemokine <- left_join(tumor_dat, cur_df_chemokine)
+
+# remove bad images and controls
+tumor_dat <- tumor_dat[!is.na(tumor_dat$manual_scoring) & tumor_dat$manual_scoring != "no assessment possible",]
+tumor_dat_chemokine <- tumor_dat_chemokine[!is.na(tumor_dat_chemokine$manual_scoring) & tumor_dat_chemokine$manual_scoring != "no assessment possible",]
+
+# boxplot
+a <- ggplot(tumor_dat, aes(y=mean_B2M, x=log10(n))) + 
+  geom_point(size=2) +
+  geom_smooth(method = "lm") +
+  stat_poly_eq(formula = y ~ x, 
+                aes(label =  ..rr.label..), 
+                parse = TRUE, size=10) +
+  ylab("Mean B2M Expression on Tumor Cells per Image (asinh)") +
+  xlab("Number of Cytotoxic T cells per Image (log10)") +
+  theme_bw() + 
+  theme(text = element_text(size=18))
+
+b <- ggplot(tumor_dat_chemokine, aes(y=mean_B2M, x=log10(fraction_positive))) + 
+  geom_point(size=2) +
+  geom_smooth(method = "lm") +
+  stat_poly_eq(formula = y ~ x, 
+                aes(label =  ..rr.label..), 
+                parse = TRUE, size=10) +
+  ylab("Mean B2M Expression on Tumor Cells per Image (asinh)") +
+  xlab("Chemokine-Producer Fraction per Image (log10)") +
+  theme_bw() + 
+  theme(text = element_text(size=18))
+
+grid.arrange(a,b, nrow=1)
+```
+
+# Interaction between Exhausted CD8 and Tumor Cells
+
+```{r Fig_4C_corr_interaction_and_exhaustion, dev=("pdf"), fig.width=7, fig.height=5}
+# number of interactions tcytotoxic and tumor per image
+dat_relation_sub <- dat_relation_rna[dat_relation_rna$celltype_first == "Tcytotoxic" & 
+                                   dat_relation_rna$celltype_second == "Tumor"]
+
+# count number of interactions
+count <- dat_relation_sub %>%
+  group_by(FirstImageNumber) %>%
+  summarise(n=n())
+names(count)[1] <- "ImageNumber"
+
+# fraction of exhausted cd8 per image
+exhaustion <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, celltype_rf) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(ImageNumber ~ celltype_rf, value.var = "n", fill = 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber"), variable.name = "celltype_rf", value.name = "n") %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(celltype_rf == "exhausted Tcytotoxic") %>%
+  ungroup() %>%
+  select(ImageNumber, fraction)
+
+# correlation plot
+cur_dat <- left_join(count, exhaustion)
+
+ggplot(cur_dat, aes(x=log10(fraction), y=log10(n))) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_poly_eq(formula = y ~ x, 
+                aes(label =  ..rr.label..), 
+                parse = TRUE, size=10) +
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction of Exhausted Cytotoxic T Cells per Image (log10)") +
+  ylab("Number of Interactions per Image (log10)")
+```
+
+# Heatmap with Community Modules
+
+## Prepare Data for Heatmap
+
+```{r exhaustion scoring}
+# paste density scoring and exhaustion scoring
+exhaustion <- data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  filter(tcell_density_score %in% c("high")) %>%
+  filter(celltype_rf %in% c("exhausted Tcytotoxic", "Tcytotoxic")) %>%
+  group_by(Description, manual_scoring, celltype_rf) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(Description + manual_scoring ~ celltype_rf, value.var = "n", fill = 0) %>%
+  reshape2::melt(id.vars = c("Description", "manual_scoring"), variable.name = "celltype_rf", value.name = "n") %>%
+  group_by(Description) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(celltype_rf == "exhausted Tcytotoxic") %>%
+  mutate(exhaustion_score = ifelse(fraction >= 0.15, "high exhaustion", "low exhaustion")) %>%
+  ungroup() %>%
+  select(Description, exhaustion_score)
+
+#exhaustion[exhaustion$Description == "L10", ]$exhaustion_score <- "low exhaustion"
+  
+cur_rna <- data.frame(colData(sce_rna))
+cur_rna <- left_join(cur_rna, exhaustion)
+sce_rna$exhaustion_score <- cur_rna$exhaustion_score
+sce_rna$exhaustion_density <- paste(sce_rna$tcell_density_score, sce_rna$exhaustion_score, sep = " - ")
+
+cur_prot <- data.frame(colData(sce_prot))
+cur_prot <- left_join(cur_prot, exhaustion)
+sce_prot$exhaustion_score <- cur_prot$exhaustion_score
+sce_prot$exhaustion_density <- paste(sce_prot$tcell_density_score, sce_prot$exhaustion_score, sep = " - ")
+```
+
+## Variation over Blocks
+```{r, eval=F}
+exhaustion <- left_join(exhaustion, unique(data.frame(colData(sce_rna)[,c("Description", "BlockID")])))
+
+test <- exhaustion %>%
+  group_by(BlockID) %>%
+  mutate(sd = sd(fraction)) %>%
+  arrange(-sd)
+
+ggplot(test, aes(x=BlockID, y=fraction)) + 
+  geom_point(size=2) +
+  theme_bw() + 
+  theme(axis.text.x = element_text(angle=90))
+```
+
+
+```{r prepare_heatmap_data}
+cur_dt <- data.frame(colData(sce_rna))
+cur_dt_prot <- as.data.table(colData(sce_prot))
+cur_dt_prot <- distinct(cur_dt_prot, Description, .keep_all = T)
+
+clust <- data.frame()
+
+## wide table for communities - filter undefined or unclear E_I_D scores
+for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
+  cur_dt_sub <- cur_dt[cur_dt[,i] > 0,]
+  cur_dt_sub <- cbind(cur_dt_sub[,c(i, "Description")],
+                      cur_dt_sub[,grepl(glob2rx("C*L*"),names(cur_dt_sub))])
+  
+  cur_dt_sub <- cur_dt_sub %>%
+    group_by(Description) %>%
+    group_by_at(i, .add = TRUE) %>%
+    summarise_each(funs(sum))
+  
+  cur_dt_sub$cluster_type <- i
+  
+  cur_dt_sub <- cur_dt_sub[,-2]
+  
+  clust <- rbind(clust, cur_dt_sub)
+}
+
+# remove pure clusters with low abundance (CCL22, CCL4, CCL8)
+clust <- clust[!(clust$cluster_type %in% c("ccl22_pure", "ccl4_pure", "ccl8_pure")),]
+
+# summarize by image
+clust <- clust %>%
+  group_by(Description, cluster_type) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(Description ~ cluster_type, value.var = "n", fill = 0)
+
+# add images with 0 clusters and add more information
+to_add <- data.frame(colData(sce_rna)) %>%
+  distinct(Description, .keep_all = TRUE)
+
+clust <- left_join(to_add[,c("Description", "exhaustion_score", "T_frac_score_per_ImageNumber")], clust)
+
+cur_dt_wide <- clust %>%
+  mutate_if(is.numeric,coalesce,0)
+
+# calculate row proportions (hard coded for 9 community modules,1-9)
+#cur_dt_wide[,grepl(glob2rx("*pure"),names(cur_dt_wide))] <- cur_dt_wide[,grepl(glob2rx("*pure"),names(cur_dt_wide))] / rowSums(cur_dt_wide[,grepl(glob2rx("*pure"),names(cur_dt_wide))])
+
+
+is.nan.data.frame <- function(x)
+do.call(cbind, lapply(x, is.nan))
+
+cur_dt_wide[is.nan(cur_dt_wide)] <- 0
+
+# order according to image infiltration score
+cur_dt_wide <- cur_dt_wide[order(cur_dt_wide$exhaustion_score),]
+
+# chemokines per image
+total_chemokines <- cur_dt %>%
+  group_by(Description, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(Description) %>%
+  mutate(fraction = n/sum(n)) %>%
+  filter(chemokine == TRUE)
+
+# community vs single producer - fraction per image
+cur_dt$in_community <- ifelse(rowSums(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))]) > 0 & cur_dt$chemokine == TRUE, TRUE, FALSE)
+
+fractions <- cur_dt %>%
+  filter(chemokine == TRUE) %>%
+  group_by(Description, in_community) %>%
+  summarise(n=n()) %>%
+  group_by(Description) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(Description ~ in_community, value.var = "fraction")
+
+names(fractions)[2:3] <- c("single", "community")
+fractions[, 2:3][is.na(fractions[, 2:3])] <- 0
+
+# chemokines per image (regardless of combination, multi-producing cells count more than once)
+chemokines <- cbind(cur_dt[,c("Description", "in_community")], cur_dt[,grepl(glob2rx("C*L*"),names(cur_dt))])
+
+# reshape
+chemokines <- reshape2::melt(chemokines, id.vars = c("Description", "in_community"), variable.name = "chemokine", value.name = "n") %>%
+  group_by(Description, in_community, chemokine) %>%
+  summarise(total = sum(n)) %>%
+  reshape2::dcast(Description + chemokine ~ in_community, value.var = "total") %>%
+  replace(is.na(.), 0) %>%
+  reshape2::melt(id.vars = c("Description", "chemokine"), variable.name = "in_community", value.name = "n")
+
+# join with wide table
+cur_dt_wide <- left_join(cur_dt_wide, fractions)
+cur_dt_wide <- left_join(cur_dt_wide, total_chemokines)
+```
+
+## Plot Heatmap
+
+```{r Fig_4D_heatmap_modules_infiltration, fig.height=8, fig.width=14, dev=c('pdf')}
+# remove controls and bad images
+cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$Description %in% unique(sce_rna[,sce_rna$Location != "CTRL"]$Description),]
+cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$exhaustion_score %in% c("high exhaustion", "low exhaustion"),]
+#cur_dt_wide_sub <- cur_dt_wide_sub[cur_dt_wide_sub$manual_scoring %in% c("deserted", "low-inflamed", "low-excluded", "high-inflamed", "high-excluded"),]
+
+# define subgroups to split  heatmap
+subgroup = cur_dt_wide_sub[,"exhaustion_score"]
+
+# heatmap annotation
+row_ha2 = rowAnnotation("Composition of Chemokine- \n Producing Cells" = anno_barplot(cur_dt_wide_sub[,c("single", "community")], 
+                                                     gp = gpar(fill = c("#F8766D", "#00BFC4")), width = unit(1.5, "cm")),
+                        "Fraction of Chemokine- \n Producing Cells" = anno_barplot(cur_dt_wide_sub[,"fraction"],
+                                                                   width = unit(1.5, "cm")),
+                       annotation_name_rot = 90, gap = unit(3, "mm"),
+                       col = list(Relapse = c("no relapse" = "orange", "relapse" = "black", "untreated/lost" = "grey")))
+
+panel_fun_chemokines = function(index, nm) {
+    image_number = cur_dt_wide_sub[index,"Description"]
+    if(length(unique(image_number)) > 9){
+      df = chemokines[chemokines$Description %in% image_number, ]
+      g = ggplot(df, aes(x = factor(chemokine), y = log10(n+1), fill=in_community)) + 
+      geom_boxplot() + 
+      xlab("Chemokine") + 
+      ylab("# Cells (log10(n+1))") +
+      theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+            legend.position = "none") +
+      ylim(0,3)
+      g = grid.grabExpr(print(g))
+      pushViewport(viewport())
+      grid.rect()
+      grid.draw(g)
+      popViewport()
+    }
+}
+
+# zoom-in 
+zoom = anno_zoom(align_to = subgroup, 
+                 which = "row", panel_fun = panel_fun_chemokines, 
+                 size = unit(6, "cm"), 
+                 gap = unit(1, "cm"), 
+                 width = unit(10, "cm"))
+
+# heatmap
+m <- as.matrix(cur_dt_wide_sub[,grepl(glob2rx("*pure"),names(cur_dt_wide_sub))])
+col_names <- c()
+for(i in (1:length(colnames(m)))){col_names <- c(col_names,(toupper(str_split(colnames(m), "_")[[i]][1])))}
+colnames(m) <- col_names
+
+ht1 = Heatmap(m, 
+        col = colorRamp2(c(0,(max(m)/2), max(m)), c("blue", "white", "red")),
+        left_annotation = row_ha2,
+        right_annotation = rowAnnotation(foo = zoom, gap = unit(3,"cm")),
+        row_split = subgroup,
+        row_title_side = "left",
+        border = T,
+        row_gap = unit(3, "mm"),
+        cluster_rows = T,
+        cluster_columns = F,
+        cluster_row_slices = F,
+        show_heatmap_legend = FALSE,
+        show_row_dend = FALSE,
+        name = "Detected Patches",
+        column_title = "Chemokine Patch", 
+        column_title_side = "bottom",
+        column_title_gp = gpar(fontsize=20),
+        row_labels = cur_dt_wide_sub[,1],
+        row_names_gp = gpar(cex=0.4),
+        row_names_side = "left",
+        width = unit(15,"cm"))
+
+#pdf("~/bbvolume/Git/melanoma_publication_old_data/output/heatmap_patches.pdf", width = 14, height = 8)
+draw(ht1)
+#dev.off()
+```
+
+```{r Fig_4D_legend, dev=c('pdf'), fig.width=3, fig.height=1}
+# manual legends
+lgd1 = Legend(labels = c("Stand-alone", "Patch"), title = "Production Setting", legend_gp = gpar(fill = c("#F8766D", "#00BFC4")))
+lgd2 = Legend(col_fun = colorRamp2(c(0, max(m)/2, max(m)), c("blue", "white", "red")), title = "Detected Patches", direction = "horizontal")
+
+# Draw Legend
+draw(packLegend(lgd2, lgd1, direction = "horizontal"))
+```
+
+# Interaction Analysis
+
+# Generate adjacency matrix for all images
+
+```{r Fig_4E_interaction_chord_groups, fig.height=7, fig.width=5, dev=c('pdf')}
+# subset sce for inflamed/exhausted in high samples
+sce_protein_sub <- sce_prot[, sce_prot$exhaustion_density %in% c("high - high exhaustion", "high - low exhaustion")]
+
+# sample 20 images each
+images <- data.frame(colData(sce_protein_sub)) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(exhaustion_density) %>%
+  filter(ImageNumber %in% sample(ImageNumber, 20)) %>%
+  select(ImageNumber, exhaustion_density)
+
+return <- list()
+
+for (i in c("high - high exhaustion", "high - low exhaustion")){
+  # title name
+  title_name <- i
+
+  # count interactions in 20 sample images
+  cur_dat_relation <- data.frame(dat_relation) %>%
+    filter(FirstImageNumber %in% images[images$exhaustion_density == i,]$ImageNumber) %>%
+    select("celltype_first" ,"celltype_second") %>%
+    dplyr::count(celltype_first,celltype_second) %>%
+    data.frame()
+  
+  # remove tumor-tumor interactions
+  cur_dat_relation <- cur_dat_relation[cur_dat_relation$celltype_first != "Tumor",]
+  cur_dat_relation <- cur_dat_relation[cur_dat_relation$celltype_first != "unknown",]
+  cur_dat_relation <- cur_dat_relation[cur_dat_relation$celltype_second != "unknown",]
+  
+    # count interactions
+  cur_dat_relation_subcluster <- data.frame(dat_relation) %>%
+    filter(FirstImageNumber %in% images[images$exhaustion_density == i,]$ImageNumber) %>%
+    select("celltype_first" , "celltype_clust_second") %>%
+    dplyr::count(celltype_first, celltype_clust_second) %>%
+    data.frame()
+  
+  # remove tumor-tumor interactions
+  cur_dat_relation_subcluster <- cur_dat_relation_subcluster[cur_dat_relation_subcluster$celltype_first == "Tcytotoxic",]
+  cur_dat_relation_subcluster <- cur_dat_relation_subcluster[cur_dat_relation_subcluster$celltype_clust_second %in% 
+                                                               unique(sce_prot[,sce_prot$celltype == "Tumor"]$celltype_clustered),]
+  # return subcluster adj df
+  return[[i]] <- cur_dat_relation_subcluster
+  
+  # make coord diagram
+  chordDiagramFromDataFrame(cur_dat_relation,
+                            grid.col = metadata(sce_prot)$colour_vectors$celltype,
+                            reduce = 0.05, 
+                            transparency = ifelse(cur_dat_relation[[1]] %in% c("Tcytotoxic"),0,0.6),
+                            annotationTrack = c("grid"))
+  
+  # add percentages
+  circos.track(track.index = 1, panel.fun = function(x, y) {
+    xlim = get.cell.meta.data("xlim")
+    ylim = get.cell.meta.data("ylim")
+    sector.name = get.cell.meta.data("sector.index")
+    xplot = get.cell.meta.data("xplot")
+    
+    circos.lines(xlim, c(mean(ylim), mean(ylim)), lty = 3) # dotted line
+    by = ifelse(abs(xplot[2] - xplot[1]) > 30, 0.2, 0.5)
+    for(p in seq(by, 1, by = by)) {
+        circos.text(p*(xlim[2] - xlim[1]) + xlim[1], mean(ylim) + 0.1, 
+            paste0(p*100, "%"), cex = 0.5, adj = c(0.5, 0), niceFacing = TRUE)
+    }
+}, bg.border = NA)
+  
+}
+```
+
+## chordPlot for Tcytotoxic and Tumor Subcluster Interactions
+
+```{r Fig_4E_interaction_cytotoxic_tumor, fig.height=5, fig.width=7, dev=c('pdf')}
+# color vector for Tumor Subclusters
+col_vec <- brewer.pal(length(unique(sce_prot[,sce_prot$celltype == "Tumor"]$celltype_clustered)), "BrBG")
+names(col_vec) <- unique(sce_prot[,sce_prot$celltype == "Tumor"]$celltype_clustered)
+
+col_vec <- c(col_vec, metadata(sce_prot)$colour_vectors$celltype["Tcytotoxic"])
+
+# order col_vector
+col_vec <- col_vec[order(names(col_vec))]
+
+gap1 <- circlize::calc_gap(return$`high - high exhaustion`, return$`high - low exhaustion`)
+
+# initialize
+circos.clear()
+
+# chord plot
+chordDiagramFromDataFrame(return$`high - high exhaustion`,
+                          transparency = 0,
+                          grid.col = col_vec,
+                          annotationTrack = c("grid"),
+                          reduce = 0.01)
+abline(h = 0, lty = 2, col = "#00000080")
+circos.clear()
+
+# initialize
+circos.clear()
+# chord plot
+chordDiagramFromDataFrame(return$`high - low exhaustion`,
+                          big.gap = gap1,
+                          grid.col = col_vec,
+                          transparency = 0,
+                          annotationTrack = c("grid"),
+                          reduce = 0.01)
+abline(h = 0, lty = 2, col = "#00000080")
+
+# end
+circos.clear()
+```
+
+```{r Fig_4E_legend, dev=c('pdf'), fig.height=5, fig.width=1}
+# create legend for tumor subclusters
+lgd1 = Legend(labels = names(col_vec[grep("Tumor", names(col_vec))]), title = "Tumor\nSubclusters", legend_gp = gpar(fill = unname(col_vec[grep("Tumor", names(col_vec))])))
+lgd2 = Legend(labels = names(metadata(sce_prot)$colour_vector$celltype), title = "Cell Type", legend_gp = gpar(fill = unname(metadata(sce_prot)$colour_vector$celltype)))
+draw(packLegend(lgd2, lgd1, gap = unit(2, "cm")))
+```
+
+## Number of Cytotoxic T cells in the two Groups
+
+```{r Fig_4E_fraction_cyto, dev=c('pdf'), fig.width=5, fig.height=4}
+data.frame(colData(sce_prot)) %>%
+  group_by(Description, exhaustion_score, celltype) %>%
+  filter(exhaustion_score %in% c("high exhaustion", "low exhaustion")) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(Description + exhaustion_score ~ celltype, value.var = "fraction", fill=0) %>%
+  select(Description, exhaustion_score, Tcytotoxic) %>%
+  ggplot(aes(x=exhaustion_score, y=Tcytotoxic)) + 
+  geom_boxplot(alpha=.2) +
+  geom_quasirandom(alpha=.2) +
+  xlab("") +
+  ylab("Fraction of Cytotoxic T Cells") +
+  theme_bw() +
+  theme(text = element_text(size=18),
+        legend.position = "none") + 
+  stat_compare_means(label.y = 0.3)
+```
+
+# Tumor Marker Profile
+
+## Tumor Marker Profile for different Scoring Groups per Image
+
+```{r Fig_4F_tumor_profile_per_image, fig.height=8, fig.width=9, dev=c('pdf')}
+tumor_marker_protein <- c("S100", "pS6", "bCatenin")
+tumor_marker_rna <- c("Mart1", "pRB", "B2M")
+
+# rna data 
+dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tumor"], "asinh")))
+dat_rna$cellID <- rownames(dat_rna)
+dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "exhaustion_score", "ImageNumber", "MM_location")])
+
+# filter
+dat_rna <- dat_rna %>%
+  filter(exhaustion_score %in% c("high exhaustion", "low exhaustion"))
+
+# mean per image
+dat_rna <- dat_rna %>%
+  select(-cellID) %>%
+  group_by(ImageNumber, exhaustion_score) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_rna <- dat_rna %>%
+  reshape2::melt(id.vars = c("ImageNumber", "exhaustion_score"), variable.name = "channel", value.name = "asinh")
+
+# protein data
+dat_prot <- data.frame(t(assay(sce_prot[tumor_marker_protein,, sce_prot$celltype == "Tumor"], "asinh")))
+dat_prot$cellID <- rownames(dat_prot)
+dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "exhaustion_score", "ImageNumber", "MM_location")])
+
+# filter
+dat_prot <- dat_prot %>%
+  filter(exhaustion_score %in% c("high exhaustion", "low exhaustion"))
+
+# mean per image
+dat_prot <- dat_prot %>%
+  select(-cellID) %>%
+  group_by(ImageNumber, exhaustion_score) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_prot <- dat_prot %>%
+  reshape2::melt(id.vars = c("ImageNumber", "exhaustion_score"), variable.name = "channel", value.name = "asinh")
+
+group_comparison <- list(c("high exhaustion", "low exhaustion"))
+
+# plot 
+a <- ggplot(dat_rna, aes(x=exhaustion_score, y=asinh)) + 
+  geom_boxplot(alpha=0.2) +
+  geom_quasirandom(alpha=0.2) +
+  theme_bw() +
+  theme(text = element_text(size=18),
+        axis.text.x = element_blank(),
+        legend.position = "none") +
+  facet_wrap(~channel) + 
+  stat_compare_means(comparisons = group_comparison, label = "p.signif") +
+  xlab("") + 
+  ylab("") + 
+  ylim(0,6)
+
+b <- ggplot(dat_prot, aes(x=exhaustion_score, y=asinh)) + 
+  geom_boxplot(alpha=0.2) +
+  geom_quasirandom(alpha=0.2) +
+  theme_bw() +
+  theme(text = element_text(size=18),
+        axis.text.x = element_text(angle=90),
+        legend.position = "none") +
+  facet_wrap(~channel) + 
+  stat_compare_means(comparisons = group_comparison, label = "p.signif") +
+  xlab("") + 
+  ylab("Mean Count per Image (asinh)") + 
+  ylim(0,6)
+
+grid.arrange(a,b, nrow=2, heights = c(0.75,1))
+```
+
+# CD8+ Marker Profile
+
+## CD8+ Marker Profile for different Scoring Groups per Image
+
+```{r Fig_4F_cd8_profile_per_image, fig.height=8, fig.width=9, dev=c('pdf'), eval=F}
+tumor_marker_protein <- c("GrzB", "PD1", "CD45RO")
+tumor_marker_rna <- c("Lag3", "T8_CXCL13", "T5_CCL4")
+
+# rna data 
+dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tcytotoxic"], "asinh")))
+dat_rna$cellID <- rownames(dat_rna)
+dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "exhaustion_score", "ImageNumber")])
+
+# filter
+dat_rna <- dat_rna %>%
+  filter(exhaustion_score %in% c("high exhaustion", "low exhaustion"))
+
+# mean per image
+dat_rna <- dat_rna %>%
+  select(-cellID) %>%
+  group_by(ImageNumber, exhaustion_score) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_rna <- dat_rna %>%
+  reshape2::melt(id.vars = c("ImageNumber", "exhaustion_score"), variable.name = "channel", value.name = "asinh")
+
+# protein data
+dat_prot <- data.frame(t(assay(sce_prot[tumor_marker_protein,, sce_prot$celltype == "Tcytotoxic"], "asinh")))
+dat_prot$cellID <- rownames(dat_prot)
+dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "exhaustion_score", "ImageNumber")])
+
+# filter
+dat_prot <- dat_prot %>%
+  filter(exhaustion_score %in% c("high exhaustion", "low exhaustion"))
+
+# mean per image
+dat_prot <- dat_prot %>%
+  select(-cellID) %>%
+  group_by(ImageNumber, exhaustion_score) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_prot <- dat_prot %>%
+  reshape2::melt(id.vars = c("ImageNumber", "exhaustion_score"), variable.name = "channel", value.name = "asinh")
+
+group_comparison <- list(c("high exhaustion", "low exhaustion"))
+
+# plot 
+a <- ggplot(dat_rna, aes(x=exhaustion_score, y=asinh)) + 
+  geom_boxplot(alpha=0.2) +
+  geom_beeswarm(alpha=0.1) +
+  theme_bw() +
+  theme(text = element_text(size=18),
+        axis.text.x = element_blank(),
+        legend.position = "none") +
+  facet_wrap(~channel) + 
+  stat_compare_means(comparisons = group_comparison, label = "p.signif") +
+  xlab("") + 
+  ylab("") + 
+  ylim(0,6)
+
+b <- ggplot(dat_prot, aes(x=exhaustion_score, y=asinh)) + 
+  geom_boxplot(alpha=0.2) +
+  geom_beeswarm(alpha=0.1) +
+  theme_bw() +
+  theme(text = element_text(size=18),
+        axis.text.x = element_text(angle=90),
+        legend.position = "none") +
+  facet_wrap(~channel) + 
+  stat_compare_means(comparisons = group_comparison, label = "p.signif") +
+  xlab("") + 
+  ylab("Mean Count per Image (asinh)") + 
+  ylim(0,6)
+
+grid.arrange(a,b, nrow=2, heights = c(0.75,1))
+```
+
+# Boxplots
+
+## Celltypes
+
+```{r Fig_4G_celltype_fractions_exhaustion, dev=("pdf"), fig.width=10, fig.height=6}
+plotCellFracGroups(sce_prot[,is.na(sce_prot$exhaustion_score) == FALSE & 
+                              #sce_prot$MM_location != "LN" & 
+                              sce_prot$celltype != "Tumor"], "celltype", "exhaustion_score") +
+  theme_bw() +
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  guides(fill=guide_legend(title="Exhaustion Score")) +
+  xlab("") + 
+  ylab("Cell Type Fractions")
+```
+
+## Celltypes Clustered
+
+```{r, eval=F}
+plotCellFracGroups(sce_rna[,is.na(sce_rna$exhaustion_score) == FALSE & 
+                              #sce_prot$MM_location != "LN"& 
+                              sce_rna$celltype != "Tumor"], "celltype_clustered", "exhaustion_score") +
+  theme_bw() +
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  guides(fill=guide_legend(title="Exhaustion Score")) +
+  xlab("") + 
+  ylab("Cell Type Fractions")
+```
+
+## Chemokines
+
+```{r Fig_4G_chemokines_exhaustion_scoring, dev=("pdf"), fig.width=10, fig.height=6}
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
+a <- plotCellFractions(sce = sce_rna[,is.na(sce_rna$exhaustion_score) == FALSE], 
+                  imageID = "ImageNumber", 
+                  celltype_column = "chemokine", 
+                  celltype_subsets = "TRUE", split_by = "exhaustion_score") +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) +
+  xlab("") +
+  ylab("Fraction of Chemokine-Expressing Cells") + 
+  stat_compare_means(label.y = 0.3) +
+  scale_fill_manual(values = "white",
+                    labels = "TRUE")
+
+b <- plotCellFracGroups(sce_rna[,is.na(sce_rna$exhaustion_score) == FALSE & 
+                             sce_rna$expressor %in% targets], "expressor", "exhaustion_score") +
+  theme_bw() +
+  theme(text = element_text(size = 12),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  guides(fill=guide_legend(title="Exhaustion Score")) +
+  xlab("") + 
+  ylab("Fraction of Total Chemokine Expression")
+
+plot_grid(a,b, nrow = 1, rel_widths = c(.3, .7))
+```
+
+## MM_location
+
+```{r}
+data.frame(colData(sce_rna)) %>%
+  filter(is.na(exhaustion_score) == FALSE) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(exhaustion_score, MM_location) %>%
+  summarise(n=n()) %>%
+  ggplot(., aes(x=exhaustion_score, y=n, fill=MM_location)) + geom_bar(stat = "identity")
+```

@@ -1,0 +1,396 @@
+---
+title: "Figure 3"
+author: "toobiwankenobi"
+date: "2020-08-04"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+
+# Introduction
+This script generates plots for Figure 3.
+
+# Preparations
+
+## Load libraries
+
+First, we will load the libraries needed for this part of the analysis.
+
+```{r load-libraries, message=FALSE}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(cytomapper)
+library(SingleCellExperiment)
+library(reshape2)
+library(tidyverse)
+library(dplyr)
+library(umap)
+library(data.table) 
+library(fpc)
+library(ggplot2)
+library(gridExtra)
+library(cba)
+library(ComplexHeatmap)
+library(colorRamps)
+library(circlize)
+library(ComplexHeatmap)
+library(RColorBrewer)
+library(destiny)
+library(scater)
+library(dittoSeq)
+```
+
+## Read the data
+
+```{r load data}
+sce = readRDS(file = "data/sce_RNA.rds")
+sce_prot = readRDS(file = "data/sce_protein.rds")
+```
+
+# Community Analysis
+
+## Example of CXCL10 Cluster and corresponding Community
+
+```{r Fig_3XX_clusters_and_communities, fig.width=10, fig.height=10, dev=c('pdf')}
+example <- findClusters(sce[,sce$ImageNumber == 137], sce[,sce$CXCL10 == 1]$cellID, 
+                    'cellID', 
+                    'Center_X', 'Center_Y', 
+                    'ImageNumber', 
+                    distance = 20, 
+                    min_clust_size = 10,
+                    output_colname = "example_cluster")
+
+example <- findCommunity(example, 
+              'cellID', 
+              'Center_X', 'Center_Y', 
+              'ImageNumber', 
+              'example_cluster', 
+              distance = 25,
+              output_colname = "chemokine_community_i",
+              plot = TRUE)
+```
+
+## Chemokine-producing cells in Pure Clusters
+
+```{r calculate_frequencies}
+# define fractions of chemokines present in community
+cur_dt <- data.frame(colData(sce))
+
+clust <- data.frame()
+
+for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
+  # select all chemokine-producing cells in a community
+  unique_comms <- unique(cur_dt[cur_dt[,i] > 0,i])
+  cur_dt_sub <- cur_dt[cur_dt[,i] %in% unique_comms & cur_dt$chemokine == 1,]
+  
+  cur_dt_sub <- cbind(cur_dt_sub[,i],
+                      cur_dt_sub[,grepl(glob2rx("C*L*"),names(cur_dt_sub))])
+  
+  colnames(cur_dt_sub)[1] <- i
+  
+  # summarise all chemokines in community
+  cur_dt_sub <- cur_dt_sub %>%
+    group_by_at(i) %>%
+    summarise_each(funs(sum))
+  
+  cur_dt_sub$cluster_type <- i
+  
+  cur_dt_sub <- cur_dt_sub[,-1]
+  
+  clust <- rbind(clust, cur_dt_sub)
+}
+
+# remove pure clusters with low abundance (CCL22, CCL4, CCL8)
+clust <- clust[!(clust$cluster_type %in% c("ccl22_pure", "ccl4_pure", "ccl8_pure")),]
+
+# add id
+clust$id <- as.character(rownames(clust))
+
+# wide format of frequencies
+clust_sub <- clust %>%
+  select_if(is.numeric)
+
+freqs_wide <- t(scale(t(as.matrix(clust_sub)), center = FALSE, 
+               scale = rowSums(clust_sub)))
+freqs_wide <- cbind(clust[,c("cluster_type","id")],as_tibble(freqs_wide))
+
+# long format of frequencies
+freqs_long <- melt(as.data.table(freqs_wide), id = c("cluster_type", "id"))
+colnames(freqs_long) <- c("cluster_type", "id", "celltype", "fraction")
+```
+
+## UMAP for chemokine fractions in cluster
+
+```{r UMAP_chemokines_frequencies_celltype}
+set.seed(9876)
+start_time_umap <- Sys.time()
+umap = freqs_wide[, -(1:2)] %>%
+  umap()
+end_time_umap <- Sys.time()
+print(end_time_umap - start_time_umap)
+
+# combine umap with pure clusters
+umap$layout <- as.data.table(cbind(umap$layout, freqs_wide[,(1:2)]))
+colnames(umap$layout) <- c("UMAP1", "UMAP2", "cluster_type", "id")
+```
+
+## UMAP clusters
+
+```{r Fig_3XX_UMAP_chemokines_abundance, dev=c('pdf')}
+# find center of clusters
+centers <- umap$layout[,-4] %>%
+  group_by(cluster_type) %>%
+  summarise(UMAP1 = sum(UMAP1)/n(), UMAP2 = sum(UMAP2)/n())
+
+umap$layout <- left_join(umap$layout, centers) 
+
+# plot kmeans cluster
+ggplot(data=left_join(freqs_long, umap$layout), aes(x=UMAP1, y=UMAP2, col=cluster_type)) +
+  geom_point(size=3, alpha=0.5) +
+  geom_label(data=centers, aes(label=cluster_type), size=5, alpha=0.5) +
+  theme_classic() + 
+  theme(text = element_text(size=30),
+        legend.position = "none") 
+```
+
+## Boxplot with frequencies per pure cluster
+
+```{r Fig_3A_community_modules_chemokines_abundance_boxplot, fig.height=6.5, fig.width=16, dev=c('pdf')}
+freqs_long %>%
+  ggplot(., aes(x=cluster_type, y=fraction)) + 
+  geom_boxplot(aes(fill=celltype)) + 
+  theme_bw() +
+  theme(text = element_text(size=20),
+        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=10)) +
+  labs(fill = "Chemokine") +
+  xlab("Pure Communities") + 
+  ylab("Fraction") 
+```
+
+## Producing Cell Type Abundance in pure clusters
+
+```{r}
+cur_dt <- data.frame(colData(sce))
+
+clust <- data.frame()
+
+for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
+  # select all chemokine-producing cells in a community
+  unique_comms <- unique(cur_dt[cur_dt[,i] > 0,i])
+  cur_dt_sub <- cur_dt[cur_dt[,i] %in% unique_comms & cur_dt$chemokine == 1,]
+  
+  cur_dt_sub <- cbind(cur_dt_sub[,i],
+                      cur_dt_sub[,"celltype"])
+  
+  colnames(cur_dt_sub) <- c("cluster","celltype")
+  
+  cur_dt_sub <- data.frame(cur_dt_sub) %>%
+    group_by(cluster, celltype) %>%
+    summarise(n=n())
+  
+  cur_dt_sub$cluster_type <- i
+  clust <- rbind(clust, cur_dt_sub)
+}
+
+clust <- clust %>%
+  reshape2::dcast(cluster_type + cluster ~ celltype, value.var = "n", fill = 0)
+
+# calculate frequencies  
+clust[,colnames(select_if(clust, is.numeric))] <- clust[,colnames(select_if(clust, is.numeric))] / rowSums(clust[,colnames(select_if(clust, is.numeric))])
+
+# remove pure clusters with low abundance (CCL22, CCL4, CCL8)
+clust <- clust[!(clust$cluster_type %in% c("ccl22_pure", "ccl4_pure", "ccl8_pure")),] %>%
+  reshape2::melt(c("cluster_type", "cluster"), variable.name = "celltype", value.name = "n")
+
+a <- ggplot(clust, aes(x=cluster_type, y=n, fill=celltype)) + 
+  geom_boxplot() + 
+  xlab(NULL) +
+  ylab("Fraction") +
+  theme_bw() +
+  theme(axis.text.x = element_blank(),
+        text = element_text(size=20)) +
+  scale_fill_manual(values = unname(metadata(sce)$colour_vectors$celltype),
+                        breaks = names(metadata(sce)$colour_vectors$celltype),
+                        labels = names(metadata(sce)$colour_vectors$celltype))
+```
+
+## Non-Producing Cell Type Abundance in pure clusters
+
+```{r Fig_3B_celltypes, fig.height=12, fig.width=16, dev=c('pdf')}
+# assign bystander cells to pure_clusters
+cur_dt <- data.frame(colData(sce))
+
+clust <- data.frame()
+
+for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
+  # select all non-producing cells in a community
+  unique_comms <- unique(cur_dt[cur_dt[,i] > 0,i])
+  cur_dt_sub <- cur_dt[cur_dt[,i] %in% unique_comms & cur_dt$chemokine == 0,]
+  
+  cur_dt_sub <- cbind(cur_dt_sub[,colname_comm],
+                      cur_dt_sub[,"celltype"])
+  
+  colnames(cur_dt_sub) <- c("cluster","celltype")
+  
+  cur_dt_sub <- data.frame(cur_dt_sub) %>%
+    group_by(cluster, celltype) %>%
+    summarise(n=n())
+  
+  cur_dt_sub$cluster_type <- i
+  clust <- rbind(clust, cur_dt_sub)
+}
+
+clust <- clust %>%
+  reshape2::dcast(cluster_type + cluster ~ celltype, value.var = "n", fill = 0)
+
+# calculate frequencies  
+clust[,colnames(select_if(clust, is.numeric))] <- clust[,colnames(select_if(clust, is.numeric))] / rowSums(clust[,colnames(select_if(clust, is.numeric))])
+
+# remove pure clusters with low abundance (CCL22, CCL4, CCL8)
+clust <- clust[!(clust$cluster_type %in% c("ccl22_pure", "ccl4_pure", "ccl8_pure")),] %>%
+  reshape2::melt(c("cluster_type", "cluster"), variable.name = "celltype", value.name = "n")
+
+b <- ggplot(clust, aes(x=cluster_type, y=n, fill=celltype)) + 
+  geom_boxplot() + 
+  ylab("Fraction") +
+  xlab("Pure Communities") +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90),
+        text = element_text(size=20)) +
+  scale_fill_manual(values = unname(metadata(sce)$colour_vectors$celltype),
+                        breaks = names(metadata(sce)$colour_vectors$celltype),
+                        labels = names(metadata(sce)$colour_vectors$celltype))
+
+grid.arrange(a,b,nrow=2)
+```
+
+# Cluster Size in Pure Clusters
+
+## UMAP for Producing Cells
+
+```{r Fig_3C_UMAP_producing_cells, fig.height=10, fig.width=10, dev=c('pdf')}
+# loop through all pure clusters 
+for(i in c("cxcl13only_clust")){
+  # subset sce object to only contain community cells
+  sce_sub <- sce[,colData(sce)[,i] > 0]
+
+  assay(sce_sub, "scaled_asinh") <- t(scale(t(assay(sce_sub, "asinh"))))
+  
+  # create UAMP
+  sce_sub <- runUMAP(sce_sub, exprs_values = "scaled_asinh", 
+               subset_row = rowData(sce_sub)$good_marker,
+               n_neighbors = 15)
+  
+  # add cluster size to 
+  cur_df <- data.frame(colData(sce_sub))
+
+  clust_size <- cur_df %>%
+    group_by(cur_df[,i]) %>%
+    summarise(clust_size = n())
+   
+  names(clust_size)[1] <- i 
+  
+  cur_df <- left_join(cur_df, clust_size)
+  sce_sub$clust_size = as.numeric(log10(cur_df$clust_size))
+  
+   # col by clust size
+  a <- dittoDimPlot(sce_sub,
+                    reduction.use = "UMAP",
+                    var = "clust_size", 
+                    size = 1,
+                    legend.show = TRUE,
+                    opacity = 0.2,
+                    max.color = "blue", min.color = "gray95",
+                    main = NULL) +
+    theme_minimal() +
+    theme(text = element_text(size=20))
+
+  # col by celltype
+  b <- dittoDimPlot(sce_sub, 
+             reduction.use = "UMAP", 
+             var = "celltype", 
+             opacity = 0.5,
+             color.panel = metadata(sce_sub)$colour_vector$celltype,
+             size = 1,
+             legend.show = TRUE,
+                    main = NULL) +
+    theme_minimal() +
+    theme(text = element_text(size=20)) + 
+    guides(colour = guide_legend(override.aes = list(alpha = 1, size=3))) 
+  
+  leg_a <- cowplot::get_legend(a)
+  leg_b <- cowplot::get_legend(b)
+  
+  # plot
+  grid.arrange(a + theme(legend.position = "none"), 
+               b + theme(legend.position = "none"), 
+               leg_a, leg_b,
+               ncol = 2, top = i)
+}
+```
+
+## UMAP for Neighbouring Cells
+
+```{r Fig_3D_UMAP_neighbouring_producing_cells, fig.height=10, fig.width=10,dev=c('pdf')}
+# loop through all pure clusters 
+for(i in c("ccl22only_clust")){
+  chemo_name <- str_split(i, "_")[[1]][1]
+  
+  # subset sce object to only contain community cells
+  sce_sub <- sce[,colData(sce)[,i] == 0 & colData(sce)[,paste(chemo_name, "comm", sep = "_")] > 0]
+
+  assay(sce_sub, "scaled_asinh") <- t(scale(t(assay(sce_sub, "asinh"))))
+
+  # create UAMP
+  sce_sub <- runUMAP(sce_sub, exprs_values = "scaled_asinh", 
+               subset_row = rowData(sce_sub)$good_marker,
+               n_neighbors = 15)
+  
+  # add cluster size to 
+  clust_size <- data.frame(colData(sce[,colData(sce)[,i] > 0])) %>%
+    group_by_at(i) %>%
+    summarise(clust_size = n()) %>%
+    mutate_if(is.double, as.character)
+   
+  names(clust_size)[1] <- paste(str_split(i, "_")[[1]][1], "comm",sep = "_")
+
+  cur_df <- left_join(data.frame(colData(sce_sub)), clust_size)
+  sce_sub$clust_size <- log10(cur_df$clust_size)
+  
+  # col by clust size
+  a <- dittoDimPlot(sce_sub,
+                    reduction.use = "UMAP",
+                    var = "clust_size", 
+                    size = 1,
+                    legend.show = TRUE,
+                    opacity = 0.2,
+                    max.color = "blue", min.color = "gray95",
+                    main = NULL) +
+    theme_minimal() +
+    theme(text = element_text(size=20)) +
+    xlim(-5,5)
+
+  # col by celltype
+  b <- dittoDimPlot(sce_sub, 
+             reduction.use = "UMAP", 
+             var = "celltype", 
+             opacity = 0.2,
+             color.panel = metadata(sce_sub)$colour_vector$celltype,
+             size = 1,
+             legend.show = TRUE,
+                    main = NULL) +
+    theme_minimal() +
+    theme(text = element_text(size=20)) + 
+    guides(colour = guide_legend(override.aes = list(alpha = 1, size=3))) +
+    xlim(-5,5)
+  
+  leg_a <- cowplot::get_legend(a)
+  leg_b <- cowplot::get_legend(b)
+  
+  # plot
+  grid.arrange(a + theme(legend.position = "none"), 
+               b + theme(legend.position = "none"), 
+               leg_a, leg_b,
+               ncol = 2, top = i)
+}
+```

@@ -65,6 +65,8 @@ navbar:
       href: Supp-Figure_4.html
     - text: Supp-Figure 5
       href: Supp-Figure_5.html
+    - text: Supp-Figure 6
+      href: Supp-Figure_5.html
   - text: License
     href: license.html
 output:

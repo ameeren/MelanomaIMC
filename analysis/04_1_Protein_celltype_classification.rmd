@@ -13,6 +13,11 @@ This script performs cell-type classification based on manually labelled cells. 
 
 # Preparations
 
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
 ## Read in data 
 First, we will read in the SingleCellExperiment object and load all libraries.
 
@@ -241,7 +246,7 @@ fitControl <- trainControl(method = "repeatedcv",
                            number = 10,
                            seeds = seeds)
 
-cl <- makePSOCKcluster(7, setup_strategy = "sequential")
+cl <- makePSOCKcluster(6, setup_strategy = "sequential")
 registerDoParallel(cl)
 
 set.seed(1234)

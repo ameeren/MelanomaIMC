@@ -30,6 +30,7 @@ library(RColorBrewer)
 library(ggalluvial)
 library(tidyverse)
 library(cowplot)
+library(ggbeeswarm)
 ```
 
 ## Load Data
@@ -39,7 +40,8 @@ library(cowplot)
 dat <- read_csv("data/protein/clinical_data_protein.csv")
 
 # SCE object
-sce = readRDS(file = "data/sce_protein.rds")
+sce_protein = readRDS(file = "data/sce_protein.rds")
+sce_rna = readRDS(file = "data/sce_RNA.rds")
 ```
 
 # Analysis
@@ -51,10 +53,10 @@ Note: as the cohort is very diverse, we are using the BlockID as the minimal uni
 ## Number of Samples
 
 ```{r Supp_Fig_2A_number_of_samples, fig.height=8, fig.width=19, dev=c('pdf')}
-dat[dat$BlockID %in% unique(sce[,sce$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
+dat[dat$BlockID %in% unique(sce_protein[,sce_protein$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
 
 # remove control samples
-dat <- dat[dat$BlockID %in% unique(sce[,sce$Location != "CTRL"]$BlockID),]
+dat <- dat[dat$BlockID %in% unique(sce_protein[,sce_protein$Location != "CTRL"]$BlockID),]
 
 p1 <- unique(dat[,c("BlockID","MM_location")]) %>%
   ggplot()+
@@ -76,28 +78,22 @@ plot_grid(p1,p2,rel_widths = c(1,3))
 
 ## Location Information
 
-```{r Supp_Fig_2B_location_plot, fig.height=14,fig.width=20, dev=c('pdf')}
+```{r Supp_Fig_2B_location_plot, fig.height=10,fig.width=15, dev=c('pdf')}
 cur_df <- dat %>%
   select(BlockID,Nr_treatments_before_surgery,MM_location,Treatment_after_surgery, Status_at_3m, Date_death,Location,Cancer_Stage, E_I_D)
 cur_df <- unique(cur_df)
 cur_df$Death <- "Dead"
 cur_df[which(is.na(cur_df$Date_death)),]$Death <- "Alive"
 
-# rename E_I_D scoring
-cur_df[cur_df$E_I_D == "1",]$E_I_D <- "Excluded"
-cur_df[cur_df$E_I_D == "2",]$E_I_D <- "Inflamed"
-cur_df[cur_df$E_I_D == "3",]$E_I_D <- "Deserted"
-cur_df[cur_df$E_I_D == "1_2",]$E_I_D <- "Excluded/Inflamed"
-
 # Alluvial plot
 b<- cur_df %>%
-  dplyr::count(MM_location,Cancer_Stage,Location,E_I_D) %>%
-  ggplot(aes(axis1 = MM_location, axis2 = Cancer_Stage, axis3 = Location,axis4 = E_I_D,y=n))+
+  dplyr::count(MM_location,Cancer_Stage,Location) %>%
+  ggplot(aes(axis1 = MM_location, axis2 = Cancer_Stage, axis3 = Location,y=n))+
   geom_alluvium(aes(fill=as.factor(MM_location)))+
   geom_stratum()+
   geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
   theme_minimal()+
-  scale_x_discrete(limits = c("Met Location", "Cancer Stage", "Punch position", "Global Infiltration"), expand = c(.2, .05)) +
+  scale_x_discrete(limits = c("Met Location", "Cancer Stage", "Punch position"), expand = c(.2, .05)) +
   theme(text = element_text(size=20)) +
   guides(fill=guide_legend(title="Metasis Location")) +
   ylab("Number of Samples")
@@ -106,18 +102,187 @@ plot(b)
 
 ## Treamtents before Surgery
 
-```{r Supp_Fig_2C_treatment_plot, fig.height=14,fig.width=20, dev=c('pdf')}
+```{r Supp_Fig_2C_treatment_plot, fig.height=10,fig.width=15, dev=c('pdf')}
 c <- cur_df %>%
-  dplyr::count(MM_location, Nr_treatments_before_surgery, Cancer_Stage,Death) %>%
-  ggplot(aes(axis1 = MM_location, axis2 = Nr_treatments_before_surgery, axis3 = Cancer_Stage,axis4 = Death,y=n))+
+  dplyr::count(MM_location, Nr_treatments_before_surgery,Death) %>%
+  ggplot(aes(axis1 = MM_location, axis2 = Nr_treatments_before_surgery, axis3 = Death,y=n))+
   geom_alluvium(aes(fill=as.factor(Death)))+
   geom_stratum()+
   geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
   theme_minimal()+
-  scale_x_discrete(limits = c("Met Location", "# Previous Treatments", "Cancer Stage", "Outcome"), expand = c(.2, .05)) +
+  scale_x_discrete(limits = c("Met Location", "# Previous Treatments", "Outcome"), expand = c(.2, .05)) +
   theme(text = element_text(size=20)) +
   guides(fill=guide_legend(title="Outcome")) +
   ylab("Number of Samples")
 plot(c)
 ```
 
+# Chemokines
+
+## Cancer Stage
+
+```{r Supp_Fig_2D_cancer_stage, dev=c('pdf'), fig.width=7, fig.height=8}
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Cancer_Stage) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Cancer_Stage) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Cancer_Stage != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Cancer_Stage %in% group_size$Cancer_Stage]
+
+plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "Cancer_Stage",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+
+t <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(ImageNumber, Cancer_Stage, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Cancer_Stage ~ chemokine, value.var = "fraction")
+
+round(wilcox.test(t$`TRUE` ~ t$Cancer_Stage)$p.value,3)
+```
+
+## Age
+
+```{r Supp_Fig_2E_age, dev=c('pdf'), fig.width=7, fig.height=8}
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Age) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Age) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Age != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Age %in% group_size$Age]
+sce_rna_sub[,sce_rna_sub$Age == "?60"]$Age <- "60+"
+
+# relevel age factor
+sce_rna_sub$Age <- factor(sce_rna_sub$Age, levels = c("<45", "45-59", "60+"))
+
+plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "Age",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+
+t <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(ImageNumber, Age, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Age ~ chemokine, value.var = "fraction")
+
+round(kruskal.test(x = t$`TRUE`, g = t$Age)$p.value,3)
+```
+
+## Gender
+
+```{r Supp_Fig_2F_gender, dev=c('pdf'), fig.width=7, fig.height=8}
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Gender) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Gender) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Gender != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Gender %in% group_size$Gender]
+
+plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "Gender",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+
+t <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(ImageNumber, Gender, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Gender ~ chemokine, value.var = "fraction")
+
+round(wilcox.test(t$`TRUE` ~ t$Gender)$p.value,3)
+```
+
+## Treatment
+
+```{r Supp_Fig_2G_treatment, dev=c('pdf'), fig.width=7, fig.height=8}
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, treatment_group_before_surgery) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(treatment_group_before_surgery) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & treatment_group_before_surgery != "control")
+
+sce_rna_sub <- sce_rna[,sce_rna$treatment_group_before_surgery %in% group_size$treatment_group_before_surgery]
+
+plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "treatment_group_before_surgery",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+
+t <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(ImageNumber, treatment_group_before_surgery, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + treatment_group_before_surgery ~ chemokine, value.var = "fraction")
+
+round(wilcox.test(t$`TRUE` ~ t$treatment_group_before_surgery)$p.value,3)
+```
+
+## Chemokine Fractions per Image for Location
+
+```{r Supp_Fig_2H_fractions_met_location, fig.width=14, fig.height=9, dev=c('pdf')}
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, MM_location) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(MM_location) %>%
+  summarise(n=n()) %>%
+  filter(n>4 & MM_location != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$MM_location %in% group_size$MM_location]
+
+a <- plotCellFractions(sce = sce_rna_sub, 
+                  imageID = "ImageNumber", 
+                  celltype_column = "expressor",
+                  celltype_subsets = targets,
+                  split_by = "MM_location",
+                  show_n = TRUE,
+                  facet_wrap = TRUE,
+                  merge_subsets = FALSE) + 
+  ylim(0, 0.1)
+
+a
+```

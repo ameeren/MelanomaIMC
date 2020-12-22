@@ -13,6 +13,11 @@ In this script we try to set global thresholds for some key markers (CD3 etc) an
 
 # Preparations
 
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
 ## Load libraries
 
 ```{r message=F}
@@ -56,16 +61,16 @@ sce[,sce$celltype_rf %in% c("CD134+ Tcell", "CD134- Tcell")]$celltype <- "Tcell"
 celltype_color <- vector(length = length(unique(sce$celltype)))
 names(celltype_color) <- unique(sce$celltype)
 
-celltype_color["CD38"] <- "goldenrod2"
-celltype_color["HLA-DR"] <- "green1"
-celltype_color["Macrophage"] <- "greenyellow"
-celltype_color["Neutrophil"] <- "blue1"
-celltype_color["Tcell"] <- "yellow"
-celltype_color["Vasculature"] <- "red2"
+celltype_color["CD38"] <- "gold"
+celltype_color["HLA-DR"] <- "darkolivegreen"
+celltype_color["Macrophage"] <- "yellow2"
+celltype_color["Neutrophil"] <- "thistle"
+celltype_color["Tcell"] <- "cyan3"
+celltype_color["Vasculature"] <- "sienna1"
 celltype_color["Stroma"] <- "tomato"
 celltype_color["Tcytotoxic"] <- "deepskyblue"
 celltype_color["Tumor"] <- "sienna4"
-celltype_color["unknown"] <- "darkgray"
+celltype_color["unknown"] <- "gray88"
 
 # Save in SCE object
 metadata(sce)$colour_vectors$celltype <- celltype_color

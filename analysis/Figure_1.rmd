@@ -12,15 +12,30 @@ This script generates figures for Figure 1B and Figure 1C.
 
 # Preparations
 
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
 ## Load libraries
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(SingleCellExperiment)
+library(data.table)
 library(scater)
 library(ggplot2)
 library(dittoSeq)
 library(cba)
 library(ComplexHeatmap)
+library(corrplot)
+library(dplyr)
+library(reshape2)
+library(tidyverse)
+library(rms)
+library(cytomapper)
+library(ggrepel)
+library(circlize)
+library(ggbeeswarm)
 ```
 
 ## Load data
@@ -28,6 +43,10 @@ library(ComplexHeatmap)
 ```{r}
 sce_rna <- readRDS("data/sce_RNA.rds")
 sce_prot <- readRDS("data/sce_protein.rds")
+
+# meta data
+dat_survival = fread(file = "data/survdat_for_modelling.csv",stringsAsFactors = FALSE)
+dat_inflammation = fread(file = "data/manual_infiltration_scoring_BlockID.csv", header = TRUE)
 ```
 
 # Figure 1B - Plots for RNA TMA
@@ -36,7 +55,7 @@ sce_prot <- readRDS("data/sce_protein.rds")
 
 ## Barplot containing Cell Types per Image
 
-```{r Fig_1B_RNA_Barplot, fig.width=15, fig.height=13, dev=c('pdf')}
+```{r Fig_1B_RNA_Barplot, fig.width=13, fig.height=6, dev=c('pdf'), eval=F}
 # Create table with celltype fractions
 cur_df <- data.frame(celltype = sce_rna$celltype,
                      Description= sce_rna$Description)
@@ -77,6 +96,10 @@ rownames(m) <- cur_df$Description
 m <- m[row_sorted,]
 hm_dat <- hm_dat[row_sorted,]
 
+# bring cell types in order (column order)
+col_order <- c("Tumor", "Macrophage", "Neutrophil", "Tcytotoxic", "Tcell", "HLA-DR", "CD38", "Vasculature", "Stroma", "unknown")
+hm_dat <- hm_dat[, col_order]
+
 col_vector <- metadata(sce_rna)$colour_vector$celltype[colnames(hm_dat)]
 col_vector_location <- structure(c("black", "blue", "red", "green"), 
                                  names = c("control", "LN", "other", "skin"))
@@ -115,48 +138,83 @@ pushViewport(viewport(angle = 270))
 grid.draw(ht)
 ```
 
-## Legend for Barplot
+## Legend
 
-```{r Fig_1B_RNA_Barplot_Legend, fig.width=2, fig.height=4, dev=c('pdf')}
+```{r Fig_1C_RNA_Legend, fig.width=2, fig.height=4, dev=c('pdf'), eval=F}
+col_vector <- metadata(sce_rna)$colour_vector$celltype
+
 lgd1 <- Legend(labels = names(col_vector), 
              title = "Cell Type", 
              legend_gp = gpar(fill = col_vector),
              ncol = 1)
 
-lgd2 <- Legend(labels = names(col_vector_location), 
-             legend_gp = gpar(fill = unname(col_vector_location)),
-             title = "Met Location",
-             ncol = 1)
-
-pd = packLegend(lgd1, lgd2, direction = "vertical", 
+pd = packLegend(lgd1, direction = "vertical", 
     column_gap = unit(0.5, "cm"))
 draw(pd)
 ```
 
 ## Heatmap showing marker expression of celltypes
 
-```{r Fig_1B_Scaled_Heatmap_RNA, fig.width=6, fig.height=5, dev=c('pdf')}
-# aggregate celltypes
-agr_sce <- aggregateAcrossCells(sce_rna, ids = colData(sce_rna)[,"celltype"], 
-                                average = TRUE)
-# asinh transformation
-assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
+```{r Fig_1C_Scaled_Heatmap_RNA, fig.width=9, fig.height=11, dev=c('pdf')}
+# add marker expression to cells
+marker_expression <- data.frame(t(assay(sce_rna[rowData(sce_rna)$good_marker,], "asinh")))
+marker_expression$cellID <- rownames(marker_expression)
+dat <- data.frame(colData(sce_rna))[,c("cellID", "celltype")]
+dat <- left_join(dat, marker_expression)
+dat$cellID <- NULL
 
-# Centered and scaled Heatmap
-dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
-            annot.by = c("celltype"), 
-            cluster_rows = TRUE,
-            annotation_colors = list(celltype = metadata(sce_rna)$colour_vectors$celltype),
-            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(-3, 3, length.out = 101),
-            annotation_legend = 0)
+# aggregate the groups
+dat_aggr <- dat %>%
+  group_by(celltype) %>%
+  summarise_all(funs(mean))
+
+# number of cells per group
+dat_sum <- dat %>%
+  group_by(celltype) %>%
+  summarise(n=n())
+
+dat_sum <- data.frame(t(dat_sum))
+
+# scale and center expression
+dat_aggr[,-c(1)] <- scale(dat_aggr[,-c(1)])
+
+# create matrix
+m <- as.matrix(t(dat_aggr[,-c(1)]))
+colnames(m) <- dat_aggr$celltype
+
+# top annotation with number of cells
+ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>100000, 101000, as.numeric(dat_sum[2,])),
+                                                                 height = unit(2,"cm"),
+                                                         ylim = range(0,100000)),
+                        "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
+                                                   which = "column", 
+                                                   rot = 0, 
+                                                   just = "center", 
+                                                   location = 0.5,
+                                                   gp = gpar(fontsize=8)))
+# plot heatmap
+h <- Heatmap(m, name = "Scaled Expression",
+        cluster_columns = TRUE,
+        show_column_dend = FALSE,
+        column_names_gp = gpar(fontsize=12),
+        column_names_rot = 45,
+        column_names_centered = TRUE,
+        show_column_names = TRUE,
+        top_annotation = ha,
+        col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
+        heatmap_legend_param = list(legend_width = unit(6,"cm"), direction="horizontal"),
+        column_names_side = "top",
+        height = unit(20, "cm"),
+        width = unit(17,"cm"))
+
+draw(h, heatmap_legend_side = "bottom")
 ```
 
 # Figure 1C - Plots for Protein TMA
 
 ## Barplot containing Cell Types per Image
 
-```{r Fig_1C_Protein_Barplot, fig.width=15, fig.height=13, dev=c('pdf')}
+```{r Fig_1D_Protein_Barplot, fig.width=13, fig.height=7, dev=c('pdf')}
 # Create table with celltype fractions
 cur_df <- data.frame(celltype = sce_prot$celltype,
                      Description= sce_prot$Description)
@@ -197,7 +255,13 @@ rownames(m) <- cur_df$Description
 m <- m[row_sorted,]
 hm_dat <- hm_dat[row_sorted,]
 
+# bring cell types in order (column order)
+col_order <- c("Tumor", "Macrophage", "Neutrophil", "Tcytotoxic", "Thelper", "Tregulatory", "Bcell", "BnTcell", "pDC", "Stroma", "unknown")
+hm_dat <- hm_dat[, col_order]
+
 col_vector <- metadata(sce_prot)$colour_vector$celltype[colnames(hm_dat)]
+col_vector_location <- structure(c("black", "blue", "red", "green"), 
+                                 names = c("control", "LN", "other", "skin"))
 
 # create annotation with cell type proportions
 ha <- rowAnnotation(`Cell Type Proportion` =
@@ -229,7 +293,7 @@ grid.draw(ht)
 
 ## Legend for Barplot
 
-```{r Fig_1C_Protein_Barplot_Legend, fig.width=2, fig.height=4, dev=c('pdf')}
+```{r Fig_1D_Protein_Barplot_Legend, fig.width=2, fig.height=4, dev=c('pdf')}
 lgd1 <- Legend(labels = names(col_vector), 
              title = "Cell Type", 
              legend_gp = gpar(fill = col_vector),
@@ -247,20 +311,344 @@ draw(pd)
 
 ## Heatmap showing marker expression of celltypes
 
-```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=6, fig.height=6, dev=c('pdf')}
-# aggregate celltypes
-agr_sce <- aggregateAcrossCells(sce_prot, ids = colData(sce_prot)[,"celltype"], 
-                                average = TRUE)
-# asinh transformation
-assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
+## Heatmap showing marker expression of celltypes
 
-# Centered and scaled Heatmap
-dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
-            annot.by = c("celltype"), 
-            cluster_rows = TRUE,
-            annotation_colors = list(celltype = metadata(sce_prot)$colour_vectors$celltype),
-            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(-3, 3, length.out = 101),
-            annotation_legend = 0)
+```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=9, fig.height=11, dev=c('pdf')}
+# add marker expression to cells
+marker_expression <- data.frame(t(assay(sce_prot[rowData(sce_prot)$good_marker,], "asinh")))
+marker_expression$cellID <- rownames(marker_expression)
+dat <- data.frame(colData(sce_prot))[,c("cellID", "celltype")]
+dat <- left_join(dat, marker_expression)
+dat$cellID <- NULL
+
+# aggregate the groups
+dat_aggr <- dat %>%
+  group_by(celltype) %>%
+  summarise_all(funs(mean))
+
+# number of cells per group
+dat_sum <- dat %>%
+  group_by(celltype) %>%
+  summarise(n=n())
+
+dat_sum <- data.frame(t(dat_sum))
+
+# scale and center expression
+dat_aggr[,-c(1)] <- scale(dat_aggr[,-c(1)])
+
+# create matrix
+m <- as.matrix(t(dat_aggr[,-c(1)]))
+colnames(m) <- dat_aggr$celltype
+
+# top annotation with number of cells
+ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>70000, 70000, as.numeric(dat_sum[2,])),
+                                                                 height = unit(2,"cm"),
+                                                         ylim = range(0,70000)),
+                        "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
+                                                   which = "column", 
+                                                   rot = 0, 
+                                                   just = "center", 
+                                                   location = 0.5,
+                                                   gp = gpar(fontsize=8)))
+# plot heatmap
+h <- Heatmap(m, name = "Scaled Expression",
+        cluster_columns = TRUE,
+        show_column_dend = FALSE,
+        column_names_gp = gpar(fontsize=12),
+        column_names_rot = 45,
+        column_names_centered = TRUE,
+        show_column_names = TRUE,
+        top_annotation = ha,
+        col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
+        heatmap_legend_param = list(legend_width = unit(6,"cm"), direction="horizontal"),
+        column_names_side = "top",
+        height = unit(20, "cm"),
+        width = unit(17,"cm"))
+
+draw(h, heatmap_legend_side = "bottom")
+```
+
+## Cell Type Correlation between the two data sets
+
+```{r Fig_1E_Celltype_Correlation, dev=c('pdf'), fig.height=7, fig.width=7, eval=F}
+cur_rna <- data.frame(colData(sce_rna))
+cur_prot <- data.frame(colData(sce_prot))
+
+rna_sum <- cur_rna %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "n", fill = 0)
+
+prot_sum <- cur_prot %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "n", fill = 0)
+
+
+# Correlation Plot
+corrplot(cor(rna_sum[,-1], prot_sum[,-1], method = "pearson"), 
+         addCoef.col = "white",
+         method = "circle",
+         tl.col="black")
+
+# Mean Correlation
+mean(c(cor(rna_sum$Macrophage, prot_sum$Macrophage, method = "pearson"), 
+       cor(rna_sum$Neutrophil, prot_sum$Neutrophil, method = "pearson"), 
+       cor(rna_sum$Tcytotoxic, prot_sum$Tcytotoxic, method = "pearson"), 
+       cor(rna_sum$Tumor, prot_sum$Tumor, method = "pearson")))
+```
+
+# Cytotoxic T cell abundance per BlockID
+
+## Barplot with Clinical Annotation 
+
+```{r Fig_1F_barplot_clinical_annotation, dev=c('pdf'), fig.height=10, fig.width=15}
+# cytotoxic density scoring per BlockID (mean over images)
+cur_sce <- data.frame(colData(sce_prot)) %>%
+  group_by(BlockID) %>%
+  mutate(cyto_density_block = mean(cyotoxic_density_image))
+
+# add manual scoring for tumor core (highest scoring)
+cur_sce <- left_join(cur_sce, dat_inflammation[,c("BlockID", "highest_scoring")])
+
+sce_prot$manual_scoring_core <- cur_sce$highest_scoring
+sce_prot$cytotoxic_density_block <- cur_sce$cyto_density_block
+
+set.seed(362)
+patient_meta <- data.frame(BlockID = sce_prot$BlockID,
+                     Tcell_score = sce_prot$T_frac_score_per_BlockID,
+                     cytotoxic_density_block = sce_prot$cytotoxic_density_block,
+                     Death = sce_prot$Death,
+                     treatment_status_before_surgery = sce_prot$treatment_status_before_surgery,
+                     relapse = sce_prot$relapse,
+                     manual_scoring_core = sce_prot$manual_scoring_core)
+
+# remove control and bad images
+patient_meta <- patient_meta %>%
+  filter(manual_scoring_core != "no assessment possible" & relapse != "control") %>%
+  distinct(BlockID, .keep_all = TRUE)
+
+# construct matrix with fractions and sort from lowest to highest  
+matrixrownames <- as.character(patient_meta$BlockID)
+m <- as.matrix(patient_meta$cytotoxic_density_block)
+rownames(m) <- matrixrownames
+m <- m[order(m[,1]),]
+
+# construct color vector for Tcell score
+
+# plot Fractions as barplot
+ha <- rowAnnotation(`Mean Cytotoxic T cells / mm2` = anno_barplot(m,gp=gpar(fill="grey"),
+                                                                   bar_width = 1,
+                                                                   height = unit(30,"cm"),
+                                                                   width = unit(15,"cm"),
+                                                                   show_row_names =FALSE))
+# create patient_meta matrix
+mrownames <- patient_meta$BlockID 
+patient_meta_matrix <- as.matrix(patient_meta)
+rownames(patient_meta_matrix) <- mrownames
+patient_meta_matrix <- patient_meta_matrix[names(m),]
+
+# heatmap consisting of BlockIDs
+h1 = Heatmap(patient_meta_matrix[,"Death"],
+             col = structure(c("gainsboro", "deepskyblue"), names = c("no", "yes")),
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = FALSE, 
+             heatmap_legend_param = list(title = "Death"),
+             show_row_names = FALSE,
+             column_labels = "Death")
+
+h2 = Heatmap(patient_meta_matrix[,"treatment_status_before_surgery"], 
+             col = structure(c("gainsboro", "deepskyblue"), names = c("naive", "non-naive")),
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = FALSE,
+             heatmap_legend_param = list(title = "Treatment Status before Surgery"),
+             show_row_names = FALSE,
+             column_labels = "Treatment Status")
+
+h3 = Heatmap(patient_meta_matrix[,"relapse"], 
+             col = structure(c("gainsboro", "deepskyblue", "black"), names = c("no relapse", "relapse", "untreated/lost")),
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = FALSE,
+             heatmap_legend_param = list(title = "Relapse Status"),
+             show_row_names = FALSE,
+             column_labels = "Relapse")
+
+h4 = Heatmap(patient_meta_matrix[,"manual_scoring_core"], 
+             col = structure(c("grey", "greenyellow", "indianred1", "green4", "indianred4"), 
+                             names = c("deserted", "low-inflamed", "low-excluded", "high-inflamed", "high-excluded")),
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             heatmap_legend_param = list(title = "Scoring Tumor Core"),
+             show_row_names = FALSE,
+             column_labels = "Scoring Tumor Core",
+             right_annotation =  ha,
+             show_heatmap_legend = FALSE)
+
+ht = grid.grabExpr(draw(h2+h3+h1+h4))
+grid.newpage()
+pushViewport(viewport(angle = 270))
+grid.draw(ht)
+```
+
+```{r Fig_1F_legend, dev=c("pdf")}
+# create legend for tumor subclusters
+lgd1 = Legend(labels = c("deserted", "low-inflamed", "low-excluded", "high-inflamed", "high-excluded"), 
+              title = "Scoring Tumor Core", 
+              ncol = 2,
+              legend_gp = gpar(fill = c("grey", "greenyellow", "indianred1", "green4", "indianred4")))
+
+lgd2 = Legend(labels = c("no relapse", "relapse", "untreated/lost"), 
+              title = "Relapse Status", 
+              legend_gp = gpar(fill = c("gainsboro", "deepskyblue", "black")))
+
+lgd3 = Legend(labels = c("naive", "non-naive"), 
+              title = "Treatment Status", 
+              legend_gp = gpar(fill = c("gainsboro", "deepskyblue")))
+ 
+lgd4 = Legend(labels = c("no", "yes"), 
+              title = "Death", 
+              legend_gp = gpar(fill = c("gainsboro", "deepskyblue")))
+
+
+# Draw Legend
+draw(packLegend(lgd2, lgd3, lgd4, lgd1, column_gap = unit(0.5, "cm"),
+                max_height = unit(2, "cm")))
+```
+
+## Define Tcytotoxic density per Image
+
+```{r}
+# cytotoxic density per image
+frac <- data.frame(colData(sce_rna)) %>%
+  distinct(ImageNumber, .keep_all = TRUE) %>%
+  group_by(BlockID) %>%
+  mutate(cyto_density_block = mean(cyotoxic_density_image)) %>%
+  distinct(BlockID, cyto_density_block)
+
+names(dat_survival)[3] <- "BlockID"
+
+frac <- left_join(frac[,c("BlockID", "cyto_density_block")], dat_survival)
+
+#
+frac$number_of_treatments_before_grouping <- ifelse(frac$Number.of.treatments.before.surgery == 0, "naive", "non-naive")
+```
+
+## Cox Proportional Hazard Model
+The (mean) density score per Block is "restricted cubic spline" (rcs) transformed which is used for non-linear continuous predictive variables (in this case Cytotoxic T cell density). 
+
+```{r Fig_1F_Hazard_Ratio , dev=("pdf"), fig.width=14, fig.height=4}
+dd <- datadist(frac)
+options(datadist="dd")
+
+cph_rcs <- cph(formula = Surv(time = Time_to_death_or_last_PET, event = censoring_death) ~ 
+                      rcs(cyto_density_block,3) + 
+                      number_of_treatments_before_grouping, 
+                    x = TRUE, y = TRUE, data = frac)
+
+summary <- as.data.frame(summary(cph_rcs))
+rownames(summary) <- c("Cytotoxic T Cell Density", "Hazard-Ratio Density", "Treatment Status", "Hazard-Ratio Treatment")
+dat <- summary[summary$Type == 2,]
+dat$var <- c("Cytotoxic T Cell Density", "Treatment Status")
+
+densityRange <- paste(paste(round(dat$High[1]), round(dat$Low[1]), sep = ":"), "cells/mm2", sep = " ")
+
+y_axis1 <- paste(paste(dat$var[1], 
+                 paste("CI95", paste(round(dat$`Lower 0.95`,2)[1], round(dat$`Upper 0.95`,2)[1], sep = " - "), sep = " "),
+                 sep = "\n"), 
+                 densityRange , sep = "\n")
+y_axis2 <- paste(paste(dat$var[2], 
+                 paste("CI95", paste(round(dat$`Lower 0.95`,2)[2], round(dat$`Upper 0.95`,2)[2], sep = " - "), sep = " "),
+                 sep = "\n"), 
+                 paste("non-naive", "naive", sep = ":") , sep = "\n")
+
+ggplot(dat,aes(x=Effect, y=var, label=round(Effect,2))) +
+  geom_point(size=10) +
+  geom_errorbar(mapping=aes(y=var, xmin=`Lower 0.95`, xmax=`Upper 0.95`), 
+                width=0.2, 
+                size=2, 
+                color="deepskyblue") +
+  geom_label_repel(box.padding = 5, size=10) +
+  geom_vline(xintercept = 1) +
+  theme_bw() +
+  theme(text=element_text(size=20)) + 
+  ylab("") + 
+  xlab("Hazard Ratio") +
+  scale_y_discrete(labels= c(y_axis1, y_axis2)) +
+  scale_x_log10()
+```
+
+# Example Images Inflammation
+
+## Load masks
+
+```{r}
+all_mask <- loadImages(x = "/home/ubuntu/bbvolume/Data/Analysis/melanoma_cohort_new_cp_pipeline/rna/cpout/",
+                       pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
+```
+
+## add the ImageNumber to masks
+
+```{r match image numbers}
+# we load the metadata for the images.
+image_mat <- as.data.frame(read.csv(file = "data/rna/Image.csv",stringsAsFactors = FALSE))
+
+# we extract only the FileNames of the masks as they are in the all_masks object
+cur_df <- data.frame(cellmask = image_mat$FileName_cellmask,
+                     ImageNumber = image_mat$ImageNumber,
+                     Description = image_mat$Metadata_Description)
+
+# we set the rownames of the extracted data to be equal to the names of all_masks
+rownames(cur_df) <- gsub(pattern = ".tiff",replacement = "",image_mat$FileName_cellmask)
+
+# we add the extracted information via mcols in the order of the all_masks object
+mcols(all_mask) <- cur_df[names(all_mask),]
+```
+
+## scale the masks
+
+```{r scale masks}
+all_mask <- scaleImages(all_mask,2^16-1)
+```
+
+## Inflammation Gruops
+
+```{r}
+data.frame(colData(sce_rna)) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(manual_scoring) %>%
+  summarise(n=n())
+```
+
+## Plot
+
+```{r Fig_1G_example_images_inflamamtion_groups, dev=("pdf")}
+# sample 5 images per group
+set.seed(1234875)
+groups <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, manual_scoring) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  filter(manual_scoring %in% c("deserted", "high-excluded", "high-inflamed"))  %>%
+  group_by(manual_scoring) %>%
+  sample_n(., 1) %>%
+  select(ImageNumber, manual_scoring, Description)
+
+# subset masks
+mask_sub <- all_mask[mcols(all_mask)$ImageNumber %in% groups$ImageNumber]
+sce_rna_sub <- sce_rna[,sce_rna$ImageNumber %in% groups$ImageNumber]
+
+# rename all cells that are not tumor and not tcytotoxic
+sce_rna_sub$celltype <- ifelse(sce_rna_sub$celltype %in% c("Tumor", "Tcytotoxic"), sce_rna_sub$celltype, "other")
+
+plotCells(mask = mask_sub, 
+          object = sce_rna_sub,
+          cell_id = "CellNumber", img_id = "ImageNumber", 
+          colour_by = "celltype",
+          colour = list(celltype = c(Tumor = "sienna4",
+                                    Tcytotoxic = "deepskyblue",
+                                    other = "black")),
+          display = "single")
 ```
 

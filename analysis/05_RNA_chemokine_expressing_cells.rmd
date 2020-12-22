@@ -12,6 +12,11 @@ Here, we define chemokine-expressing cells
 
 # Preparations
 
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
 ## Load libraries
 
 ```{r, message=F}
@@ -219,16 +224,7 @@ targets <- targets[!targets == "NA"]
 # add expressor info to sce object
 sce$expressor <- cur_df$expressor
 
-# add color vector to metadata
-color_chemo <- primary.colors(length(targets))
-names(color_chemo) <- targets
-metadata(sce)$colour_vectors$chemokine_combinations <- color_chemo
-
-# replace order of chemokines to match order without control samples for upset plot only (ATTENTION! HARD CODED)
-color_chemo <- replace(color_chemo, c("CXCL8", "CCL18"), color_chemo[c("CCL18", "CXCL8")])
-metadata(sce)$colour_vectors$chemokine_combinations_no_control_UPSETplot <- color_chemo
-
-# add target list to metadata
+# add target names to metadata
 metadata(sce)$chemokines_morethan600_withcontrol <- targets
 ```
 

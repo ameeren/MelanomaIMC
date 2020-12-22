@@ -10,6 +10,7 @@
 #' @param colour_vector (optional) named colour vector. names(color_vector) must return unique colour_by levels
 #' @param colour_by color barplot stacks by variable
 #' @param split_by split plots by variable
+#' @param show_n (optional) logical, should sample size be plotted on x-axis?
 
 #' @return ggplot objects
 #' @export
@@ -22,10 +23,11 @@ plotCellCounts <- function(sce,
                            imageID = NULL,
                            colour_by = NULL,
                            split_by = NULL,
-                           colour_vector = NULL){
+                           colour_vector = NULL,
+                           show_n = TRUE){
 
   # validity checks
-  .plotCellCountsCheck(sce, sce_sub, proportion, normalize, cellID, imageID, colour_by, split_by)
+  .plotCellCountsCheck(sce, sce_sub, proportion, normalize, cellID, imageID, colour_by, split_by, show_n)
 
   # check if color vector is correct
   if(!is.null(colour_vector) & is.null(sce_sub)){
@@ -75,20 +77,19 @@ plotCellCounts <- function(sce,
       group_by(imageID, split_by) %>%
       distinct(imageID, .keep_all = T) %>%
       group_by(split_by) %>%
-      summarise(n=n(), .groups = 'drop')
+      summarise(n=n(), .groups = 'drop') %>%
+      arrange(split_by)
   }
 
   # Generate different plots
   if (proportion == TRUE) {
     df_sum <- reshape2::melt(table(cur_df) / rowSums(table(cur_df)))
 
-    ggplot(df_sum, aes(x = split_by, y = value, fill = colour_by)) +
+    p <- ggplot(df_sum, aes(x = split_by, y = value, fill = colour_by)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = unname(colour_vector),
                         breaks = names(colour_vector),
                         labels = names(colour_vector)) +
-      scale_x_discrete(breaks = unique(df_sum$split_by),
-                       labels = paste(unique(df_sum$split_by), sample_size$n, sep = "\n#Samples = ")) +
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title.x = element_blank(),
@@ -125,13 +126,11 @@ plotCellCounts <- function(sce,
       mutate(n_cells_norm = n_cells / n_cells_group)
 
     # Plot
-    ggplot(df_norm, aes(x = split_by, y = n_cells_norm, fill = colour_by)) +
+    p <- ggplot(df_norm, aes(x = split_by, y = n_cells_norm, fill = colour_by)) +
       geom_bar(stat = "identity") +
       scale_fill_manual(values = unname(colour_vector),
                         breaks = names(colour_vector),
                         labels = names(colour_vector)) +
-      scale_x_discrete(breaks = unique(df_norm$split_by),
-                       labels = paste(unique(df_norm$split_by), sample_size$n, sep = "\n#Samples = ")) +
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title.x = element_blank(),
@@ -143,13 +142,11 @@ plotCellCounts <- function(sce,
       ylab("Cell Fraction (Normalized by Total Group Size)")
 
   } else if(proportion == FALSE & normalize == FALSE) {
-    ggplot(cur_df, aes(x = split_by, fill = colour_by)) +
+    p <- ggplot(cur_df, aes(x = split_by, fill = colour_by)) +
       geom_bar() +
       scale_fill_manual(values = unname(colour_vector),
                         breaks = names(colour_vector),
                         labels = names(colour_vector)) +
-      scale_x_discrete(breaks = unique(cur_df$split_by),
-                       labels = paste(unique(cur_df$split_by), sample_size$n, sep = "\n#Samples = ")) +
       theme(
         axis.text.x = element_text(angle = 45, hjust = 1),
         axis.title.x = element_blank(),
@@ -159,5 +156,12 @@ plotCellCounts <- function(sce,
         panel.grid.major.y = element_line(color = "grey", size = .3)
       ) +
       ylab("Cell counts")
-    }
-}
+  }
+  if(show_n == T){
+    p +
+      scale_x_discrete(breaks = unique(sample_size$split_by),
+                       labels = paste(unique(sample_size$split_by), sample_size$n, sep = "\n#Samples = "))
+  }else{
+    p
+  }
+  }

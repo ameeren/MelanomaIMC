@@ -33,7 +33,7 @@ cur_meta <- data.frame(metadata(sce))
 cur_sce <- cur_sce %>%
   left_join(., cur_meta[,c("ImageNumber", "Location", "Adjuvant", "E_I_D", "Mutation", 
                            "Cancer_Stage", "Status_at_3m", "BlockID", "Description", "TissueType",
-                           "MM_location", "Age_range", "Gender")])
+                           "MM_location", "Age_range", "Gender", "Internal_pat_ID")])
 
 colData(sce)$Location <- cur_sce$Location
 colData(sce)$Adjuvant <- cur_sce$Adjuvant
@@ -47,6 +47,7 @@ colData(sce)$TissueType <- cur_sce$TissueType
 colData(sce)$MM_location <- cur_sce$MM_location
 colData(sce)$Age <- cur_sce$Age_range
 colData(sce)$Gender <- cur_sce$Gender
+colData(sce)$PatientID <- cur_sce$Internal_pat_ID
 ```
 
 # Make clinical data interpretable for statistical analysis

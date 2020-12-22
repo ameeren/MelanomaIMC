@@ -98,3 +98,121 @@
     stop("Please provide an numeric threshold.")
   }
 }
+
+# checks for plotCellCounts()
+.plotCellCountsCheck <- function(sce,
+                                 sce_sub,
+                                 proportion,
+                                 normalize,
+                                 cellID,
+                                 imageID,
+                                 colour_by,
+                                 split_by,
+                                 show_n){
+  #Check if sce is SingleCellExpriment
+  .sceCheck(sce)
+
+  #Check if sce_sub is SingleCellExperiment
+  if (!is.null(sce_sub)) {
+    .sceCheck(sce_sub)
+  }
+
+  # is show_n logical?
+  if(is.logical(show_n) != TRUE){
+    stop("show_n must be logical, TRUE or FALSE")
+  }
+
+  # check
+  if (normalize == FALSE & !is.null(sce_sub)) {
+    stop(
+      "If no normalization should be performed on sce_sub, sce_sub must be used as direct input (sce) for this function."
+    )
+  }
+
+  #check if sce_sub is really a subset of sce if normalize==TRUE
+  if (normalize == TRUE & !is.null(sce_sub)) {
+    if (is.null(cellID)) {
+      stop("cellID parameter must be provided in order to check validity of subsetted SCE")
+    }
+    if (all(colData(sce_sub)[, cellID] %in% colData(sce)[, cellID]) != TRUE) {
+      stop("sce_sub is not part of sce. Please provide a subset of sce as input.")
+    }
+  }
+
+  # Check if selected variable exists
+  entries <- colnames(colData(sce))
+  if (!is.null(colour_by)) {
+    if (!(colour_by %in% entries)) {
+      stop("The entry for colour_by is not a colData slot of the object.")
+    }
+  }
+
+  if (!is.null(split_by)) {
+    if (!(split_by %in% entries)) {
+      stop("The entry for split_by is not a colData slot of the object.")
+    }
+  }
+
+  if (is.null(imageID)) {
+    stop("provide an imageID. imageID must be a colData entry of the sce object.")
+  } else if (!(imageID %in% entries)) {
+    stop("The entry for imageID is not a colData slot of the object.")
+  }
+
+}
+
+.plotCellFractionsCheck <- function(sce,
+                                    imageID,
+                                    celltype_column,
+                                    celltype_subsets,
+                                    merge_subsets,
+                                    split_by,
+                                    show_n,
+                                    facet_wrap){
+
+  #Check if sce is SingleCellExpriment
+  .sceCheck(sce)
+
+  # Check if selected variable exists
+  entries <- colnames(colData(sce))
+
+  if (!(split_by %in% entries)) {
+      stop("The entry for split_by is not a colData entry of the SCE object.")
+  }
+  if (!(imageID %in% entries)) {
+    stop("The entry for imageID is not a colData entry of the SCE object.")
+  }
+  if (!(celltype_column %in% entries)) {
+    stop("The entry for celltype_column is not a colData entry of the SCE object.")
+  }
+
+  # is show_n logical?
+  if(is.logical(show_n) != TRUE){
+    stop("show_n must be logical, TRUE or FALSE")
+  }
+
+  # is facet_wrap logical?
+  if(is.logical(facet_wrap) != TRUE){
+    stop("facet_wrap must be logical, TRUE or FALSE")
+  }
+
+  # is merge_subsets logical?
+  if(is.logical(merge_subsets) != TRUE){
+    stop("merge_subsets must be logical, TRUE or FALSE")
+  }
+
+  # merge only when subsets are provided
+  if(merge_subsets == TRUE & is.null(celltype_subsets)){
+    warning("Subsets can only be merged if celltype_subsets is provided. Either provide subset or set merge_subsets to FALSE")
+  }
+
+  # check subset column
+  if(!is.null(celltype_subsets)){
+    if(is.vector(celltype_subsets) != TRUE){
+      stop("Please provide an (character) vector as celltype_subset input.")
+    }
+    if(all(celltype_subsets %in% unique(data.frame(colData(sce))[,celltype_column])) != TRUE){
+      stop("The provided celltype_subset is not a subset of celltype_column. Please check.")
+    }
+  }
+}

@@ -1,0 +1,96 @@
+---
+title: "10_coloring"
+author: ""
+date: "2020-11-25"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+Color schemes
+
+# Preparations
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Load libraries
+
+```{r, message=FALSE, warning=FALSE}
+library(SingleCellExperiment)
+library(colorRamps)
+```
+
+## Load data
+
+```{r}
+sce_rna <- readRDS("data/sce_RNA.rds")
+sce_prot <- readRDS("data/sce_protein.rds")
+```
+
+## All celltypes
+
+```{r}
+col <- c("sienna4", "tomato", "gray65", "sienna1", "lightblue", "deepskyblue", "cyan",
+         "dodgerblue2", "darkolivegreen1", "darkolivegreen4", "darkolivegreen","darkgreen", "yellow2",
+         "khaki", "gold")
+
+names <- c("Tumor", "Stroma", "unknown", "Vasculature", "Tcell", "Tcytotoxic", "Thelper",
+           "Tregulatory", "Bcell", "BnTcell", "HLA-DR", "CD38" ,"Macrophage", "Neutrophil", "pDC")
+
+#barplot(seq_along(names), col=col, main="Pastel_hcl", names.arg = names)
+
+col_celltypes <- col
+names(col_celltypes) <- names
+```
+
+# RNA
+
+## Celltypes
+
+```{r}
+cell_rna <- col_celltypes[c("Tumor", "Stroma", "unknown", "Vasculature", "Tcell", 
+                            "Tcytotoxic", "HLA-DR", "CD38","Macrophage", "Neutrophil")]
+
+metadata(sce_rna)$colour_vectors$celltype <- cell_rna
+```
+
+## Chemokines
+
+```{r}
+# add color vector to metadata
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+color_chemo <- primary.colors(length(targets))
+names(color_chemo) <- targets
+
+#barplot(seq_along(targets), col=color_chemo, main="Pastel_hcl", names.arg = targets)
+metadata(sce_rna)$colour_vectors$chemokine_combinations <- color_chemo
+
+# replace order of chemokines to match order without control samples for upset plot only (ATTENTION! HARD CODED)
+new_order <- replace(targets, match(c("CXCL8", "CCL18"),targets), c("CCL18", "CXCL8"))
+color_chemo <- color_chemo[new_order]
+metadata(sce_rna)$colour_vectors$chemokine_combinations_no_control_UPSETplot <- color_chemo
+```
+
+# Protein
+
+## Celltypes
+
+```{r}
+cell_protein <- col_celltypes[c("Tumor", "Stroma", "unknown", "Tcytotoxic", 
+                                "Thelper", "Tregulatory", "Bcell", "BnTcell",
+                                "Macrophage", "Neutrophil", "pDC")]
+
+metadata(sce_prot)$colour_vectors$celltype <- cell_protein
+```
+
+## Save RDS
+
+```{r}
+saveRDS(sce_rna, "data/sce_RNA.rds")
+saveRDS(sce_prot, "data/sce_protein.rds")
+```
+
