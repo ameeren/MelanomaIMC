@@ -37,6 +37,7 @@ library(ComplexHeatmap)
 library(colorRamps)
 library(circlize)
 library(RColorBrewer)
+library(ggbeeswarm)
 library(destiny)
 library(scater)
 library(dittoSeq)
@@ -44,7 +45,6 @@ library(gridExtra)
 library(ggpmisc)
 library(neighbouRhood)
 library(cowplot)
-library(kableExtra)
 ```
 
 ## Read the data
@@ -63,134 +63,6 @@ dat_relation = fread(file = "data/rna/Object relationships.csv",stringsAsFactors
 # prepare data 
 dat_relation$cellID_first <- paste("RNA", paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = "_"), sep = "_")
 dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
-```
-
-# Community Analysis - Abundance Boxplots
-
-## Chemokine-producing cells in Pure Clusters
-
-```{r calculate_frequencies}
-# define fractions of chemokines present in community
-cur_dt <- data.frame(colData(sce_rna))
-
-clust <- data.frame()
-
-for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
-  # select all chemokine-producing cells in a community
-  unique_comms <- unique(cur_dt[cur_dt[,i] > 0,i])
-  cur_dt_sub <- cur_dt[cur_dt[,i] %in% unique_comms & cur_dt$chemokine == 1,]
-  
-  cur_dt_sub <- cbind(cur_dt_sub[,i],
-                      cur_dt_sub[,grepl(glob2rx("C*L*"),names(cur_dt_sub))])
-  
-  colnames(cur_dt_sub)[1] <- i
-  
-  # summarise all chemokines in community
-  cur_dt_sub <- cur_dt_sub %>%
-    group_by_at(i) %>%
-    summarise_each(funs(sum))
-  
-  cur_dt_sub$cluster_type <- i
-  
-  cur_dt_sub <- cur_dt_sub[,-1]
-  
-  clust <- rbind(clust, cur_dt_sub)
-}
-
-# remove pure clusters with low abundance (CCL22, CCL4, CCL8)
-clust <- clust[!(clust$cluster_type %in% c("ccl22_pure", "ccl4_pure", "ccl8_pure")),]
-
-# add id
-clust$id <- as.character(rownames(clust))
-
-# wide format of frequencies
-clust_sub <- clust %>%
-  select_if(is.numeric)
-
-freqs_wide <- t(scale(t(as.matrix(clust_sub)), center = FALSE, 
-               scale = rowSums(clust_sub)))
-freqs_wide <- cbind(clust[,c("cluster_type","id")],as_tibble(freqs_wide))
-
-# long format of frequencies
-freqs_long <- melt(as.data.table(freqs_wide), id = c("cluster_type", "id"))
-colnames(freqs_long) <- c("cluster_type", "id", "celltype", "fraction")
-```
-
-## Boxplot with frequencies per pure cluster
-
-```{r Fig_3A_community_modules_chemokines_abundance_boxplot, fig.height=6.5, fig.width=16, dev=c('pdf')}
-col_vector_chemokines <- metadata(sce_rna)$colour_vector$chemokine_combinations
-col_vector_chemokines <- col_vector_chemokines[c("CXCL13", "CXCL10", "CXCL9", "CCL2", "CXCL12", "CCL19", "CCL18", "CXCL8", "CCL4", "CCL22")]
-col_vector_new_chemo <- c("forestgreen")
-names(col_vector_new_chemo) <- c("CCL8")
-col_vector_chemokines <- c(col_vector_chemokines, col_vector_new_chemo)
-
-freqs_long %>%
-  ggplot(., aes(x=cluster_type, y=fraction, fill = celltype)) + 
-  geom_boxplot() + 
-  theme_bw() +
-  theme(text = element_text(size=20),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1, size=10)) +
-  labs(fill = "Chemokine") +
-  xlab("Chemokine Patches") + 
-  ylab("Fraction") +
-  scale_fill_manual(values = unname(col_vector_chemokines),
-                     breaks = names(col_vector_chemokines),
-                     labels = names(col_vector_chemokines)) + 
-  scale_x_discrete(labels=c("ccl18_pure" = "CCL18", "ccl19_pure" = "CCL19", "ccl2_pure" = "CCL2",
-                            "cxcl10_pure" = "CXCL10", "cxcl12_pure" = "CXCL12", "cxcl13_pure" = "CXCL13",
-                            "cxcl8_pure" = "CXCL8", "cxcl9_pure" = "CXCL9"))
-```
-
-## Producing Cell Type Abundance in pure clusters
-
-```{r}
-cur_dt <- data.frame(colData(sce_rna))
-
-clust <- data.frame()
-
-for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
-  # select all chemokine-producing cells in a community
-  unique_comms <- unique(cur_dt[cur_dt[,i] > 0,i])
-  cur_dt_sub <- cur_dt[cur_dt[,i] %in% unique_comms & cur_dt$chemokine == 1,]
-  
-  cur_dt_sub <- cbind(cur_dt_sub[,i],
-                      cur_dt_sub[,"celltype"])
-  
-  colnames(cur_dt_sub) <- c("cluster","celltype")
-  
-  cur_dt_sub <- data.frame(cur_dt_sub) %>%
-    group_by(cluster, celltype) %>%
-    summarise(n=n())
-  
-  cur_dt_sub$cluster_type <- i
-  clust <- rbind(clust, cur_dt_sub)
-}
-
-clust <- clust %>%
-  reshape2::dcast(cluster_type + cluster ~ celltype, value.var = "n", fill = 0)
-
-# calculate frequencies  
-clust[,colnames(select_if(clust, is.numeric))] <- clust[,colnames(select_if(clust, is.numeric))] / rowSums(clust[,colnames(select_if(clust, is.numeric))])
-
-# remove pure clusters with low abundance (CCL22, CCL4, CCL8)
-clust <- clust[!(clust$cluster_type %in% c("ccl22_pure", "ccl4_pure", "ccl8_pure")),] %>%
-  reshape2::melt(c("cluster_type", "cluster"), variable.name = "celltype", value.name = "n")
-
-a <- ggplot(clust, aes(x=cluster_type, y=n, fill=celltype)) + 
-  geom_boxplot() + 
-  xlab(NULL) +
-  ylab("Fraction") +
-  theme_bw() +
-  theme(axis.text.x = element_blank(),
-        text = element_text(size=20),
-        legend.position = "none") +
-  scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype),
-                        breaks = names(metadata(sce_rna)$colour_vectors$celltype),
-                        labels = names(metadata(sce_rna)$colour_vectors$celltype)) + 
-  scale_x_discrete(labels=c("ccl18_pure" = "CCL18", "ccl19_pure" = "CCL19", "ccl2_pure" = "CCL2",
-                            "cxcl10_pure" = "CXCL10", "cxcl12_pure" = "CXCL12", "cxcl13_pure" = "CXCL13",
-                            "cxcl8_pure" = "CXCL8", "cxcl9_pure" = "CXCL9"))
 ```
 
 ## Example of CXCL10 Cluster and corresponding Community
@@ -214,116 +86,11 @@ example <- findCommunity(example,
               plot = TRUE)
 ```
 
-## Non-Producing Cell Type Abundance in pure clusters
-
-```{r Fig_3C_celltypes, fig.height=12, fig.width=16, dev=c('pdf')}
-# assign bystander cells to pure_clusters
-cur_dt <- data.frame(colData(sce_rna))
-
-clust <- data.frame()
-
-for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
-  # select all non-producing cells in a community
-  unique_comms <- unique(cur_dt[cur_dt[,i] > 0,i])
-  cur_dt_sub <- cur_dt[cur_dt[,i] %in% unique_comms & cur_dt$chemokine == 0,]
-  
-  cur_dt_sub <- cbind(cur_dt_sub[,i],
-                      cur_dt_sub[,"celltype"])
-  
-  colnames(cur_dt_sub) <- c("cluster","celltype")
-  
-  cur_dt_sub <- data.frame(cur_dt_sub) %>%
-    group_by(cluster, celltype) %>%
-    summarise(n=n())
-  
-  cur_dt_sub$cluster_type <- i
-  clust <- rbind(clust, cur_dt_sub)
-}
-
-clust <- clust %>%
-  reshape2::dcast(cluster_type + cluster ~ celltype, value.var = "n", fill = 0)
-
-# calculate frequencies  
-clust[,colnames(select_if(clust, is.numeric))] <- clust[,colnames(select_if(clust, is.numeric))] / rowSums(clust[,colnames(select_if(clust, is.numeric))])
-
-# remove pure clusters with low abundance (CCL22, CCL4, CCL8)
-clust <- clust[!(clust$cluster_type %in% c("ccl22_pure", "ccl4_pure", "ccl8_pure")),] %>%
-  reshape2::melt(c("cluster_type", "cluster"), variable.name = "celltype", value.name = "n")
-
-b <- ggplot(clust, aes(x=cluster_type, y=n, fill=celltype)) + 
-  geom_boxplot() + 
-  ylab("Fraction") +
-  xlab("Pure Communities") +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90),
-        text = element_text(size=20),
-        legend.position = "none") +
-  scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype),
-                        breaks = names(metadata(sce_rna)$colour_vectors$celltype),
-                        labels = names(metadata(sce_rna)$colour_vectors$celltype)) + 
-  scale_x_discrete(labels=c("ccl18_pure" = "CCL18", "ccl19_pure" = "CCL19", "ccl2_pure" = "CCL2",
-                            "cxcl10_pure" = "CXCL10", "cxcl12_pure" = "CXCL12", "cxcl13_pure" = "CXCL13",
-                            "cxcl8_pure" = "CXCL8", "cxcl9_pure" = "CXCL9"))
-
-grid.arrange(a,b,nrow=2,heights = c(0.75,1))
-```
-
-## Cluster Summary for Chemokines
-
-```{r Fig_3C_table_chemokines, dev=c('pdf')}
-clust <- data.frame()
-
-for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
-  # select all non-producing cells in a community
-  unique_comms <- unique(cur_dt[cur_dt[,i] > 0,i])
-  cur_dt_sub <- cur_dt[cur_dt[,i] %in% unique_comms & cur_dt$chemokine == 0,]
-  
-  cur_dt_sub <- cbind(cur_dt_sub[,i],
-                      cur_dt_sub[,"celltype"])
-  
-  colnames(cur_dt_sub) <- c("cluster","celltype")
-  
-  cur_dt_sub <- data.frame(cur_dt_sub) %>%
-    group_by(cluster) %>%
-    summarise(n=n())
-  
-  cur_dt_sub$cluster_type <- i
-  clust <- rbind(clust, cur_dt_sub)
-}
-
-mean_clust <- clust %>%
-  group_by(cluster_type) %>%
-  mutate(`Mean Cluster Size` = round(mean(n)), `Number of Clusters` = n()) %>%
-  distinct(cluster_type, .keep_all = T) %>%
-  select("cluster_type", "Mean Cluster Size", "Number of Clusters") %>%
-  mutate(`Considered for Analysis` = ifelse(`Number of Clusters` > 20, 1, 0)) %>%
-  arrange(`Number of Clusters`)
-
-mean_clust$`Chemokine Cluster` <- toupper(sapply(str_split(as.character(mean_clust$cluster_type), "_"), "[[", 1))
-mean_clust$cluster_type <- NULL
-
-mean_clust <- mean_clust %>%
-  select("Chemokine Cluster", "Mean Cluster Size", "Number of Clusters", "Considered for Analysis")
-
-mean_clust %>%
-  kbl(align=c("l", rep("c",3))) %>%
-  kable_paper(full_width = F) %>%
-  column_spec(1, bold = T, border_right = T, width = "2em") %>%
-  column_spec(2, color = "white",
-              background = spec_color(mean_clust$`Mean Cluster Size`, end = 0.7), 
-              width = "3em") %>%
-  column_spec(3, color = "white",
-              background = spec_color(mean_clust$`Number of Clusters`, end = 0.7),
-              width = "3em") %>%
-  column_spec(4, color = "white", width = "3em") %>%
-  kable_styling(font_size = 18, html_font = "Arial")
-```
-
 # Sunburst Plots
 
 ## Chemokine-producing cells in Patches
 
-```{r Fig_3D_sunburst_plot, fig.height=15, fig.width=10, dev=c('pdf')}
+```{r Fig_3C_sunburst_plot, fig.height=15, fig.width=10, dev=c('pdf')}
 # define fractions of chemokines present in community
 cur_dt <- data.frame(colData(sce_rna))
 
@@ -477,7 +244,7 @@ draw(packLegend(lgd2, lgd1, direction = "horizontal"))
 
 ## Diffusion Map for CXCL13 Producing Cells
 
-```{r Fig_3D_DiffusionMap_producing_cells, fig.height=7, fig.width=11, dev=c('pdf')}
+```{r Fig_3E_DiffusionMap_producing_cells, fig.height=7, fig.width=11, dev=c('pdf')}
 # loop through all patches 
 for(i in c("cxcl13only_clust")){
   # subset sce object to only contain community cells
@@ -585,157 +352,9 @@ plot_grid(c, grid.arrange(a + theme(legend.position = "none"),
 grid.arrange(leg_a, leg_b, ncol = 2)
 ```
 
-## Max Cluster Size Correlation with Celltypes
-
-```{r Fig_XX_maxclustersize_and_patches, fig.width=8, fig.height=6, dev=("pdf")}
-cur_sce <- data.frame(colData(sce_sub))
-
-sizes <- data.frame("Description" = unique(sce_rna$Description))
-for(i in names(cur_sce[,grepl(glob2rx("*only_clust"),names(cur_sce))])){
-  # subset sce object to only contain community cells
-  sce_sub <- sce_rna[,colData(sce_rna)[,i] > 0]
-
-  # add patch size to sce
-  cur_df <- data.frame(colData(sce_sub))
-
-  clust_size <- cur_df %>%
-    group_by(cur_df[,i]) %>%
-    summarise(clust_size = log10(n()))
-   
-  names(clust_size)[1] <- i 
-  
-  cur_df <- left_join(cur_df, clust_size)
-  
-  max_clust_size <- cur_df %>%
-    group_by(Description) %>%
-    distinct_at(i, .keep_all = T) %>%
-    group_by(Description) %>%
-    summarise(maxClustSize = max(clust_size))
-  
-  name <- toupper(str_split(i, pattern = "only")[[1]][1])
-  colnames(max_clust_size) <- c("Description", name)
-  
-  sizes <- left_join(sizes, max_clust_size)
-  }
-
-sizes <- replace(sizes, is.na(sizes), 0) 
-
-sizes <- sizes %>%
-  arrange(Description)
-
-celltypes <- data.frame(colData(sce_prot)) %>%
-  group_by(Description, celltype) %>%
-  summarise(n=n()) %>%
-  mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0) %>%
-  arrange(Description)
-
-corr <- as.matrix(cor(celltypes[,-1], sizes[,-1]))
-
-Heatmap(corr,
-        name = "Max Patch Size and Celltypes",
-        cell_fun = function(j, i, x, y, width, height, fill) {
-          grid.text(sprintf("%.1f", corr[i, j]), x, y, gp = gpar(fontsize = 10))},
-        heatmap_legend_param = list(
-          title = "R2", at = c(-0.7, 0, 0.7),
-          labels = c("-0.7","0","0.7")),
-        column_title = "Chemokine Patches",
-        column_title_side = "bottom",
-        row_names_side = "left",
-        width = unit(15, "cm"),
-        height = unit(8, "cm"),
-        show_row_dend = FALSE)
-```
-
 ## Marker Heatmap Patch Cells
 
-```{r Fig_XX_marker_expression_patches_celltypes, dev=("pdf")}
-# subset sce to only contain community cells
-cur_sce <- data.frame(colData(sce_rna))
-cur_sce$patch_type <- ""
-
-dat <- data.frame()
-# loop through all chemokines 
-for(i in names(cur_sce[,grepl(glob2rx("*pure"),names(cur_sce))])){
-  chemokine_name <- toupper(str_split(i, pattern = "_")[[1]][1])
-  
-  # all community cells
-  cur_sce_sub <- cur_sce[cur_sce[,i] > 0,]
-  
-  # non-producer
-  cur_sce_sub$patch_type <- ifelse(cur_sce_sub$chemokine == FALSE, "Bystander", cur_sce_sub[i > 0,]$patch_type)
-  
-  # patch chemokine or other chemokine? 
-  cur_sce_sub[cur_sce_sub$chemokine == TRUE,]$patch_type <- ifelse((cur_sce_sub[i > 0 & cur_sce_sub$chemokine == TRUE, chemokine_name] == 1) == TRUE, 
-                                                                   "Producer", "Other Producer")
-  
-  if(nrow(cur_sce_sub) > 0){
-    cur_sce_sub$patch_group <- chemokine_name
-  }
-  
-  # retain 5 most abundant celltypes per chemokine (at least 100 occurences)
-  top3 <- cur_sce_sub %>%
-    group_by(patch_group, patch_type,celltype) %>%
-    summarise(n=n()) %>%
-    top_n(n=5, wt = n) %>%
-    mutate(function_celltype = paste(patch_type, celltype, sep = "_")) %>%
-    filter(n>100)
-  
-  cur_sce_sub <- cur_sce_sub %>%
-    select(cellID, patch_group, patch_type,celltype) %>%
-    mutate(function_celltype = paste(patch_type, celltype, sep = "_")) %>%
-    filter(function_celltype %in% top3$function_celltype)
-  
-  # add to total data.frame
-  dat <- rbind(dat, cur_sce_sub)
-}
-
-## add marker expression to cells
-marker_expression <- data.frame(t(assay(sce_rna[rowData(sce_rna)$good_marker,], "asinh")))
-marker_expression$cellID <- rownames(marker_expression)
-dat <- left_join(dat, marker_expression, by = "cellID")
-dat$cellID <- NULL
-dat$function_celltype <- NULL
-
-## aggregate for groups
-dat_aggr <- dat %>%
-  group_by(patch_group, patch_type, celltype) %>%
-  summarise_all(funs(mean))
-
-## number of cells per group
-dat_sum <- dat %>%
-  group_by(patch_group, patch_type, celltype) %>%
-  summarise(n=log10(n()))
-
-dat_sum <- data.frame(t(dat_sum))
-
-# scale and center expression
-dat_aggr[,-c(1:3)] <- scale(dat_aggr[,-c(1:3)])
-
-m <- as.matrix(t(dat_aggr[,-c(1:3)]))
-colnames(m) <- dat_aggr$patch_group
-
-ha <- HeatmapAnnotation("Function" = dat_aggr$patch_type,
-                        "Cell Type" = dat_aggr$celltype,
-                        "Number of Cells (log10)" = anno_barplot(as.numeric(dat_sum[4,]),
-                                                                 height = unit(2,"cm")),
-                        col = list("Cell Type" = metadata(sce_rna)$colour_vectors$celltype,
-                                   "Function" = setNames(c("blue", "red", "black"), 
-                                                         c("Producer", "Other Producer", "Bystander"))))
-
-Heatmap(m, name = "Scaled\nExpression",
-        cluster_columns = FALSE,
-        show_column_names = FALSE,
-        top_annotation = ha,
-        column_split = colnames(m),
-        col = colorRamp2(c(-3, 0, 3), c("blue", "white", "red")),
-        height = unit(20, "cm"),
-        width = unit(25,"cm"))
-```
-
-## Marker Heatmap Patch Cells V2
-
-```{r Fig_XX_marker_expression_patches_celltypes_v2, dev=("pdf"), fig.width=12, fig.height=10}
+```{r Fig_3D_marker_expression_patches_celltypes, dev=("pdf"), fig.width=12, fig.height=10}
 # subset sce to only contain community cells
 cur_sce <- data.frame(colData(sce_rna))
 cur_sce$patch_type <- ""
@@ -820,9 +439,8 @@ h <- Heatmap(m, name = "Scaled\nExpression",
         col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
         height = unit(20, "cm"),
         width = unit(25,"cm"))
-pdf("~/bbvolume/Git/melanoma_publication_old_data/output/heatmap.pdf", width = 12, height = 10)
+
 draw(h)
-dev.off()
 ```
 
 ## Legend
@@ -832,9 +450,9 @@ lgd2 = color_mapping_legend(ha@anno_list$Chemokine@color_mapping, plot = FALSE, 
 lgd3 = color_mapping_legend(ha@anno_list$`Cell Type`@color_mapping, plot = FALSE, legend_direction = "horizontal")
 
 lgd_list = packLegend(lgd1,lgd2,lgd3, direction = "horizontal", gap = unit(1,"cm"))
-pdf("~/bbvolume/Git/melanoma_publication_old_data/output/heatmap_legend.pdf", width = 5, height = 2)
+
 draw(lgd_list)
-dev.off()
+
 ```
 
 ## Fraction of Exhausted T Cytotoxic T cell per Group and per Chemokine
@@ -1094,200 +712,6 @@ b <- plotCellCounts(sce_rna_sub,
 grid.arrange(a,b, ncol=2)
 ```
 
-## CXCL9 Macrophages
-
-```{r, eval=F}
-sce_rna$celltype_expressor <- paste(sce_rna$celltype, sce_rna$CXCL9, sep = "_")
-
-plotCellFractions(sce_rna, imageID = "ImageNumber", celltype_column = "celltype_expressor", celltype_subsets = c("Macrophage_1"), split_by = "T_frac_score_per_ImageNumber")
-```
-
-
-## Profile of Cytotoxic T cells 
-
-```{r, eval=FALSE}
-# ids
-ids_tumor_chemokine <- cur_dat_relation_chemokine$cellID_first
-ids_tumor_control <- cur_dat_relation_control$cellID_first
-
-sce_rna_sub <- sce_rna[,sce_rna$cellID %in% c(ids_tumor_chemokine, ids_tumor_control)]
-sce_rna_sub$tumor_class <- ifelse(sce_rna_sub$cellID %in% ids_tumor_chemokine, "CD8+ CXCL13+", "CD8+ CXCL13-")
-
-tumor_marker_rna <- c("Lag3" , "T8_CXCL13")
-
-# rna data 
-dat_rna <- data.frame(t(assay(sce_rna_sub[tumor_marker_rna,], "asinh")))
-dat_rna$cellID <- rownames(dat_rna)
-dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna_sub))[,c("cellID", "tumor_class")])
-
-# melt
-dat_rna <- dat_rna %>%
-  reshape2::melt(id.vars = c("cellID", "tumor_class"), variable.name = "channel", value.name = "asinh")
-
-# plot 
-ggplot(dat_rna, aes(x=tumor_class, y=asinh, fill=tumor_class)) + 
-  geom_boxplot(alpha=0.2) +
-  geom_violin(alpha=0.1) +
-  theme_bw() +
-  theme(text = element_text(size=18),
-        #axis.text.x = element_blank(),
-        legend.position = "none") +
-  facet_wrap(~channel) + 
-  xlab("") + 
-  ylab("") +
-  facet_wrap(~channel)
-```
-
-## How many CXCL13+ CD8+ are also exhausted? 
-
-```{r}
-data.frame(colData(sce_rna)) %>%
-  filter(cellID %in% cur_dat_relation_chemokine$cellID_first) %>%
-  filter(celltype == "Tcytotoxic") %>%
-  group_by(celltype_rf) %>%
-  summarise(n=n()) %>%
-  mutate(percentage = (n / sum(n) * 100))
-```
-
-## Define Chemokine Producing Tumor Cells and Control Population of Same Size
-
-```{r, eval=F}
-cd8_cxcl13 <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tcytotoxic" & sce_rna$CXCL13 == 1]))[,"cellID"]
-control_cd8 <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tcytotoxic" & sce_rna$CXCL13 == 0]))
-
-# sample same amount of control tumor cells
-control_cd8 <- control_cd8[sample(nrow(control_cd8), length(cd8_cxcl13)), "cellID"]
-```
-
-## Neighbourhood of CXCL13+ CD8 cells
-
-```{r, eval=F}
-# prepare data 
-dat_relation$cellID_first <- paste("RNA", paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = "_"), sep = "_")
-dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
-
-# only chemokine+ tumor cells as first object
-dat_relation_sub <- dat_relation[dat_relation$cellID_first %in% cd8_cxcl13,]
-interacting_cells <- dat_relation_sub$cellID_second
-
-# percentage of chemokine expressing cells
-data.frame(colData(sce_rna[,sce_rna$cellID %in% interacting_cells])) %>%
-  group_by(celltype, chemokine) %>%
-  summarise(n=n()) %>%
-  reshape2::dcast(celltype ~ chemokine, value.var = "n", fill=0) %>%
-  mutate(percentage_chemokine = round(`TRUE` / (`FALSE` + `TRUE`)*100,1))
-
-# subset
-dat_relation_sub <- dat_relation[dat_relation$cellID_first %in% cd8_cxcl13,]
-dat_relation_sub <- dat_relation_sub[!(dat_relation_sub$cellID_second %in% cd8_cxcl13),]
-dat_relation_sub <- dat_relation_sub[dat_relation_sub$cellID_second %in% sce_rna[,sce_rna$chemokine == 1]$cellID, ]
-
-# add expressor status to first and second label
-expressor_first <- data.frame(colData(sce_rna))[,c("cellID", "expressor")]
-colnames(expressor_first) <- c("cellID_first", "expressor_cd8")
-expressor_second <- data.frame(colData(sce_rna))[,c("cellID", "expressor")]
-colnames(expressor_second) <- c("cellID_second", "expressor_neighbour")
-dat_relation_sub <- left_join(dat_relation_sub, expressor_first, by = "cellID_first")
-dat_relation_sub <- left_join(dat_relation_sub, expressor_second, by = "cellID_second")
-
-# count occurences of case where first label has (partially) same chemokine as non-cd8 neighbouring cell
-shared_chemokine <- dat_relation_sub %>%
-  group_by(cellID_first) %>%
-  mutate(shared_chemokine = ifelse(all(str_split(expressor_cd8, "_")[[1]] %in% str_split(expressor_neighbour, "_")[[1]]), TRUE, FALSE))
-  
-# what are the most abundant combinations of chemokines in cd8 cells that only occur in this cd8 cell but not in non-cd8 neighbouring cells?  
-shared_chemokine %>%
-  group_by(shared_chemokine) %>%
-  filter(shared_chemokine == FALSE) %>%
-  group_by(expressor_cd8) %>%
-  summarise(n=n()) %>%
-  arrange(-n)
-
-ids <- shared_chemokine %>%
-  filter(shared_chemokine == FALSE) %>%
-  select(cellID_first)
-
-cur_col <- data.frame(colData(sce_rna))
-cur_col$standalone_cd8 <- ifelse(cur_col$cellID %in% ids$cellID_first, TRUE, FALSE)
-
-# define chemokine tumor cells that are standalone - e.g. they produce an unique chemokine not present in neighborhood
-colData(sce_rna)$standalone_cd8 <- cur_col$standalone_cd8
-```
-
-## Analyse (non-tumor) Neighbouring Cells of Producing vs Non-Producing CD8+ Cells
-
-```{r Fig_6B_celltype_fractions, dev=('pdf'), fig.width=7, fig.height=5,eval=F}
-standalone_cd8 <- data.frame(colData(sce_rna[, sce_rna$standalone_cd8 == TRUE & sce_rna$CXCL13 == 1]))[,"cellID"]
-standalone_neighbours <- dat_relation[dat_relation$cellID_first %in% standalone_cd8,]$cellID_second
-
-control_cd8 <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tcytotoxic" & sce_rna$CXCL13 == 0]))
-control_cd8 <- control_cd8[sample(nrow(control_cd8), length(standalone_cd8)), "cellID"]
-control_neighbours <- dat_relation[dat_relation$cellID_first %in% control_cd8,]$cellID_second
-
-# sample same amount of control tumor cells
-cur_sce <- sce_rna[,sce_rna$cellID %in% c(standalone_neighbours, control_neighbours)]
-
-# add info if the tumor cell is producing a chemokine or not (STANDALONE)
-cur_df <- data.frame(colData(cur_sce))
-cur_df$cd8_producing <- ifelse(cur_df$cellID %in% standalone_neighbours, "producing neighbour", "non-producing neighbour")
-colData(cur_sce)$cd8_producing <- cur_df$cd8_producing
-
-# plot proportions
-a <- plotCellCounts(cur_sce, proportion = TRUE, 
-               colour_by = "celltype", 
-               split_by = "cd8_producing",
-               imageID = "ImageNumber",
-               colour_vector = metadata(cur_sce)$colour_vector$celltype) +
-  guides(fill=guide_legend("Cell Type"))
-
-col_vec <- c("lightblue", "darkblue")
-names(col_vec) <- c(FALSE, TRUE)
-
-b <- plotCellCounts(cur_sce, proportion = TRUE, 
-               colour_by = "chemokine", 
-               split_by = "cd8_producing",
-               imageID = "ImageNumber",
-               colour_vector = col_vec,
-               show_n = FALSE)   +
-  guides(fill=guide_legend("Chemokine"))
-
-grid.arrange(a,b, ncol=2)
-```
-
-## Heatmap
-
-```{r Fig_6D_heatmap, dev=('pdf'), fig.width=11, fig.height=9, eval=F}
-standalone_cd8 <- data.frame(colData(sce_rna[, sce_rna$standalone_cd8 == TRUE & sce_rna$CXCL13 == 1]))[,"cellID"]
-standalone_neighbours <- dat_relation[dat_relation$cellID_first %in% standalone_cd8,]$cellID_second
-
-control_cd8 <- data.frame(colData(sce_rna[, sce_rna$celltype == "Tcytotoxic" & sce_rna$CXCL13 == 0]))
-control_cd8 <- control_cd8[sample(nrow(control_cd8), length(standalone_cd8)), "cellID"]
-control_neighbours <- dat_relation[dat_relation$cellID_first %in% control_cd8,]$cellID_second
-
-cur_sce <- sce_rna[,sce_rna$cellID %in% c(standalone_neighbours, control_neighbours)]
-
-# add info if the tumor cell is producing a chemokine or not (STANDALONE)
-cur_df <- data.frame(colData(cur_sce))
-cur_df$cd8_neighbor <- ifelse(cur_df$cellID %in% standalone_neighbours, "producing CD8", "non-producing")
-colData(cur_sce)$cd8_neighbor <- cur_df$cd8_neighbor
-
-cur_sce$celltype_standalone <- paste(cur_sce$celltype, cur_sce$cd8_neighbor)
-
-# aggregate celltypes
-agr_sce <- aggregateAcrossCells(cur_sce, ids = colData(cur_sce)[,c("celltype_standalone")], 
-                                average = TRUE)
-# asinh transformation
-assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
-
-# Centered and scaled Heatmap
-dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
-            annot.by = c("celltype", "cd8_neighbor"), 
-            cluster_rows = TRUE,
-            annotation_colors = list(celltype = metadata(sce_rna)$colour_vectors$celltype),
-            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(-3, 3, length.out = 101))
-```
-
 # NeighbouRhood analysis
 
 ## CP output
@@ -1298,14 +722,20 @@ dat_cells = fread(file = "data/rna/cell.csv",stringsAsFactors = FALSE)
 dat_relation = fread(file = "data/rna/Object relationships.csv",stringsAsFactors = FALSE)
 
 # Number of cores used for multicore:
-ncores = 10
 
-n_perm = 1000 
+if(detectCores() > 12){
+  ncores = round(detectCores()/3,0)
+}else{
+  ncores = 1
+}
+
+n_perm = 100 
 ```
 
 ## Start the analysis
 
 ```{r milieu_analysis}
+start = Sys.time()
 cur_sce <- as.data.frame(colData(sce_rna))
 
 # add same cellID to dat_cells as in sce object
@@ -1349,7 +779,7 @@ for(size in c(2,3,4,5,6)) {
     ), idcol = 'run')
     
     # calc p values
-    dat_p <- neighbouRhood::calc_p_vals(dat_baseline, dat_perm, n_perm = 1000, p_tresh = 0.01) 
+    dat_p <- neighbouRhood::calc_p_vals(dat_baseline, dat_perm, n_perm = n_perm, p_tresh = 0.01) 
     
     # select interactions between chemokine+ cells
     dat_p$interaction <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "_")
@@ -1376,11 +806,14 @@ for(size in c(2,3,4,5,6)) {
   # add to data.frame
   image_df <- rbind(image_df, images)
 }
+end = Sys.time()
+
+print(end-start)
 ```
 
 ## Visualize 
 
-```{r Fig_XX_patch_analysis, dev=("pdf"), fig.height=5, fig.width=8}
+```{r Fig_3A_patch_analysis, dev=("pdf"), fig.height=5, fig.width=8}
 dat <- image_df %>%
   reshape2::dcast(chemokine ~ patch_size, value.var = "significant_images", fill = 0)
 

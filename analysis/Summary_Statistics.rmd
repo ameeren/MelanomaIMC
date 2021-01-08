@@ -56,6 +56,13 @@ data.frame(colData(sce_protein)) %>%
   summarise(n=n())
 ```
 
+## Number of Cells in Data Sets
+
+```{r}
+ncol(sce_rna)
+ncol(sce_protein)
+```
+
 ## Number of Celltypes
 
 ```{r}
@@ -63,13 +70,15 @@ data.frame(colData(sce_protein)) %>%
 data.frame(colData(sce_protein)) %>%
   filter(Location != "CTRL") %>%
   group_by(celltype) %>%
-  summarise(n=n())
+  summarise(n=n()) %>%
+  mutate(percentage=round(n/sum(n)*100,1))
 
 # RNA data
 data.frame(colData(sce_rna)) %>%
   filter(Location != "CTRL") %>%
   group_by(celltype) %>%
-  summarise(n=n())
+  summarise(n=n()) %>%
+  mutate(percentage=round(n/sum(n)*100,1))
 ```
 
 ## Number of Chemokine Expressing Cells
@@ -123,6 +132,28 @@ data.frame(colData(sce_rna)) %>%
   group_by(coexpression) %>%
   summarise(n=n()) %>%
   mutate(percentage = round((n / sum(n)) *100,1))
+```
+
+## Multi Expressors
+
+```{r}
+data.frame(colData(sce_rna)) %>%
+  rowwise() %>%
+  mutate(coexpression = length(strsplit(expressor, "_")[[1]])) %>%
+  filter(Location != "CTRL") %>%
+  filter(chemokine == 1) %>%
+  group_by(coexpression) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round((n / sum(n)) *100,1))
+```
+
+## CCL8 Expression
+
+```{r}
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  filter(CCL8 == 1) %>%
+  summarise(n=n())
 ```
 
 ## Chemokine Expression in Tumor Cells

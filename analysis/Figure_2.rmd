@@ -367,112 +367,6 @@ lgd_list = packLegend(lgd1,lgd2,lgd3,lgd4, direction = "horizontal", gap = unit(
 draw(lgd_list)
 ```
 
-## Heatmap v2
-
-```{r, eval=F}
-# add marker expression to cells
-marker_expression <- data.frame(t(assay(sce_rna[rowData(sce_rna)$good_marker,], "asinh")))
-marker_expression$cellID <- rownames(marker_expression)
-dat <- left_join(relation_total, marker_expression, by = "cellID")
-
-# number of cells per group
-group_size <- dat %>%
-  group_by(group, type, celltype) %>%
-  distinct(cellID, .keep_all = TRUE) %>%
-  summarise(total_group=n(), .groups = "drop") %>%
-  mutate(group_type = paste(group, type, sep = "_")) %>%
-  select(group, type, group_type, celltype, total_group)
-
-# number of neighboring cells that produce the same chemokine
-same_chemo <- dat %>%
-  filter(type == "Neighbor") %>%
-  group_by(group, type, expressor, celltype) %>%
-  distinct(cellID, .keep_all = TRUE) %>%
-  summarise(same_chemo= n(), .groups = "drop") %>%
-  filter(is.na(expressor) == FALSE) %>%
-  mutate(group_type = paste(group, type, sep = "_")) %>%
-  select(group, type, group_type, celltype, same_chemo)
-
-# number of neighboring cells that produce a chemokine
-other_chemo <- dat %>%
-  filter(type == "Neighbor") %>%
-  group_by(group, type, chemokine, celltype) %>%
-  distinct(cellID, .keep_all = TRUE) %>%
-  summarise(producer= n(), .groups = "drop") %>%
-  filter(chemokine == "TRUE") %>%
-  mutate(group_type = paste(group, type, sep = "_"))  %>%
-  select(group, type, group_type, celltype, producer)
-
-summary <- left_join(group_size, same_chemo, by=c("group_type", "celltype", "group", "type"))
-summary <- left_join(summary, other_chemo, by=c("group_type", "celltype", "group", "type"))
-
-summary <- summary %>%
-  mutate_if(is.numeric,coalesce,0)
-
-# ordering of summary
-summary <- summary %>%
-  arrange(type, celltype, group)
-
-# remove same_chemo from total_chemo (redundant) and both from total group
-summary$producer <- summary$producer - summary$same_chemo 
-summary$total_group <- summary$total_group - (summary$same_chemo + summary$producer)
-
-# prepare stats table with total group size and proportions
-stats <- summary[,5:7] 
-stats$non_chemo <- stats$total_group - (stats$same_chemo + stats$producer)
-stats[stats$same_chemo == 0 & stats$producer == 0,]$same_chemo <- stats[stats$same_chemo == 0 & stats$producer == 0,]$total_group
-stats[stats$same_chemo == stats$total_group,]$non_chemo <- 0
-
-# calculate proportions
-stats[,2:4] <- stats[,2:4] / t(stats[,1])
-all(rowSums(stats[,2:4]) == 1)
-
-# remove not needed columns
-dat$cellID <- NULL
-dat$expressor <- NULL
-dat$chemokine <- NULL
-
-# aggregate data
-dat_aggr <- dat %>%
-  group_by(group, type, celltype) %>%
-  summarise_all(funs(mean))
-
-# scale and center expression
-dat_aggr[,-c(1:3)] <- scale(dat_aggr[,-c(1:3)])
-
-# prepare matrix for heatmap
-dat_aggr <- dat_aggr %>%
-  arrange(type, celltype, group)
-
-
-m <- as.matrix(t(dat_aggr[,-c(1:3)]))
-colnames(m) <- dat_aggr$type
-
-# create top annotations
-ha <- HeatmapAnnotation("Cell Type" = dat_aggr$celltype,
-                        "Chemokine" = dat_aggr$group,
-                        "Cell Numbers (log10)" = anno_points(log10(stats[,1]),
-                                                     height = unit(1.5,"cm")),
-                        "Chemokine\nInformation" = anno_barplot(stats[,-1],
-                                                                 gp = gpar(fill = 2:4),
-                                                                 height = unit(2,"cm")),
-                        col = list("Cell Type" = metadata(sce_rna)$colour_vectors$celltype),
-                        show_legend = TRUE)
-# create heatmap
-h <- Heatmap(m, name = "Scaled\nExpression",
-        cluster_columns = FALSE,
-        show_column_names = FALSE,
-        top_annotation = ha,
-        show_heatmap_legend = TRUE,
-        column_split = colnames(m),
-        col = colorRamp2(c(-4, 0, 4), c("blue", "white", "red")),
-        height = unit(20, "cm"),
-        width = unit(25,"cm"))
-
-# draw heatmap
-draw(h)
-```
-
 ## Heatmap v3
 
 ```{r, Fig_2X_heatmap_marker_producing_cells, fig.width=12, fig.height=10, dev=("pdf")}
@@ -514,9 +408,6 @@ summary <- left_join(summary, other_chemo, by=c("group_type", "celltype", "group
 
 summary <- summary %>%
   mutate_if(is.numeric,coalesce,0)
-
-#summary <- summary %>%
-  #filter(type == "Producer")
 
 # ordering of summary
 summary <- summary %>%
@@ -602,49 +493,6 @@ layout(matrix(1:2,1,2))
 
 dat_relation$celltype_expressor_first <- paste(dat_relation$celltype_first, dat_relation$expressor_first, sep = "_")
 dat_relation$celltype_expressor_second <- paste(dat_relation$celltype_second, dat_relation$expressor_second, sep = "_")
-```
-
-## Marker Profile for Expressor Celltypes
-
-```{r eval=F}
-cur_dt <- data.frame(colData(sce_rna))
-
-cur_dt <- cur_dt %>%
-  mutate(celltype_expressor = ifelse(cur_dt$chemokine == 0, celltype, paste(celltype, expressor, sep = "_")))
-
-cur_sce <- sce_rna
-cur_sce$celltype_expressor <- cur_dt$celltype_expressor
-
-groups <- cur_dt %>%
-  group_by(celltype, expressor, celltype_expressor) %>%
-  summarise(n = n()) %>%
-  filter(n>1200) %>%
-  arrange(-n) %>%
-  ungroup() %>%
-  group_by(celltype) %>%
-  mutate(groupSize = n()) %>%
-  filter(groupSize>1)
-
-cur_sce <- cur_sce[, cur_sce$celltype_expressor %in% groups$celltype_expressor]
-
-# aggregate celltypes
-agr_sce <- aggregateAcrossCells(cur_sce, ids = colData(cur_sce)[,"celltype_expressor"], 
-                                average = TRUE)
-# asinh transformation
-assay(agr_sce, "asinh") <- asinh(counts(agr_sce))
-
-# Centered and scaled Heatmap
-colvec_expressor <- metadata(sce_rna)$colour_vectors$chemokine_combinations[unique(cur_sce[,cur_sce$chemokine==1]$expressor)]
-names(colvec_expressor["<NA>"]) <- "white"
-
-dittoHeatmap(agr_sce[rowData(agr_sce)$good_marker,], assay = "asinh",
-            annot.by = c("celltype", "expressor"), 
-            cluster_rows = TRUE,
-            annotation_colors = list(celltype = metadata(sce_rna)$colour_vectors$celltype[unique(cur_sce$celltype)],
-                                     expressor = colvec_expressor),
-            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(-3, 3, length.out = 101),
-            annotation_legend = 0)
 ```
 
 # Correlations

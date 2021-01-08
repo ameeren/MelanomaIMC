@@ -125,7 +125,7 @@ plotDist(sce, plot_type = "ridges",
 ## Define markers which had poor staining
 
 ```{r define good markers}
-rowData(sce)$good_marker <- ! grepl( "DNA|Histone|Vimentin|PD1|PDL1|CCR2",rownames(sce))
+rowData(sce)$good_marker <- ! grepl( "DNA|Histone|Vimentin|PD1|PDL1|CCR2|CK5",rownames(sce))
 ```
 
 ## Calculate UMAP

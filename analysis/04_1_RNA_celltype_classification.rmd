@@ -244,7 +244,7 @@ fitControl <- trainControl(method = "repeatedcv",
                            number = 10,
                            seeds = seeds)
 
-cl <- makePSOCKcluster(6, setup_strategy = "sequential")
+cl <- makePSOCKcluster(round(detectCores()/1.9,0), setup_strategy = "sequential")
 registerDoParallel(cl)
 
 set.seed(1234)
@@ -252,7 +252,7 @@ set.seed(1234)
 start = Sys.time()
 rffit <- train(x = t(assay(train_sce, "asinh")[rowData(sce)$good_marker,]), 
                y = factor(train_sce$layer_1_gated),
-               method = "rf", ntree = 1000,
+               method = "rf", ntree = 500,
                tuneLength = 10,
                trControl = fitControl)
 stopCluster(cl)
@@ -448,5 +448,6 @@ saveRDS(sce, "data/sce_RNA.rds")
 layer_1_dat <- as.data.frame(cell_labels.prob)
 layer_1_dat$class <- cell_labels.class
 
-write.csv(layer_1_dat, file = "data/layer_1_classification_rna.csv")
+#write.csv(layer_1_dat, file = "data/layer_1_classification_rna.csv")
+saveRDS(layer_1_dat, "data/layer_1_classification_rna.csv")
 ```
