@@ -357,7 +357,7 @@ circos.clear()
 
 ## Legend
 
-```{r legend_cxcl9, dev=c('pdf'), eval=F}
+```{r legend_cxcl9_2, dev=c('pdf'), eval=F}
 # create legend for macrophage subclusters
 lgd1 = Legend(labels = names(col_vec[grep("Macrophage", names(col_vec))]), title = "Macrophage Subclusters", legend_gp = gpar(fill = unname(col_vec[grep("Macrophage", names(col_vec))])))
 draw(lgd1)

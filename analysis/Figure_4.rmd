@@ -203,7 +203,7 @@ ggplot(cur_dat, aes(x=log10(fraction), y=log10(n))) +
 # paste density scoring and exhaustion scoring
 exhaustion <- data.frame(colData(sce_rna)) %>%
   filter(Location != "CTRL") %>%
-  filter(tcell_density_score %in% c("high")) %>%
+  filter(T_frac_score_per_ImageNumber %in% c("high")) %>%
   filter(celltype_rf %in% c("exhausted Tcytotoxic", "Tcytotoxic")) %>%
   group_by(Description, manual_scoring, celltype_rf) %>%
   summarise(n=n()) %>%
@@ -221,12 +221,12 @@ exhaustion <- data.frame(colData(sce_rna)) %>%
 cur_rna <- data.frame(colData(sce_rna))
 cur_rna <- left_join(cur_rna, exhaustion)
 sce_rna$exhaustion_score <- cur_rna$exhaustion_score
-sce_rna$exhaustion_density <- paste(sce_rna$tcell_density_score, sce_rna$exhaustion_score, sep = " - ")
+sce_rna$exhaustion_density <- paste(sce_rna$T_frac_score_per_ImageNumber, sce_rna$exhaustion_score, sep = " - ")
 
 cur_prot <- data.frame(colData(sce_prot))
 cur_prot <- left_join(cur_prot, exhaustion)
 sce_prot$exhaustion_score <- cur_prot$exhaustion_score
-sce_prot$exhaustion_density <- paste(sce_prot$tcell_density_score, sce_prot$exhaustion_score, sep = " - ")
+sce_prot$exhaustion_density <- paste(sce_prot$T_frac_score_per_ImageNumber, sce_prot$exhaustion_score, sep = " - ")
 ```
 
 ## Variation over Blocks
