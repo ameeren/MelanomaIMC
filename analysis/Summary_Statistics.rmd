@@ -63,6 +63,31 @@ ncol(sce_rna)
 ncol(sce_protein)
 ```
 
+## Number of Cells and Ablated Area
+
+```{r}
+# diff in ablated area
+area_prot <- data.frame(image_area = image_mat_prot$Height_FullStack * image_mat_prot$Width_FullStack)
+area_prot$Description <- image_mat_prot$Metadata_Description
+area_prot$data_set <- "Protein"
+
+area_rna <- data.frame(image_area = image_mat_rna$Height_FullStack * image_mat_rna$Width_FullStack)
+area_rna$Description <- image_mat_rna$Metadata_Description
+area_rna$data_set <- "RNA"
+
+image_area <- rbind(area_rna, area_prot)
+
+# Ratio #Cells Protein/RNA
+round(ncol(sce_protein) / ncol(sce_rna),2)
+
+area <- image_area %>%
+  group_by(data_set) %>%
+  summarise(area_sum = sum(image_area))
+
+# Ratio Area Protein/RNA
+round(area[area$data_set == "Protein", ]$area_sum / area[area$data_set == "RNA", ]$area_sum,2)
+```
+
 ## Number of Celltypes
 
 ```{r}
