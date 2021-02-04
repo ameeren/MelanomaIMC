@@ -107,6 +107,24 @@ cells_panel_uncorrected = cells_panel[cells_panel$signal_type == "MeanIntensity"
 cells_panel_corrected = cells_panel[cells_panel$signal_type == "MeanIntensityCorrected",]
 ```
 
+## Boxplot with uncorrected and corrected signal
+
+```{r Supp_Fig_1D_corrected signal, dev=("pdf"), fig.width=8, fig.height=5}
+cells_panel2 <- cells_panel
+cells_panel2[cells_panel2$signal_type == "MeanIntensity", ]$signal_type = "uncorrected"
+cells_panel2[cells_panel2$signal_type == "MeanIntensityCorrected", ]$signal_type = "spill-over corrected"
+
+ggplot(cells_panel2[cells_panel2$Metadata_Target == "T9",], aes(x=`Metal Tag`, y=counts_asinh, fill=signal_type)) +
+  geom_boxplot(outlier.shape = NA, lwd=0.5) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        text = element_text(size=18)) +
+  guides(fill=guide_legend(title="Signal")) +
+  ylab("Mean Count (asinh)") +
+  xlab("") +
+  facet_wrap(~Metadata_Target,labeller = as_labeller(c(T9 = "mRNA probe for Channel 9 (Er168)")))
+```
+
 ## Unspecific Amplifier Binding 
 
 ```{r Supp_Fig_1A_heatmap_unspecific_binding, dev=c('pdf')}
@@ -136,9 +154,12 @@ a = Heatmap(as.matrix(results),
         column_order =  order(as.numeric(gsub("T", "", unique(cells_panel_corrected$Target)))),
         heatmap_legend_param = list(title = "% cross-talk", size =15),
         column_names_side = "top",
+        column_title = "Stained Channel",
+        row_title = "Other Channels",
+        row_names_side = "left",
         column_names_rot = 0,
         column_names_gp = gpar(fontsize = 15),
-        row_names_gp = gpar(fontsize = 0),
+        row_names_gp = gpar(fontsize = 15),
         column_names_centered = T,
         cell_fun = function(j, i, x, y, width, height, fill) {
         grid.text(sprintf("%.1f", as.matrix(results)[i, j]), x, y, gp = gpar(fontsize = 10))
@@ -269,7 +290,6 @@ cells = rbind(cells, cells4_long)
 cells_panel <- merge(cells,panel[,.(channel,Target)],by="channel")
 cells_panel <- cells_panel[Target %in% c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),]
 ```
-
 
 ## Load data frolm 8plex validation and make it comparable
 

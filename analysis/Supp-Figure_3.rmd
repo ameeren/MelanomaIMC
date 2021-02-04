@@ -22,400 +22,191 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```{r load libraries}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
 library(SingleCellExperiment)
-library(scater)
-library(reshape2)
-library(tidyverse)
 library(dplyr)
-library(umap)
-library(data.table) 
-library(fpc)
 library(ggplot2)
-library(gridExtra)
-library(cba)
-library(ComplexHeatmap)
-library(colorRamps)
-library(circlize)
-library(ComplexHeatmap)
-library(RColorBrewer)
-library(destiny)
+library(ggbeeswarm)
+library(tidyr)
+library(scater)
 library(dittoSeq)
 library(gridExtra)
-library(ggpmisc)
 library(cowplot)
+library(data.table)
+library(ggpmisc)
+library(ggpubr)
 ```
 
 ## Load Data
 
 ```{r}
 # SCE object
-sce_protein = readRDS(file = "data/sce_protein.rds")
 sce_rna = readRDS(file = "data/sce_RNA.rds")
+sce_prot = readRDS(file = "data/sce_protein.rds")
 
 # meta data
-dat_relation = fread(file = "data/rna/Object relationships.csv",stringsAsFactors = FALSE)
+dat_relation = fread(file = "data/protein/Object relationships.csv",stringsAsFactors = FALSE)
+dat_relation_rna = fread(file = "data/RNA/Object relationships.csv",stringsAsFactors = FALSE)
+
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 ```
 
-## Prepare Relation Table
+## Tumor Marker Profile for different Tcell Scoring Groups
+
+```{r Supp_Fig_3X_tumor_profile_tcell, fig.height=8, fig.width=10, dev=c('pdf')}
+tumor_marker_protein <- c("bCatenin", "Sox9", "pERK", "p75", "Ki67", "SOX10", "PARP", "S100", "MiTF")
+tumor_marker_rna <- c("Mart1", "pRB")
+
+# rna data 
+dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tumor"], "asinh")))
+dat_rna$cellID <- rownames(dat_rna)
+dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "Tcell_density_score_image", "Description", "MM_location", "Location")])
+
+# filter
+dat_rna <- dat_rna %>%
+  filter(Location != "CTRL")
+
+# mean per image
+dat_rna <- dat_rna %>%
+  select(-cellID) %>%
+  group_by(Description, Tcell_density_score_image) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_rna <- dat_rna %>%
+  reshape2::melt(id.vars = c("Description", "Tcell_density_score_image"), variable.name = "channel", value.name = "asinh")
+
+# protein data
+dat_prot <- data.frame(t(assay(sce_prot[tumor_marker_protein,, sce_prot$celltype == "Tumor"], "asinh")))
+dat_prot$cellID <- rownames(dat_prot)
+dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "Tcell_density_score_image", "Description", "MM_location", "Location")])
+
+# filter
+dat_prot <- dat_prot %>%
+  filter(Location != "CTRL")
+
+# mean per image
+dat_prot <- dat_prot %>%
+  select(-cellID) %>%
+  group_by(Description, Tcell_density_score_image) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_prot <- dat_prot %>%
+  reshape2::melt(id.vars = c("Description", "Tcell_density_score_image"), variable.name = "channel", value.name = "asinh")
+
+# join both data sets
+comb <- rbind(dat_prot, dat_rna)
+
+group_comparison <- list(c("absent", "high"), c("med", "high"))
+
+# plot 
+p <- ggplot(comb, aes(x=Tcell_density_score_image, y=asinh, fill=Tcell_density_score_image)) + 
+  geom_boxplot(alpha=0.2, lwd=1) +
+  geom_quasirandom(alpha=0.6, size=2, aes(col=Tcell_density_score_image)) +
+  scale_color_discrete(guide = FALSE) +
+  theme_bw() +
+  theme(text = element_text(size=18),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank()) +
+  facet_wrap(~channel, scales = "free") + 
+  stat_compare_means(comparisons = group_comparison, label = "p.signif") +
+  xlab("") + 
+  ylab("Mean Count per Image (asinh)") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
+  guides(fill=guide_legend(title="Tcell Score", override.aes = c(lwd=0.5, alpha=1)))
+
+leg <- get_legend(p)
+
+grid.arrange(p + theme(legend.position = "none"))
+```
+
+```{r Supp_Fig_3X_tumor_profile_tcell_legend, fig.height=2, fig.width=2, dev=c('pdf')}
+grid.arrange(leg)
+```
+
+## Prepare Relation Data RNA
 
 ```{r}
-# prepare data 
-dat_relation$cellID_first <- paste("RNA", paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = "_"), sep = "_")
-dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
+# prepare data and add cellID
+dat_relation_rna$cellID_first <- paste("RNA", paste(dat_relation_rna$`First Image Number`, dat_relation_rna$`First Object Number`, sep = "_"), sep = "_")
+dat_relation_rna$cellID_second <- paste("RNA", paste(dat_relation_rna$`Second Image Number`, dat_relation_rna$`Second Object Number`, sep = "_"), sep = "_")
+
+# add celltype status to first and second label
+celltype_first <- data.frame(colData(sce_rna))[,c("cellID", "celltype", "celltype_clustered")]
+colnames(celltype_first) <- c("cellID_first", "celltype_first", "celltype_clust_first")
+celltype_second <- data.frame(colData(sce_rna))[,c("cellID", "celltype", "celltype_clustered")]
+colnames(celltype_second) <- c("cellID_second", "celltype_second", "celltype_clust_second")
+
+dat_relation_rna <- left_join(dat_relation_rna, celltype_first, by = "cellID_first")
+dat_relation_rna <- left_join(dat_relation_rna, celltype_second, by = "cellID_second")
+
+colnames(dat_relation_rna)[5] <- "FirstImageNumber"
 ```
 
-# Heatmaps
+## CD8/Tumor Interactions and Chemokine Freqs
 
-## RNA Data Scaled Heatmap
+```{r Supp_Fig_3X_chemokines_tumor_interaction, dev=("pdf"), fig.width=9, fig.height=8}
+# number of interactions tcytotoxic and tumor per image
+dat_relation_sub <- dat_relation_rna[dat_relation_rna$celltype_first %in% c("Tcytotoxic") & 
+                                   dat_relation_rna$celltype_second == "Tumor"]
 
-```{r Supp_Fig_3A_RNA_heatmap, fig.width=10, fig.height=10, dev=c('pdf')}
-# Aggregate the counts
-mean_sce <- calculateSummary(sce_rna, split_by = c("celltype","celltype_clustered"), 
-                             exprs_values = "counts")
+# count number of interactions
+count <- dat_relation_sub %>%
+  group_by(FirstImageNumber) %>%
+  summarise(n=n())
+names(count)[1] <- "ImageNumber"
 
-# Exclude bad channels
-mean_sce <- mean_sce[rownames(sce_rna)[rowData(sce_rna)$good_marker],]
+# fraction of exhausted cd8 per image
+expressor_frac <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, expressor) %>%
+  summarise(n=n()) %>%
+  mutate(fraction=n/sum(n)) %>%
+  filter(expressor %in% targets) %>%
+  reshape2::dcast(ImageNumber ~ expressor, value.var = "fraction", fill = 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber"), variable.name = "expressor", value.name = "fraction")
 
-# Transform and scale
-assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
-assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
+# correlation plot
+cur_dat <- left_join(expressor_frac, count)
+cur_dat[is.na(cur_dat$n),]$n <- 0
 
-plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
-            colour_columns_by = c("celltype"), 
-            labels_col = mean_sce$celltype_clustered,
-            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
-            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            zlim = c(-4, 4),legend = TRUE)
+ggplot(cur_dat, aes(x=log10(fraction), y=log10(n))) + 
+  geom_point(size=2) + 
+  geom_smooth(method="lm") +
+  stat_poly_eq(formula = y ~ x, 
+                aes(label =  ..rr.label..), 
+                parse = TRUE, size=5, label.y = 0.01, label.x = 1) +
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Chemokine Fraction (log10)") +
+  ylab("Number of CD8/Tumor Interactions (log10)") +
+  facet_wrap(~expressor)
 ```
 
-## Protein Data Scaled Heatmap
-
-```{r Supp_Fig_3B_Protein_heatmap, fig.width=10, fig.height=10, dev=c('pdf')}
-# Aggregate the counts
-mean_sce <- calculateSummary(sce_protein, split_by = c("celltype","celltype_clustered"), 
-                             exprs_values = "counts")
-
-# Exclude bad channels
-mean_sce <- mean_sce[rownames(sce_protein)[rowData(sce_protein)$good_marker],]
-
-# Transform and scale
-assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts")) 
-assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
-
-plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
-            colour_columns_by = c("celltype"), 
-            labels_col = mean_sce$celltype_clustered,
-            show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
-            color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            zlim = c(-4, 4),legend = TRUE)
-```
-
-# CCL18+ Macrophages  (different with t helper and tumor)
-
-## Interaction Analysis
-
-```{r}
-dat_relation$expressor_first <- NULL
-dat_relation$expressor_second <- NULL
-dat_relation$celltype_first <- NULL
-dat_relation$celltype_second <- NULL
-dat_relation$celltype_clustered_second <- NULL
-dat_relation$celltype_expressor_first <- NULL
-dat_relation$celltype_expressor_second <- NULL
-
-# add expressor status to first and second label
-expressor_first <- data.frame(colData(sce_rna))[,c("cellID", "CCL18", "celltype")]
-colnames(expressor_first) <- c("cellID_first", "expressor_first", "celltype_first")
-expressor_second <- data.frame(colData(sce_rna))[,c("cellID", "expressor", "celltype", "celltype_clustered")]
-colnames(expressor_second) <- c("cellID_second", "expressor_second", "celltype_second", "celltype_clustered_second")
-dat_relation <- left_join(dat_relation, expressor_first, by = "cellID_first")
-dat_relation <- left_join(dat_relation, expressor_second, by = "cellID_second")
-```
-
-## Generate adjacency matrix for all images
-
-```{r CCL18_macrophages, fig.height=3, fig.width=5, dev=c('pdf')}
-layout(matrix(1:2,1,2))
-
-dat_relation$celltype_expressor_first <- paste(dat_relation$celltype_first, dat_relation$expressor_first, sep = "_")
-dat_relation$celltype_expressor_second <- paste(dat_relation$celltype_second, dat_relation$expressor_second, sep = "_")
-
-# subset sce for inflamed/exhausted in high samples
-cur_dat_relation_chemokine <- dat_relation[dat_relation$celltype_first == "Macrophage" & 
-                                   dat_relation$expressor_first == 1]
-
-cur_dat_relation_control <- dat_relation[dat_relation$celltype_first == "Macrophage" & 
-                                   dat_relation$expressor_first == 0]
-
-# sample same amount of macrophages
-control_sample <- sample(unique(cur_dat_relation_control$cellID_first), length(unique(cur_dat_relation_chemokine$cellID_first)))
-cur_dat_relation_control <- cur_dat_relation_control[cur_dat_relation_control$cellID_first %in% control_sample,]
-
-# count interactions
-cd8_cxcl13 <- data.frame(cur_dat_relation_chemokine) %>%
-    select("celltype_expressor_first" ,"celltype_second") %>%
-    dplyr::count(celltype_expressor_first,celltype_second) %>%
-  mutate(celltype_expressor_first = "Macrophage_1") %>%
-    data.frame()
-
-cd8_control <- data.frame(cur_dat_relation_control) %>%
-    select("celltype_expressor_first" ,"celltype_second") %>%
-    dplyr::count(celltype_expressor_first,celltype_second) %>%
-  mutate(celltype_expressor_first = "Macrophage_0") %>%
-    data.frame()
-
-# chord plot
-chordDiagramFromDataFrame(cd8_control,
-                          #big.gap = gap,
-                          #grid.col = col_vec,
-                          #annotationTrack = c("grid"),
-                          reduce = 0.01)
-abline(h = 0, lty = 2, col = "#00000080")
-title(main = "control")
-circos.clear()
-
-chordDiagramFromDataFrame(cd8_cxcl13,
-                          #grid.col = col_vec,
-                          #annotationTrack = c("grid"),
-                          reduce = 0.01)
-abline(h = 0, lty = 2, col = "#00000080")
-title(main = "CCL18+ Macrophage")
-circos.clear()
-```
-
-## Legend
-
-```{r legend_ccl18, dev=c('pdf'), eval=F}
-# create legend for macrophage subclusters
-lgd1 = Legend(labels = names(col_vec[grep("Macrophage", names(col_vec))]), title = "Macrophage Subclusters", legend_gp = gpar(fill = unname(col_vec[grep("Macrophage", names(col_vec))])))
-draw(lgd1)
-```
-
-# CXCL9+ Macrophages (different with cytotoxic)
-
-## Interaction Analysis
-
-```{r}
-dat_relation$expressor_first <- NULL
-dat_relation$expressor_second <- NULL
-dat_relation$celltype_first <- NULL
-dat_relation$celltype_second <- NULL
-dat_relation$celltype_clustered_second <- NULL
-dat_relation$celltype_expressor_first <- NULL
-dat_relation$celltype_expressor_second <- NULL
-
-# add expressor status to first and second label
-expressor_first <- data.frame(colData(sce_rna))[,c("cellID", "CXCL9", "celltype")]
-colnames(expressor_first) <- c("cellID_first", "expressor_first", "celltype_first")
-expressor_second <- data.frame(colData(sce_rna))[,c("cellID", "expressor", "celltype", "celltype_clustered")]
-colnames(expressor_second) <- c("cellID_second", "expressor_second", "celltype_second", "celltype_clustered_second")
-dat_relation <- left_join(dat_relation, expressor_first, by = "cellID_first")
-dat_relation <- left_join(dat_relation, expressor_second, by = "cellID_second")
-```
-
-## Generate adjacency matrix for all images
-
-```{r cxcl9_macrophages, fig.height=3, fig.width=5, dev=c('pdf')}
-layout(matrix(1:2,1,2))
-
-dat_relation$celltype_expressor_first <- paste(dat_relation$celltype_first, dat_relation$expressor_first, sep = "_")
-dat_relation$celltype_expressor_second <- paste(dat_relation$celltype_second, dat_relation$expressor_second, sep = "_")
-
-# subset sce for inflamed/exhausted in high samples
-cur_dat_relation_chemokine <- dat_relation[dat_relation$celltype_first == "Macrophage" & 
-                                   dat_relation$expressor_first == 1 &
-                                     dat_relation$celltype_second == "Tumor"]
-
-cur_dat_relation_control <- dat_relation[dat_relation$celltype_first == "Macrophage" & 
-                                   dat_relation$expressor_first == 0 &
-                                     dat_relation$celltype_second == "Tumor"]
-
-# sample same amount of macrophages
-control_sample <- sample(unique(cur_dat_relation_control$cellID_first), length(unique(cur_dat_relation_chemokine$cellID_first)))
-cur_dat_relation_control <- cur_dat_relation_control[cur_dat_relation_control$cellID_first %in% control_sample,]
-
-# count interactions
-cd8_cxcl13 <- data.frame(cur_dat_relation_chemokine) %>%
-    select("celltype_expressor_first" ,"celltype_clustered_second") %>%
-    dplyr::count(celltype_expressor_first,celltype_clustered_second) %>%
-  mutate(celltype_expressor_first = "Macrophage_1") %>%
-    data.frame()
-
-cd8_control <- data.frame(cur_dat_relation_control) %>%
-    select("celltype_expressor_first" ,"celltype_clustered_second") %>%
-    dplyr::count(celltype_expressor_first,celltype_clustered_second) %>%
-  mutate(celltype_expressor_first = "Macrophage_0") %>%
-    data.frame()
-
-# chord plot
-chordDiagramFromDataFrame(cd8_control,
-                          #big.gap = gap,
-                          #grid.col = col_vec,
-                          #annotationTrack = c("grid"),
-                          reduce = 0.01)
-abline(h = 0, lty = 2, col = "#00000080")
-title(main = "control")
-circos.clear()
-
-chordDiagramFromDataFrame(cd8_cxcl13,
-                          #grid.col = col_vec,
-                          #annotationTrack = c("grid"),
-                          reduce = 0.01)
-abline(h = 0, lty = 2, col = "#00000080")
-title(main = "CXCL9+ Macrophage")
-circos.clear()
-```
-
-## Legend
-
-```{r legend_cxcl9, dev=c('pdf'), eval=F}
-# create legend for macrophage subclusters
-lgd1 = Legend(labels = names(col_vec[grep("Macrophage", names(col_vec))]), title = "Macrophage Subclusters", legend_gp = gpar(fill = unname(col_vec[grep("Macrophage", names(col_vec))])))
-draw(lgd1)
-```
-
-
-
-# Directly compare CCL18/CXCL9 Macrophages
-
-## Interaction Analysis
-
-```{r}
-dat_relation$expressor_first <- NULL
-dat_relation$expressor_second <- NULL
-dat_relation$celltype_first <- NULL
-dat_relation$celltype_second <- NULL
-dat_relation$celltype_clustered_second <- NULL
-dat_relation$celltype_expressor_first <- NULL
-dat_relation$celltype_expressor_second <- NULL
-dat_relation$expressor_first_CXCL9 <- NULL
-dat_relation$expressor_first_CCL18 <- NULL
-dat_relation$celltype_expressor_first_CXCL9 <- NULL
-dat_relation$celltype_expressor_first_CCL18 <- NULL
-
-# add expressor status to first and second label
-expressor_first <- data.frame(colData(sce_rna))[,c("cellID", "CXCL9", "CCL18","celltype")]
-colnames(expressor_first) <- c("cellID_first", "expressor_first_CXCL9", "expressor_first_CCL18", "celltype_first")
-expressor_second <- data.frame(colData(sce_rna))[,c("cellID", "expressor", "celltype", "celltype_clustered")]
-colnames(expressor_second) <- c("cellID_second", "expressor_second", "celltype_second", "celltype_clustered_second")
-dat_relation <- left_join(dat_relation, expressor_first, by = "cellID_first")
-dat_relation <- left_join(dat_relation, expressor_second, by = "cellID_second")
-```
-
-## Generate adjacency matrix for all images
-
-```{r compare_cxcl9_ccl8_macrophage, fig.height=5, fig.width=7, dev=c('pdf')}
-layout(matrix(1:2,1,2))
-
-dat_relation$celltype_expressor_first_CXCL9 <- paste(dat_relation$celltype_first, dat_relation$expressor_first_CXCL9, sep = "_")
-dat_relation$celltype_expressor_first_CCL18 <- paste(dat_relation$celltype_first, dat_relation$expressor_first_CCL18, sep = "_")
-dat_relation$celltype_expressor_second <- paste(dat_relation$celltype_second, dat_relation$expressor_second, sep = "_")
-
-# subset sce for inflamed/exhausted in high samples
-cur_dat_relation_cxcl9 <- dat_relation[dat_relation$celltype_first == "Macrophage" & 
-                                   dat_relation$expressor_first_CXCL9 == 1]
-
-cur_dat_relation_ccl18 <- dat_relation[dat_relation$celltype_first == "Macrophage" & 
-                                   dat_relation$expressor_first_CCL18 == 1]
-
-# sample same amount of macrophages
-control_sample <- sample(unique(cur_dat_relation_cxcl9$cellID_first), length(unique(cur_dat_relation_ccl18$cellID_first)))
-cur_dat_relation_cxcl9 <- cur_dat_relation_cxcl9[cur_dat_relation_cxcl9$cellID_first %in% control_sample,]
-
-# count interactions
-cxcl9 <- data.frame(cur_dat_relation_cxcl9) %>%
-    select("celltype_first" ,"celltype_clustered_second") %>%
-    dplyr::count(celltype_first,celltype_clustered_second) %>%
-  #mutate(celltype_expressor_first = "Macrophage_1") %>%
-    data.frame()
-
-ccl18 <- data.frame(cur_dat_relation_ccl18) %>%
-    select("celltype_first" ,"celltype_clustered_second") %>%
-    dplyr::count(celltype_first,celltype_clustered_second) %>%
-  #mutate(celltype_expressor_first = "Macrophage_0") %>%
-    data.frame()
-
-
-# chord plot
-chordDiagramFromDataFrame(cxcl9,
-                          #big.gap = gap,
-                          #grid.col = col_vec,
-                          #annotationTrack = c("grid"),
-                          reduce = 0.02)
-abline(h = 0, lty = 2, col = "#00000080")
-title(main = "CXCL9 Macrophage")
-circos.clear()
-
-chordDiagramFromDataFrame(ccl18,
-                          #big.gap = gap,
-                          #grid.col = col_vec,
-                          #annotationTrack = c("grid"),
-                          reduce = 0.02)
-abline(h = 0, lty = 2, col = "#00000080")
-title(main = "CCL18 Macrophage")
-circos.clear()
-```
-
-## Legend
-
-```{r legend_cxcl9_2, dev=c('pdf'), eval=F}
-# create legend for macrophage subclusters
-lgd1 = Legend(labels = names(col_vec[grep("Macrophage", names(col_vec))]), title = "Macrophage Subclusters", legend_gp = gpar(fill = unname(col_vec[grep("Macrophage", names(col_vec))])))
-draw(lgd1)
-```
-
-## Analyse (non-tumor) Neighbouring Cells of Producing vs Non-Producing CD8+ Cells
-
-```{r Fig_6B_celltype_fractions, dev=('pdf'), fig.width=7, fig.height=5,eval=F}
-# subset sce for inflamed/exhausted in high samples
-cur_dat_relation_ccl18 <- dat_relation[dat_relation$celltype_first == "Macrophage" & 
-                                   dat_relation$celltype_expressor_first_CCL18 == 1]
-
-cur_dat_relation_cxcl9 <- dat_relation[dat_relation$celltype_first == "Macrophage" & 
-                                   dat_relation$celltype_expressor_first_CXCL9 == 1]
-
-# sample same amount of macrophages
-ids_neighbor_cxcl9 <- cur_dat_relation_cxcl9$cellID_second
-ids_neighbor_ccl18 <- cur_dat_relation_ccl18$cellID_second
-
-sce_rna_sub <- sce_rna[,sce_rna$cellID %in% c(ids_neighbor_cxcl9, ids_neighbor_ccl18)]
-sce_rna_sub$macro_type <- ifelse(sce_rna_sub$cellID %in% ids_neighbor_cxcl9, "CXCL9 Macrophage", "CCL18 Macrophage")
-
-# plot proportions
-a <- plotCellCounts(sce_rna_sub,
-                    sce_rna_sub[,sce_rna_sub$celltype == "Tumor"], 
-                    normalize =  TRUE,
-                    cellID = "cellID",
-                    colour_by = "celltype_clustered", 
-                    split_by = "macro_type",
-                    #colour_vector = col_vec[grep("Tcytotoxic", names(col_vec))],
-                    imageID = "ImageNumber") +
-  guides(fill=guide_legend("Cell Type")) +
-  theme(text = element_text(size=18))
-
-b <- plotCellCounts(sce_rna_sub,
-                    sce_rna_sub[,sce_rna_sub$celltype == "Tcytotoxic"], 
-                    normalize =  TRUE,
-                    cellID = "cellID",
-                    colour_by = "celltype_clustered", 
-                    split_by = "macro_type",
-                    #colour_vector = col_vec[grep("Tcytotoxic", names(col_vec))],
-                    imageID = "ImageNumber") +
-  guides(fill=guide_legend("Cell Type")) +
-  theme(text = element_text(size=18))
-
-targets <- metadata(sce_rna_sub)$chemokines_morethan600_withcontrol
-
-c <- plotCellCounts(sce_rna_sub, 
-                    sce_rna_sub[,sce_rna_sub$expressor %in% targets & sce_rna_sub$celltype == "Tcytotoxic"], 
-                    normalize = TRUE, 
-                    cellID = "cellID",
-                    colour_by = "expressor", 
-                    split_by = "macro_type",
-                    imageID = "ImageNumber",
-                    #colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations,
-                    show_n = FALSE)   +
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=18))
-
-grid.arrange(a,b,c, ncol=3)
+# Chemokines
+
+## Expressor in Tcell groups
+
+```{r Supp_Fig_3X_expressor_cd8_grouping, fig.width=14, fig.height=5, dev=("pdf")}
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
+frac <- data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(Description, Tcell_density_score_image, expressor) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(expressor %in% targets) %>%
+  reshape2::dcast(Description + Tcell_density_score_image ~ expressor, value.var = "fraction", fill = 0) %>%
+  reshape2::melt(id.vars = c("Description", "Tcell_density_score_image"), variable.name = "expressor", value.name = "fraction")
+
+ggplot(frac, aes(x=expressor, y = fraction, fill = Tcell_density_score_image)) + 
+  geom_boxplot(alpha=.75, outlier.size = 0.5) +
+  #geom_jitter(size = 1, alpha=0.7, position = position_jitterdodge(dodge.width = 0.75,jitter.width = 0.05), aes(col=Tcell_density_score_image)) +
+  scale_color_discrete(guide = FALSE) +
+  theme_bw() +
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+  guides(fill=guide_legend(title="CD8 Density")) +
+  xlab("") + 
+  ylab("Fractions")  +
+  coord_cartesian(ylim = c(0,0.06))
 ```

@@ -35,20 +35,26 @@ library(doParallel)
 ```{r}
 sce <- readRDS("data/sce_RNA.rds")
 
-# load all subsetted sce object from hierarchichal gating and combine them
-path = "data/rna/celltype_classifier/"
-file.names <- dir(path, pattern =".rds")
+# load all subsetted sce object from hierarchichal gating and combine the
+label.files <- list.files("data/rna/celltype_classifier/", full.names = TRUE)
 
-# loop through all files and combine sce objects
-for(i in 1:length(file.names)){
-  file <- readRDS(paste0(path,file.names[i]))
-  if (i == 1){
-    labelled_sce <- file
-  }
-  else {
-    labelled_sce <- cbind(labelled_sce, file)
-  }
-}
+# Read in SCE objects
+cur_sces <- lapply(label.files, readRDS)
+
+# Merge SCE objects
+# Due to relabelling, we now need to match the colData entries and remove rowData
+cur_entries <- names(colData(cur_sces[[1]]))
+
+cur_sces <- lapply(cur_sces, function(x){
+  colData(x) <- colData(x)[,cur_entries]
+  rowData(x) <- NA
+  return(x)
+  })
+  
+labelled_sce <- do.call("cbind", cur_sces)
+
+# add rowData
+rowData(labelled_sce) <- rowData(sce)
 ```
 
 ## Duplicates

@@ -1,0 +1,78 @@
+---
+title: "13_TCF7_PD1"
+author: ""
+date: "2021-02-01"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+
+
+# Preparations
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Load libraries
+
+First, we will load the libraries needed for this part of the analysis.
+
+```{r, message=FALSE}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(dplyr)
+library(SingleCellExperiment)
+library(ggplot2)
+library(ggridges)
+```
+
+## Read the data
+
+```{r}
+sce_prot = readRDS(file = "data/sce_protein.rds")
+```
+
+## TCF7 CD8 cells
+
+```{r signal_strength_distrubution_Tcf7}
+y <- c(rep(1:10,16),rep(11,7))
+
+# add the group information to the sce object
+sce_prot$groups <- y[colData(sce_prot)$ImageNumber]
+
+# now we use the function written by Nils
+plotDist(sce_prot["TCF7", sce_prot$celltype == "Tcytotoxic"], plot_type = "ridges", 
+         colour_by = "groups", split_by = "rows", 
+         exprs_values = "asinh") +
+  geom_vline(xintercept = 1.5)
+
+# define positive cells
+sce_prot$TCF7 <- ifelse(assay(sce_prot["TCF7",], "asinh") > 1.5, "TCF7+", "TCF7-")
+```
+
+## PD1 CD8 cells
+
+```{r signal_strength_distrubution_PD1}
+y <- c(rep(1:10,16),rep(11,7))
+
+# add the group information to the sce object
+sce_prot$groups <- y[colData(sce_prot)$ImageNumber]
+
+# now we use the function written by Nils
+plotDist(sce_prot["PD1", sce_prot$celltype == "Tcytotoxic"], plot_type = "ridges", 
+         colour_by = "groups", split_by = "rows", 
+         exprs_values = "asinh") +
+  geom_vline(xintercept = 1.5)
+
+# define positive cells
+sce_prot$PD1 <- ifelse(assay(sce_prot["PD1",], "asinh") > 1.5, "PD1+", "PD1-")
+```
+
+## Save SCE object
+
+```{r save sce}
+saveRDS(sce_prot, file = "data/sce_protein.rds")
+```

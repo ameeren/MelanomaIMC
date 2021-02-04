@@ -34,7 +34,7 @@ library(readr)
 dat <- read_csv("data/protein/clinical_data_protein.csv")
 
 # SCE object
-sce_protein = readRDS(file = "data/sce_protein.rds")
+sce_prot = readRDS(file = "data/sce_protein.rds")
 sce_rna = readRDS(file = "data/sce_RNA.rds")
 ```
 
@@ -43,24 +43,40 @@ sce_rna = readRDS(file = "data/sce_RNA.rds")
 ## Number of Samples and Patients
 
 ```{r}
+# Number of Patients
+data.frame(colData(sce_prot)) %>%
+  filter(Location != "CTRL") %>%
+  distinct(PatientID) %>%
+  summarise(n=n())
+
 # Number of Samples without control samples
-data.frame(colData(sce_protein)) %>%
+data.frame(colData(sce_prot)) %>%
   filter(Location != "CTRL") %>%
   distinct(Description) %>%
   summarise(n=n())
 
-# Number of Patients
-data.frame(colData(sce_protein)) %>%
+# Number of Samples - Mutation
+data.frame(colData(sce_prot)) %>%
   filter(Location != "CTRL") %>%
-  distinct(PatientID) %>%
-  summarise(n=n())
+  distinct(Description, .keep_all = T) %>%
+  group_by(Mutation) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round(n/sum(n) *100,0))
+
+# Number of Samples - Location
+data.frame(colData(sce_prot)) %>%
+  filter(Location != "CTRL") %>%
+  distinct(Description, .keep_all = T) %>%
+  group_by(MM_location_simplified) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round(n/sum(n) *100,0))
 ```
 
 ## Number of Cells in Data Sets
 
 ```{r}
 ncol(sce_rna)
-ncol(sce_protein)
+ncol(sce_prot)
 ```
 
 ## Number of Cells and Ablated Area
@@ -78,7 +94,7 @@ area_rna$data_set <- "RNA"
 image_area <- rbind(area_rna, area_prot)
 
 # Ratio #Cells Protein/RNA
-round(ncol(sce_protein) / ncol(sce_rna),2)
+round(ncol(sce_prot) / ncol(sce_rna),2)
 
 area <- image_area %>%
   group_by(data_set) %>%
@@ -92,7 +108,7 @@ round(area[area$data_set == "Protein", ]$area_sum / area[area$data_set == "RNA",
 
 ```{r}
 # Protein data
-data.frame(colData(sce_protein)) %>%
+data.frame(colData(sce_prot)) %>%
   filter(Location != "CTRL") %>%
   group_by(celltype) %>%
   summarise(n=n()) %>%
@@ -146,28 +162,15 @@ data.frame(colData(sce_rna)) %>%
   summarise(sum <- sum(percentage))
 ```
 
-## Co-Expression of Chemokines
-
-```{r}
-data.frame(colData(sce_rna)) %>%
-  rowwise() %>%
-  mutate(coexpression = ifelse(length(strsplit(expressor, "_")[[1]]) > 2, 1, 0)) %>%
-  filter(Location != "CTRL") %>%
-  filter(chemokine == 1) %>%
-  group_by(coexpression) %>%
-  summarise(n=n()) %>%
-  mutate(percentage = round((n / sum(n)) *100,1))
-```
-
 ## Multi Expressors
 
 ```{r}
 data.frame(colData(sce_rna)) %>%
   rowwise() %>%
-  mutate(coexpression = length(strsplit(expressor, "_")[[1]])) %>%
+  mutate(number_of_chemokines = length(strsplit(expressor, "_")[[1]])) %>%
   filter(Location != "CTRL") %>%
   filter(chemokine == 1) %>%
-  group_by(coexpression) %>%
+  group_by(number_of_chemokines) %>%
   summarise(n=n()) %>%
   mutate(percentage = round((n / sum(n)) *100,1))
 ```
@@ -297,3 +300,16 @@ data.frame(colData(sce_rna)) %>%
   mutate(percentage_expressing = round(`1` / (`0`+`1`) * 100,1))
 ```
 
+# Fisher Test for Bcell patches and Dysfunction
+
+```{r}
+cont_table <- data.frame(colData(sce_prot)) %>%
+  distinct(Description,.keep_all = T) %>%
+  filter(is.na(dysfunction_score) == FALSE) %>%
+  group_by(bcell_patch_score, dysfunction_score) %>%
+  summarise(n=n()) %>%
+  filter(bcell_patch_score %in% c("small patches", "large patches")) %>%
+  reshape2::dcast(bcell_patch_score ~ dysfunction_score, value.var = "n", fill = 0)
+
+fisher.test(cont_table[,-1])
+```

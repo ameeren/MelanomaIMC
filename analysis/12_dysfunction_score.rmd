@@ -1,0 +1,92 @@
+---
+title: "12_dysfunction_score"
+author: ""
+date: "2021-01-19"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+This script generates plots for Figure 4.
+
+# Preparations
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Load libraries
+
+First, we will load the libraries needed for this part of the analysis.
+
+```{r, message=FALSE}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(reshape2)
+library(tidyverse)
+library(dplyr)
+```
+
+## Read the data
+
+```{r}
+sce_rna = readRDS(file = "data/sce_RNA.rds")
+sce_prot = readRDS(file = "data/sce_protein.rds")
+```
+
+## Derive Scoring
+We divide the images with a high CD8 cell density into two groups: low dysfunction (CD8+CXCL13+ < 5%) and high dysfunction (CD8+CXCL13+ >= 5%)
+
+```{r exhaustion scoring}
+# paste density scoring and exhaustion scoring
+dysfunction <- data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>% # remove controls
+  mutate(MM_location_punch = paste(MM_location, Location, sep = "_")) %>%
+  #filter(MM_location != "LN") %>% ################### ATTENTION #################
+  filter(MM_location_punch != "LN_M") %>% # remove LN margin samples
+  filter(Tcell_density_score_image %in% c("high")) %>%
+  mutate(celltype2 = paste(celltype, CXCL13, sep = "_")) %>%
+  filter(celltype2 %in% c("Tcytotoxic_1", "Tcytotoxic_0")) %>%
+  group_by(Description, celltype2) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(Description ~ celltype2, value.var = "n", fill = 0) %>%
+  reshape2::melt(id.vars = c("Description"), variable.name = "celltype2", value.name = "n") %>%
+  group_by(Description) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(celltype2 == "Tcytotoxic_1") %>%
+  mutate(dysfunction_score = ifelse(fraction >= 0.05, "high dysfunction", "low dysfunction")) %>%
+  ungroup() %>%
+  select(Description, dysfunction_score, fraction)
+
+#dysfunction[dysfunction$Description == "L10", ]$dysfunction_score <- "low dysfunction"
+  
+cur_rna <- data.frame(colData(sce_rna))
+cur_rna <- left_join(cur_rna, dysfunction)
+sce_rna$dysfunction_score <- cur_rna$dysfunction_score
+sce_rna$dysfunction_density <- paste(sce_rna$Tcell_density_score_image, sce_rna$dysfunction_score, sep = " - ")
+
+cur_prot <- data.frame(colData(sce_prot))
+cur_prot <- left_join(cur_prot, dysfunction)
+sce_prot$dysfunction_score <- cur_prot$dysfunction_score
+sce_prot$dysfunction_density <- paste(sce_prot$Tcell_density_score_image, sce_prot$dysfunction_score, sep = " - ")
+```
+
+## Number of Patients in different groups
+
+```{r}
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL" & is.na(dysfunction_score) == FALSE) %>%
+  distinct(PatientID, .keep_all = T) %>%
+  group_by(dysfunction_score) %>%
+  summarise(patients = n())
+```
+
+## save SCE
+
+```{r save sce}
+saveRDS(sce_prot, file = "data/sce_protein.rds")
+saveRDS(sce_rna, file = "data/sce_RNA.rds")
+```
+

@@ -32,6 +32,15 @@ library(tidyverse)
 library(cowplot)
 library(ggbeeswarm)
 library(gridExtra)
+library(SingleCellExperiment)
+library(scater)
+library(cba)
+library(ComplexHeatmap)
+library(reshape2)
+library(rms)
+library(ggrepel)
+library(circlize)
+library(coxme)
 ```
 
 ## Load Data
@@ -39,10 +48,14 @@ library(gridExtra)
 ```{r}
 # clinical data
 dat <- read_csv("data/protein/clinical_data_protein.csv")
+dat_survival = fread(file = "data/survdat_for_modelling.csv",stringsAsFactors = FALSE)
+dat_inflammation = fread(file = "data/manual_infiltration_scoring_BlockID.csv", header = TRUE)
 
 # SCE object
-sce_protein = readRDS(file = "data/sce_protein.rds")
+sce_prot = readRDS(file = "data/sce_protein.rds")
 sce_rna = readRDS(file = "data/sce_RNA.rds")
+
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 ```
 
 # Analysis
@@ -53,239 +66,64 @@ Note: as the cohort is very diverse, we are using the BlockID as the minimal uni
 
 ## Number of Samples
 
-```{r Supp_Fig_2A_number_of_samples, fig.height=8, fig.width=19, dev=c('pdf')}
-dat[dat$BlockID %in% unique(sce_protein[,sce_protein$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
+```{r Supp_Fig_2C_number_of_samples, fig.height=6, fig.width=11, dev=c('pdf')}
+dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
 
 # remove control samples
-dat <- dat[dat$BlockID %in% unique(sce_protein[,sce_protein$Location != "CTRL"]$BlockID),]
+dat <- dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location != "CTRL"]$BlockID),]
 
 p1 <- unique(dat[,c("BlockID","MM_location")]) %>%
   ggplot()+
   geom_bar(aes(y=MM_location),stat ="count") +
   xlab("BlockIDs per Location") +
   ylab("Metastasis Location") +
-  theme(text = element_text(size=18))
+  theme_bw()+
+  theme(text = element_text(size=14))
   
 p2 <- dat %>%
   ggplot()+
   geom_bar(aes(x=BlockID, fill=(MM_location)),stat="count")+
+  theme_bw()+
   theme(axis.text.x = element_text(angle = 90,vjust = 0.5)) + 
   ylab("Number of Samples") +
   guides(fill=guide_legend(title="Metasis Location")) +
-  theme(text = element_text(size=18))
+  theme(text = element_text(size=14),
+        axis.text.x = element_text(size=6.5))
 
-plot_grid(p1,p2,rel_widths = c(1,3))  
-```
-
-## Location Information
-
-```{r Supp_Fig_2B_location_plot, fig.height=10,fig.width=15, dev=c('pdf')}
-cur_df <- dat %>%
-  select(BlockID,Nr_treatments_before_surgery,MM_location,Treatment_after_surgery, Status_at_3m, Date_death,Location,Cancer_Stage, E_I_D)
-cur_df <- unique(cur_df)
-cur_df$Death <- "Dead"
-cur_df[which(is.na(cur_df$Date_death)),]$Death <- "Alive"
-
-# Alluvial plot
-b<- cur_df %>%
-  dplyr::count(MM_location,Cancer_Stage,Location) %>%
-  ggplot(aes(axis1 = MM_location, axis2 = Cancer_Stage, axis3 = Location,y=n))+
-  geom_alluvium(aes(fill=as.factor(MM_location)))+
-  geom_stratum()+
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  theme_minimal()+
-  scale_x_discrete(limits = c("Met Location", "Cancer Stage", "Punch position"), expand = c(.2, .05)) +
-  theme(text = element_text(size=20)) +
-  guides(fill=guide_legend(title="Metasis Location")) +
-  ylab("Number of Samples")
-plot(b)
-```
-
-## Treamtents before Surgery
-
-```{r Supp_Fig_2C_treatment_plot, fig.height=10,fig.width=15, dev=c('pdf')}
-c <- cur_df %>%
-  dplyr::count(MM_location, Nr_treatments_before_surgery,Death) %>%
-  ggplot(aes(axis1 = MM_location, axis2 = Nr_treatments_before_surgery, axis3 = Death,y=n))+
-  geom_alluvium(aes(fill=as.factor(Death)))+
-  geom_stratum()+
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  theme_minimal()+
-  scale_x_discrete(limits = c("Met Location", "# Previous Treatments", "Outcome"), expand = c(.2, .05)) +
-  theme(text = element_text(size=20)) +
-  guides(fill=guide_legend(title="Outcome")) +
-  ylab("Number of Samples")
-plot(c)
+plot_grid(p1,p2,rel_widths = c(1.25,3))  
 ```
 
 # Chemokines
 
-## Cancer Stage
+## Expressor in MM_location
 
-```{r Supp_Fig_2D_cancer_stage, dev=c('pdf'), fig.width=7, fig.height=8}
-targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+```{r Supp_Fig_2D_expressor_per_location, fig.width=10, fig.height=5, dev=("pdf")}
+# add control location to sce
+sce_rna$MM_location_simplified2 <- sce_rna$MM_location_simplified
+sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "Skin"]$MM_location_simplified2 <- "control skin"
+sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "Lymphnode"]$MM_location_simplified2 <- "control LN"
+sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "PSO"]$MM_location_simplified2 <- "control psoriasis"
 
-# subset sce_rna
-group_size <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber, Cancer_Stage) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(Cancer_Stage) %>%
+frac <- data.frame(colData(sce_rna)) %>%
+  filter(MM_location_simplified2 != "control psoriasis") %>%
+  group_by(Description, MM_location_simplified2, expressor) %>%
   summarise(n=n()) %>%
-  filter(n>10 & Cancer_Stage != "")
-
-sce_rna_sub <- sce_rna[,sce_rna$Cancer_Stage %in% group_size$Cancer_Stage]
-
-plotCellCounts(sce = sce_rna_sub, 
-                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
-                     cellID = "cellID",
-                     colour_by = "expressor",
-                     split_by = "Cancer_Stage",
-                     imageID = "ImageNumber",
-                     normalize = TRUE,
-                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=18))
-
-t <- data.frame(colData(sce_rna_sub)) %>%
-  group_by(ImageNumber, Cancer_Stage, chemokine) %>%
-  summarise(n=n()) %>%
-  group_by(ImageNumber) %>%
   mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(ImageNumber + Cancer_Stage ~ chemokine, value.var = "fraction")
+  filter(expressor %in% targets) %>%
+  reshape2::dcast(Description + MM_location_simplified2 ~ expressor, value.var = "fraction", fill = 0) %>%
+  reshape2::melt(id.vars = c("Description", "MM_location_simplified2"), variable.name = "expressor", value.name = "fraction")
 
-round(wilcox.test(t$`TRUE` ~ t$Cancer_Stage)$p.value,3)
-```
-
-## Age
-
-```{r Supp_Fig_2E_age, dev=c('pdf'), fig.width=7, fig.height=8}
-# subset sce_rna
-group_size <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber, Age) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(Age) %>%
-  summarise(n=n()) %>%
-  filter(n>10 & Age != "")
-
-sce_rna_sub <- sce_rna[,sce_rna$Age %in% group_size$Age]
-sce_rna_sub[,sce_rna_sub$Age == "?60"]$Age <- "60+"
-
-# relevel age factor
-sce_rna_sub$Age <- factor(sce_rna_sub$Age, levels = c("<45", "45-59", "60+"))
-
-plotCellCounts(sce = sce_rna_sub, 
-                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
-                     cellID = "cellID",
-                     colour_by = "expressor",
-                     split_by = "Age",
-                     imageID = "ImageNumber",
-                     normalize = TRUE,
-                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=18))
-
-t <- data.frame(colData(sce_rna_sub)) %>%
-  group_by(ImageNumber, Age, chemokine) %>%
-  summarise(n=n()) %>%
-  group_by(ImageNumber) %>%
-  mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(ImageNumber + Age ~ chemokine, value.var = "fraction")
-
-round(kruskal.test(x = t$`TRUE`, g = t$Age)$p.value,3)
-```
-
-## Gender
-
-```{r Supp_Fig_2F_gender, dev=c('pdf'), fig.width=7, fig.height=8}
-# subset sce_rna
-group_size <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber, Gender) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(Gender) %>%
-  summarise(n=n()) %>%
-  filter(n>10 & Gender != "")
-
-sce_rna_sub <- sce_rna[,sce_rna$Gender %in% group_size$Gender]
-
-plotCellCounts(sce = sce_rna_sub, 
-                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
-                     cellID = "cellID",
-                     colour_by = "expressor",
-                     split_by = "Gender",
-                     imageID = "ImageNumber",
-                     normalize = TRUE,
-                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=18))
-
-t <- data.frame(colData(sce_rna_sub)) %>%
-  group_by(ImageNumber, Gender, chemokine) %>%
-  summarise(n=n()) %>%
-  group_by(ImageNumber) %>%
-  mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(ImageNumber + Gender ~ chemokine, value.var = "fraction")
-
-round(wilcox.test(t$`TRUE` ~ t$Gender)$p.value,3)
-```
-
-## Treatment
-
-```{r Supp_Fig_2G_treatment, dev=c('pdf'), fig.width=7, fig.height=8}
-# subset sce_rna
-group_size <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber, treatment_group_before_surgery) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(treatment_group_before_surgery) %>%
-  summarise(n=n()) %>%
-  filter(n>10 & treatment_group_before_surgery != "control")
-
-sce_rna_sub <- sce_rna[,sce_rna$treatment_group_before_surgery %in% group_size$treatment_group_before_surgery]
-
-plotCellCounts(sce = sce_rna_sub, 
-                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
-                     cellID = "cellID",
-                     colour_by = "expressor",
-                     split_by = "treatment_group_before_surgery",
-                     imageID = "ImageNumber",
-                     normalize = TRUE,
-                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=18))
-
-t <- data.frame(colData(sce_rna_sub)) %>%
-  group_by(ImageNumber, treatment_group_before_surgery, chemokine) %>%
-  summarise(n=n()) %>%
-  group_by(ImageNumber) %>%
-  mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(ImageNumber + treatment_group_before_surgery ~ chemokine, value.var = "fraction")
-
-round(wilcox.test(t$`TRUE` ~ t$treatment_group_before_surgery)$p.value,3)
-```
-
-## Chemokine Fractions per Image for Location
-
-```{r Supp_Fig_2H_fractions_met_location, fig.width=14, fig.height=9, dev=c('pdf')}
-# subset sce_rna
-group_size <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber, MM_location) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(MM_location) %>%
-  summarise(n=n()) %>%
-  filter(n>4 & MM_location != "")
-
-sce_rna_sub <- sce_rna[,sce_rna$MM_location %in% group_size$MM_location]
-
-a <- plotCellFractions(sce = sce_rna_sub, 
-                  imageID = "ImageNumber", 
-                  celltype_column = "expressor",
-                  celltype_subsets = targets,
-                  split_by = "MM_location",
-                  show_n = TRUE,
-                  facet_wrap = TRUE,
-                  merge_subsets = FALSE) + 
-  ylim(0, 0.1)
-
-a
+ggplot(frac, aes(x=expressor, y = fraction, fill = MM_location_simplified2)) + 
+  geom_boxplot(alpha=1, outlier.size = 0.5) +
+  #geom_jitter(size = 0.75, alpha=0.6, position = position_jitterdodge(dodge.width = 0.75,jitter.width = 0.05), aes(col=MM_location_simplified2)) + 
+  scale_color_discrete(guide=FALSE) +
+  theme_bw() +
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+  guides(fill=guide_legend(title="Met Location", override.aes = aes(lwd=0.5))) +
+  xlab("") + 
+  ylab("Fractions") +
+  coord_cartesian(ylim = c(0,0.075))
 ```
 
 # Met Location
@@ -300,15 +138,13 @@ groups <- data.frame(colData(sce_rna)) %>%
   group_by(MM_location) %>%
   distinct(PatientID, .keep_all = T) %>%
   summarise(n=n()) %>%
-  filter(n>=5) %>%
+  filter(n>=10) %>%
   arrange(-n)
 ```
 
 ## Boxplot/Barplot per Location for every chemokine combination
 
 ```{r}
-targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
-
 fractions_per_image <- data.frame(colData(sce_rna)) %>%
   group_by(ImageNumber, MM_location, expressor, celltype) %>%
   summarise(n = n()) %>%
@@ -341,7 +177,7 @@ median_celltype_fraction <- fractions_per_image %>%
   mutate(proportions = sum_fraction / sum(sum_fraction))
 ```
 
-```{r Fig_2D_expression_per_location, dev=c('pdf')}
+```{r Fig_2E_expression_per_location, dev=c('pdf')}
 plot_list <- list()
 for(i in groups$MM_location) {
   a <- fraction_expressor_per_image %>%
@@ -353,9 +189,10 @@ for(i in groups$MM_location) {
     theme_bw() +
     theme(axis.title.y = element_blank(),
           axis.text.y = element_text(hjust=0.5)) +
+    #scale_x_log10() +
     #annotation_logticks(sides = "bottom") + 
-    xlab("Cell Fraction per Image") +
-    xlim(0,0.15)
+    xlab("Cell Fraction per Image") + 
+    coord_cartesian(xlim = c(0,0.05))
   
   b <- median_celltype_fraction %>%
     filter(MM_location == i) %>%  
@@ -376,4 +213,320 @@ for(i in groups$MM_location) {
                widths = c(.75,1),
                top = i)
 }
+```
+
+## Mutation
+
+```{r Supp_Fig_2F_mutation, dev=c('pdf'), fig.width=12, fig.height=6.35}
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Mutation) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Mutation) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Mutation != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Mutation %in% group_size$Mutation]
+
+a <- plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "Mutation",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+
+b <- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "celltype",
+                     split_by = "Mutation",
+                     imageID = "ImageNumber",
+                     proportion = TRUE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$celltype) + 
+  guides(fill=guide_legend("Cell Type")) +
+  theme(text = element_text(size=18))
+
+
+grid.arrange(a,b,nrow=1)
+
+t <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(ImageNumber, Mutation, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Mutation ~ chemokine, value.var = "fraction")
+
+round(kruskal.test(t$`TRUE` ~ t$Mutation)$p.value,3)
+
+# MM_location for Mutations
+data.frame(colData(sce_rna_sub)) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Mutation, MM_location_simplified) %>%
+  summarise(n=n()) %>%
+  group_by(Mutation) %>%
+  mutate(percentage = n / sum(n) * 100)
+```
+
+# Cytotoxic T cell abundance per BlockID
+
+## Barplot with Clinical Annotation 
+
+```{r Supp_Fig_2X_barplot_clinical_annotation, dev=c('pdf'), fig.height=10, fig.width=15}
+# cytotoxic density scoring per BlockID (mean over images)
+cur_sce <- data.frame(colData(sce_prot)) %>%
+  group_by(BlockID) %>%
+  mutate(cyto_density_block = mean(cyotoxic_density_image))
+
+sce_prot$cytotoxic_density_block <- cur_sce$cyto_density_block
+
+set.seed(362)
+patient_meta <- data.frame(BlockID = sce_prot$BlockID,
+                     cytotoxic_density_block = sce_prot$cytotoxic_density_block,
+                     Death = sce_prot$Death,
+                     treatment_status_before_surgery = sce_prot$treatment_status_before_surgery,
+                     relapse = sce_prot$relapse)
+
+# remove control and bad images
+patient_meta <- patient_meta %>%
+  filter(relapse != "control") %>%
+  distinct(BlockID, .keep_all = TRUE)
+
+# construct matrix with fractions and sort from lowest to highest  
+matrixrownames <- as.character(patient_meta$BlockID)
+m <- as.matrix(patient_meta$cytotoxic_density_block)
+rownames(m) <- matrixrownames
+m <- m[order(m[,1]),]
+
+# construct color vector for Tcell score
+
+# plot Fractions as barplot
+ha <- rowAnnotation(`Mean Cytotoxic T cells / mm2` = anno_barplot(m,gp=gpar(fill="grey"),
+                                                                   bar_width = 1,
+                                                                   height = unit(30,"cm"),
+                                                                   width = unit(15,"cm"),
+                                                                   show_row_names =FALSE))
+# create patient_meta matrix
+mrownames <- patient_meta$BlockID 
+patient_meta_matrix <- as.matrix(patient_meta)
+rownames(patient_meta_matrix) <- mrownames
+patient_meta_matrix <- patient_meta_matrix[names(m),]
+
+# heatmap consisting of BlockIDs
+h1 = Heatmap(patient_meta_matrix[,"Death"],
+             col = structure(c("gainsboro", "deepskyblue"), names = c("no", "yes")),
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = FALSE, 
+             heatmap_legend_param = list(title = "Death"),
+             show_row_names = FALSE,
+             right_annotation = ha, 
+             column_labels = "Death")
+
+h2 = Heatmap(patient_meta_matrix[,"treatment_status_before_surgery"], 
+             col = structure(c("gainsboro", "deepskyblue"), names = c("naive", "non-naive")),
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = FALSE,
+             heatmap_legend_param = list(title = "Treatment Status before Surgery"),
+             show_row_names = FALSE,
+             column_labels = "Treatment Status")
+
+h3 = Heatmap(patient_meta_matrix[,"relapse"], 
+             col = structure(c("gainsboro", "deepskyblue", "black"), names = c("no relapse", "relapse", "untreated/lost")),
+             width = unit(0.5, "cm"), 
+             height = unit(30, "cm"),
+             show_heatmap_legend = FALSE,
+             heatmap_legend_param = list(title = "Relapse Status"),
+             show_row_names = FALSE,
+             column_labels = "Relapse")
+
+
+ht = grid.grabExpr(draw(h2+h3+h1))
+grid.newpage()
+pushViewport(viewport(angle = 270))
+grid.draw(ht)
+```
+
+```{r Supp_Fig_2X_legend, dev=c("pdf")}
+# create legend for tumor subclusters
+
+lgd2 = Legend(labels = c("no relapse", "relapse", "untreated/lost"), 
+              title = "Relapse Status", 
+              legend_gp = gpar(fill = c("gainsboro", "deepskyblue", "black")))
+
+lgd3 = Legend(labels = c("naive", "non-naive"), 
+              title = "Treatment Status", 
+              legend_gp = gpar(fill = c("gainsboro", "deepskyblue")))
+ 
+lgd4 = Legend(labels = c("no", "yes"), 
+              title = "Death", 
+              legend_gp = gpar(fill = c("gainsboro", "deepskyblue")))
+
+
+# Draw Legend
+draw(packLegend(lgd2, lgd3, lgd4, column_gap = unit(0.5, "cm"),
+                max_height = unit(2, "cm")))
+```
+
+## Define Tcytotoxic density per Image
+
+```{r}
+# cytotoxic density per image
+frac <- data.frame(colData(sce_prot)) %>%
+  distinct(ImageNumber, .keep_all = TRUE) %>%
+  group_by(BlockID) %>%
+  mutate(cyto_density_block = mean(cyotoxic_density_image)) %>%
+  distinct(BlockID, cyto_density_block)
+
+names(dat_survival)[3] <- "BlockID"
+
+frac <- left_join(frac[,c("BlockID", "cyto_density_block")], dat_survival)
+
+#
+frac$number_of_treatments_before_grouping <- ifelse(frac$Number.of.treatments.before.surgery == 0, "naive", "non-naive")
+```
+
+## Cox Proportional Hazard Model
+The (mean) density score per Block is "restricted cubic spline" (rcs) transformed which is used for non-linear continuous predictive variables (in this case Cytotoxic T cell density). 
+
+```{r Supp_Fig_2X_Hazard_Ratio , dev=("pdf"), fig.width=14, fig.height=4}
+dd <- datadist(frac)
+options(datadist="dd")
+
+cph_rcs <- cph(formula = Surv(time = Time_to_death_or_last_PET, event = censoring_death) ~ 
+                      rcs(cyto_density_block,3) + 
+                      number_of_treatments_before_grouping, 
+                    x = TRUE, y = TRUE, data = frac)
+
+summary <- as.data.frame(summary(cph_rcs))
+rownames(summary) <- c("Cytotoxic T Cell Density", "Hazard-Ratio Density", "Treatment Status", "Hazard-Ratio Treatment")
+dat <- summary[summary$Type == 2,]
+dat$var <- c("Cytotoxic T Cell Density", "Treatment Status")
+
+densityRange <- paste(paste(round(dat$High[1]), round(dat$Low[1]), sep = ":"), "cells/mm2", sep = " ")
+
+y_axis1 <- paste(paste(dat$var[1], 
+                 paste("CI95", paste(round(dat$`Lower 0.95`,2)[1], round(dat$`Upper 0.95`,2)[1], sep = " - "), sep = " "),
+                 sep = "\n"), 
+                 densityRange , sep = "\n")
+y_axis2 <- paste(paste(dat$var[2], 
+                 paste("CI95", paste(round(dat$`Lower 0.95`,2)[2], round(dat$`Upper 0.95`,2)[2], sep = " - "), sep = " "),
+                 sep = "\n"), 
+                 paste("non-naive", "naive", sep = ":") , sep = "\n")
+
+ggplot(dat,aes(x=Effect, y=var, label=round(Effect,2))) +
+  geom_point(size=10) +
+  geom_errorbar(mapping=aes(y=var, xmin=`Lower 0.95`, xmax=`Upper 0.95`), 
+                width=0.2, 
+                size=2, 
+                color="deepskyblue") +
+  geom_label_repel(box.padding = 5, size=10) +
+  geom_vline(xintercept = 1) +
+  theme_bw() +
+  theme(text=element_text(size=20)) + 
+  ylab("") + 
+  xlab("Hazard Ratio") +
+  scale_y_discrete(labels= c(y_axis1, y_axis2)) +
+  scale_x_log10()
+```
+
+# Heatmap for Expressors for non-top 14 chemokines (TODO)
+
+## Subclustering on cells
+
+```{r}
+set.seed(12345)
+
+# 6 clusters
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+cur_sce <- sce_rna[,!(sce_rna$expressor %in% targets) & sce_rna$expressor != "NA"]
+names(assays(cur_sce)) <- c("counts", "exprs","scaled_counts", "scaled_asinh")
+cur_sce <- CATALYST::cluster(cur_sce, features = rownames(cur_sce)[rowData(cur_sce)$good_marker], ydim = 4, xdim = 5, maxK = 4)
+```
+
+## Heatmap Marker Expression
+
+```{r, Supp_Fig_2X_marker_heatmap, fig.width=12, fig.height=12, dev=("pdf")}
+# add marker expression to cells
+marker_expression <- data.frame(t(assay(cur_sce[rowData(cur_sce)$good_marker,], "exprs")))
+marker_expression$cellID <- rownames(marker_expression)
+
+# chemokine info
+chemo <- data.frame(colData(cur_sce))[,c("cellID", "cluster_id")] 
+
+dat <- left_join(chemo, marker_expression, by = "cellID")
+dat$cellID <- NULL
+
+# aggregate data
+dat_aggr <- dat %>%
+  group_by(cluster_id) %>%
+  summarise_all(funs(mean))
+
+# scale and center expression
+dat_aggr[,-1] <- scale(dat_aggr[,-1])
+
+stats <- dat %>%
+  group_by(cluster_id) %>%
+  summarise(n=n())
+
+# factorize expressor for column sorting in heatmap
+
+m <- as.matrix(t(dat_aggr[,-1]))
+colnames(m) <- dat_aggr$cluster_id
+
+# create top annotations
+ha <- HeatmapAnnotation("Cluster" = dat_aggr$cluster_id,
+                        "Cells" = anno_barplot(stats[,2],
+                                               height = unit(1.5,"cm"),
+                                               axis_param = list(gp = gpar(fontsize=14))),
+                        "Cell Numbers" = anno_text(t(stats[,2]), 
+                                                   which = "column", 
+                                                   rot = 90, 
+                                                   just = "center", 
+                                                   location = 0.5,
+                                                   gp = gpar(fontsize=10)),
+                        #col = list("Cluster" = metadata(sce_rna)$colour_vectors$chemokine_single),
+                        show_legend = FALSE,
+                        annotation_name_gp = gpar(fontsize = 16))
+
+
+# row_split for markers
+rowData(cur_sce)$heatmap_relevance <- ""
+rowData(cur_sce[rowData(cur_sce)$good_marker,])$heatmap_relevance <- "lineage"
+rowData(cur_sce[grepl("CXCL|CCL|DapB", rownames(cur_sce)),])$heatmap_relevance <- "chemokine"
+rowData(cur_sce[grepl("B2M|GLUT1|CD134|Lag3|CD163|cleavedPARP|pRB", rownames(cur_sce)),])$heatmap_relevance <- "other"
+             
+# create heatmap
+h <- Heatmap(m, name = "Scaled\nExpression",
+             row_split = rowData(cur_sce[rowData(cur_sce)$good_marker,])$heatmap_relevance,
+             cluster_columns = TRUE,
+             show_column_names = FALSE,
+             top_annotation = ha,
+             show_heatmap_legend = FALSE,
+             #column_split = colnames(m),
+             column_title_rot = 90,
+             cluster_column_slices = TRUE,
+             row_names_gp = gpar(fontsize = 16),
+             column_title_gp = gpar(fontsize = 23),
+             row_title_gp = gpar(fontsize = 23),
+             col = colorRamp2(c(-3, 0, 3), c("blue", "white", "red")),
+             height = unit(20, "cm"),
+             width = unit(25,"cm"))
+
+# draw heatmap
+draw(h)
+```
+
+## Legend heatmap
+
+```{r Supp_Fig_2X_legend_heatmap, dev="pdf", fig.height=2, fig.width=7}
+lgd1 = color_mapping_legend(h@matrix_color_mapping, plot = FALSE, legend_direction = "horizontal", legend_width=unit(3,"cm"), at = c(-3:3))
+
+lgd_list = packLegend(lgd1,direction = "horizontal", gap = unit(1,"cm"))
+draw(lgd_list)
 ```

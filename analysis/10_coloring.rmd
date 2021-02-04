@@ -58,7 +58,7 @@ cell_rna <- col_celltypes[c("Tumor", "Stroma", "unknown", "Vasculature", "Tcell"
 metadata(sce_rna)$colour_vectors$celltype <- cell_rna
 ```
 
-## Chemokines
+## Chemokines (Combinations)
 
 ```{r}
 # add color vector to metadata
@@ -73,6 +73,19 @@ metadata(sce_rna)$colour_vectors$chemokine_combinations <- color_chemo
 new_order <- replace(targets, match(c("CXCL8", "CCL18"),targets), c("CCL18", "CXCL8"))
 color_chemo <- color_chemo[new_order]
 metadata(sce_rna)$colour_vectors$chemokine_combinations_no_control_UPSETplot <- color_chemo
+```
+
+## Chemokines (single)
+
+```{r}
+col_vector_chemokines <- metadata(sce_rna)$colour_vector$chemokine_combinations
+col_vector_chemokines <- col_vector_chemokines[c("CXCL13", "CXCL10", "CXCL9", "CCL2", "CXCL12", "CCL19", "CCL18", "CXCL8", "CCL4", "CCL22")]
+col_vector_new_chemo <- c("forestgreen")
+names(col_vector_new_chemo) <- c("CCL8")
+  
+col_vector_chemokines <- c(col_vector_chemokines, col_vector_new_chemo)
+
+metadata(sce_rna)$colour_vectors$chemokine_single <- col_vector_chemokines
 ```
 
 # Protein

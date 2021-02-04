@@ -55,7 +55,8 @@ image_mat <- as.data.frame(read.csv(file = "~/bbvolume/Data/Analysis/melanoma_co
 
 # we extract only the FileNames of the stacks as they are in the all_pixel object
 cur_df <- data.frame(cellmask = image_mat$FileName_FullStack,
-                     ImageNumber = image_mat$ImageNumber)
+                     ImageNumber = image_mat$ImageNumber,
+                     Description = image_mat$Metadata_Description)
 
 # we set the rownames of the extracted data to be equal to the names of all_pixel
 rownames(cur_df) <- gsub(pattern = ".tiff",replacement = "",image_mat$FileName_FullStack)

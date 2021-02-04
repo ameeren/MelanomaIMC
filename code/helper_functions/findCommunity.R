@@ -8,6 +8,9 @@
 #' @param distance (numeric) distance to enlarge (buffer) the cluster
 #' @param convex (optional) logical, should the cluster be enlarged based on its convex or concave hull? default = FALSE (concave)
 #' @param plot logical, plot images showing cluster and community borders using ggplot. default = FALSE
+#' @param xlim set x scale limit for plotting
+#' @param ylim set y scale limit for plotting
+#' @param point_size set size for geom_points, default is 1
 #' @param output_colname (optional) column name for the community ID column, defalut = "community"
 #' @return new colData entry with community ID.
 #' @export
@@ -20,7 +23,10 @@ findCommunity <- function(input_sce,
                           distance,
                           convex = F,
                           output_colname = "community",
-                          plot = FALSE){
+                          plot = FALSE,
+                          xlim = NULL,
+                          ylim = NULL,
+                          point_size = 1){
   # start time
   start = Sys.time()
 
@@ -177,9 +183,12 @@ findCommunity <- function(input_sce,
       # all cluster cells
       clust_cells <- input_df[input_df$ImageNumber == j & input_df$cluster != 0,]
       p <- polygon_plots +
-             geom_sf(data = cells_sfc, color=alpha("black",0.3)) +
-             geom_point(data = clust_cells, aes(x=X, y=Y), color="red") +
+             geom_sf(data = cells_sfc, color=alpha("black",0.3), size=point_size) +
+             geom_point(data = clust_cells, aes(x=X, y=Y), color="red",size=point_size) +
              ggtitle(paste(ImageNumber, j, sep = ": "))
+      if(is.null(xlim) == FALSE & is.null(ylim) == FALSE){
+        p <- p + xlim(xlim) + ylim(ylim)
+      }
       plot(p + theme_void() + theme(plot.title = element_text(hjust = 0.5)))
     }
   }

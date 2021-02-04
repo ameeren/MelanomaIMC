@@ -1,5 +1,5 @@
 ---
-title: "02_RNA_quality_control"
+title: "03_RNA_quality_control"
 author: "Nils Eling/Daniel Schulz/Tobias Hoch"
 date: "2020-07-28"
 output: workflowr::wflow_html
@@ -123,9 +123,13 @@ plotDist(sce, plot_type = "ridges",
 ```
 
 ## Define markers which had poor staining
+By visual inspection, we defined bad markers
 
 ```{r define good markers}
-rowData(sce)$good_marker <- ! grepl( "DNA|Histone|Vimentin|PD1|PDL1|CCR2|CK5",rownames(sce))
+rowData(sce)$good_marker <- ! grepl("DNA|Histone|Vimentin|PD1|PDL1|CCR2|CK5",rownames(sce))
+
+# good_marker without RNA channels
+rowData(sce)$noRNA_marker <- ! grepl("DNA|Histone|Vimentin|PD1|PDL1|CCR2|CK5|CXCL|CCL|DapB",rownames(sce))
 ```
 
 ## Calculate UMAP

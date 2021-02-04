@@ -1,5 +1,5 @@
 ---
-title: "cytotoxic T cell quantification"
+title: "05 cytotoxic T cell quantification"
 author: "Daniel"
 date: "July 2020"
 output: html_document
@@ -31,10 +31,11 @@ library(tidyverse)
 ## Load Data
 
 ```{r load data, echo=FALSE}
-sce = readRDS(file = "data/sce_protein.rds")
+sce_prot = readRDS(file = "data/sce_protein.rds")
 sce_rna = readRDS(file = "data/sce_RNA.rds")
 
 image_mat <- read.csv("data/protein/Image.csv")
+image_mat_rna <- read.csv("data/rna/Image.csv")
 ```
 
 # Cytotoxic T cell Scoring
@@ -44,8 +45,8 @@ We want to calculate the T cell density.
 we calculate this per mm2. We use the count for cytotxic T cells as defined under “03_cell_type_definition” script
 
 ```{r}
-cur_df <- data.frame(celltype = sce$celltype,
-                             ImageNumber = sce$ImageNumber)
+cur_df <- data.frame(celltype = sce_prot$celltype,
+                             ImageNumber = sce_prot$ImageNumber)
 
 # count cell types per images
 cellcount <- (t(table(cur_df)))
@@ -65,9 +66,9 @@ hist(cellcount$density,breaks = 300)
 
 # add cyotoxic T cell density to sce
 cellcount$ImageNumber <- as.integer(cellcount$ImageNumber)
-cur_sce <- data.frame(colData(sce))
+cur_sce <- data.frame(colData(sce_prot))
 cur_sce <- left_join(cur_sce, cellcount[,c("ImageNumber", "density")])
-sce$cyotoxic_density_image <- cur_sce$density
+sce_prot$cyotoxic_density_image <- cur_sce$density
 ```
 
 ## T cell density score per image
@@ -90,196 +91,23 @@ T_density_scores[T_med] <- "med"
 T_density_scores[T_high] <- "high"
 
 # now we add the information to the single cell experiment
-sce$Tcell_density_score_image <- T_density_scores[sce$ImageNumber]
-```
+sce_prot$Tcell_density_score_image <- T_density_scores[sce_prot$ImageNumber]
+sce_prot$Tcell_density_score_image <- factor(sce_prot$Tcell_density_score_image, levels = c("absent", "low", "med", "high"))
 
-## Fraction of cytotoxic T cells per ImageNumber
-
-we group images by the fraction of cytotoxic T cells. we calculate the fractions and then make three even groups: low, medium, high by simply splitting the sorted data.
-
-```{r T cell fraction score per ImageNumber}
-cur_df <- tibble(celltype = sce$celltype,
-                 ImageNumber = sce$ImageNumber)
-
-cellcount <- as_tibble(t(table(cur_df)))
-
-cellcount <- cellcount %>%
-  group_by(ImageNumber) %>%
-  mutate(total = sum(n))
-
-cellcount <- cellcount %>%
-  filter(celltype == "Tcytotoxic")
-
-cellcount <- cellcount %>%
-  mutate(Tcytotoxic_frac =n/total)
-
-# here we generate three classes based on ranks
-cellcount$rank <- ntile(cellcount$Tcytotoxic_frac,n=3)
-
-# the lowest third of cytotoxic T cell fraction BlockIDs get grouped
-cellcount$T_frac_score <- ""
-cellcount[which(cellcount$rank == 1),]$T_frac_score <- "low"
-cellcount[which(cellcount$rank == 2),]$T_frac_score <- "med"
-cellcount[which(cellcount$rank == 3),]$T_frac_score <- "high"
-
-T_frac_score <- cellcount$T_frac_score
-names(T_frac_score) <- cellcount$ImageNumber
-
-# add to SCE
-sce$T_frac_score_per_ImageNumber <- T_frac_score[sce$ImageNumber]
-```
-
-## Fraction of cytotoxic T cells per BlockID
-
-we group images by the fraction of cytotoxic T cells. we calculate the fractions and then make three even groups: low, medium, high by simply splitting the sorted data.
-
-```{r T cell fraction score per BlockID}
-cur_df <- tibble(celltype = sce$celltype,
-                 BlockID = sce$BlockID)
-
-cellcount <- as_tibble(t(table(cur_df)))
-
-cellcount <- cellcount %>%
-  group_by(BlockID) %>%
-  mutate(total = sum(n))
-
-cellcount <- cellcount %>%
-  filter(celltype == "Tcytotoxic")
-
-
-cellcount <- cellcount %>%
-  mutate(Tcytotoxic_frac =n/total)
-
-# here we generate three classes based on ranks
-cellcount$rank <- ntile(cellcount$Tcytotoxic_frac,n=3)
-
-# the lowest third of cytotoxic T cell fraction BlockIDs get grouped
-cellcount$T_frac_score <- ""
-cellcount[which(cellcount$rank == 1),]$T_frac_score <- "low"
-cellcount[which(cellcount$rank == 2),]$T_frac_score <- "med"
-cellcount[which(cellcount$rank == 3),]$T_frac_score <- "high"
-
-T_frac_score <- cellcount$T_frac_score
-names(T_frac_score) <- cellcount$BlockID
-
-# add to SCE
-sce$T_frac_score_per_BlockID <- T_frac_score[sce$BlockID]
-```
-
-## Fraction of cytotoxic T cells per PatientID
-
-we group images by the fraction of cytotoxic T cells. we calculate the fractions and then make three even groups: low, medium, high by simply splitting the sorted data.
-
-```{r T cell fraction score per PatientID}
-pat_ID <- metadata(sce)$Internal_pat_ID
-sce$PatientID <- pat_ID[sce$ImageNumber]
-
-cur_df <- tibble(celltype = sce$celltype,
-                 PatientID = sce$PatientID)
-
-cellcount <- as_tibble(t(table(cur_df)))
-
-cellcount <- cellcount %>%
-  group_by(PatientID) %>%
-  mutate(total = sum(n))
-
-cellcount <- cellcount %>%
-  filter(celltype == "Tcytotoxic")
-
-
-cellcount <- cellcount %>%
-  mutate(Tcytotoxic_frac =n/total)
-
-# here we generate three classes based on ranks
-cellcount$rank <- ntile(cellcount$Tcytotoxic_frac,n=3)
-
-# the lowest third of cytotoxic T cell fraction BlockIDs get grouped
-cellcount$T_frac_score <- ""
-cellcount[which(cellcount$rank == 1),]$T_frac_score <- "low"
-cellcount[which(cellcount$rank == 2),]$T_frac_score <- "med"
-cellcount[which(cellcount$rank == 3),]$T_frac_score <- "high"
-
-T_frac_score <- cellcount$T_frac_score
-names(T_frac_score) <- cellcount$PatientID
-
-sce$T_frac_score_per_PatientID <- T_frac_score[sce$PatientID]
+# number of samples per group
+data.frame(colData(sce_prot)) %>%
+  distinct(Description, .keep_all = T) %>%
+  group_by(Tcell_density_score_image) %>%
+  summarise(n=n())
 ```
 
 ## E_I_D score compared to T_frac_score_per_ImageNumber
 
 ```{r check the cut offs}
-cur_df <- data.frame(T_density = sce$T_frac_score_per_ImageNumber,
-                     E_I_D = sce$E_I_D)
+cur_df <- data.frame(T_density = sce_prot$Tcell_density_score_image,
+                     E_I_D = sce_prot$E_I_D)
 
 table(cur_df)
-```
-
-__cells from images classified as deserted mostly belong to the absent class defined here. However, in the absent class defined here many cells from images belong to either inflamed or excluded classes.__
-
-
-## Develope a E_I_D score based on the images in this cohort
-
-we will therefore make use of the tumor mask that we generated using ilastik. Every cell has a tag which assigns it to being within the tumor or not.
-
-We will define as follows:
-1: deserted - density below 40 cytotoxic cells/mm2
-2: low-inflamed - infiltration ratio >= 0.5 & >40-300 cells/mm2
-3: high-inflamed - infiltration ratio >= 0.5 & >300 cells/mm2
-4: low-excluded - infiltration ratio < 0.5 & >40-300 cells/mm2
-5: high-excluded - infiltration ratio < 0.5 & >300 cells/mm2
-
-```{r develope E_I_D score based on this data}
-# we next calculate the amount of T cells inside and outside the tumor for each image
-cur_df <- data.frame(inside_tumor = sce$in_tumor,
-                     E_I_D = sce$E_I_D,
-                     ImageNumber = sce$ImageNumber,
-                     celltype = sce$celltype,
-                     Location = sce$Location,
-                     Tcell_density_score_image = sce$Tcell_density_score_image,
-                     cyotoxic_density_image = sce$cyotoxic_density_image)
-
-# reshaping
-cur_df <- reshape2::dcast(cur_df,formula = "ImageNumber + E_I_D + inside_tumor + 
-                          Tcell_density_score_image + Location + cyotoxic_density_image ~ celltype")
-cur_df <- cur_df[,c("ImageNumber","E_I_D","inside_tumor", "Tcell_density_score_image",
-                    "Tcytotoxic", "Location", "cyotoxic_density_image")]
-cur_df <- reshape2::dcast(cur_df,formula = "ImageNumber + E_I_D + Tcell_density_score_image + 
-                          Location + cyotoxic_density_image ~ inside_tumor", value.var = "Tcytotoxic")
-
-colnames(cur_df) <- c("ImageNumber" , "E_I_D" ,"Tcell_density_score_image", 
-                      "Location", "cyotoxic_density_image", "outside_tumor", "inside_tumor")
-
-# convert NAs to 0
-cur_df[is.na(cur_df$outside_tumor),]$outside_tumor <- 0
-
-# the ratio still has "Inf" and "NAns" values due to 0 values in the data. we will take care of this below
-cur_df$infiltration_ratio <- cur_df$inside_tumor/cur_df$outside_tumor
-
-cur_df$infiltration <- "unassigned"
-
-# for all samples that have abenst Tcell_density_score_image we also enter the status "Deserted"
-cur_df[cur_df$cyotoxic_density_image < 40,]$infiltration <- "deserted"
-cur_df[cur_df$cyotoxic_density_image >=40 & 
-         cur_df$cyotoxic_density_image < 300 & 
-         cur_df$infiltration_ratio >= 0.5,]$infiltration <- "low-inflamed"
-cur_df[cur_df$cyotoxic_density_image >=40 & 
-         cur_df$cyotoxic_density_image < 300 & 
-         cur_df$infiltration_ratio < 0.5,]$infiltration <- "low-excluded"
-cur_df[cur_df$cyotoxic_density_image >= 300 & 
-         cur_df$infiltration_ratio > 0.5,]$infiltration <- "high-inflamed"
-cur_df[cur_df$cyotoxic_density_image >= 300 & 
-         cur_df$infiltration_ratio < 0.5,]$infiltration <- "high-excluded"
-
-# control samples
-cur_df[cur_df$Location == "CTRL",]$infiltration <- "control"
-
-# group sizes
-cur_df %>% 
-  group_by(infiltration) %>%
-  summarize(n=n())
-
-# incorporate the information into the single cell experiment
-sce$infiltration <- cur_df$infiltration[sce$ImageNumber]
 ```
 
 ## Add Scores to RNA data set
@@ -291,26 +119,22 @@ sce_rna$T_frac_score_per_ImageNumber <- NULL
 sce_rna$T_frac_score_per_PatientID <- NULL
 sce_rna$cyotoxic_density_image <- NULL
 
-description_data <- data.frame(colData(sce)) %>%
+description_data <- data.frame(colData(sce_prot)) %>%
   distinct(Description, .keep_all = TRUE)
 
 col_rna <- data.frame(colData(sce_rna))
 
 # left_join
-col_rna <- left_join(col_rna, description_data[,c("Description", "T_frac_score_per_ImageNumber", "T_frac_score_per_BlockID",
-                                                  "T_frac_score_per_PatientID", "infiltration", "cyotoxic_density_image")])
+col_rna <- left_join(col_rna, description_data[,c("Description", "Tcell_density_score_image", "cyotoxic_density_image")])
 
-# add to sce
-sce_rna$T_frac_score_per_ImageNumber <- col_rna$T_frac_score_per_ImageNumber
-sce_rna$T_frac_score_per_BlockID <- col_rna$T_frac_score_per_BlockID
-sce_rna$T_frac_score_per_PatientID <- col_rna$T_frac_score_per_PatientID
-sce_rna$infiltration <- col_rna$infiltration
-sce_rna$cyotoxic_density_image <- col_rna$cyotoxic_density_image
+# add to sce (attention: cytotoxic density is calculated on protein data set!)
+sce_rna$Tcell_density_score_image <- col_rna$Tcell_density_score_image
+sce_rna$cyotoxic_density_image <- col_rna$density
 ```
 
 ## Save updated SCE
 
 ```{r save sce}
-saveRDS(sce,file = "data/sce_protein.rds")
+saveRDS(sce_prot,file = "data/sce_protein.rds")
 saveRDS(sce_rna,file = "data/sce_RNA.rds")
 ```
