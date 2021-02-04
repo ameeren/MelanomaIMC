@@ -1,6 +1,6 @@
 ---
-title: "Figure_5"
-author: ""
+title: "Figure 5"
+author: "Tobias Hoch and Daniel Schulz"
 date: "2021-01-30"
 output: workflowr::wflow_html
 editor_options:
@@ -108,9 +108,9 @@ dat_relation_rna <- left_join(dat_relation_rna, celltype_second, by = "cellID_se
 colnames(dat_relation_rna)[5] <- "FirstImageNumber"
 ```
 
-# Interaction Analysis
+# Figure 5A
 
-# Generate adjacency matrix for all images
+## Generate adjacency matrix for all images
 
 ```{r Fig_5A_interaction_chord_groups, fig.height=7, fig.width=5, dev=c('pdf')}
 # subset sce for inflamed/exhausted in high samples
@@ -189,7 +189,7 @@ draw(packLegend(lgd2,
                 gap = unit(2, "cm")))
 ```
 
-# Boxplots
+# Figure 5B
 
 ## Celltypes
 
@@ -250,9 +250,11 @@ c <- data.frame(colData(sce_rna)) %>%
 plot(c)
 ```
 
+# Figure 5C
+
 ## B cell patch grouping for dysfunction groups
 
-```{r Fig_5B_bcell_groups_fraction, dev=("pdf"), fig.width=10, fig.height=3}
+```{r Fig_5C_bcell_groups_fraction, dev=("pdf"), fig.width=10, fig.height=3}
 a <- data.frame(colData(sce_rna)) %>%
   distinct(Description, .keep_all = T) %>%
   group_by(bcell_patch_score, dysfunction_score) %>%
@@ -271,7 +273,7 @@ ggplot(a) +
   guides(fill=guide_legend(title="Bcell Groups"))
 ```
 
-# Bcell Patches and CXCL13 Expression
+# Figure 5D
 
 ## Analysis
 
@@ -339,9 +341,34 @@ ggplot(all_images,aes(x=bcell_patch_score, y = log10(as.numeric(density+1)), fil
   guides(fill=guide_legend(title="Cell Type", override.aes = c(lwd=0.5)))
 ```
 
+# Figure 5E
+
+## Example of CXCL10 Cluster and corresponding Community
+
+```{r Fig_5E_clusters_and_communities, fig.width=6, fig.height=6, dev=c('pdf')}
+example <- findClusters(sce_prot[,sce_prot$Description == "C9"], sce_prot[,colData(sce_prot)$celltype %in% c("Bcell", "BnTcell")]$cellID, 
+                    'cellID', 
+                    'Center_X', 'Center_Y', 
+                    'Description', 
+                    distance = 15, 
+                    min_clust_size = 20,
+                    output_colname = "example_patch")
+
+example <- findCommunity(example, 
+              'cellID', 
+              'Center_X', 'Center_Y', 
+              'Description', 
+              'example_patch', 
+              distance = 50,
+              output_colname = "example_milieu",
+              plot = TRUE)
+```
+
+# Figure 5F
+
 ## Fraction of Tcf7 Tcells cells in bcell patch groups
 
-```{r Fig_5E_cd8_tcf7_pd1_bcells, dev=("pdf"), fig.width=9, fig.height=4}
+```{r Fig_5F_cd8_tcf7_pd1_bcells, dev=("pdf"), fig.width=9, fig.height=4}
 celltypes <- data.frame(colData(sce_prot)) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
@@ -377,30 +404,11 @@ ggplot(celltypes, aes(x=TCF7_PD1, y=fraction, fill=bcell_patch_score)) +
   ylim(0,1.1)
 ```
 
-## Example of CXCL10 Cluster and corresponding Community
-
-```{r Fig_3B_clusters_and_communities, fig.width=6, fig.height=6, dev=c('pdf')}
-example <- findClusters(sce_prot[,sce_prot$Description == "C9"], sce_prot[,colData(sce_prot)$celltype %in% c("Bcell", "BnTcell")]$cellID, 
-                    'cellID', 
-                    'Center_X', 'Center_Y', 
-                    'Description', 
-                    distance = 15, 
-                    min_clust_size = 20,
-                    output_colname = "example_patch")
-
-example <- findCommunity(example, 
-              'cellID', 
-              'Center_X', 'Center_Y', 
-              'Description', 
-              'example_patch', 
-              distance = 50,
-              output_colname = "example_milieu",
-              plot = TRUE)
-```
+# Figure 5G
 
 ## Percentage of TCF7+PD1+CD8+ cells that are part of a Bcell milieu
 
-```{r Supp_Fig_5X_milieu_presence_tcells, fig.height=6, fig.width=6, dev=("pdf")}
+```{r Fig_5G_milieu_presence_tcells, fig.height=6, fig.width=6, dev=("pdf")}
 # what fraction of each celltype is part of a milieu?
 cur_dat <- data.frame(colData(sce_prot)) %>%
   filter(Location != "CTRL") %>%

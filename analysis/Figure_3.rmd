@@ -1,6 +1,6 @@
 ---
 title: "Figure 3"
-author: "toobiwankenobi"
+author: "Tobias Hoch and Daniel Schulz"
 date: "2020-08-04"
 output: workflowr::wflow_html
 editor_options:
@@ -66,9 +66,209 @@ dat_relation$cellID_first <- paste("RNA", paste(dat_relation$`First Image Number
 dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
 ```
 
+# Figure 3B
+
+## CP output
+
+```{r}
+# Load and prepare
+dat_cells = fread(file = "data/rna/cell.csv",stringsAsFactors = FALSE)
+dat_relation = fread(file = "data/rna/Object relationships.csv",stringsAsFactors = FALSE)
+
+# Number of cores used for multicore:
+if(detectCores() >= 12){
+  ncores = round(detectCores()/1.25,0)
+}
+if(detectCores() > 1 & detectCores() < 12){
+  ncores = round(detectCores()/2,0)
+}
+if(detectCores() == 1){
+  ncores = 1
+}
+
+n_perm = 100 
+```
+
+## Start the analysis
+
+```{r milieu_analysis}
+start = Sys.time()
+cur_sce <- as.data.frame(colData(sce_rna))
+
+# add same cellID to dat_cells as in sce object
+dat_cells$cellID <- paste("RNA_", paste(dat_cells$ImageNumber, dat_cells$ObjectNumber, sep = "_"), sep = "")
+
+image_df <- data.frame()
+for(size in c(2,3,4,5,6)) {
+  images <- data.frame()
+  for(i in colnames(cur_sce[,grepl("CCL|CXCL",colnames(cur_sce))])){
+    # add chemokine info to celltype
+    sce_info <- cur_sce[,c("cellID", i , "Description")]
+    
+    # add celltype information
+    dat_cells_tmp <- left_join(as.data.frame(dat_cells), sce_info, by = "cellID")
+    
+    #assign labels and groups
+    dat_cells_tmp$label <- dat_cells_tmp[,i]
+    dat_cells_tmp$group <- dat_cells_tmp$Description
+    dat_cells_tmp <- as.data.table(dat_cells_tmp)
+    
+    # subset dat_relation and dat_cells
+    dat_cells_sub <- dat_cells_tmp#[dat_cells$Description == "P3",]
+    dat_relation_sub <- dat_relation#[dat_relation$`First Image Number` == unique(sce_rna[,sce_rna$Description == "P3"]$ImageNumber),]
+    
+    # Prepare the data
+    d = neighbouRhood::prepare_tables(dat_cells_sub, dat_relation_sub)
+    
+    # Calculate the baseline statistics
+    dat_baseline = neighbouRhood::apply_labels(d[[1]], d[[2]]) %>%
+      neighbouRhood::aggregate_classic_patch(., patch_size = size)
+    
+    # Calculate the permutation statistics
+    # This will run the test using parallel computing. The name of the idcol does actually not matter.
+    
+    set.seed(12312)
+    dat_perm = rbindlist(mclapply(1:n_perm, function(x){
+      dat_labels = neighbouRhood::shuffle_labels(d[[1]])
+      neighbouRhood::apply_labels(dat_labels, d[[2]]) %>%
+        neighbouRhood::aggregate_classic_patch(., patch_size = size)
+    },mc.cores = ncores
+    ), idcol = 'run')
+    
+    # calc p values
+    dat_p <- neighbouRhood::calc_p_vals(dat_baseline, dat_perm, n_perm = n_perm, p_tresh = 0.01) 
+    
+    # select interactions between chemokine+ cells
+    dat_p$interaction <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "_")
+    
+    dat_p_wide <- dat_p %>%
+      reshape2::dcast(group ~ interaction, value.var = "sigval", fill = 0) %>%
+      select(group, `1_1`)
+    
+    summary <- as.data.frame(dat_p_wide) %>%
+      group_by(`1_1`) %>%
+      summarise(n=n(),.groups = 'drop') %>%
+      ungroup() %>%
+      mutate(percentage_sig = (n/sum(n)) * 100)
+    
+    images <- rbind(images, cbind(summary[1,], i))
+  }
+  
+  # calculate percentage of images with significant patches
+  images$percentage_sig <- 100 - images$percentage_sig
+  images$patch_size <- size
+  images <- select(images, percentage_sig, i, patch_size)
+  colnames(images) <- c("significant_images", "chemokine", "patch_size")
+  
+  # add to data.frame
+  image_df <- rbind(image_df, images)
+}
+end = Sys.time()
+
+print(end-start)
+```
+
+## Visualize 
+
+```{r Fig_3B_patch_analysis, dev=("pdf"), fig.height=5, fig.width=8}
+dat <- image_df %>%
+  reshape2::dcast(chemokine ~ patch_size, value.var = "significant_images", fill = 0)
+
+rownames(dat) <- dat$chemokine
+dat$chemokine <- NULL
+
+m <- t(as.matrix(dat))
+
+col_fun = viridis::inferno(100)
+
+Heatmap(m,
+        cluster_rows = FALSE,
+        col = col_fun,
+        column_title = "Self-Interaction",
+        column_title_side = "bottom",
+        show_row_names = TRUE,
+        cell_fun = function(j, i, x, y, width, height, fill) {
+          grid.text(sprintf("%.1f", m[i, j]), x, y, gp = gpar(fontsize = 15, col = "grey"))
+          },
+        heatmap_legend_param = list(
+          title = "% Significant\nImages", at = c(0, 10, 20, 30, 40, 50),
+          labels = c("0%", "10%", "20%", "30%","40%", "50%")),
+        row_title = "Patch Size",
+        row_names_side = "left",
+        width = unit(15, "cm"),
+        height = unit(8, "cm"))
+```
+
+## Calculate p-value for Figure 3B
+
+```{r milieu_analysis_image58}
+start = Sys.time()
+cur_sce <- as.data.frame(colData(sce_rna))
+
+image_df <- data.frame()
+for(size in c(2,3,4,5,6,7,8,9,10)) {
+  images <- data.frame()
+  for(i in c("CXCL10")){
+    # add chemokine info to celltype
+    sce_info <- cur_sce[,c("cellID", i , "Description")]
+    
+    # add celltype information
+    dat_cells_tmp <- left_join(as.data.frame(dat_cells), sce_info, by = "cellID")
+    
+    #assign labels and groups
+    dat_cells_tmp$label <- dat_cells_tmp[,i]
+    dat_cells_tmp$group <- dat_cells_tmp$Description
+    dat_cells_tmp <- as.data.table(dat_cells_tmp)
+    
+    # subset dat_relation and dat_cells
+    dat_cells_sub <- dat_cells_tmp[Description == "P3",]
+    dat_relation_sub <- dat_relation[dat_relation$`First Image Number` == unique(sce_rna[,sce_rna$Description == "P3"]$ImageNumber),]
+    
+    # Prepare the data
+    d = neighbouRhood::prepare_tables(dat_cells_sub, dat_relation_sub)
+    
+    # Calculate the baseline statistics
+    dat_baseline = neighbouRhood::apply_labels(d[[1]], d[[2]]) %>%
+      neighbouRhood::aggregate_classic_patch(., patch_size = size)
+    
+    # Calculate the permutation statistics
+    # This will run the test using parallel computing. The name of the idcol does actually not matter.
+    
+    set.seed(12312)
+    dat_perm = rbindlist(mclapply(1:n_perm, function(x){
+      dat_labels = neighbouRhood::shuffle_labels(d[[1]])
+      neighbouRhood::apply_labels(dat_labels, d[[2]]) %>%
+        neighbouRhood::aggregate_classic_patch(., patch_size = size)
+    },mc.cores = ncores
+    ), idcol = 'run')
+    
+    # calc p values
+    dat_p <- neighbouRhood::calc_p_vals(dat_baseline, dat_perm, n_perm = n_perm, p_tresh = 0.01) 
+    
+    # select interactions between chemokine+ cells
+    dat_p$interaction <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "_")
+    images <- rbind(images,dat_p)
+  }
+  
+  # calculate percentage of images with significant patches
+  images$patch_size <- size
+  
+  # add to data.frame
+  image_df <- rbind(image_df, images)
+}
+
+end = Sys.time()
+print(end-start)
+
+# Significant Self-Interatcions
+image_df[image_df$interaction == "1_1",]
+```
+
+# Figure 3C
+
 ## Example of CXCL10 Cluster and corresponding Community
 
-```{r Fig_3B_clusters_and_communities, fig.width=10, fig.height=10, dev=c('pdf')}
+```{r Fig_3C_clusters_and_communities, fig.width=10, fig.height=10, dev=c('pdf')}
 example <- findClusters(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CXCL10 == 1]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
@@ -111,11 +311,11 @@ example <- findCommunity(example,
               point_size = 14)
 ```
 
-# Sunburst Plots
+# Figure 3D
 
 ## Chemokine-producing cells in Patches
 
-```{r Fig_3C_sunburst_plot, fig.height=15, fig.width=10, dev=c('pdf')}
+```{r Fig_3D_sunburst_plot, fig.height=15, fig.width=10, dev=c('pdf')}
 # define fractions of chemokines present in community
 cur_dt <- data.frame(colData(sce_rna))
 
@@ -264,583 +464,7 @@ lgd2 = Legend(labels = names(col_vector_cells), title = "Inner Circle\nCell Type
 draw(packLegend(lgd2, lgd1, direction = "horizontal"))
 ```
 
-## Marker Heatmap Patch Cells
-
-```{r Fig_3D_marker_expression_patches_celltypes, dev=("pdf"), fig.width=12, fig.height=10}
-# subset sce to only contain community cells
-cur_sce <- data.frame(colData(sce_rna))
-cur_sce$patch_type <- ""
-
-dat <- data.frame()
-# loop through all chemokines 
-for(i in names(cur_sce[,grepl(glob2rx("*pure"),names(cur_sce))])){
-  chemokine_name <- toupper(str_split(i, pattern = "_")[[1]][1])
-  
-  # all community cells
-  cur_sce_sub <- cur_sce[cur_sce[,i] > 0,]
-  
-  # non-producer
-  cur_sce_sub$patch_type <- ifelse(cur_sce_sub$chemokine == FALSE, "Bystander", cur_sce_sub[i > 0,]$patch_type)
-  
-  # patch chemokine or other chemokine? 
-  cur_sce_sub[cur_sce_sub$chemokine == TRUE,]$patch_type <- ifelse((cur_sce_sub[i > 0 & cur_sce_sub$chemokine == TRUE, chemokine_name] == 1) == TRUE, 
-                                                                   "Expressor", "Other Expressor")
-  
-  if(nrow(cur_sce_sub) > 0){
-    cur_sce_sub$patch_group <- chemokine_name
-  }
-  
-  # retain 5 most abundant celltypes per chemokine (at least 100 occurences)
-  top3 <- cur_sce_sub %>%
-    group_by(patch_group, patch_type,celltype) %>%
-    summarise(n=n()) %>%
-    top_n(n=5, wt = n) %>%
-    mutate(function_celltype = paste(patch_type, celltype, sep = "_")) %>%
-    filter(n>200)
-  
-  cur_sce_sub <- cur_sce_sub %>%
-    select(cellID, patch_group, patch_type,celltype) %>%
-    mutate(function_celltype = paste(patch_type, celltype, sep = "_")) %>%
-    filter(function_celltype %in% top3$function_celltype)
-  
-  # add to total data.frame
-  dat <- rbind(dat, cur_sce_sub)
-}
-
-## add marker expression to cells
-marker_expression <- data.frame(t(assay(sce_rna[rowData(sce_rna)$good_marker,], "asinh")))
-marker_expression$cellID <- rownames(marker_expression)
-dat <- left_join(dat, marker_expression, by = "cellID")
-dat$cellID <- NULL
-dat$function_celltype <- NULL
-
-## aggregate for groups
-dat_aggr <- dat %>%
-  group_by(patch_group, patch_type, celltype) %>%
-  summarise_all(funs(mean)) %>%
-  arrange(celltype)
-
-## number of cells per group
-dat_sum <- dat %>%
-  group_by(patch_group, patch_type, celltype) %>%
-  summarise(n=n()) %>%
-  arrange(celltype)
-
-dat_sum <- data.frame(t(dat_sum))
-
-# scale and center expression
-dat_aggr[,-c(1:3)] <- scale(dat_aggr[,-c(1:3)])
-
-m <- as.matrix(t(dat_aggr[,-c(1:3)]))
-colnames(m) <- dat_aggr$patch_type
-
-ha <- HeatmapAnnotation("Cell Type" = dat_aggr$celltype,
-                        "Milieu" = dat_aggr$patch_group,
-                        #"Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[4,])>1000, 1010, as.numeric(dat_sum[4,])),
-                                                         #height = unit(2,"cm"),
-                                                         #ylim = range(0,1000),
-                                                         #gp = gpar(fill = ifelse(as.numeric(dat_sum[4,]) > 1000, "red", "black"))),
-                        "Numbers" = anno_text(round(as.numeric(dat_sum[4,])), 
-                                              which = "column", 
-                                              rot = 90, 
-                                              just = "center", 
-                                              location = 0.5,
-                                              gp = gpar(fontsize=8)),
-                        col = list("Cell Type" = metadata(sce_rna)$colour_vectors$celltype,
-                                   "Milieu" = col_vector_chemokines),
-                        show_legend = FALSE,
-                        annotation_name_gp = gpar(fontsize = 16))
-
-# row_split for markers
-rowData(sce_rna)$heatmap_relevance <- ""
-rowData(sce_rna[rowData(sce_rna)$good_marker,])$heatmap_relevance <- "lineage"
-rowData(sce_rna[grepl("CXCL|CCL|DapB", rownames(sce_rna)),])$heatmap_relevance <- "chemokine"
-rowData(sce_rna[grepl("B2M|GLUT1|CD134|Lag3|CD163|cleavedPARP|pRB", rownames(sce_rna)),])$heatmap_relevance <- "other"
-             
-h <- Heatmap(m, name = "Scaled\nExpression",
-             row_split = rowData(sce_rna[rowData(sce_rna)$good_marker,])$heatmap_relevance,
-             cluster_columns = FALSE,
-             show_column_names = FALSE,
-             top_annotation = ha,
-             show_heatmap_legend = FALSE,
-             row_names_gp = gpar(fontsize = 16),
-             column_title_gp = gpar(fontsize = 23),
-             row_title_gp = gpar(fontsize = 23),
-             column_split = colnames(m),
-             col = colorRamp2(c(-3, 0, 3), c("blue", "white", "red")),
-             height = unit(20, "cm"),
-             width = unit(25,"cm"))
-
-draw(h)
-```
-
-## Legend
-```{r Fig_3XX_heatmap_legend, fig.width=7, fig.height=2, dev=("pdf")}
-lgd1 = color_mapping_legend(h@matrix_color_mapping, plot = FALSE, legend_direction = "horizontal", legend_width=unit(3,"cm"), at = c(-3:3))
-lgd2 = color_mapping_legend(ha@anno_list$Milieu@color_mapping, plot = FALSE, legend_direction = "horizontal", nrow=5)
-lgd3 = color_mapping_legend(ha@anno_list$`Cell Type`@color_mapping, plot = FALSE, legend_direction = "horizontal", nrow=5)
-
-lgd_list = packLegend(lgd1,lgd2,lgd3, direction = "horizontal", gap = unit(1,"cm"))
-
-draw(lgd_list)
-```
-
-## Fraction of Exhausted T Cytotoxic T cell per Group and per Chemokine
-
-```{r Fig_XX_cd8_cells_in_comms}
-# subset sce to only contain community cells
-cur_sce <- data.frame(colData(sce_rna))
-cur_sce$patch_type <- ""
-
-dat <- data.frame()
-# loop through all chemokines 
-for(i in names(cur_sce[,grepl(glob2rx("*pure"),names(cur_sce))])){
-  chemokine_name <- toupper(str_split(i, pattern = "_")[[1]][1])
-  
-  # all community cells
-  cur_sce_sub <- cur_sce[cur_sce[,i] > 0,]
-  
-  # non-producer
-  cur_sce_sub$patch_type <- ifelse(cur_sce_sub$chemokine == FALSE, "Bystander", cur_sce_sub[i > 0,]$patch_type)
-  
-  # patch chemokine or other chemokine? 
-  cur_sce_sub[cur_sce_sub$chemokine == TRUE,]$patch_type <- ifelse((cur_sce_sub[i > 0 & cur_sce_sub$chemokine == TRUE, chemokine_name] == 1) == TRUE, 
-                                                                   "Expressor", "Other Expressor")
-  
-  if(nrow(cur_sce_sub) > 0){
-    cur_sce_sub$patch_group <- chemokine_name
-  }
-  
-  # fraction of CD8 per community
-  cd8_frac <- cur_sce_sub[,c(i, "patch_group", "celltype")] %>%
-    group_by_all() %>%
-    summarise(n=n()) %>%
-    mutate(frac = n / sum(n)) %>%
-    filter(celltype == "Tcytotoxic")
-  
-  names(cd8_frac)[1] <- "comm_id"
-  
-  # ratio of Lag3+ to Lag3- CD8 per community
-  exhaustion_ratio <- cur_sce_sub[,c(i, "patch_group", "celltype_rf")] %>%
-    group_by_all() %>%
-    summarise(n=n()) 
-  
-  names(exhaustion_ratio)[1] <- "comm_id"
-  
-  exhaustion_ratio <- exhaustion_ratio %>%
-    reshape2::dcast(patch_group + comm_id ~ celltype_rf, value.var = "n", fill = 0) %>%
-    select(comm_id, patch_group, `exhausted Tcytotoxic`, Tcytotoxic) %>%
-    mutate(ratio = (`exhausted Tcytotoxic` / (Tcytotoxic+`exhausted Tcytotoxic`))) %>%
-    ungroup() %>%
-    select(comm_id, patch_group, ratio)
-  
-  comb <- left_join(cd8_frac, exhaustion_ratio)
-  
-  comb <- comb %>%
-    ungroup() %>%
-    select(patch_group, frac, ratio)
-  
-  # add to total data.frame
-  dat <- rbind(dat, comb)
-}
-
-dat_sub <- dat[dat$patch_group %in% c("CXCL10", "CXCL9", "CCL19"),]
-
-comparison <- list(c("CXCL10", "CXCL9"), c("CXCL10", "CCL19"), c("CXCL9", "CCL19"))
-
-# fraction of CD8+ per Community
-a <- ggplot(dat_sub, aes(x=patch_group, y=frac)) + 
-  geom_boxplot() +
-  geom_quasirandom(alpha=.2) +
-  #stat_compare_means(comparisons = comparison) +
-  ylab("Fraction of Cytotoxic T Cells per Community") + 
-  xlab("") +
-  theme_bw()
-
-# Fraction of Exhausted T cells from All T cells
-b <- ggplot(dat_sub, aes(x=patch_group, y=ratio)) + 
-  geom_boxplot() + 
-  #stat_compare_means(comparisons = comparison) +
-  ylab("Exhausted T Cells / All Cytotoxic T cells per Community") +
-  geom_quasirandom(alpha=.2) +
-  xlab("") +
-  theme_bw()
-
-#pdf("~/bbvolume/Git/melanoma_publication_old_data/output/heatmap.pdf", width = 12, height = 10)
-plot_grid(a,b,nrow = 2)
-#dev.off()
-```
-
-
-# CD8+CXCL13+ Analysis
-
-## Interaction Analysis
-
-```{r}
-# add expressor status to first and second label
-expressor_first <- data.frame(colData(sce_rna))[,c("cellID", "CXCL13", "celltype")]
-colnames(expressor_first) <- c("cellID_first", "expressor_first", "celltype_first")
-expressor_second <- data.frame(colData(sce_rna))[,c("cellID", "expressor", "celltype", "celltype_clustered")]
-colnames(expressor_second) <- c("cellID_second", "expressor_second", "celltype_second", "celltype_clustered_second")
-dat_relation <- left_join(dat_relation, expressor_first, by = "cellID_first")
-dat_relation <- left_join(dat_relation, expressor_second, by = "cellID_second")
-```
-
-## Generate adjacency matrix for all images
-
-```{r Fig_3E_interaction_CD8CXCL13, fig.height=3, fig.width=5, dev=c('pdf')}
-layout(matrix(1:2,1,2))
-
-dat_relation$celltype_expressor_first <- paste(dat_relation$celltype_first, dat_relation$expressor_first, sep = "_")
-dat_relation$celltype_expressor_second <- paste(dat_relation$celltype_second, dat_relation$expressor_second, sep = "_")
-
-# subset sce for inflamed/exhausted in high samples
-cur_dat_relation_chemokine <- dat_relation[dat_relation$celltype_first == "Tcytotoxic" & 
-                                   dat_relation$expressor_first == 1 &
-                                     dat_relation$celltype_second == "Macrophage"]
-
-cur_dat_relation_control <- dat_relation[dat_relation$celltype_first == "Tcytotoxic" & 
-                                   dat_relation$expressor_first == 0 &
-                                     dat_relation$celltype_second == "Macrophage"]
-
-# sample same amount of macrophages
-control_sample <- sample(unique(cur_dat_relation_control$cellID_first), length(unique(cur_dat_relation_chemokine$cellID_first)))
-cur_dat_relation_control <- cur_dat_relation_control[cur_dat_relation_control$cellID_first %in% control_sample,]
-
-# count interactions
-cd8_cxcl13 <- data.frame(cur_dat_relation_chemokine) %>%
-    select("celltype_expressor_first" ,"celltype_clustered_second") %>%
-    dplyr::count(celltype_expressor_first,celltype_clustered_second) %>%
-  mutate(celltype_expressor_first = "Tcytotoxic") %>%
-    data.frame()
-
-cd8_control <- data.frame(cur_dat_relation_control) %>%
-    select("celltype_expressor_first" ,"celltype_clustered_second") %>%
-    dplyr::count(celltype_expressor_first,celltype_clustered_second) %>%
-  mutate(celltype_expressor_first = "Tcytotoxic") %>%
-    data.frame()
-
-gap = calc_gap(cd8_cxcl13,cd8_control)
-
-# color vector for Tumor Subclusters
-col_vec <- brewer.pal(length(unique(sce_rna[,sce_rna$celltype == "Macrophage"]$celltype_clustered)), "BrBG")
-names(col_vec) <- unique(sce_rna[,sce_rna$celltype == "Macrophage"]$celltype_clustered)
-col_vec <- c(col_vec, metadata(sce_rna)$colour_vectors$celltype["Tcytotoxic"])
-
-# order col_vector
-col_vec <- col_vec[order(names(col_vec))]
-
-# chord plot
-chordDiagramFromDataFrame(cd8_control,
-                          big.gap = gap,
-                          grid.col = col_vec,
-                          annotationTrack = c("grid"),
-                          reduce = 0.01)
-abline(h = 0, lty = 2, col = "#00000080")
-title(main = "CD8+ CXCL13-")
-circos.clear()
-
-chordDiagramFromDataFrame(cd8_cxcl13,
-                          grid.col = col_vec,
-                          annotationTrack = c("grid"),
-                          reduce = 0.01)
-abline(h = 0, lty = 2, col = "#00000080")
-title(main = "CD8+ CXCL13+")
-circos.clear()
-```
-
-## Legend
-
-```{r Fig_3E_legend, dev=c('pdf')}
-# create legend for macrophage subclusters
-lgd1 = Legend(labels = names(col_vec[grep("Macrophage", names(col_vec))]), title = "Macrophage Subclusters", legend_gp = gpar(fill = unname(col_vec[grep("Macrophage", names(col_vec))])))
-draw(lgd1)
-```
-
-## Compare Macrophage Marker in the Neighborhood of Dysfunctional T cells
-
-## Macrophage Profile
-
-```{r Fig_3G_Macrophage_Profile, fig.height=7, fig.width=11, dev=c('pdf')}
-# ids
-ids_tumor_chemokine <- cur_dat_relation_chemokine$cellID_second
-ids_tumor_control <- cur_dat_relation_control$cellID_second
-
-sce_rna_sub <- sce_rna[,sce_rna$cellID %in% c(ids_tumor_chemokine, ids_tumor_control) & sce_rna$celltype_clustered == "Macrophage_1"]
-sce_rna_sub$tumor_class <- ifelse(sce_rna_sub$cellID %in% ids_tumor_chemokine, "CD8+ CXCL13+", "CD8+ CXCL13-")
-
-tumor_marker_rna <- c("CD163" , "T9_CXCL9", "T4_CXCL10")
-
-# rna data 
-dat_rna <- data.frame(t(assay(sce_rna_sub[tumor_marker_rna,], "asinh")))
-dat_rna$cellID <- rownames(dat_rna)
-dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna_sub))[,c("cellID", "tumor_class")])
-
-# melt
-dat_rna <- dat_rna %>%
-  reshape2::melt(id.vars = c("cellID", "tumor_class"), variable.name = "channel", value.name = "asinh")
-
-# plot 
-ggplot(dat_rna, aes(x=tumor_class, y=asinh, fill=tumor_class)) + 
-  geom_boxplot(alpha=0.2) +
-  geom_violin(alpha=0.1) +
-  theme_bw() +
-  theme(text = element_text(size=18),
-        #axis.text.x = element_blank(),
-        legend.position = "none") +
-  facet_wrap(~channel) + 
-  xlab("") + 
-  ylab("") +
-  facet_wrap(~channel)
-```
-
-## Other Chemokine Production in the Neighborhood of CXCL13+ CD8+ T cells
-
-```{r Fig_3F_Macrophage_Subclusters, fig.height=8, fig.width=12, dev=c('pdf')}
-# subset sce for inflamed/exhausted in high samples
-cur_dat_relation_chemokine <- dat_relation[dat_relation$celltype_first == "Tcytotoxic" & 
-                                   dat_relation$expressor_first == 1]
-
-cur_dat_relation_control <- dat_relation[dat_relation$celltype_first == "Tcytotoxic" & 
-                                   dat_relation$expressor_first == 0]
-
-# sample same amount of macrophages
-control_sample <- sample(unique(cur_dat_relation_control$cellID_first), length(unique(cur_dat_relation_chemokine$cellID_first)))
-cur_dat_relation_control <- cur_dat_relation_control[cur_dat_relation_control$cellID_first %in% control_sample,]
-ids_tumor_chemokine <- cur_dat_relation_chemokine$cellID_second
-ids_tumor_control <- cur_dat_relation_control$cellID_second
-
-sce_rna_sub <- sce_rna[,sce_rna$cellID %in% c(ids_tumor_chemokine, ids_tumor_control)]
-sce_rna_sub$tumor_class <- ifelse(sce_rna_sub$cellID %in% ids_tumor_chemokine, "CD8+ CXCL13+", "CD8+ CXCL13-")
-
-# plot proportions
-a <- plotCellCounts(sce_rna_sub,
-                    sce_rna_sub[,sce_rna_sub$celltype == "Macrophage"], 
-                    normalize =  TRUE,
-                    cellID = "cellID",
-                    colour_by = "celltype_clustered", 
-                    split_by = "tumor_class",
-                    imageID = "ImageNumber",
-                    colour_vector = col_vec[grep("Macrophage", names(col_vec))]) +
-  guides(fill=guide_legend("Cell Type")) +
-  theme(text = element_text(size=18))
-
-targets <- metadata(sce_rna_sub)$chemokines_morethan600_withcontrol
-
-b <- plotCellCounts(sce_rna_sub, 
-                    sce_rna_sub[,sce_rna_sub$expressor %in% targets & sce_rna_sub$celltype == "Macrophage"], 
-                    normalize = TRUE, 
-                    cellID = "cellID",
-                    colour_by = "expressor", 
-                    split_by = "tumor_class",
-                    imageID = "ImageNumber",
-                    colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations,
-                    show_n = FALSE)   +
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=18))
-
-grid.arrange(a,b, ncol=2)
-```
-
-# NeighbouRhood analysis
-
-## CP output
-
-```{r, eval=F}
-# Load and prepare
-dat_cells = fread(file = "data/rna/cell.csv",stringsAsFactors = FALSE)
-dat_relation = fread(file = "data/rna/Object relationships.csv",stringsAsFactors = FALSE)
-
-# Number of cores used for multicore:
-if(detectCores() >= 12){
-  ncores = round(detectCores()/1.25,0)
-}
-if(detectCores() > 1 & detectCores() < 12){
-  ncores = round(detectCores()/2,0)
-}
-if(detectCores() == 1){
-  ncores = 1
-}
-
-n_perm = 100 
-```
-
-## Start the analysis
-
-```{r milieu_analysis, eval=F}
-start = Sys.time()
-cur_sce <- as.data.frame(colData(sce_rna))
-
-# add same cellID to dat_cells as in sce object
-dat_cells$cellID <- paste("RNA_", paste(dat_cells$ImageNumber, dat_cells$ObjectNumber, sep = "_"), sep = "")
-
-image_df <- data.frame()
-for(size in c(2,3,4,5,6)) {
-  images <- data.frame()
-  for(i in colnames(cur_sce[,grepl("CCL|CXCL",colnames(cur_sce))])){
-    # add chemokine info to celltype
-    sce_info <- cur_sce[,c("cellID", i , "Description")]
-    
-    # add celltype information
-    dat_cells_tmp <- left_join(as.data.frame(dat_cells), sce_info, by = "cellID")
-    
-    #assign labels and groups
-    dat_cells_tmp$label <- dat_cells_tmp[,i]
-    dat_cells_tmp$group <- dat_cells_tmp$Description
-    dat_cells_tmp <- as.data.table(dat_cells_tmp)
-    
-    # subset dat_relation and dat_cells
-    dat_cells_sub <- dat_cells_tmp#[dat_cells$Description == "P3",]
-    dat_relation_sub <- dat_relation#[dat_relation$`First Image Number` == unique(sce_rna[,sce_rna$Description == "P3"]$ImageNumber),]
-    
-    # Prepare the data
-    d = neighbouRhood::prepare_tables(dat_cells_sub, dat_relation_sub)
-    
-    # Calculate the baseline statistics
-    dat_baseline = neighbouRhood::apply_labels(d[[1]], d[[2]]) %>%
-      neighbouRhood::aggregate_classic_patch(., patch_size = size)
-    
-    # Calculate the permutation statistics
-    # This will run the test using parallel computing. The name of the idcol does actually not matter.
-    
-    set.seed(12312)
-    dat_perm = rbindlist(mclapply(1:n_perm, function(x){
-      dat_labels = neighbouRhood::shuffle_labels(d[[1]])
-      neighbouRhood::apply_labels(dat_labels, d[[2]]) %>%
-        neighbouRhood::aggregate_classic_patch(., patch_size = size)
-    },mc.cores = ncores
-    ), idcol = 'run')
-    
-    # calc p values
-    dat_p <- neighbouRhood::calc_p_vals(dat_baseline, dat_perm, n_perm = n_perm, p_tresh = 0.01) 
-    
-    # select interactions between chemokine+ cells
-    dat_p$interaction <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "_")
-    
-    dat_p_wide <- dat_p %>%
-      reshape2::dcast(group ~ interaction, value.var = "sigval", fill = 0) %>%
-      select(group, `1_1`)
-    
-    summary <- as.data.frame(dat_p_wide) %>%
-      group_by(`1_1`) %>%
-      summarise(n=n(),.groups = 'drop') %>%
-      ungroup() %>%
-      mutate(percentage_sig = (n/sum(n)) * 100)
-    
-    images <- rbind(images, cbind(summary[1,], i))
-  }
-  
-  # calculate percentage of images with significant patches
-  images$percentage_sig <- 100 - images$percentage_sig
-  images$patch_size <- size
-  images <- select(images, percentage_sig, i, patch_size)
-  colnames(images) <- c("significant_images", "chemokine", "patch_size")
-  
-  # add to data.frame
-  image_df <- rbind(image_df, images)
-}
-end = Sys.time()
-
-print(end-start)
-```
-
-## Visualize 
-
-```{r Fig_3A_patch_analysis, dev=("pdf"), fig.height=5, fig.width=8, eval=F}
-dat <- image_df %>%
-  reshape2::dcast(chemokine ~ patch_size, value.var = "significant_images", fill = 0)
-
-rownames(dat) <- dat$chemokine
-dat$chemokine <- NULL
-
-m <- t(as.matrix(dat))
-
-col_fun = viridis::inferno(100)
-
-Heatmap(m,
-        cluster_rows = FALSE,
-        col = col_fun,
-        column_title = "Self-Interaction",
-        column_title_side = "bottom",
-        show_row_names = TRUE,
-        cell_fun = function(j, i, x, y, width, height, fill) {
-          grid.text(sprintf("%.1f", m[i, j]), x, y, gp = gpar(fontsize = 15, col = "grey"))
-          },
-        heatmap_legend_param = list(
-          title = "% Significant\nImages", at = c(0, 10, 20, 30, 40, 50),
-          labels = c("0%", "10%", "20%", "30%","40%", "50%")),
-        row_title = "Patch Size",
-        row_names_side = "left",
-        width = unit(15, "cm"),
-        height = unit(8, "cm"))
-```
-
-## Calculate p-value for Figure 3B
-
-```{r milieu_analysis_image58, eval=F}
-start = Sys.time()
-cur_sce <- as.data.frame(colData(sce_rna))
-
-image_df <- data.frame()
-for(size in c(2,3,4,5,6,7,8,9,10)) {
-  images <- data.frame()
-  for(i in c("CXCL10")){
-    # add chemokine info to celltype
-    sce_info <- cur_sce[,c("cellID", i , "Description")]
-    
-    # add celltype information
-    dat_cells_tmp <- left_join(as.data.frame(dat_cells), sce_info, by = "cellID")
-    
-    #assign labels and groups
-    dat_cells_tmp$label <- dat_cells_tmp[,i]
-    dat_cells_tmp$group <- dat_cells_tmp$Description
-    dat_cells_tmp <- as.data.table(dat_cells_tmp)
-    
-    # subset dat_relation and dat_cells
-    dat_cells_sub <- dat_cells_tmp[Description == "P3",]
-    dat_relation_sub <- dat_relation[dat_relation$`First Image Number` == unique(sce_rna[,sce_rna$Description == "P3"]$ImageNumber),]
-    
-    # Prepare the data
-    d = neighbouRhood::prepare_tables(dat_cells_sub, dat_relation_sub)
-    
-    # Calculate the baseline statistics
-    dat_baseline = neighbouRhood::apply_labels(d[[1]], d[[2]]) %>%
-      neighbouRhood::aggregate_classic_patch(., patch_size = size)
-    
-    # Calculate the permutation statistics
-    # This will run the test using parallel computing. The name of the idcol does actually not matter.
-    
-    set.seed(12312)
-    dat_perm = rbindlist(mclapply(1:n_perm, function(x){
-      dat_labels = neighbouRhood::shuffle_labels(d[[1]])
-      neighbouRhood::apply_labels(dat_labels, d[[2]]) %>%
-        neighbouRhood::aggregate_classic_patch(., patch_size = size)
-    },mc.cores = ncores
-    ), idcol = 'run')
-    
-    # calc p values
-    dat_p <- neighbouRhood::calc_p_vals(dat_baseline, dat_perm, n_perm = n_perm, p_tresh = 0.01) 
-    
-    # select interactions between chemokine+ cells
-    dat_p$interaction <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "_")
-    images <- rbind(images,dat_p)
-  }
-  
-  # calculate percentage of images with significant patches
-  images$patch_size <- size
-  
-  # add to data.frame
-  image_df <- rbind(image_df, images)
-}
-
-end = Sys.time()
-print(end-start)
-
-# Significant Self-Interatcions
-image_df[image_df$interaction == "1_1",]
-```
-
-# CD8 Analysis in Milieus
+# Figure 3E
 
 ## Expression levels in CD8 cells in milieus
 
@@ -863,7 +487,7 @@ milieus <- milieus %>%
 
 ## Marker Profile for different Milieus (for CD8+)
 
-```{r Fig_3X_cd8_profile_milieus, fig.height=6, fig.width=8, dev=c('pdf')}
+```{r Fig_3E_cd8_profile_milieus, fig.height=6, fig.width=8, dev=c('pdf')}
 marker_rna <- c("Lag3", "T8_CXCL13", "T5_CCL4")
 
 # rna data 
@@ -917,6 +541,6 @@ grid.arrange(c + theme(legend.position = "none"))
 
 ## Legend
 
-```{r ig_3X_legend, fig.height=3, fig.width=2, dev=c('pdf')}
+```{r Fig_3E_legend, fig.height=3, fig.width=2, dev=c('pdf')}
 grid.arrange(leg_c)
 ```

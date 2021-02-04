@@ -1,6 +1,6 @@
 ---
-title: "Figure_2"
-author: "toobiwankenobi"
+title: "Figure 2"
+author: "Tobias Hoch and Daniel Schulz"
 date: "2020-08-04"
 output: workflowr::wflow_html
 editor_options:
@@ -47,7 +47,7 @@ sce_rna <- readRDS(file = "data/sce_RNA.rds")
 sce_prot <- readRDS(file= "data/sce_protein.rds")
 ```
 
-# Plots
+# Figure 2B
 
 ## UpSet plot with ComplexHeatmap - including CellType Annotation and Met Location (with controls)
 
@@ -197,6 +197,8 @@ draw(packLegend(lgd1,column_gap = unit(0.5, "cm"),
                 max_height = unit(7, "cm")))
 ```
 
+# Figure 2C
+
 ## Heatmap Marker Expression
 
 ```{r, Fig_2C_heatmap_marker_producing_cells, fig.width=12, fig.height=12, dev=("pdf")}
@@ -300,6 +302,8 @@ lgd_list = packLegend(lgd1,lgd2,direction = "horizontal", gap = unit(1,"cm"))
 draw(lgd_list)
 ```
 
+# Figure 2D
+
 ## Fraction of Tumor Cells that express chemokines
 
 ```{r Fig_2D_tumor_cells_chemokine, dev=("pdf"), fig.width=9}
@@ -336,7 +340,7 @@ ggplot(cur_dat,aes(x=fct_reorder(chemokine, fraction, .fun = median, .desc = TRU
   geom_hline(yintercept = median(cur_dat$fraction+0.001), linetype = 2)
 ```
 
-# Correlations
+# Figure 2E
 
 ## Correlation of Chemokines with Celltypes
 
@@ -363,6 +367,8 @@ corrplot(cor,
          tl.col="black",
          tl.cex = 1.5)
 ```
+
+# Figure 2F
 
 ## Correlation of Chemokines with Celltypes (based on fractions)
 
@@ -408,7 +414,7 @@ corrplot(cor,
 
 ## Scatter Plot for CD8+ and Chemokine Selection
 
-```{r Fig_2F_cd8_chemokine_correlation, fig.width=11, fig.height=14, dev=("pdf")}
+```{r Fig_2F_cd8_chemokine_correlation, fig.width=7, fig.height=9, dev=("pdf")}
 # sum
 chemokines <- data.frame(colData(sce_rna)) %>%
   group_by(Description) %>%
@@ -437,22 +443,22 @@ sum <- sum %>%
 
 sum$celltype_chemo <- factor(sum$celltype_chemo, levels = c("Tcytotoxic ~ CXCL9", "pDC ~ CXCL12", "Tregulatory ~ CCL22"))
 
-ggplot(sum, aes(x=chemo_fraction, y=cell_fraction)) + 
+ggplot(sum, aes(x=log10(chemo_fraction), y=log10(cell_fraction))) + 
   geom_point() + 
   geom_smooth(method="lm") +
-  scale_x_log10() + 
-  scale_y_log10() +
-  annotation_logticks(sides = "l") +
-  annotation_logticks(sides = "b") +
-  ylab("Celltype Fraction\n") +
-  xlab("Chemokine Fraction") +
+  #scale_x_log10() + 
+  #scale_y_log10() +
+  #annotation_logticks(sides = "l") +
+  #annotation_logticks(sides = "b") +
+  ylab("Celltype Fraction (log10)\n") +
+  xlab("Chemokine Fraction (log10)") +
   scale_y_continuous(position = "right") +
   theme_bw() + 
-  theme(text=element_text(size=35)) +
+  theme(text=element_text(size=18),
+        plot.margin = margin(0.5,0.5,0.5,0.5, "cm")) +
   guides(col=guide_legend(title="Chemokines")) +
-  stat_poly_eq(formula = y ~ x, size=13,
+  stat_poly_eq(formula = y ~ x, size=7,
                aes(label = ..rr.label..), 
                parse = TRUE) + 
   facet_wrap(~celltype_chemo, ncol = 1, scales = "free")
 ```
-

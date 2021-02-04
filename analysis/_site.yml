@@ -28,9 +28,13 @@ navbar:
     - text: Pure Chemokine Communities
       href: 08_RNA_neighbourhood_analysis_chemokines.html
     - text: Scoring System
-      href: 09_manual_scoring.rmd
+      href: 09_manual_scoring.html
     - text: Coloring Scheme
-      href: 10_coloring.rmd
+      href: 10_coloring.html
+    - text: TLS Identification
+      href: 11_Bcell_TLS_identification.html
+    - text: Dysfunction
+      href: 12_dysfunction_score.html
   - text: Protein TMA
     menu:
     - text: Read Data
@@ -51,6 +55,10 @@ navbar:
       href: 09_manual_scoring.rmd
     - text: Coloring Scheme
       href: 10_coloring.rmd
+    - text: TLS Identification
+      href: 11_Bcell_TLS_identification.html
+    - text: TCF7/PD1 Gating
+      href: 13_TCF7_PD1.html
   - text: Main Figures
     menu:
     - text: Figure 1
@@ -61,6 +69,8 @@ navbar:
       href: Figure_3.html
     - text: Figure 4
       href: Figure_4.html
+    - text: Figure 5
+      href: Figure_5.html
   - text: Supplemental Figures
     menu:
     - text: Supp-Figure 1
@@ -71,8 +81,14 @@ navbar:
       href: Supp-Figure_3.html
     - text: Supp-Figure 4
       href: Supp-Figure_4.html
-  - text: License
-    href: license.html
+    - text: Supp-Figure 5
+      href: Supp-Figure_5.html
+  - text: Additional Material
+  menu:
+    - text: Summary Statistics
+      href: Summary_Statistics.html
+    - text: License
+      href: license.html
 output:
   workflowr::wflow_html:
     toc: yes

@@ -1,6 +1,6 @@
 ---
-title: "Supp-Figure_5"
-author: ""
+title: "Supplementary Figure 5"
+author: "Tobias Hoch and Daniel Schulz"
 date: "2021-01-30"
 output: workflowr::wflow_html
 editor_options:
@@ -53,17 +53,26 @@ sce_prot = readRDS(file = "data/sce_protein.rds")
 
 # image
 image_mat <- read.csv("data/protein/Image.csv")
-image_mat_rna <- read.csv("data/rna/Image.csv")
 
 # surv_dat
 dat_survival_prot <- fread(file = "data/protein/clinical_data_protein.csv")
 ```
 
-# Size of Chemokine Patches
+## Prepare image size data
+
+```{r}
+im_size <- as.data.frame(cbind(image_mat$Metadata_Description, (image_mat$Height_cellmask * image_mat$Width_cellmask)/1000000))
+names(im_size) <- c("Description", "mm2")
+im_size$mm2 <- as.numeric(im_size$mm2)
+im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2 <- mean(im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2)
+im_size <- im_size[im_size != "G1 - split",]
+```
+
+# Supp Figure 5A/5B
 
 ## Diffusion Map for CXCL13 Producing Cells
 
-```{r Fig_3D_DiffusionMap_producing_cells, fig.height=7, fig.width=11, dev=c('pdf')}
+```{r Fig_5A5B_DiffusionMap_producing_cells, fig.height=7, fig.width=11, dev=c('pdf')}
 # loop through all patches 
 for(i in c("cxcl13only_clust")){
   # subset sce object to only contain community cells
@@ -221,145 +230,16 @@ plot_grid(grid.arrange(a + theme(legend.position = "none"),
 
 ## Legend for Plot
 
-```{r Fig_3D_Legend, dev=c('pdf'), fig.height=3, fig.width=3}
+```{r Supp_Fig_5A5B_Legend, dev=c('pdf'), fig.height=3, fig.width=3}
 grid.arrange(leg_a)
 grid.arrange(leg_b)
 ```
 
-# CXCL13 Production in Bcell Groups
-
-## Analysis
-
-```{r Supp_Fig_5X_Bcell_patches_CXCL13_fraction, fig.height=6, fig.width=9, dev=c('pdf')}
-# fraction ot total production
-cxcl13 <- data.frame(colData(sce_rna)) %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M") %>% # remove LN margin samples 
-  filter(CXCL13 == 1) %>%
-  group_by(Description, MM_location, celltype) %>%
-  summarise(n=n()) %>%
-  group_by(Description) %>%
-  mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(Description + MM_location ~ celltype, value.var = "fraction", fill = 0)
-
-all_images <- data.frame(colData(sce_rna)) %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M") %>%
-  distinct(Description, .keep_all = T) %>%
-  select(Description)
-
-# left_join to have all images
-all_images <- left_join(all_images, cxcl13)
-
-# replace NA
-all_images[is.na(all_images)] <- 0
-
-all_images <- all_images %>%
-  reshape2::melt(id.vars=c("Description", "MM_location"), variable.name = "celltype", value.name = "fraction")
-
-#
-Bcell <- data.frame(colData(sce_rna)) %>%
-  distinct(Description, .keep_all = T) %>%
-  group_by(Description) %>%
-  select(Description, bcell_patch_score)
-
-# add grouping
-all_images <- left_join(all_images, Bcell[,c("Description","bcell_patch_score")]) %>%
-  filter(celltype %in% c("Tcytotoxic", "Tcell", "HLA-DR")) 
-
-#all_images$interaction <- interaction(all_images$celltype, all_images$bcell_patch_score)
-
-ggplot(all_images,aes(x=bcell_patch_score, y = fraction, fill=celltype)) + 
-  geom_boxplot(alpha=1, lwd=1, outlier.shape = NA) + 
-  #scale_x_discrete(labels = rep(unique(all_images$bcell_patch_score), each = 3)) +
-  geom_quasirandom(dodge.width=0.75, alpha=1, size=2) +
-  #geom_line(aes(group = Description), alpha = ifelse(all_images$celltype != "HLA-DR", 0.6, 0), colour = "black") +
-  #geom_point(aes(group= interaction), position = position_dodge(0.75)) +
-  ylab("Fraction of Total CXCL13 Expression") +
-  xlab("") + 
-  theme_bw() +
-  theme(text = element_text(size=18),
-        axis.text.x = element_text(angle=45, vjust=1, hjust=1)) +
-  scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype[c("Tcytotoxic", "Tcell", "HLA-DR")]),
-                    breaks = names(metadata(sce_rna)$colour_vectors$celltype[c("Tcytotoxic", "Tcell", "HLA-DR")])) +
-  #scale_color_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype[c("Tcytotoxic", "Tcell", "HLA-DR")]),
-                    #breaks = names(metadata(sce_rna)$colour_vectors$celltype[c("Tcytotoxic", "Tcell", "HLA-DR")]),
-                    #guide = FALSE) +
-  guides(fill=guide_legend(title="Cell Type", override.aes = c(lwd=0.5)))
-```
-
-# Response / Survival Analysis
-
-```{r}
-# select blocks in ICI subgroup that are treatment-naive and non-adjuvant
-blocks <- unique(sce_prot[,sce_prot$treatment_status_before_surgery == "naive" & 
-                            sce_prot$treatment_group_after_surgery == "ICI" &
-                            sce_prot$Adjuvant == "n"]$BlockID)
-
-# subset survival data (only data points that contain info for 3m response)
-dat_survival_prot_sub <- dat_survival_prot[dat_survival_prot$BlockID %in% blocks & 
-                                             is.na(dat_survival_prot$Status_at_3m) == FALSE, ]
-
-# remove LN margin samples
-dat_survival_prot_sub <- dat_survival_prot_sub %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M")
-
-# group sizes
-dat_survival_prot_sub %>%
-  distinct(Internal_pat_ID, .keep_all = T) %>%
-  group_by(Status_at_3m) %>%
-  summarise(n=n())
-```
-
-## TCF7/PD1 fraction in responder vs. non responder
-
-```{r, Supp_Fig_5X_responder_nonresponder_tcf7pd1, fig.height=8, fig.width=10, dev=("pdf")}
-im_size <- as.data.frame(cbind(image_mat$Metadata_Description, (image_mat$Height_cellmask * image_mat$Width_cellmask)/1000000))
-names(im_size) <- c("Description", "mm2")
-im_size$mm2 <- as.numeric(im_size$mm2)
-im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2 <- mean(im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2)
-im_size <- im_size[im_size != "G1 - split",]
-
-cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_survival_prot_sub$BlockID)])) %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
-  #filter(celltype != "Tumor") %>%
-  mutate(TCF7_PD1 = paste(TCF7, PD1, sep = "_")) %>%
-  group_by(PatientID,BlockID, Description, bcell_patch_score, celltype, TCF7_PD1) %>%
-  summarise(n=n()) %>% 
-  reshape2::dcast(PatientID + BlockID + Description + bcell_patch_score + celltype ~ TCF7_PD1, value.var = "n", fill=0) %>%
-  reshape2::melt(id.vars = c("PatientID","BlockID", "Description", "bcell_patch_score", "celltype"), 
-                 variable.name = "TCF7_PD1", value.name = "n") %>%
-  group_by(Description, celltype) %>%
-  mutate(fraction = n/sum(n)) %>%
-  mutate(total_cells = sum(n)) %>%
-  ungroup() %>%
-  filter(celltype %in% c("Tcytotoxic", "Thelper")) 
-
-cur_dat <- left_join(cur_dat, dat_survival_prot_sub[,c("BlockID", "Status_at_3m", "Primary_melanoma_type")]) %>%
-  distinct(Description, celltype, TCF7_PD1, .keep_all = T)
-
-cur_dat <- left_join(cur_dat, im_size[im_size$Description %in% unique(cur_dat$Description),])
-cur_dat$n_per_mm2 <- cur_dat$n / cur_dat$mm2
-cur_dat$celltype2 <- paste(cur_dat$celltype, cur_dat$TCF7_PD1, sep = ", ")
-
-ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Status_at_3m, y=log10(n_per_mm2+1), fill=Status_at_3m, label=PatientID)) + 
-  geom_boxplot(alpha=.4, outlier.shape = NA) +
-  geom_beeswarm(size=3) +
-  geom_label_repel(aes(label=PatientID), max.overlaps = 12, size = 5, alpha=.5) + 
-  stat_compare_means(label.x.npc = "left", label.y = -0.9, size=6) +
-  theme_bw() +
-  theme(text = element_text(size=18)) +
-  ylab("TCF7+/PD1+ cells per mm2 (log10)") +
-  xlab("") +
-  guides(fill=guide_legend(title="Response 3m", override.aes = c(lwd=0.5, size=1))) +
-  facet_wrap(~celltype2, scales = "free")
-```
+# Supp Figure 5C
 
 ## Tcf7+ correlation with Tcf7+PD1+ in Tcells
 
-```{r, Supp_Fig_5X_tcf7_pd1_tcell_corr, fig.width=10, fig.height=4, dev=("pdf")}
+```{r, Supp_Fig_5C_tcf7_pd1_tcell_corr, fig.width=10, fig.height=4, dev=("pdf")}
 cur_dat <- data.frame(colData(sce_prot)) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
@@ -397,120 +277,76 @@ ggplot(cur_dat, aes(x=log10(`TCF7+_PD1+`+1), y=log10(`TCF7+_PD1-`+1))) +
   facet_wrap(~celltype, scales = "free")
 ```
 
-# B Cell Patch/Milieu Analysis
+# Supp Figure 5D
 
-```{r Supp_Fig_5X_celltypes_bcell_milieus, fig.width=8, fig.height=6, dev=("pdf"), eval=F}
-# Cell Fractions for Patches and Milieus
-patch <- data.frame(colData(sce_prot)) %>%
-  filter(Location != "CTRL") %>%
-  filter(bcell_patch > 0) %>%
-  group_by(Description, bcell_patch, celltype) %>%
-  summarise(n=n()) %>%
-  mutate(fraction = n/sum(n), patch_size = sum(n))
+## Response / Survival Analysis
 
-milieu <- data.frame(colData(sce_prot)) %>%
-  filter(Location != "CTRL") %>%
-  filter(bcell_milieu > 0) %>%
-  #filter(bcell_patch == 0) %>%
-  group_by(Description, bcell_milieu, celltype) %>%
-  summarise(n=n()) %>%
-  mutate(fraction = n/sum(n))
+```{r}
+# select blocks in ICI subgroup that are treatment-naive and non-adjuvant
+blocks <- unique(sce_prot[,sce_prot$treatment_status_before_surgery == "naive" & 
+                            sce_prot$treatment_group_after_surgery == "ICI" &
+                            sce_prot$Adjuvant == "n"]$BlockID)
 
-patch$type <- "patch cells"
-milieu$type <- "milieu cells"
-names(patch)[2] <- "ID"
-names(milieu)[2] <- "ID"
-patch$ID <- as.character(patch$ID)
+# subset survival data (only data points that contain info for 3m response)
+dat_survival_prot_sub <- dat_survival_prot[dat_survival_prot$BlockID %in% blocks & 
+                                             is.na(dat_survival_prot$Status_at_3m) == FALSE, ]
 
-sum <- rbind(patch, milieu)
+# remove LN margin samples
+dat_survival_prot_sub <- dat_survival_prot_sub %>%
+  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
+  filter(mmLocationPunch != "LN_M")
 
-# add patch score
-score_info <- data.frame(colData(sce_prot))[,c("Description", "bcell_patch_score", "Location")] %>%
-  filter(Location != "CTRL") %>%
-  distinct(Description, .keep_all = T) %>%
-  select(Description, bcell_patch_score)
+# group sizes
+dat_survival_prot_sub %>%
+  distinct(Internal_pat_ID, .keep_all = T) %>%
+  group_by(Status_at_3m) %>%
+  summarise(n=n())
+```
 
-sum <- left_join(sum, score_info) %>%
-  mutate(type_score = paste(bcell_patch_score, type, sep = ", ")) %>%
-  filter(type == "milieu cells")
+## TCF7/PD1 fraction in responder vs. non responder
 
-p1 <- ggplot(sum, aes(x=celltype, y = fraction, fill=bcell_patch_score)) +
-  geom_boxplot(outlier.shape = NA) + 
-  geom_quasirandom(alpha=.8, dodge.width=.75, size=0.25) +
-  facet_wrap(~type, scales = "free") +
-  ylab("Cell Type Fraction") +
-  xlab("") +
-  theme_bw() + 
-  theme(text = element_text(size=15)) + 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
-  guides(fill=guide_legend(title="Bcell Score", override.aes = c(lwd=0.5, size=1))) +
-  stat_compare_means(aes(group = bcell_patch_score), label = "p.signif", label.y = -0.15, size=5)
-
-milieu <- data.frame(colData(sce_prot)) %>%
-  filter(bcell_milieu > 0) %>%
-  filter(bcell_patch == 0) %>%
+```{r, Supp_Fig_5D_responder_nonresponder_tcf7pd1, fig.height=8, fig.width=10, dev=("pdf")}
+cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_survival_prot_sub$BlockID)])) %>%
+  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
+  filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
+  #filter(celltype != "Tumor") %>%
   mutate(TCF7_PD1 = paste(TCF7, PD1, sep = "_")) %>%
-  group_by(Description, bcell_patch_score, bcell_milieu, celltype, TCF7_PD1) %>%
-  summarise(n=n()) %>%
+  group_by(PatientID,BlockID, Description, bcell_patch_score, celltype, TCF7_PD1) %>%
+  summarise(n=n()) %>% 
+  reshape2::dcast(PatientID + BlockID + Description + bcell_patch_score + celltype ~ TCF7_PD1, value.var = "n", fill=0) %>%
+  reshape2::melt(id.vars = c("PatientID","BlockID", "Description", "bcell_patch_score", "celltype"), 
+                 variable.name = "TCF7_PD1", value.name = "n") %>%
+  group_by(Description, celltype) %>%
   mutate(fraction = n/sum(n)) %>%
-  filter(celltype %in% c("Tcytotoxic", "Thelper", "BnTcell"))
+  mutate(total_cells = sum(n)) %>%
+  ungroup() %>%
+  filter(celltype %in% c("Tcytotoxic", "Thelper")) 
 
-p2 <- ggplot(milieu, aes(x=TCF7_PD1, y = fraction, fill=bcell_patch_score)) +
-  geom_boxplot(outlier.shape = NA) + 
-  geom_quasirandom(alpha=.8, dodge.width=.75, size=0.25) +
-  facet_wrap(~celltype, scales = "free") +
-  ylab("Cell Type Fraction") +
+cur_dat <- left_join(cur_dat, dat_survival_prot_sub[,c("BlockID", "Status_at_3m", "Primary_melanoma_type")]) %>%
+  distinct(Description, celltype, TCF7_PD1, .keep_all = T)
+
+cur_dat <- left_join(cur_dat, im_size[im_size$Description %in% unique(cur_dat$Description),])
+cur_dat$n_per_mm2 <- cur_dat$n / cur_dat$mm2
+cur_dat$celltype2 <- paste(cur_dat$celltype, cur_dat$TCF7_PD1, sep = ", ")
+
+ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Status_at_3m, y=log10(n_per_mm2+1), fill=Status_at_3m, label=PatientID)) + 
+  geom_boxplot(alpha=.4, outlier.shape = NA) +
+  geom_beeswarm(size=3) +
+  geom_label_repel(aes(label=PatientID), max.overlaps = 12, size = 5, alpha=.5) + 
+  stat_compare_means(label.x.npc = "left", label.y = -0.9, size=6) +
+  theme_bw() +
+  theme(text = element_text(size=18)) +
+  ylab("TCF7+/PD1+ cells per mm2 (log10)") +
   xlab("") +
-  theme_bw() + 
-  theme(text = element_text(size=15)) + 
-  theme(axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
-  guides(fill=guide_legend(title="Bcell Score", override.aes = c(lwd=0.5, size=1))) +
-  stat_compare_means(aes(group = bcell_patch_score, label = ..p.signif..), label.y = -0.15, size=5)
-
-leg <- get_legend(p2)
-grid.arrange(p1 + theme(legend.position = "none"), p2 + theme(legend.position = "none"), ncol=1)
+  guides(fill=guide_legend(title="Response 3m", override.aes = c(lwd=0.5, size=1))) +
+  facet_wrap(~celltype2, scales = "free")
 ```
 
-## Leged
-```{r Supp_Fig_5X_legend, dev=("pdf"), fig.width=2, fig.height=2, eval=F}
-grid.arrange(leg)
-```
-
-## Correlation between Bcell Patch Size and Fractions
-
-```{r Supp_Fig_5X_corr_patch_size_and_celltypes, dev=("pdf"), fig.width=10, fig.height=5, eval=F}
-milieu2 <- data.frame(colData(sce_prot)) %>%
-  filter(Location != "CTRL") %>%
-  filter(bcell_milieu > 0) %>%
-  filter(bcell_patch == 0) %>%
-  mutate(celltype2 = ifelse(celltype %in% c("Tcytotoxic", "Thelper", "BnTcell"), paste(celltype, paste(TCF7, PD1, sep = "_"), sep = "_"), celltype)) %>%
-  group_by(Description, bcell_milieu, celltype) %>%
-  summarise(n=n()) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(Description + bcell_milieu ~ celltype, value.var = "fraction", fill=0) %>%
-  reshape2::melt(id.vars = c("Description", "bcell_milieu"), variable.name = "celltype", value.name = "fraction")
-
-milieu2$ID <- milieu2$bcell_milieu
-
-sum <- left_join(milieu2,patch[,c("ID", "patch_size")])
-
-ggplot(sum, aes(x=log10(patch_size), y=log10(fraction+1))) + 
-  geom_point() + 
-  geom_smooth(method="lm") +
-  facet_wrap(~celltype, scales = "free") +
-  stat_poly_eq(formula = y ~ x, 
-                aes(label =  ..rr.label..), 
-                parse = TRUE, size=5, label.x.npc = "right") +
-  ylab("Fraction within Milieu (log10)") +
-  xlab("Bcell Patch Size (log10)") +
-  theme_bw() + 
-  theme(text = element_text(size=14))
-
-```
+# Supp Figure 5E
 
 ## Chemokine Correlation with Tcf7+CD8+
 
-```{r Supp_Fig_5X_chemokines_tcfpd1_correlation, fig.height=5, fig.width=9, dev=("pdf")}
+```{r Supp_Fig_5E_chemokines_tcfpd1_correlation, fig.height=5, fig.width=9, dev=("pdf")}
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 
 # top abundant chemokines
@@ -580,7 +416,7 @@ draw(h)
 
 ## Legend heatmap
 
-```{r Fig_2C_legend_heatmap, dev="pdf", fig.height=3, fig.width=2}
+```{r Supp_Fig_5E_legend_heatmap, dev="pdf", fig.height=3, fig.width=2}
 lgd1 = color_mapping_legend(h@matrix_color_mapping, plot = FALSE, legend_direction = "vertical", legend_width=unit(3,"cm"), at = c(-3:3))
 lgd2 = color_mapping_legend(ha1@anno_list$`Cell Type`@color_mapping, plot = FALSE, legend_direction = "vertical", nrow = 4)
 

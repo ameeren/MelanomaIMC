@@ -1,6 +1,6 @@
 ---
 title: "Supplementary Figure 1"
-author: "Hoch et al"
+author: "Tobias Hoch and Daniel Schulz"
 date: "2020-08-04"
 output: workflowr::wflow_html
 editor_options:
@@ -30,8 +30,6 @@ library(ggrepel)
 library(ggpmisc)
 library(ggrastr)
 ```
-
-# Unspecific Binding Quantification
 
 ## Load and process the data
 
@@ -107,27 +105,11 @@ cells_panel_uncorrected = cells_panel[cells_panel$signal_type == "MeanIntensity"
 cells_panel_corrected = cells_panel[cells_panel$signal_type == "MeanIntensityCorrected",]
 ```
 
-## Boxplot with uncorrected and corrected signal
-
-```{r Supp_Fig_1D_corrected signal, dev=("pdf"), fig.width=8, fig.height=5}
-cells_panel2 <- cells_panel
-cells_panel2[cells_panel2$signal_type == "MeanIntensity", ]$signal_type = "uncorrected"
-cells_panel2[cells_panel2$signal_type == "MeanIntensityCorrected", ]$signal_type = "spill-over corrected"
-
-ggplot(cells_panel2[cells_panel2$Metadata_Target == "T9",], aes(x=`Metal Tag`, y=counts_asinh, fill=signal_type)) +
-  geom_boxplot(outlier.shape = NA, lwd=0.5) +
-  theme_bw() +
-  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
-        text = element_text(size=18)) +
-  guides(fill=guide_legend(title="Signal")) +
-  ylab("Mean Count (asinh)") +
-  xlab("") +
-  facet_wrap(~Metadata_Target,labeller = as_labeller(c(T9 = "mRNA probe for Channel 9 (Er168)")))
-```
+# Supp Figure 1E
 
 ## Unspecific Amplifier Binding 
 
-```{r Supp_Fig_1A_heatmap_unspecific_binding, dev=c('pdf')}
+```{r Supp_Fig_1E_heatmap_unspecific_binding, dev=c('pdf')}
 results = matrix(nrow=12, ncol = 12)
 rownames(results) = unique(cells_panel$Target)
 colnames(results) = unique(cells_panel$Target)
@@ -167,7 +149,25 @@ a = Heatmap(as.matrix(results),
 draw(a)
 ```
 
-# Signal Intensity per Channel Quantificaiton
+# Supp Figure 1D
+
+## Boxplot with uncorrected and corrected signal
+
+```{r Supp_Fig_1D_corrected signal, dev=("pdf"), fig.width=8, fig.height=5}
+cells_panel2 <- cells_panel
+cells_panel2[cells_panel2$signal_type == "MeanIntensity", ]$signal_type = "uncorrected"
+cells_panel2[cells_panel2$signal_type == "MeanIntensityCorrected", ]$signal_type = "spill-over corrected"
+
+ggplot(cells_panel2[cells_panel2$Metadata_Target == "T9",], aes(x=`Metal Tag`, y=counts_asinh, fill=signal_type)) +
+  geom_boxplot(outlier.shape = NA, lwd=0.5) +
+  theme_bw() +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        text = element_text(size=18)) +
+  guides(fill=guide_legend(title="Signal")) +
+  ylab("Mean Count (asinh)") +
+  xlab("") +
+  facet_wrap(~Metadata_Target,labeller = as_labeller(c(T9 = "mRNA probe for Channel 9 (Er168)")))
+```
 
 ## Remove previous data 
 
@@ -179,6 +179,7 @@ sapply(list.files("code/helper_functions", full.names = TRUE), source)
 ```
 
 ## Load the data
+
 ```{r}
 cells1 = fread("data/12plex_validation/HeLa/20190208/cell.csv", header = T,sep=",")
 cells3 = fread("data/12plex_validation/HeLa/20190215/cell.csv", header = T,sep=",")
@@ -332,9 +333,11 @@ all(colnames(cells_panel) == colnames(cells_panel_8plex))
 cells_panel_12plex = rbind(cells_panel, cells_panel_8plex)
 ```
 
+# Supp Figure 1A
+
 ## Throw out the DNA, histone and panCytokeratin data and then get the info of PPIB staining
 
-```{r Supp_Fig_1B_merged_comparison_per_channel, fig.width=10, fig.height=8, dev=c('pdf')}
+```{r Supp_Fig_1A_merged_comparison_per_channel, fig.width=10, fig.height=8, dev=c('pdf')}
 # subset
 cells_panel_12plex_sub = cells_panel_12plex[stain == Target,]
 
@@ -362,7 +365,7 @@ cells_panel_12plex_sub %>%
   mutate(sd = sd(mean_per_channel), mean = mean(mean_per_channel), min = min(mean_per_channel), max = max(mean_per_channel))
 ```
 
-# Antibody Incubation
+# Supp Figure 1C
 
 ## Influence of Antibody Incubation
 
@@ -385,11 +388,11 @@ ggplot(data=dd, aes(x=Target, y=counts_asinh, fill = stain)) +
   scale_fill_discrete(name = "Protocol Type") 
 ```
 
-# RNAScope vs. RNA-Seq
+# Supp Figure 1B
 
 ## Compare Positive Controls with RNAseq data
 
-```{r Supp_Fig_1D_correlation_with_RNAseq, fig.width=8, fig.height=7, dev=c('pdf')}
+```{r Supp_Fig_1B_correlation_with_RNAseq, fig.width=8, fig.height=7, dev=c('pdf')}
 # add gene name
 cells_panel_12plex$gene <- ""
 cells_panel_12plex[cells_panel_12plex$Target == "T1",]$gene <- "POLR2A"
@@ -441,7 +444,7 @@ ggplot(sum, aes(x=expression_RNAseq, y=expression_RNAScope, label=gene)) +
 cor(sum$expression_RNAScope, sum$expression_RNAseq, method = c("spearman"))
 ```
 
-# Chemokine Detection Method
+# Supp Figure 1F
 
 ## Load Data
 
@@ -470,7 +473,7 @@ output_list <- compute_difference(sce_rna,
 
 ## Plot Results from Chemokine Detection
 
-```{r Supp_Fig_1E1F_chemokine_detection,fig.height=7, fig.width=17, dev=c("pdf"), dpi=25}
+```{r Supp_Fig_1F_chemokine_detection,fig.height=7, fig.width=17, dev=c("pdf"), dpi=25}
 # check difference between DapB and signal (histogram)
 plot_list = list()
 for(i in chemokine_channels_sub){
@@ -506,4 +509,3 @@ for(i in chemokine_channels_sub){
   grid.arrange(a,b, nrow = 1, ncol=2)
 }
 ```
-

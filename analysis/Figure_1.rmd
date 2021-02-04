@@ -1,6 +1,6 @@
 ---
-title: "Figure 1B and 1C"
-author: "Hoch et al"
+title: "Figure 1"
+author: "Tobias Hoch and Daniel Schulz"
 date: "2020-08-04"
 output: workflowr::wflow_html
 editor_options:
@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates figures for Figure 1B and Figure 1C. 
+This script generates plots for Figure 1. 
 
 # Preparations
 
@@ -44,10 +44,9 @@ library(dendextend)
 ```{r}
 sce_rna <- readRDS("data/sce_RNA.rds")
 sce_prot <- readRDS("data/sce_protein.rds")
-
-# meta data
-dat_inflammation = fread(file = "data/manual_infiltration_scoring_BlockID.csv", header = TRUE)
 ```
+
+# Figure 1C
 
 ## Heatmap showing marker expression of celltypes
 
@@ -122,11 +121,175 @@ h <- Heatmap(m, name = "Scaled Expression",
 draw(h, heatmap_legend_side = "bottom")
 ```
 
-# Figure 1D - Plots for Protein TMA
+## Heatmap showing marker expression of celltypes
+
+```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=10, fig.height=11, dev=c('pdf')}
+# add marker expression to cells
+marker_expression <- data.frame(t(assay(sce_prot[rowData(sce_prot)$good_marker,], "asinh")))
+marker_expression$cellID <- rownames(marker_expression)
+dat <- data.frame(colData(sce_prot))[,c("cellID", "celltype")]
+dat <- left_join(dat, marker_expression)
+dat$cellID <- NULL
+
+# aggregate the groups
+dat_aggr <- dat %>%
+  group_by(celltype) %>%
+  summarise_all(funs(mean))
+
+# number of cells per group
+dat_sum <- dat %>%
+  group_by(celltype) %>%
+  summarise(n=n())
+
+dat_sum <- data.frame(t(dat_sum))
+
+# scale and center expression
+dat_aggr[,-c(1)] <- scale(dat_aggr[,-c(1)])
+
+# create matrix
+m <- as.matrix(t(dat_aggr[,-c(1)]))
+colnames(m) <- dat_aggr$celltype
+
+# top annotation with number of cells
+ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>70000, 70000, as.numeric(dat_sum[2,])),
+                                                         height = unit(3,"cm"),
+                                                         ylim = range(0,70000),
+                                                         gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 70000, "white", "black"),
+                                                                   col = "white"),
+                                                         axis_param = list(gp = gpar(fontsize=14))),
+                        "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
+                                                   which = "column", 
+                                                   rot = 0, 
+                                                   just = "center", 
+                                                   location = 0.5,
+                                                   gp = gpar(fontsize=10,col = ifelse(as.numeric(dat_sum[2,]) > 70000, "red", "black"))),
+                        annotation_name_gp = gpar(fontsize = 16))
+
+# row_split for markers
+rowData(sce_prot)$heatmap_relevance <- ""
+rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance <- "lineage"
+rowData(sce_prot[grepl("PDL1|CD11b|CD206|PARP|CXCR2|CD11c|pS6|GrzB|IDO1|CD45RA|H3K27me3|TCF7|CD45RO|PD1|pERK|ICOS|Ki67", rownames(sce_prot)),])$heatmap_relevance <- "other"
+
+# plot heatmap
+h <- Heatmap(m, name = "Scaled Expression",
+             row_split = rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance,
+             cluster_columns = TRUE,
+             show_column_dend = FALSE,
+             column_names_gp = gpar(fontsize=18),
+             column_names_rot = 45,
+             column_names_centered = TRUE,
+             show_column_names = TRUE,
+             row_names_gp = gpar(fontsize = 16),
+             row_title_gp = gpar(fontsize = 23),
+             top_annotation = ha,
+             col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
+             heatmap_legend_param = list(at = c(-2:2), legend_width = unit(6,"cm"), 
+                                         direction="horizontal", title_gp = gpar(fontsize=16),
+                                         labels_gp = gpar(fontsize=12)),
+             column_names_side = "top",
+             height = unit(20, "cm"),
+             width = unit(17,"cm"))
+
+draw(h, heatmap_legend_side = "bottom")
+```
+
+# Figure 1D
+
+## Cell Type Correlation between the two data sets
+
+```{r Fig_1D_Celltype_Correlation, dev=c('pdf'), fig.height=8, fig.width=9}
+cur_rna <- data.frame(colData(sce_rna))
+cur_prot <- data.frame(colData(sce_prot))
+
+rna_sum <- cur_rna %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
+
+prot_sum <- cur_prot %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
+
+# Correlation Plot - shared celltypes
+shared <- c("Macrophage", "Neutrophil", "Tcytotoxic", "Tumor")
+
+corrplot(cor(rna_sum[,-1], prot_sum[,-1], method = "pearson"), 
+         addCoef.col = "white",
+         method = "circle",
+         tl.col="black",
+         tl.cex = 1.5)
+
+# Mean Correlation between shared celltypes
+mean(c(cor(rna_sum$Macrophage, prot_sum$Macrophage, method = "pearson"), 
+       cor(rna_sum$Neutrophil, prot_sum$Neutrophil, method = "pearson"), 
+       cor(rna_sum$Tcytotoxic, prot_sum$Tcytotoxic, method = "pearson"), 
+       cor(rna_sum$Tumor, prot_sum$Tumor, method = "pearson")))
+```
+
+# Figure 1E
+
+## Load masks
+
+```{r}
+all_mask <- loadImages(x = "/home/ubuntu/bbvolume/Data/Analysis/melanoma_cohort_new_cp_pipeline/protein/cpout/",
+                       pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
+```
+
+## add the ImageNumber to masks
+
+```{r match image numbers}
+# we load the metadata for the images.
+image_mat <- as.data.frame(read.csv(file = "data/protein/Image.csv",stringsAsFactors = FALSE))
+
+# we extract only the FileNames of the masks as they are in the all_masks object
+cur_df <- data.frame(cellmask = image_mat$FileName_cellmask,
+                     ImageNumber = image_mat$ImageNumber,
+                     Description = image_mat$Metadata_Description)
+
+# we set the rownames of the extracted data to be equal to the names of all_masks
+rownames(cur_df) <- gsub(pattern = ".tiff",replacement = "",image_mat$FileName_cellmask)
+
+# we add the extracted information via mcols in the order of the all_masks object
+mcols(all_mask) <- cur_df[names(all_mask),]
+```
+
+## scale the masks
+
+```{r scale masks}
+all_mask <- scaleImages(all_mask,2^16-1)
+```
+
+## Plot two example Images
+
+```{r Fig_1E_example_images_immune_cells, dev=("pdf")}
+# subset masks
+mask_sub <- all_mask[mcols(all_mask)$Description %in% c("H9", "L7", "H2")]
+sce_prot_sub <- sce_prot[,sce_prot$Description %in% c("H9", "L7", "H2")]
+
+# rename all cells that are not tumor and not tcytotoxic
+#sce_prot_sub$celltype <- ifelse(sce_prot_sub$celltype %in% c("Tumor", "Tcytotoxic"), sce_prot_sub$celltype, "other")
+
+col_list <- list()
+col_list$`Cell Type` <- metadata(sce_prot)$colour_vectors$celltype
+
+sce_prot_sub$`Cell Type` <- sce_prot_sub$celltype
+
+plotCells(mask = mask_sub, 
+          object = sce_prot_sub,
+          cell_id = "CellNumber", img_id = "Description", 
+          colour_by = "Cell Type",
+          colour = col_list,
+          display = "single")
+```
+
+# Figure 1F
 
 ## Barplot containing Cell Types per Image
 
-```{r Fig_1D_Protein_Barplot, fig.width=13, fig.height=8, dev=c('pdf')}
+```{r Fig_1F_Protein_Barplot, fig.width=13, fig.height=8, dev=c('pdf')}
 # Create table with celltype fractions
 cur_df <- data.frame(celltype = sce_prot$celltype,
                      Description = sce_prot$Description,
@@ -224,7 +387,7 @@ grid.draw(ht)
 
 ## Legend for Barplot
 
-```{r Fig_1D_Protein_Barplot_Legend, fig.width=2, fig.height=4, dev=c('pdf')}
+```{r Fig_1F_Protein_Barplot_Legend, fig.width=2, fig.height=4, dev=c('pdf')}
 lgd1 <- Legend(labels = names(col_vector), 
              title = "Cell Type", 
              legend_gp = gpar(fill = col_vector),
@@ -244,192 +407,3 @@ pd = packLegend(lgd1, lgd2, lgd3, direction = "vertical",
     column_gap = unit(0.5, "cm"))
 draw(pd)
 ```
-
-## Heatmap showing marker expression of celltypes
-
-```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=10, fig.height=11, dev=c('pdf')}
-# add marker expression to cells
-marker_expression <- data.frame(t(assay(sce_prot[rowData(sce_prot)$good_marker,], "asinh")))
-marker_expression$cellID <- rownames(marker_expression)
-dat <- data.frame(colData(sce_prot))[,c("cellID", "celltype")]
-dat <- left_join(dat, marker_expression)
-dat$cellID <- NULL
-
-# aggregate the groups
-dat_aggr <- dat %>%
-  group_by(celltype) %>%
-  summarise_all(funs(mean))
-
-# number of cells per group
-dat_sum <- dat %>%
-  group_by(celltype) %>%
-  summarise(n=n())
-
-dat_sum <- data.frame(t(dat_sum))
-
-# scale and center expression
-dat_aggr[,-c(1)] <- scale(dat_aggr[,-c(1)])
-
-# create matrix
-m <- as.matrix(t(dat_aggr[,-c(1)]))
-colnames(m) <- dat_aggr$celltype
-
-# top annotation with number of cells
-ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>70000, 70000, as.numeric(dat_sum[2,])),
-                                                         height = unit(3,"cm"),
-                                                         ylim = range(0,70000),
-                                                         gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 70000, "white", "black"),
-                                                                   col = "white"),
-                                                         axis_param = list(gp = gpar(fontsize=14))),
-                        "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
-                                                   which = "column", 
-                                                   rot = 0, 
-                                                   just = "center", 
-                                                   location = 0.5,
-                                                   gp = gpar(fontsize=10,col = ifelse(as.numeric(dat_sum[2,]) > 70000, "red", "black"))),
-                        annotation_name_gp = gpar(fontsize = 16))
-
-# row_split for markers
-rowData(sce_prot)$heatmap_relevance <- ""
-rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance <- "lineage"
-rowData(sce_prot[grepl("PDL1|CD11b|CD206|PARP|CXCR2|CD11c|pS6|GrzB|IDO1|CD45RA|H3K27me3|TCF7|CD45RO|PD1|pERK|ICOS|Ki67", rownames(sce_prot)),])$heatmap_relevance <- "other"
-
-# plot heatmap
-h <- Heatmap(m, name = "Scaled Expression",
-             row_split = rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance,
-             cluster_columns = TRUE,
-             show_column_dend = FALSE,
-             column_names_gp = gpar(fontsize=18),
-             column_names_rot = 45,
-             column_names_centered = TRUE,
-             show_column_names = TRUE,
-             row_names_gp = gpar(fontsize = 16),
-             row_title_gp = gpar(fontsize = 23),
-             top_annotation = ha,
-             col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
-             heatmap_legend_param = list(at = c(-2:2), legend_width = unit(6,"cm"), 
-                                         direction="horizontal", title_gp = gpar(fontsize=16),
-                                         labels_gp = gpar(fontsize=12)),
-             column_names_side = "top",
-             height = unit(20, "cm"),
-             width = unit(17,"cm"))
-
-draw(h, heatmap_legend_side = "bottom")
-```
-
-## Cell Type Correlation between the two data sets
-
-```{r Fig_1E_Celltype_Correlation, dev=c('pdf'), fig.height=8, fig.width=9}
-cur_rna <- data.frame(colData(sce_rna))
-cur_prot <- data.frame(colData(sce_prot))
-
-rna_sum <- cur_rna %>%
-  group_by(Description, celltype) %>%
-  summarise(n = n()) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
-
-prot_sum <- cur_prot %>%
-  group_by(Description, celltype) %>%
-  summarise(n = n()) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
-
-# Correlation Plot - shared celltypes
-shared <- c("Macrophage", "Neutrophil", "Tcytotoxic", "Tumor")
-
-corrplot(cor(rna_sum[,-1], prot_sum[,-1], method = "pearson"), 
-         addCoef.col = "white",
-         method = "circle",
-         tl.col="black",
-         tl.cex = 1.5)
-
-# Mean Correlation between shared celltypes
-mean(c(cor(rna_sum$Macrophage, prot_sum$Macrophage, method = "pearson"), 
-       cor(rna_sum$Neutrophil, prot_sum$Neutrophil, method = "pearson"), 
-       cor(rna_sum$Tcytotoxic, prot_sum$Tcytotoxic, method = "pearson"), 
-       cor(rna_sum$Tumor, prot_sum$Tumor, method = "pearson")))
-```
-
-## Immune Cell Correlation in Protein Set
-
-```{r Fig_1F_Immune_Correlation, dev=c('pdf'), fig.height=7, fig.width=7, eval=F}
-cur_prot <- data.frame(colData(sce_prot))
-
-prot_sum <- cur_prot %>%
-  group_by(Description, celltype) %>%
-  summarise(n = n()) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
-
-# Correlation Plot - shared celltypes
-immune <- c("Macrophage", "Neutrophil", "Tcytotoxic", "Bcell", "BnTcell", "pDC", "Thelper", "Tregulatory")
-
-# correlation
-cor <- cor(prot_sum[,immune], prot_sum[,immune], method = "pearson")
-
-corrplot(cor, 
-         order = "FPC",
-         addCoef.col = "white",
-         method = "circle",
-         tl.col="black",
-         tl.cex = 2)
-```
-
-# Example Images high/low B2M
-
-## Load masks
-
-```{r}
-all_mask <- loadImages(x = "/home/ubuntu/bbvolume/Data/Analysis/melanoma_cohort_new_cp_pipeline/protein/cpout/",
-                       pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
-```
-
-## add the ImageNumber to masks
-
-```{r match image numbers}
-# we load the metadata for the images.
-image_mat <- as.data.frame(read.csv(file = "data/protein/Image.csv",stringsAsFactors = FALSE))
-
-# we extract only the FileNames of the masks as they are in the all_masks object
-cur_df <- data.frame(cellmask = image_mat$FileName_cellmask,
-                     ImageNumber = image_mat$ImageNumber,
-                     Description = image_mat$Metadata_Description)
-
-# we set the rownames of the extracted data to be equal to the names of all_masks
-rownames(cur_df) <- gsub(pattern = ".tiff",replacement = "",image_mat$FileName_cellmask)
-
-# we add the extracted information via mcols in the order of the all_masks object
-mcols(all_mask) <- cur_df[names(all_mask),]
-```
-
-## scale the masks
-
-```{r scale masks}
-all_mask <- scaleImages(all_mask,2^16-1)
-```
-
-## Plot two example Images
-
-```{r Fig_4A_example_images_B2Mexpression, dev=("pdf")}
-# subset masks
-mask_sub <- all_mask[mcols(all_mask)$Description %in% c("H9", "L7", "H2")]
-sce_prot_sub <- sce_prot[,sce_prot$Description %in% c("H9", "L7", "H2")]
-
-# rename all cells that are not tumor and not tcytotoxic
-#sce_prot_sub$celltype <- ifelse(sce_prot_sub$celltype %in% c("Tumor", "Tcytotoxic"), sce_prot_sub$celltype, "other")
-
-col_list <- list()
-col_list$`Cell Type` <- metadata(sce_prot)$colour_vectors$celltype
-
-sce_prot_sub$`Cell Type` <- sce_prot_sub$celltype
-
-plotCells(mask = mask_sub, 
-          object = sce_prot_sub,
-          cell_id = "CellNumber", img_id = "Description", 
-          colour_by = "Cell Type",
-          colour = col_list,
-          display = "single")
-```
-
-
