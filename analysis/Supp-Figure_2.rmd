@@ -41,6 +41,8 @@ library(rms)
 library(ggrepel)
 library(circlize)
 library(coxme)
+library(rstatix)
+library(ggpubr)
 ```
 
 ## Load Data
@@ -116,8 +118,7 @@ fractions_per_image <- data.frame(colData(sce_rna)) %>%
   group_by(ImageNumber, MM_location, expressor, celltype) %>%
   summarise(n = n()) %>%
   group_by(ImageNumber) %>%
-  mutate(total_cells = sum(n)) %>%
-  mutate(fraction_per_image = n / total_cells) %>%
+  mutate(fraction_per_image = n / sum(n)) %>%
   group_by(ImageNumber, expressor) %>%
   mutate(group_fraction = sum(fraction_per_image)) %>%
   ungroup() %>%
@@ -127,10 +128,11 @@ fractions_per_image <- data.frame(colData(sce_rna)) %>%
 fraction_expressor_per_image <- fractions_per_image %>%
   distinct(ImageNumber, MM_location, expressor, .keep_all = T) %>%
   reshape2::dcast(ImageNumber + MM_location ~ expressor, value.var = "group_fraction", fill = 0) %>%
-  reshape2::melt(id.vars = c("ImageNumber", "MM_location"), variable.name = "expressor", value.name = "fraction_per_image")
+  reshape2::melt(id.vars = c("ImageNumber", "MM_location"), variable.name = "expressor", 
+                 value.name = "fraction_per_image")
 
 # fraction of celltype expressing a certain combi per image
-median_celltype_fraction <- fractions_per_image %>%
+celltype_fractions <- fractions_per_image %>%
   distinct(ImageNumber, celltype, expressor, .keep_all = T) %>%
   reshape2::dcast(ImageNumber + MM_location + expressor ~ celltype, value.var = "fraction_per_image", fill = 0) %>%
   reshape2::melt(id.vars = c("ImageNumber", "MM_location", "expressor"), 
@@ -139,9 +141,22 @@ median_celltype_fraction <- fractions_per_image %>%
   reshape2::melt(id.vars = c("ImageNumber", "MM_location", "celltype"), 
                  variable.name = "expressor", value.name = "fraction_per_image") %>%
   group_by(MM_location, expressor, celltype) %>%
-  summarise(sum_fraction = sum(fraction_per_image)) %>%
+  summarise(sum_fraction = sum(fraction_per_image)) %>% # sum-up fractions over all images 
   group_by(MM_location, expressor) %>%
-  mutate(proportions = sum_fraction / sum(sum_fraction))
+  mutate(proportions = sum_fraction / sum(sum_fraction)) # calculate proportions for each expressor
+
+#median_celltype_fraction <- fractions_per_image %>%
+  #distinct(ImageNumber, celltype, expressor, .keep_all = T) %>%
+  #reshape2::dcast(ImageNumber + MM_location + expressor ~ celltype, value.var = "fraction_per_image", fill = 0) %>%
+  #reshape2::melt(id.vars = c("ImageNumber", "MM_location", "expressor"), 
+                 #variable.name = "celltype", value.name = "fraction_per_image") %>%
+  #reshape2::dcast(ImageNumber + MM_location + celltype ~ expressor, value.var = "fraction_per_image", fill = 0) %>%
+  #reshape2::melt(id.vars = c("ImageNumber", "MM_location", "celltype"), 
+                 #variable.name = "expressor", value.name = "fraction_per_image") %>%
+  #group_by(MM_location, expressor, celltype) %>%
+  #summarise(median_fraction = median(fraction_per_image)) %>%
+  #group_by(MM_location, expressor) %>%
+  #mutate(proportions = median_fraction / sum(median_fraction))
 ```
 
 ## Plot
@@ -163,7 +178,7 @@ for(i in groups$MM_location) {
     xlab("Cell Fraction per Image") + 
     coord_cartesian(xlim = c(0,0.05))
   
-  b <- median_celltype_fraction %>%
+  b <- celltype_fractions %>%
     filter(MM_location == i) %>%  
     ggplot(., aes(y=expressor, x=-proportions, fill=celltype)) + 
     geom_bar(stat = "identity") +
@@ -235,37 +250,60 @@ group_size <- data.frame(colData(sce_rna)) %>%
 sce_rna_sub <- sce_rna[,sce_rna$Mutation %in% group_size$Mutation]
 
 a <- plotCellCounts(sce = sce_rna_sub, 
-                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
-                     cellID = "cellID",
-                     colour_by = "expressor",
-                     split_by = "Mutation",
-                     imageID = "ImageNumber",
-                     normalize = TRUE,
-                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+                    sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                    cellID = "cellID",
+                    colour_by = "expressor",
+                    split_by = "Mutation",
+                    imageID = "ImageNumber",
+                    normalize = TRUE,
+                    show_n = FALSE,
+                    colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
   guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=18))
+  theme(text = element_text(size=16))
 
 b <- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
-                     cellID = "cellID",
-                     colour_by = "celltype",
-                     split_by = "Mutation",
-                     imageID = "ImageNumber",
-                     proportion = TRUE,
-                     colour_vector = metadata(sce_rna)$colour_vectors$celltype) + 
+                    cellID = "cellID",
+                    colour_by = "celltype",
+                    split_by = "Mutation",
+                    imageID = "ImageNumber",
+                    proportion = TRUE,
+                    show_n = FALSE,
+                    colour_vector = metadata(sce_rna)$colour_vectors$celltype) + 
   guides(fill=guide_legend("Cell Type")) +
-  theme(text = element_text(size=18))
+  theme(text = element_text(size=16))
 
-
-grid.arrange(a,b,nrow=1)
-
+# fraction of chemokine-expressing cells per image
 t <- data.frame(colData(sce_rna_sub)) %>%
-  group_by(ImageNumber, Mutation, chemokine) %>%
+  group_by(ImageNumber, Mutation, chemokine, MM_location_simplified) %>%
   summarise(n=n()) %>%
   group_by(ImageNumber) %>%
   mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(ImageNumber + Mutation ~ chemokine, value.var = "fraction")
+  reshape2::dcast(ImageNumber + Mutation + MM_location_simplified ~ chemokine, value.var = "fraction")
 
-round(kruskal.test(t$`TRUE` ~ t$Mutation)$p.value,3)
+median_expression <- median(t$`TRUE`)
+
+stat.test <- t %>%
+  group_by(Mutation) %>%
+  t_test(data = ., mu = median_expression, `TRUE` ~ 1, alternative = "greater") %>%
+  adjust_pvalue(method="BH") %>%
+  add_significance() %>%
+  add_x_position(x = "Mutation", dodge = 0.8)
+
+c <- ggplot(t, aes(x=Mutation, y=`TRUE`)) + 
+  geom_boxplot(alpha=0.2, lwd=1.5) + 
+  geom_quasirandom(aes(col=MM_location_simplified), size=2, alpha=.8) +
+  geom_hline(yintercept = median_expression, linetype=2, size=2) + 
+  stat_pvalue_manual(stat.test, x = "x", label = "p.adj.signif", size = 7, y.position = 0.3) + 
+  xlab("") + 
+  ylab("Fraction of Chemokine-Expressing Cells") +
+  theme_bw() +
+  theme(text = element_text(size=16),
+        axis.text.x = element_text(angle=45, hjust=1, vjust=1)) +
+  guides(col=guide_legend("Location")) +
+  coord_cartesian(ylim=c(0,0.3))
+
+grid.arrange(a,b,c,nrow=1,
+             widths = c(1,1,1))
 
 # MM_location for Mutations
 data.frame(colData(sce_rna_sub)) %>%

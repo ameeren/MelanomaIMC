@@ -36,6 +36,10 @@ dat <- read_csv("data/protein/clinical_data_protein.csv")
 # SCE object
 sce_prot = readRDS(file = "data/sce_protein.rds")
 sce_rna = readRDS(file = "data/sce_RNA.rds")
+
+# image
+image_mat_rna <- read.csv("data/rna/Image.csv")
+image_mat_prot <- read.csv("data/protein/Image.csv")
 ```
 
 # Statistics

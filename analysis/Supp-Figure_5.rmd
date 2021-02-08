@@ -43,6 +43,7 @@ library(ggpubr)
 library(cowplot)
 library(circlize)
 library(ggrepel)
+library(rstatix)
 ```
 
 ## Read the data
@@ -52,7 +53,7 @@ sce_rna = readRDS(file = "data/sce_RNA.rds")
 sce_prot = readRDS(file = "data/sce_protein.rds")
 
 # image
-image_mat <- read.csv("data/protein/Image.csv")
+image_mat_prot <- read.csv("data/protein/Image.csv")
 
 # surv_dat
 dat_survival_prot <- fread(file = "data/protein/clinical_data_protein.csv")
@@ -61,7 +62,7 @@ dat_survival_prot <- fread(file = "data/protein/clinical_data_protein.csv")
 ## Prepare image size data
 
 ```{r}
-im_size <- as.data.frame(cbind(image_mat$Metadata_Description, (image_mat$Height_cellmask * image_mat$Width_cellmask)/1000000))
+im_size <- as.data.frame(cbind(image_mat_prot$Metadata_Description, (image_mat_prot$Height_cellmask * image_mat_prot$Width_cellmask)/1000000))
 names(im_size) <- c("Description", "mm2")
 im_size$mm2 <- as.numeric(im_size$mm2)
 im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2 <- mean(im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2)
@@ -329,14 +330,31 @@ cur_dat <- left_join(cur_dat, im_size[im_size$Description %in% unique(cur_dat$De
 cur_dat$n_per_mm2 <- cur_dat$n / cur_dat$mm2
 cur_dat$celltype2 <- paste(cur_dat$celltype, cur_dat$TCF7_PD1, sep = ", ")
 
-ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Status_at_3m, y=log10(n_per_mm2+1), fill=Status_at_3m, label=PatientID)) + 
-  geom_boxplot(alpha=.4, outlier.shape = NA) +
+stat.test <- cur_dat %>%
+  mutate(log10_n_per_mm2 = log10(n_per_mm2 + 1)) %>%
+  group_by(celltype2) %>%
+  wilcox_test(data = ., n_per_mm2 ~ Status_at_3m) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj")
+
+info <- cur_dat[,c("celltype2", "TCF7_PD1")] %>%
+  distinct(celltype2, .keep_all = T)
+
+# filter relevant tests
+stat.test <- left_join(stat.test, info) %>%
+  filter(TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"))
+
+stat.test$p_and_p.adj <- paste(paste("p = ", round(stat.test$p,2), sep = ""), paste("p.adj = ", round(stat.test$p.adj,2), sep = ""), sep = "\n")
+
+ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Status_at_3m, y=log10(n_per_mm2+1), label=PatientID)) + 
+  geom_boxplot(alpha=.4, outlier.shape = NA, aes(fill=Status_at_3m)) +
   geom_beeswarm(size=3) +
   geom_label_repel(aes(label=PatientID), max.overlaps = 12, size = 5, alpha=.5) + 
-  stat_compare_means(label.x.npc = "left", label.y = -0.9, size=6) +
+  #stat_compare_means(label.x.npc = "left", label.y = -0.9, size=6, label = "p.format") +
+  stat_pvalue_manual(stat.test, label = "p_and_p.adj", size=5, label.x.npc = "left", y.position = -0.9, bracket.size = 0) +
   theme_bw() +
   theme(text = element_text(size=18)) +
-  ylab("TCF7+/PD1+ cells per mm2 (log10)") +
+  ylab("Cells per mm2 (log10)") +
   xlab("") +
   guides(fill=guide_legend(title="Response 3m", override.aes = c(lwd=0.5, size=1))) +
   facet_wrap(~celltype2, scales = "free")
@@ -346,7 +364,7 @@ ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Stat
 
 ## Chemokine Correlation with Tcf7+CD8+
 
-```{r Supp_Fig_5E_chemokines_tcfpd1_correlation, fig.height=5, fig.width=9, dev=("pdf")}
+```{r Supp_Fig_5E_chemokines_tcfpd1_correlation, fig.height=5.3, fig.width=9.8, dev=("pdf")}
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 
 # top abundant chemokines
@@ -377,6 +395,7 @@ prot_sum <- cur_prot %>%
   summarise(n = n()) %>%
   group_by(Description) %>%
   mutate(fraction = n/sum(n)) %>%
+  filter(!celltype2 %in% c("Thelper_TCF7+_PD1+", "Thelper_TCF7-_PD1+", "Tcytotoxic_TCF7+_PD1+")) %>%
   reshape2::dcast(Description ~ celltype2, value.var = "fraction", fill = 0) %>%
   select(Description,contains(c("Tcytotoxic", "Thelper")))
 
@@ -406,8 +425,8 @@ h <- Heatmap(cor,
         row_title = "Expressor",
         row_names_side = "left",
         top_annotation = ha1,
-        width = unit(15, "cm"),
-        height = unit(8, "cm"),
+        width = unit(18, "cm"),
+        height = unit(10, "cm"),
         show_heatmap_legend = FALSE)
 
 # draw heatmap
@@ -417,7 +436,7 @@ draw(h)
 ## Legend heatmap
 
 ```{r Supp_Fig_5E_legend_heatmap, dev="pdf", fig.height=3, fig.width=2}
-lgd1 = color_mapping_legend(h@matrix_color_mapping, plot = FALSE, legend_direction = "vertical", legend_width=unit(3,"cm"), at = c(-3:3))
+lgd1 = color_mapping_legend(h@matrix_color_mapping, plot = FALSE, legend_direction = "vertical", legend_width=unit(3,"cm"), at = c(-1:1))
 lgd2 = color_mapping_legend(ha1@anno_list$`Cell Type`@color_mapping, plot = FALSE, legend_direction = "vertical", nrow = 4)
 
 lgd_list = packLegend(lgd1,lgd2,direction = "vertical", gap = unit(1,"cm"))

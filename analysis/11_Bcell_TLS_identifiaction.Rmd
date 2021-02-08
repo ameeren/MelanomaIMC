@@ -46,6 +46,9 @@ sce_rna = readRDS(file = "data/sce_RNA.rds")
 
 image_prot <- read.csv("data/protein/Image.csv")
 image_rna <- read.csv("data/rna/Image.csv")
+
+sce_prot$bcell_patch_score <- NULL
+sce_rna$bcell_patch_score <- NULL
 ```
 
 ## Find patches of B cells and their milieus
@@ -144,9 +147,9 @@ example <- findCommunity(example,
 ## Make grouping
 
 1 no B cells (B cell density < 10 Bcells/mm2 and no patches)
-2 few B cells / no patches (B cell density > 10 Bcells/mm2 and no patches)
-3 small patches (max patch size < 250 B cells)
-4 large patches (max patch size > 250 B cells)
+2 no B cell patches (B cell density > 10 Bcells/mm2 and no patches)
+3 small B cell patches (max patch size < 250 B cells)
+4 TLS (max patch size > 250 B cells)
 
 ```{r}
 Bcell <- data.frame(colData(sce_prot)) %>%
@@ -169,16 +172,16 @@ im_w_patches <- data.frame(colData(sce_prot)) %>%
 
 ```{r}
 Bcell$Bcell_patch_score <- ""
-Bcell[Bcell$density < 10,]$Bcell_patch_score <- "no Bcells"
-Bcell[Bcell$density > 10,]$Bcell_patch_score <- "few Bcells"
-Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size<250,]$Description,]$Bcell_patch_score <- "small patches"
-Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size>=250,]$Description,]$Bcell_patch_score <- "large patches"
+Bcell[Bcell$density < 10,]$Bcell_patch_score <- "no B cells"
+Bcell[Bcell$density > 10,]$Bcell_patch_score <- "no B cell patches"
+Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size<250,]$Description,]$Bcell_patch_score <- "small B cell patches"
+Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size>=250,]$Description,]$Bcell_patch_score <- "TLS"
 
 Bcell %>%
   group_by(Bcell_patch_score) %>%
   summarise(n=n())
 
-Bcell$Bcell_patch_score <- factor(Bcell$Bcell_patch_score, levels = c("no Bcells", "few Bcells", "small patches", "large patches"))
+Bcell$Bcell_patch_score <- factor(Bcell$Bcell_patch_score, levels = c("no B cells", "no B cell patches", "small B cell patches", "TLS"))
 
 # add to sce
 cur_df <- data.frame(colData(sce_prot))

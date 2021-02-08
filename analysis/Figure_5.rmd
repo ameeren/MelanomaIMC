@@ -49,6 +49,7 @@ library(ggalluvial)
 library(cytomapper)
 library(corrplot)
 library(ggridges)
+library(rstatix)
 ```
 
 ## Read the data
@@ -202,16 +203,23 @@ celltypes <- data.frame(colData(sce_prot)) %>%
   filter(is.na(dysfunction_score) == FALSE)
 
 celltypes$bcell_patch_score <- as.character(celltypes$bcell_patch_score)
-celltypes$bcell_patch_score <- factor(celltypes$bcell_patch_score, levels = c("no Bcells", "few Bcells", "small patches", "large patches"))
+celltypes$bcell_patch_score <- factor(celltypes$bcell_patch_score, levels = c("no B cells", "no B cell patches", "small B cell patches", "TLS"))
 
-ggplot(celltypes, aes(x=celltype, y=fraction, fill=dysfunction_score)) +
-  geom_boxplot(alpha=.5, lwd = 1, outlier.shape = NA) +
+stat.test <- celltypes %>%
+  group_by(celltype) %>%
+  wilcox_test(data = ., fraction ~ dysfunction_score) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj") %>%
+  add_x_position(x = "dysfunction_score", dodge = 0.8)
+
+
+ggplot(celltypes, aes(x=celltype, y=fraction)) +
+  geom_boxplot(alpha=.5, lwd = 1, outlier.shape = NA, aes(fill=dysfunction_score)) +
   #geom_jitter(alpha=1, position = position_jitterdodge(dodge.width = 0.75,jitter.width = 0.1), size = 4, 
               #aes(x = celltype, y = fraction, #col=ifelse(celltype %in% c("Bcell", "BnTcell"), bcell_patch_score, " "),
                   #group = dysfunction_score)) + 
-   geom_quasirandom(dodge.width=0.75, alpha=1, size=1) + 
-  #scale_color_discrete(guide = FALSE) +
-  stat_compare_means(aes(group = dysfunction_score), label = "p.signif") +
+  geom_quasirandom(dodge.width=0.75, alpha=1, size=1) + 
+  stat_pvalue_manual(stat.test, x = "celltype", label = "p.adj.signif", size = 7, y.position = -0.05) + 
   theme_bw() +
   theme(text = element_text(size = 16),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
@@ -270,7 +278,7 @@ ggplot(a) +
   theme(text = element_text(size = 22)) +
   xlab("Fraction of Samples") +
   ylab("") +
-  guides(fill=guide_legend(title="Bcell Groups"))
+  guides(fill=guide_legend(title="Bcell Score"))
 ```
 
 # Figure 5D
@@ -386,14 +394,19 @@ celltypes <- data.frame(colData(sce_prot)) %>%
   filter(celltype %in% c("Tcytotoxic", "Thelper")) 
 
 celltypes$bcell_patch_score <- as.character(celltypes$bcell_patch_score)
-celltypes$bcell_patch_score <- factor(celltypes$bcell_patch_score, levels = c("no Bcells", "few Bcells", "small patches", "large patches"))
+celltypes$bcell_patch_score <- factor(celltypes$bcell_patch_score, levels = c("no B cells", "no B cell patches", "small B cell patches", "TLS"))
 
-ggplot(celltypes, aes(x=TCF7_PD1, y=fraction, fill=bcell_patch_score)) +
-  geom_boxplot(alpha=1, lwd = 0.5, outlier.size = 0.5) +
-  #geom_jitter(alpha=0.5, position = position_jitterdodge(dodge.width = 0.75,jitter.width = 0.1), size = 1, 
-              #aes(group = bcell_patch_score)) + 
-  #scale_color_discrete(guide = FALSE) +
-  stat_compare_means(aes(group = bcell_patch_score), label = "p.signif", size=6, label.y = 1) +
+stat.test <- celltypes %>%
+  group_by(celltype, TCF7_PD1) %>%
+  kruskal_test(data = ., fraction ~ bcell_patch_score) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj") %>%
+  mutate(group1 = celltype, group2 = TCF7_PD1) %>%
+  add_xy_position()
+
+ggplot(celltypes, aes(x=TCF7_PD1, y=fraction)) +
+  geom_boxplot(alpha=1, lwd = 0.5, outlier.size = 0.5, aes(fill=bcell_patch_score)) +
+  stat_pvalue_manual(x = "group2", stat.test, y.position = -0.1, size = 6) +
   theme_bw() +
   theme(text = element_text(size = 14),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
@@ -401,14 +414,14 @@ ggplot(celltypes, aes(x=TCF7_PD1, y=fraction, fill=bcell_patch_score)) +
   xlab("") + 
   ylab("Fraction of Population") +
   facet_wrap(~celltype, scales = "free") +
-  ylim(0,1.1)
+  ylim(-0.1,1.1)
 ```
 
 # Figure 5G
 
 ## Percentage of TCF7+PD1+CD8+ cells that are part of a Bcell milieu
 
-```{r Fig_5G_milieu_presence_tcells, fig.height=6, fig.width=6, dev=("pdf")}
+```{r Fig_5G_milieu_presence_tcells, fig.height=5, fig.width=8, dev=("pdf")}
 # what fraction of each celltype is part of a milieu?
 cur_dat <- data.frame(colData(sce_prot)) %>%
   filter(Location != "CTRL") %>%
@@ -432,10 +445,18 @@ milieu_area <- data.frame(colData(sce_prot)) %>%
   mutate(fraction_of_area = area / sum(area))  %>%
   filter(row_number() == n())
 
-sum <- left_join(cur_dat, milieu_area)
+sum <- left_join(cur_dat, milieu_area, by="Description")
 
 # calculate metric - milieu_fraction divided by milieu-area-fraction (this normalizes the first metric)
 sum$metric <- sum$fraction_in_milieu / sum$fraction_of_area
+
+# one-sample t test
+stat.test <- sum %>%
+  group_by(celltype, status) %>%
+  mutate(log10_metric = log10(metric)) %>%
+  t_test(log10_metric ~ 1, mu = 0, alternative = "greater", detailed = TRUE) %>%
+  adjust_pvalue() %>%
+  add_significance("p.adj")
 
 ggplot(sum, aes(x=sum$status, y=log10(metric))) +
   geom_boxplot(outlier.shape = NA) + 
@@ -445,7 +466,12 @@ ggplot(sum, aes(x=sum$status, y=log10(metric))) +
   theme_bw() + 
   theme(text=element_text(size=14),
         axis.text.x = element_text(angle=45, vjust=1, hjust=1)) +
+  stat_pvalue_manual(
+    stat.test, x = "status", y.position = 1.5,
+    label = "p.adj.signif",
+    position = position_dodge(0.8), 
+    size=7) + 
   ylab("Area-Normalized Log10 Fold-Change") +
-  xlab("") +
-  coord_cartesian(ylim=c(-1,1.75))
+  xlab("") #+
+  #coord_cartesian(ylim=c(-1,1.75))
 ```

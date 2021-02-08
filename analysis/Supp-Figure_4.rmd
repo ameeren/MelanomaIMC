@@ -32,6 +32,7 @@ library(circlize)
 library(ggpubr)
 library(ggridges)
 library(gridExtra)
+library(rstatix)
 ```
 
 ## Read the data
@@ -162,11 +163,17 @@ dat_prot <- dat_prot %>%
 # join both data sets
 comb <- rbind(dat_prot, dat_rna)
 
-group_comparison <- list(c("high dysfunction", "low dysfunction"))
+stat.test <- comb %>%
+  group_by(channel) %>%
+  wilcox_test(data = ., asinh ~ dysfunction_score) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj") %>%
+  add_xy_position(x = "celltype", dodge = 0.8)
+
 
 # plot 
-p <- ggplot(comb, aes(x=dysfunction_score, y=asinh, fill=dysfunction_score)) + 
-  geom_boxplot(alpha=0.2, lwd=1) +
+p <- ggplot(comb, aes(x=dysfunction_score, y=asinh)) + 
+  geom_boxplot(alpha=0.2, lwd=1, aes(fill=dysfunction_score)) +
   geom_quasirandom(alpha=0.6, size=2, aes(col=dysfunction_score)) +
   scale_color_discrete(guide = FALSE) +
   theme_bw() +
@@ -175,7 +182,7 @@ p <- ggplot(comb, aes(x=dysfunction_score, y=asinh, fill=dysfunction_score)) +
         axis.ticks = element_blank(),
         axis.title.x = element_blank()) +
   facet_wrap(~channel, scales = "free", ncol = 3) + 
-  stat_compare_means(comparisons = group_comparison, label = "p.signif") +
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
   xlab("") + 
   ylab("Mean Count per Image (asinh)") +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
@@ -219,10 +226,19 @@ s100 <- data.frame(colData(sce_rna)) %>%
   mutate(fraction = n/sum(n)) %>%
   filter(is.na(dysfunction_score) == F & S100 == "positive")
 
-ggplot(s100, aes(x=dysfunction_score, y=fraction, fill =dysfunction_score)) + 
-  geom_boxplot(alpha=0.2, lwd=1.5) + 
+s100$dysfunction_score <- factor(s100$dysfunction_score)
+
+stat.test <- s100 %>%
+  group_by(S100) %>%
+  wilcox_test(data = ., fraction ~ dysfunction_score) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj") %>%
+  add_x_position(dodge = 0.8)
+
+ggplot(s100, aes(x=dysfunction_score, y=fraction)) + 
+  geom_boxplot(alpha=0.2, lwd=1.5, aes(fill = dysfunction_score)) + 
   geom_quasirandom(aes(col=dysfunction_score), size=3) +
-  stat_compare_means(comparisons = list(c("high dysfunction", "low dysfunction")), size=6) + 
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7, y.position = 1) + 
   xlab("") + 
   ylab("Fraction of S100+ Tumor Cells") +
   theme_bw() +
@@ -307,7 +323,7 @@ fractions <- cur_dt %>%
   summarise(n=n()) %>%
   group_by(Description) %>%
   mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(Description ~ in_community, value.var = "fraction")
+  reshape2::dcast(Description ~ in_community, value.var = "fraction", fill = 0)
 
 names(fractions)[2:3] <- c("single", "community")
 fractions[, 2:3][is.na(fractions[, 2:3])] <- 0
@@ -339,9 +355,9 @@ cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$dysfunction_score %in% c("high dysfun
 subgroup = cur_dt_wide_sub[,"dysfunction_score"]
 
 # heatmap annotation
-row_ha2 = rowAnnotation("Composition of Chemokine- \n Producing Cells" = anno_barplot(cur_dt_wide_sub[,c("single", "community")], 
+row_ha2 = rowAnnotation("Production Mode of\nChemokine-Expressing Cells" = anno_barplot(cur_dt_wide_sub[,c("single", "community")], 
                                                      gp = gpar(fill = c("#F8766D", "#00BFC4")), width = unit(1.5, "cm")),
-                        "Fraction of Chemokine- \n Producing Cells" = anno_barplot(cur_dt_wide_sub[,"fraction"],
+                        "Fraction of Chemokine- \n Expressing Cells" = anno_barplot(cur_dt_wide_sub[,"fraction"],
                                                                    width = unit(1.5, "cm")),
                        annotation_name_rot = 90, gap = unit(3, "mm"),
                        col = list(Relapse = c("no relapse" = "orange", "relapse" = "black", "untreated/lost" = "grey")))
@@ -411,7 +427,7 @@ draw(ht1)
 
 ```{r Supp_Fig_4D_legend, dev=c('pdf'), fig.width=3, fig.height=1}
 # manual legends
-lgd1 = Legend(labels = c("Stand-alone", "Patch"), title = "Production Setting", legend_gp = gpar(fill = c("#F8766D", "#00BFC4")))
+lgd1 = Legend(labels = c("Stand-alone", "Patch"), title = "Production Mode", legend_gp = gpar(fill = c("#F8766D", "#00BFC4")))
 lgd2 = Legend(col_fun = colorRamp2(c(0:max(m)), colors = col_fun), 
               at = seq(0, max(m)+2, by=5), title = "Detected Patches", direction = "horizontal", grid_width = unit(2, "cm"))
 

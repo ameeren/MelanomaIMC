@@ -46,6 +46,7 @@ library(neighbouRhood)
 library(cowplot)
 library(viridis)
 library(ggpubr)
+library(rstatix)
 ```
 
 ## Read the data
@@ -514,29 +515,62 @@ dat_rna <- dat_rna %>%
   group_by(channel) %>%
   mutate(channel_median = median(asinh))
 
-# plot 
-c <- ggplot(dat_rna, aes(x=milieu_short, y=asinh, fill=milieu_short)) + 
-  geom_boxplot(alpha=.6, lwd=0.5, outlier.shape = NA, position = position_dodge(1.1)) +
-  #geom_jitter(size = 1, alpha=0.05, position = position_jitterdodge(dodge.width = 1.1,jitter.width = 0.05), aes(col=milieu_short)) +
-  theme_bw() +
-  theme(text = element_text(size=18),
-        axis.title.x=element_blank(),
-        axis.text.x=element_blank(),
-        axis.ticks.x=element_blank()) +
-  guides(fill=guide_legend("Milieu", override.aes = list(alpha=1)), col="none") +
-  #stat_compare_means(aes(group = milieu_short), label = "p.format") +
-  ylab("Mean Expression (asinh)") + 
-  xlab("") + 
-  geom_hline(aes(yintercept = channel_median, group = channel), colour = 'black', linetype = 2, size=1) + 
-  scale_fill_manual(values = unname(col_vector_chemokines),
-                    breaks = names(col_vector_chemokines),
-                    labels = names(col_vector_chemokines)) + 
-  facet_wrap(~channel, scales = "free", nrow = 2, shrink = TRUE) +
-  coord_cartesian(ylim=c(0,1.5))
+# one-sample t test
+stat.test <- data.frame()
 
-leg_c <- cowplot::get_legend(c)
+# loop through all channels (each has a different µ)
+for(j in unique(dat_rna$channel)){
+  cur.mu <- unique(dat_rna[dat_rna$channel == j, ]$channel_median)
+  
+  # calculate p-value for different milieus in one channel and adjust pvalue 
+  cur.test <- dat_rna[dat_rna$channel == j, ] %>%
+    group_by(channel, milieu_short) %>%
+    t_test(asinh ~ 1, mu = cur.mu, detailed = TRUE) %>%
+    adjust_pvalue()
+      
+  stat.test <- rbind(stat.test, cur.test)
+}
 
-grid.arrange(c + theme(legend.position = "none"))
+# adjust again for testing across different channels
+stat.test <- stat.test %>%
+    adjust_pvalue() %>%
+    add_significance("p.adj")
+
+# plot
+plot_list <- list()
+ylim_list <- list("Lag3" = c(0,0.9), "T8_CXCL13" = c(0,2.3), "T5_CCL4" = c(0,1))
+for(i in unique(dat_rna$channel)){
+  cur.stat.test <- stat.test[stat.test$channel == i, ]
+  
+  plot_list[[i]] <- ggplot(dat_rna[dat_rna$channel == i,], aes(x=milieu_short, y=asinh, fill=milieu_short)) + 
+    geom_boxplot(alpha=.6, lwd=0.5, outlier.shape = NA, position = position_dodge(1.1)) +
+    theme_bw() +
+    theme(text = element_text(size=18),
+          axis.title.x=element_blank(),
+          axis.text.x=element_blank(),
+          axis.ticks.x=element_blank()) +
+    guides(fill=guide_legend("Milieu", override.aes = list(alpha=1)), col="none") +
+    stat_pvalue_manual(
+      cur.stat.test, x = "milieu_short", y.position = ylim_list[[i]][2]-0.05,
+      label = "p.adj.signif",
+      position = position_dodge(0.8), 
+      size=4) + 
+    ylab("Mean Expression (asinh)") + 
+    xlab("") + 
+    geom_hline(aes(yintercept = channel_median, group = channel), colour = 'black', linetype = 2, size=1) + 
+    scale_fill_manual(values = unname(col_vector_chemokines),
+                      breaks = names(col_vector_chemokines),
+                      labels = names(col_vector_chemokines)) + 
+    coord_cartesian(ylim=ylim_list[[i]]) +
+    facet_wrap(~channel)
+}
+
+leg_c <- cowplot::get_legend(plot_list[[1]])
+
+grid.arrange(plot_list[[1]] + theme(legend.position = "none"),
+             plot_list[[2]] + theme(legend.position = "none") + ylab(""),
+             plot_list[[3]] + theme(legend.position = "none") + ylab(""),
+             ncol=2)
 ```
 
 ## Legend

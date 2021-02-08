@@ -48,6 +48,7 @@ library(survminer)
 library(ggalluvial)
 library(cytomapper)
 library(ggrepel)
+library(rstatix)
 ```
 
 ## Read the data
@@ -62,7 +63,7 @@ dat_relation_rna = fread(file = "data/RNA/Object relationships.csv",stringsAsFac
 dat_inflammation = fread(file = "data/manual_infiltration_scoring_BlockID.csv", header = TRUE)
 
 # image
-image_mat <- read.csv("data/protein/Image.csv")
+image_mat_prot <- read.csv("data/protein/Image.csv")
 
 # surv_dat
 dat_survival_prot <- fread(file = "data/protein/clinical_data_protein.csv")
@@ -111,7 +112,7 @@ colnames(dat_relation_rna)[5] <- "FirstImageNumber"
 ## Tumor Marker Profile for different Tcell Scoring Groups
 
 ```{r Fig_4A_tumor_profile_tcell, fig.height=6, fig.width=9, dev=c('pdf')}
-tumor_marker_protein <- c("pS6", "H3K27me3", "HLADR", "PDL1")
+tumor_marker_protein <- c("pS6", "H3K27me3", "HLADR", "PDL1", "IDO1")
 tumor_marker_rna <- c("B2M")
 
 # rna data 
@@ -155,20 +156,31 @@ dat_prot <- dat_prot %>%
 # join both data sets
 comb <- rbind(dat_prot, dat_rna)
 
+
+# adjusted wilcox.test for groups
 group_comparison <- list(c("absent", "high"), c("med", "high"))
 
+stat.test <- comb %>%
+  group_by(channel) %>%
+  wilcox_test(data = ., asinh ~ Tcell_density_score_image) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj") %>%
+  add_xy_position(x = "Tcell_density_score_image", dodge = 0.8, comparisons = group_comparison) %>%
+  filter(is.na(y.position) == FALSE)
+
 # plot 
-p <- ggplot(comb, aes(x=Tcell_density_score_image, y=asinh, fill=Tcell_density_score_image)) + 
-  geom_boxplot(alpha=0.2, lwd=1) +
-  geom_quasirandom(alpha=0.6, size=2, aes(col=Tcell_density_score_image)) +
+p <- ggplot(comb, aes(x=Tcell_density_score_image, y=asinh, 
+                      group=Tcell_density_score_image)) + 
+  geom_boxplot(alpha=0.2, lwd=1, aes(group=Tcell_density_score_image, fill = Tcell_density_score_image)) +
+  facet_wrap(~channel, scales = "free", ncol=3) + 
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
+  geom_quasirandom(alpha=0.6, size=2, aes(group=Tcell_density_score_image, col = Tcell_density_score_image)) +
   scale_color_discrete(guide = FALSE) +
   theme_bw() +
   theme(text = element_text(size=18),
+        axis.title.x = element_blank(),
         axis.text.x = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_blank()) +
-  facet_wrap(~channel, scales = "free", ncol=3) + 
-  stat_compare_means(comparisons = group_comparison, label = "p.signif", size=7) +
+        axis.ticks.x = element_blank()) +
   xlab("") + 
   ylab("Mean Count per Image (asinh)") +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.15))) +
@@ -196,15 +208,15 @@ all_mask <- loadImages(x = "/home/ubuntu/bbvolume/Data/Analysis/melanoma_cohort_
 
 ```{r match image numbers}
 # we load the metadata for the images.
-image_mat <- as.data.frame(read.csv(file = "data/rna/Image.csv",stringsAsFactors = FALSE))
+image_mat_rna <- as.data.frame(read.csv(file = "data/rna/Image.csv",stringsAsFactors = FALSE))
 
 # we extract only the FileNames of the masks as they are in the all_masks object
-cur_df <- data.frame(cellmask = image_mat$FileName_cellmask,
-                     ImageNumber = image_mat$ImageNumber,
-                     Description = image_mat$Metadata_Description)
+cur_df <- data.frame(cellmask = image_mat_rna$FileName_cellmask,
+                     ImageNumber = image_mat_rna$ImageNumber,
+                     Description = image_mat_rna$Metadata_Description)
 
 # we set the rownames of the extracted data to be equal to the names of all_masks
-rownames(cur_df) <- gsub(pattern = ".tiff",replacement = "",image_mat$FileName_cellmask)
+rownames(cur_df) <- gsub(pattern = ".tiff",replacement = "",image_mat_rna$FileName_cellmask)
 
 # we add the extracted information via mcols in the order of the all_masks object
 mcols(all_mask) <- cur_df[names(all_mask),]
@@ -369,11 +381,18 @@ sum2 <- sum %>%
   mutate(fraction = n/sum(n)) %>%
   ungroup()
 
-ggplot(sum2, aes(x=celltype, y=fraction, fill = dysfunction_score)) +
-  geom_boxplot(alpha=.2, lwd=1) +
-  geom_quasirandom(alpha=.6, dodge.width=.75, size=2, aes(col=dysfunction_score)) +
+stat.test <- sum2 %>%
+  group_by(celltype) %>%
+  wilcox_test(data = ., fraction ~ dysfunction_score) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj") %>%
+  add_x_position(x = "celltype", dodge = 0.8)
+
+ggplot(sum2, aes(x=celltype, y=fraction)) +
+  geom_boxplot(alpha=.2, lwd=1, aes(fill = dysfunction_score)) +
+  geom_quasirandom(alpha=.6, dodge.width=.75, size=2, aes(group = dysfunction_score, col=dysfunction_score)) +
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7, y.position = 0.9) + 
   scale_color_discrete(guide = FALSE) +
-  stat_compare_means(aes(group = dysfunction_score), label = "p.signif", size=5, label.y = 0.95) +
   theme_bw() +
   theme(text = element_text(size = 16),
         axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
@@ -432,18 +451,23 @@ dat_prot <- dat_prot %>%
 # join both data sets
 comb <- rbind(dat_prot, dat_rna)
 
-group_comparison <- list(c("high dysfunction", "low dysfunction"))
+stat.test <- comb %>%
+  group_by(channel) %>%
+  wilcox_test(data = ., asinh ~ dysfunction_score) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj") %>%
+  add_xy_position(x = "celltype", dodge = 0.8)
 
 # plot 
-ggplot(comb, aes(x=dysfunction_score, y=asinh, fill=dysfunction_score)) + 
-  geom_boxplot(alpha=0.2, lwd=1) +
+ggplot(comb, aes(x=dysfunction_score, y=asinh)) + 
+  geom_boxplot(alpha=0.2, lwd=1, aes(fill=dysfunction_score)) +
   geom_quasirandom(alpha=0.6, size=3, aes(col=dysfunction_score)) +
   scale_color_discrete(guide = FALSE) +
   theme_bw() +
   theme(text = element_text(size=18),
         legend.position = "none") +
   facet_wrap(~channel, scales = "free") + 
-  stat_compare_means(comparisons = group_comparison, label = "p.signif", size=7) +
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
   ylab("Mean Expression (asinh)") + 
   xlab("") +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.2)))
@@ -451,79 +475,9 @@ ggplot(comb, aes(x=dysfunction_score, y=asinh, fill=dysfunction_score)) +
 
 # Figure 4G
 
-## Response / Survival Analysis
-
-```{r}
-# select blocks in ICI subgroup that are treatment-naive and non-adjuvant
-blocks <- unique(sce_prot[,sce_prot$treatment_status_before_surgery == "naive" & 
-                            sce_prot$treatment_group_after_surgery == "ICI" &
-                            sce_prot$Adjuvant == "n"]$BlockID)
-
-# subset survival data (only data points that contain info for 3m response)
-dat_survival_prot_sub <- dat_survival_prot[dat_survival_prot$BlockID %in% blocks & 
-                                             is.na(dat_survival_prot$Status_at_3m) == FALSE, ]
-
-# remove LN margin samples
-dat_survival_prot_sub <- dat_survival_prot_sub %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M")
-
-# group sizes
-dat_survival_prot_sub %>%
-  distinct(Internal_pat_ID, .keep_all = T) %>%
-  group_by(Status_at_3m) %>%
-  summarise(n=n())
-```
-
-## Celltypes Clustered in Responder vs. Non-Responder
-
-```{r, Fig_4G_responder_nonresponder_tumor, fig.height=3.8, fig.width=9.1, dev=("pdf")}
-im_size <- as.data.frame(cbind(image_mat$Metadata_Description, (image_mat$Height_cellmask * image_mat$Width_cellmask)/1000000))
-names(im_size) <- c("Description", "mm2")
-im_size$mm2 <- as.numeric(im_size$mm2)
-im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2 <- mean(im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2)
-im_size <- im_size[im_size != "G1 - split",]
-
-cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_survival_prot_sub$BlockID)])) %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  #filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
-  #filter(celltype != "Tumor") %>%
-  group_by(PatientID,BlockID, Description, bcell_patch_score, celltype_clustered) %>%
-  summarise(n=n()) %>% 
-  reshape2::dcast(PatientID + BlockID + Description + bcell_patch_score ~ celltype_clustered, value.var = "n", fill=0) %>%
-  reshape2::melt(id.vars = c("PatientID","BlockID", "Description", "bcell_patch_score"), 
-                 variable.name = "celltype", value.name = "n") %>%
-  group_by(Description) %>%
-  mutate(fraction = n/sum(n)) %>%
-  mutate(total_cells = sum(n)) %>%
-  ungroup() %>%
-  filter(celltype %in% c("Tumor_1", "Tumor_9"))
-
-cur_dat <- left_join(cur_dat, dat_survival_prot_sub[,c("BlockID", "Status_at_3m", "Primary_melanoma_type")]) %>%
-  distinct(Description, celltype, .keep_all = T)
-
-cur_dat <- left_join(cur_dat, im_size[im_size$Description %in% unique(cur_dat$Description),])
-cur_dat$n_per_mm2 <- cur_dat$n / cur_dat$mm2
-
-ggplot(cur_dat, aes(x=Status_at_3m, y=log10(n_per_mm2+1), fill=Status_at_3m, label=PatientID)) + 
-  geom_boxplot(alpha=.4, outlier.shape = NA) +
-  geom_beeswarm(size=3) +
-  geom_label_repel(aes(label=PatientID), max.overlaps = 12, size = 5, alpha=.5) + 
-  stat_compare_means(label.x.npc = "left", label.y = -0.9, size=8) +
-  theme_bw() +
-  theme(text = element_text(size=18),
-        legend.position = "none") +
-  ylab("Cells per mm2 (log10)") +
-  xlab("") +
-  guides(fill=guide_legend(title="Response 3m", override.aes = c(lwd=0.5, size=1))) +
-  facet_wrap(~celltype, scales = "free")
-```
-
-# Figure 4H
-
 ## S100 and T Cell Dysfunction
 
-```{r Fig_4H_S100_dysfunction, dev=("pdf"), fig.width=7.7, fig.height=3.5}
+```{r Fig_4G_S100_dysfunction, dev=("pdf"), fig.width=7.7, fig.height=3.5}
 # fraction of exhausted cd8 per image
 dysfunction <- data.frame(colData(sce_rna)) %>%
   mutate(celltype2 = paste(celltype, CXCL13, sep = "_")) %>%
@@ -569,3 +523,83 @@ ggplot(cur_dat, aes(x=asinh, y=log10(fraction))) +
   xlab("Mean S100 (asinh)") +
   ylab("Fraction of Dysfunctional T cells\n(log10)")
 ```
+
+# Figure 4H
+
+## Response / Survival Analysis
+
+```{r}
+# select blocks in ICI subgroup that are treatment-naive and non-adjuvant
+blocks <- unique(sce_prot[,sce_prot$treatment_status_before_surgery == "naive" & 
+                            sce_prot$treatment_group_after_surgery == "ICI" &
+                            sce_prot$Adjuvant == "n"]$BlockID)
+
+# subset survival data (only data points that contain info for 3m response)
+dat_survival_prot_sub <- dat_survival_prot[dat_survival_prot$BlockID %in% blocks & 
+                                             is.na(dat_survival_prot$Status_at_3m) == FALSE, ]
+
+# remove LN margin samples
+dat_survival_prot_sub <- dat_survival_prot_sub %>%
+  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
+  filter(mmLocationPunch != "LN_M")
+
+# group sizes
+dat_survival_prot_sub %>%
+  distinct(Internal_pat_ID, .keep_all = T) %>%
+  group_by(Status_at_3m) %>%
+  summarise(n=n())
+```
+
+## Celltypes Clustered in Responder vs. Non-Responder
+
+```{r, Fig_4H_responder_nonresponder_tumor, fig.height=4.5, fig.width=9.1, dev=("pdf")}
+im_size <- as.data.frame(cbind(image_mat_prot$Metadata_Description, (image_mat_prot$Height_cellmask * image_mat_prot$Width_cellmask)/1000000))
+names(im_size) <- c("Description", "mm2")
+im_size$mm2 <- as.numeric(im_size$mm2)
+im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2 <- mean(im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2)
+im_size <- im_size[im_size != "G1 - split",]
+
+cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_survival_prot_sub$BlockID)])) %>%
+  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
+  #filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
+  #filter(celltype != "Tumor") %>%
+  group_by(PatientID,BlockID, Description, bcell_patch_score, celltype_clustered) %>%
+  summarise(n=n()) %>% 
+  reshape2::dcast(PatientID + BlockID + Description + bcell_patch_score ~ celltype_clustered, value.var = "n", fill=0) %>%
+  reshape2::melt(id.vars = c("PatientID","BlockID", "Description", "bcell_patch_score"), 
+                 variable.name = "celltype", value.name = "n") %>%
+  group_by(Description) %>%
+  mutate(fraction = n/sum(n)) %>%
+  mutate(total_cells = sum(n)) %>%
+  ungroup() %>%
+  filter(celltype %in% c("Tumor_1", "Tumor_9"))
+
+cur_dat <- left_join(cur_dat, dat_survival_prot_sub[,c("BlockID", "Status_at_3m", "Primary_melanoma_type")]) %>%
+  distinct(Description, celltype, .keep_all = T)
+
+cur_dat <- left_join(cur_dat, im_size[im_size$Description %in% unique(cur_dat$Description),])
+cur_dat$n_per_mm2 <- cur_dat$n / cur_dat$mm2
+
+stat.test <- cur_dat %>%
+  group_by(celltype) %>%
+  mutate(y_log10 = log10(n_per_mm2+1)) %>%
+  wilcox_test(data = ., y_log10 ~ Status_at_3m) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj") %>%
+  add_xy_position(x = "Status_at_3m", dodge = 0.8)
+
+ggplot(cur_dat, aes(x=Status_at_3m, y=log10(n_per_mm2+1), group = Status_at_3m, label=PatientID)) + 
+  geom_boxplot(alpha=.4, outlier.shape = NA, aes(fill=Status_at_3m)) +
+  geom_beeswarm(size=3) +
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 6) + 
+  geom_label_repel(aes(group=Status_at_3m , label=PatientID), max.overlaps = 12, size = 5, alpha=.5) + 
+  theme_bw() +
+  theme(text = element_text(size=18),
+        legend.position = "none") +
+  ylab("Cells per mm2 (log10)") +
+  xlab("") +
+  guides(fill=guide_legend(title="Response 3m", override.aes = c(lwd=0.5, size=1))) +
+  facet_wrap(~celltype, scales = "free") +
+  scale_y_continuous(expand = c(0.1, 0))
+```
+
