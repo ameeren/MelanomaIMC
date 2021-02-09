@@ -85,10 +85,14 @@ navbar:
       href: Supp-Figure_5.html
   - text: Additional Material
   menu:
-    - text: Summary Statistics
-      href: Summary_Statistics.html
-    - text: License
-      href: license.html
+  - text: Summary Statistics
+    href: Summary_Statistics.html
+  - text: License
+    href: license.html
+  right:
+  - icon: fa-github
+    text: Source code
+    href: https://github.com/BodenmillerGroup/melanoma_publication
 output:
   workflowr::wflow_html:
     toc: yes
