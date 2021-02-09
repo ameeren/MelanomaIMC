@@ -1,0 +1,1496 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="toobiwankenobi" />
+
+<meta name="date" content="2020-10-26" />
+
+<title>Summary Statistics for hte Manuscript</title>
+
+<script src="site_libs/jquery-1.11.3/jquery.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<style type="text/css">
+  pre:not([class]) {
+    background-color: white;
+  }
+</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+<style type="text/css">
+h1 {
+  font-size: 34px;
+}
+h1.title {
+  font-size: 38px;
+}
+h2 {
+  font-size: 30px;
+}
+h3 {
+  font-size: 24px;
+}
+h4 {
+  font-size: 18px;
+}
+h5 {
+  font-size: 16px;
+}
+h6 {
+  font-size: 12px;
+}
+.table th:not([align]) {
+  text-align: left;
+}
+</style>
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+code {
+  color: inherit;
+  background-color: rgba(0, 0, 0, 0.04);
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+</style>
+
+
+<style type="text/css">
+/* padding for bootstrap navbar */
+body {
+  padding-top: 51px;
+  padding-bottom: 40px;
+}
+/* offset scroll position for anchor links (for fixed navbar)  */
+.section h1 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h2 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h3 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h4 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h5 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.section h6 {
+  padding-top: 56px;
+  margin-top: -56px;
+}
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #ffffff;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script>
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.parent().addClass('active');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row-fluid">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Melanoma Publication</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li>
+  <a href="about.html">About</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    RNA TMA
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="01_RNA_read_data.html">Read Data</a>
+    </li>
+    <li>
+      <a href="02_RNA_annotations.html">Annotations</a>
+    </li>
+    <li>
+      <a href="03_RNA_quality_control.html">Quality Control</a>
+    </li>
+    <li>
+      <a href="04_1_RNA_celltype_classification.html">Automated Celltype Classification</a>
+    </li>
+    <li>
+      <a href="04_2_RNA_classification_subclustering.html">Subclustering</a>
+    </li>
+    <li>
+      <a href="05_RNA_chemokine_expressing_cells.html">Chemokine-Expressing Cells</a>
+    </li>
+    <li>
+      <a href="06_RNA_chemokine_community_definition.html">Mixed Chemokine Communities</a>
+    </li>
+    <li>
+      <a href="07_RNA_chemokine_community_clustering.html">Clustering of Mixed Chemokine Communities</a>
+    </li>
+    <li>
+      <a href="08_RNA_neighbourhood_analysis_chemokines.html">Pure Chemokine Communities</a>
+    </li>
+    <li>
+      <a href="09_manual_scoring.html">Scoring System</a>
+    </li>
+    <li>
+      <a href="10_coloring.html">Coloring Scheme</a>
+    </li>
+    <li>
+      <a href="11_Bcell_TLS_identification.html">TLS Identification</a>
+    </li>
+    <li>
+      <a href="12_dysfunction_score.html">Dysfunction</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Protein TMA
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="01_Protein_read_data.html">Read Data</a>
+    </li>
+    <li>
+      <a href="02_Protein_annotations.html">Annotations</a>
+    </li>
+    <li>
+      <a href="03_Protein_quality_control.html">Quality Control</a>
+    </li>
+    <li>
+      <a href="04_1_Protein_celltype_classification.html">Automated Celltype Classification</a>
+    </li>
+    <li>
+      <a href="04_2_Protein_classification_subclustering.html">Subclustering</a>
+    </li>
+    <li>
+      <a href="05_Protein_Tcell_quantification.html">Cytotoxic T cell Quantification</a>
+    </li>
+    <li>
+      <a href="06_Protein_Ki67status.html">Ki67 Scoring</a>
+    </li>
+    <li>
+      <a href="09_manual_scoring.rmd">Scoring System</a>
+    </li>
+    <li>
+      <a href="10_coloring.rmd">Coloring Scheme</a>
+    </li>
+    <li>
+      <a href="11_Bcell_TLS_identification.html">TLS Identification</a>
+    </li>
+    <li>
+      <a href="13_TCF7_PD1.html">TCF7/PD1 Gating</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Main Figures
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Figure_1.html">Figure 1</a>
+    </li>
+    <li>
+      <a href="Figure_2.html">Figure 2</a>
+    </li>
+    <li>
+      <a href="Figure_3.html">Figure 3</a>
+    </li>
+    <li>
+      <a href="Figure_4.html">Figure 4</a>
+    </li>
+    <li>
+      <a href="Figure_5.html">Figure 5</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Supplemental Figures
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Supp-Figure_1.html">Supp-Figure 1</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_2.html">Supp-Figure 2</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_3.html">Supp-Figure 3</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_4.html">Supp-Figure 4</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_5.html">Supp-Figure 5</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown-header">Additional Material</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div class="fluid-row" id="header">
+
+
+
+<h1 class="title toc-ignore">Summary Statistics for hte Manuscript</h1>
+<h4 class="author">toobiwankenobi</h4>
+<h4 class="date">2020-10-26</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2021-02-05
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+</p>
+<p>
+<strong>Knit directory:</strong> <code>melanoma_publication_old_data/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/jdblischak/workflowr">workflowr</a> (version 1.6.2). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20200728code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20200728)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20200728code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20200728)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree20a1458a4a84f38a314ea39a12a78aad3595e51dtargetblank20a1458a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/20a1458a4a84f38a314ea39a12a78aad3595e51d" target="_blank">20a1458</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree20a1458a4a84f38a314ea39a12a78aad3595e51dtargetblank20a1458a" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/20a1458a4a84f38a314ea39a12a78aad3595e51d" target="_blank">20a1458</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rhistory
+    Ignored:    .Rproj.user/
+    Ignored:    ._.DS_Store
+    Ignored:    code/.DS_Store
+    Ignored:    code/._.DS_Store
+    Ignored:    code/helper_functions/._findCommunity.R
+    Ignored:    data/.DS_Store
+    Ignored:    data/._.DS_Store
+    Ignored:    data/._density_infiltration_BlockID.csv
+    Ignored:    data/._layer_1_classification_rna.csv
+    Ignored:    data/._manual_infiltration_scoring.csv
+    Ignored:    data/._manual_infiltration_scoring_BlockID.csv
+    Ignored:    data/._manual_infiltration_scoring_RC.csv
+    Ignored:    data/._manual_infiltration_scoring_TH.csv
+    Ignored:    data/._survdat_for_modelling.csv
+    Ignored:    data/12plex_validation/
+    Ignored:    data/200323_TMA_256_Hot Cold_Clinical Data_Updated Response Data_For Collaborators_latest updated_Mar_2020_for_Coxph_modeling.csv
+    Ignored:    data/colour_vector.rds
+    Ignored:    data/density_infiltration_BlockID.csv
+    Ignored:    data/fraction_and_infiltration_scoring.csv
+    Ignored:    data/layer_1_classification_protein.csv
+    Ignored:    data/layer_1_classification_protein.rds
+    Ignored:    data/layer_1_classification_rna.csv
+    Ignored:    data/manual_infiltration_scoring.csv
+    Ignored:    data/manual_infiltration_scoring_BlockID.csv
+    Ignored:    data/manual_infiltration_scoring_RC.csv
+    Ignored:    data/manual_infiltration_scoring_TH.csv
+    Ignored:    data/protein/
+    Ignored:    data/rna/
+    Ignored:    data/safety_copy_SCE/
+    Ignored:    data/sce_RNA.rds
+    Ignored:    data/sce_protein.rds
+    Ignored:    data/survdat_for_modelling.csv
+    Ignored:    output/.DS_Store
+    Ignored:    output/._.DS_Store
+    Ignored:    output/._protein_neutrophil.png
+    Ignored:    output/._rna_neutrophil.png
+    Ignored:    output/PSOCKclusterOut/
+    Ignored:    output/bcell_grouping.png
+    Ignored:    output/dysfunction_correlation.pdf
+
+Unstaged changes:
+    Modified:   .gitignore
+    Modified:   analysis/Summary_Statistics.rmd
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/Summary_Statistics.rmd</code>) and HTML (<code>docs/Summary_Statistics.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/f9bb33a83d519d86072a7e716214ff78bce022a0/analysis/Summary_Statistics.rmd" target="_blank">f9bb33a</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-04
+</td>
+<td>
+new Figure 5 and minor changes in figure order
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/0c5228509fee639dfa76a59ac22c9611e41f3669/analysis/Summary_Statistics.rmd" target="_blank">0c52285</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-01-12
+</td>
+<td>
+new summary stats
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/2ac183310c0cc9a7a420897f1b99752b1aae10a7/analysis/Summary_Statistics.rmd" target="_blank">2ac1833</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-01-08
+</td>
+<td>
+changes to Figures
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/9442cb9048bc92f3320eda95d2b40ce49d09d10e/analysis/Summary_Statistics.rmd" target="_blank">9442cb9</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2020-12-22
+</td>
+<td>
+add all new files
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>This script gives an overview over the clinical data and generates statistics used in the manuscript.</p>
+</div>
+<div id="preparations" class="section level1">
+<h1>Preparations</h1>
+<div id="load-libraries" class="section level2">
+<h2>Load libraries</h2>
+<pre class="r"><code>sapply(list.files(&quot;code/helper_functions&quot;, full.names = TRUE), source)</code></pre>
+<pre><code>        code/helper_functions/calculateSummary.R
+value   ?                                       
+visible FALSE                                   
+        code/helper_functions/censor_dat.R
+value   ?                                 
+visible FALSE                             
+        code/helper_functions/detect_mRNA_expression.R
+value   ?                                             
+visible FALSE                                         
+        code/helper_functions/DistanceToClusterCenter.R
+value   ?                                              
+visible FALSE                                          
+        code/helper_functions/findClusters.R
+value   ?                                   
+visible FALSE                               
+        code/helper_functions/findCommunity.R
+value   ?                                    
+visible FALSE                                
+        code/helper_functions/getCellCount.R
+value   ?                                   
+visible FALSE                               
+        code/helper_functions/getInfoFromString.R
+value   ?                                        
+visible FALSE                                    
+        code/helper_functions/getSpotnumber.R
+value   ?                                    
+visible FALSE                                
+        code/helper_functions/plotBarFracCluster.R
+value   ?                                         
+visible FALSE                                     
+        code/helper_functions/plotCellCounts.R
+value   ?                                     
+visible FALSE                                 
+        code/helper_functions/plotCellFrac.R
+value   ?                                   
+visible FALSE                               
+        code/helper_functions/plotCellFracGroups.R
+value   ?                                         
+visible FALSE                                     
+        code/helper_functions/plotCellFracGroupsSubset.R
+value   ?                                               
+visible FALSE                                           
+        code/helper_functions/plotCellFractions.R
+value   ?                                        
+visible FALSE                                    
+        code/helper_functions/plotDist.R
+value   ?                               
+visible FALSE                           
+        code/helper_functions/scatter_function.R
+value   ?                                       
+visible FALSE                                   
+        code/helper_functions/sceChecks.R
+value   ?                                
+visible FALSE                            
+        code/helper_functions/validityChecks.R
+value   ?                                     
+visible FALSE                                 </code></pre>
+<pre class="r"><code>library(data.table)
+library(dplyr)
+library(SingleCellExperiment)
+library(readr)</code></pre>
+</div>
+<div id="load-data" class="section level2">
+<h2>Load Data</h2>
+<pre class="r"><code># clinical data
+dat &lt;- read_csv(&quot;data/protein/clinical_data_protein.csv&quot;)
+
+# SCE object
+sce_prot = readRDS(file = &quot;data/sce_protein.rds&quot;)
+sce_rna = readRDS(file = &quot;data/sce_RNA.rds&quot;)
+
+# image
+image_mat_rna &lt;- read.csv(&quot;data/rna/Image.csv&quot;)
+image_mat_prot &lt;- read.csv(&quot;data/protein/Image.csv&quot;)</code></pre>
+</div>
+</div>
+<div id="statistics" class="section level1">
+<h1>Statistics</h1>
+<div id="number-of-samples-and-patients" class="section level2">
+<h2>Number of Samples and Patients</h2>
+<pre class="r"><code># Number of Patients
+data.frame(colData(sce_prot)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  distinct(PatientID) %&gt;%
+  summarise(n=n())</code></pre>
+<pre><code>   n
+1 69</code></pre>
+<pre class="r"><code># Number of Samples without control samples
+data.frame(colData(sce_prot)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  distinct(Description) %&gt;%
+  summarise(n=n())</code></pre>
+<pre><code>    n
+1 159</code></pre>
+<pre class="r"><code># Number of Samples - Mutation
+data.frame(colData(sce_prot)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  distinct(Description, .keep_all = T) %&gt;%
+  group_by(Mutation) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round(n/sum(n) *100,0))</code></pre>
+<pre><code># A tibble: 6 x 3
+  Mutation     n percentage
+  &lt;chr&gt;    &lt;int&gt;      &lt;dbl&gt;
+1 BRAF        71         45
+2 GNAQ         2          1
+3 KRAS         1          1
+4 NRAS        50         31
+5 unknown      7          4
+6 wt          28         18</code></pre>
+<pre class="r"><code># Number of Samples - Location
+data.frame(colData(sce_prot)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  distinct(Description, .keep_all = T) %&gt;%
+  group_by(MM_location_simplified) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round(n/sum(n) *100,0))</code></pre>
+<pre><code># A tibble: 3 x 3
+  MM_location_simplified     n percentage
+  &lt;chr&gt;                  &lt;int&gt;      &lt;dbl&gt;
+1 LN                        54         34
+2 other                     29         18
+3 skin                      76         48</code></pre>
+</div>
+<div id="number-of-cells-in-data-sets" class="section level2">
+<h2>Number of Cells in Data Sets</h2>
+<pre class="r"><code>ncol(sce_rna)</code></pre>
+<pre><code>[1] 864263</code></pre>
+<pre class="r"><code>ncol(sce_prot)</code></pre>
+<pre><code>[1] 989404</code></pre>
+</div>
+<div id="number-of-cells-and-ablated-area" class="section level2">
+<h2>Number of Cells and Ablated Area</h2>
+<pre class="r"><code># diff in ablated area
+area_prot &lt;- data.frame(image_area = image_mat_prot$Height_FullStack * image_mat_prot$Width_FullStack)
+area_prot$Description &lt;- image_mat_prot$Metadata_Description
+area_prot$data_set &lt;- &quot;Protein&quot;
+
+area_rna &lt;- data.frame(image_area = image_mat_rna$Height_FullStack * image_mat_rna$Width_FullStack)
+area_rna$Description &lt;- image_mat_rna$Metadata_Description
+area_rna$data_set &lt;- &quot;RNA&quot;
+
+image_area &lt;- rbind(area_rna, area_prot)
+
+# Ratio #Cells Protein/RNA
+round(ncol(sce_prot) / ncol(sce_rna),2)</code></pre>
+<pre><code>[1] 1.14</code></pre>
+<pre class="r"><code>area &lt;- image_area %&gt;%
+  group_by(data_set) %&gt;%
+  summarise(area_sum = sum(image_area))
+
+# Ratio Area Protein/RNA
+round(area[area$data_set == &quot;Protein&quot;, ]$area_sum / area[area$data_set == &quot;RNA&quot;, ]$area_sum,2)</code></pre>
+<pre><code>[1] 1.07</code></pre>
+</div>
+<div id="number-of-celltypes" class="section level2">
+<h2>Number of Celltypes</h2>
+<pre class="r"><code># Protein data
+data.frame(colData(sce_prot)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  group_by(celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage=round(n/sum(n)*100,1))</code></pre>
+<pre><code># A tibble: 11 x 3
+   celltype         n percentage
+   &lt;chr&gt;        &lt;int&gt;      &lt;dbl&gt;
+ 1 Bcell        39604        4.1
+ 2 BnTcell      25921        2.7
+ 3 Macrophage   62049        6.5
+ 4 Neutrophil   10900        1.1
+ 5 pDC           6850        0.7
+ 6 Stroma       59246        6.2
+ 7 Tcytotoxic   52567        5.5
+ 8 Thelper      54306        5.6
+ 9 Tregulatory   9226        1  
+10 Tumor       622114       64.7
+11 unknown      18567        1.9</code></pre>
+<pre class="r"><code># RNA data
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  group_by(celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage=round(n/sum(n)*100,1))</code></pre>
+<pre><code># A tibble: 10 x 3
+   celltype         n percentage
+   &lt;chr&gt;        &lt;int&gt;      &lt;dbl&gt;
+ 1 CD38         10931        1.3
+ 2 HLA-DR       29557        3.5
+ 3 Macrophage   64405        7.7
+ 4 Neutrophil    5018        0.6
+ 5 Stroma       24574        2.9
+ 6 Tcell        87858       10.5
+ 7 Tcytotoxic   44630        5.3
+ 8 Tumor       549153       65.3
+ 9 unknown       2972        0.4
+10 Vasculature  21297        2.5</code></pre>
+</div>
+<div id="number-of-chemokine-expressing-cells" class="section level2">
+<h2>Number of Chemokine Expressing Cells</h2>
+<pre class="r"><code># Percentage of Chemokine Producing Cells
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  group_by(chemokine) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 2 x 3
+  chemokine      n percentage
+  &lt;lgl&gt;      &lt;int&gt;      &lt;dbl&gt;
+1 FALSE     782417       93.1
+2 TRUE       57978        6.9</code></pre>
+<pre class="r"><code># Chemokines by Celltype
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(chemokine == 1) %&gt;%
+  group_by(celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 10 x 3
+   celltype        n percentage
+   &lt;chr&gt;       &lt;int&gt;      &lt;dbl&gt;
+ 1 CD38          920        1.6
+ 2 HLA-DR       3202        5.5
+ 3 Macrophage  12675       21.9
+ 4 Neutrophil   1378        2.4
+ 5 Stroma       3913        6.7
+ 6 Tcell       12179       21  
+ 7 Tcytotoxic   9428       16.3
+ 8 Tumor       12965       22.4
+ 9 unknown        45        0.1
+10 Vasculature  1273        2.2</code></pre>
+<pre class="r"><code># Sum of major expressing cell types
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(chemokine == 1) %&gt;%
+  group_by(celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1)) %&gt;%
+  filter(percentage &gt; 15) %&gt;%
+  summarise(sum &lt;- sum(percentage))</code></pre>
+<pre><code># A tibble: 1 x 1
+  `sum &lt;- sum(percentage)`
+                     &lt;dbl&gt;
+1                     81.6</code></pre>
+<pre class="r"><code># CXCL13 experssion by Tcells
+# Chemokines by Celltype
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(expressor == &quot;CXCL13&quot;) %&gt;%
+  group_by(celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1)) %&gt;%
+  filter(percentage &gt; 30) %&gt;%
+  summarise(sum &lt;- sum(percentage))</code></pre>
+<pre><code># A tibble: 1 x 1
+  `sum &lt;- sum(percentage)`
+                     &lt;dbl&gt;
+1                     71.1</code></pre>
+</div>
+<div id="multi-expressors" class="section level2">
+<h2>Multi Expressors</h2>
+<pre class="r"><code>data.frame(colData(sce_rna)) %&gt;%
+  rowwise() %&gt;%
+  mutate(number_of_chemokines = length(strsplit(expressor, &quot;_&quot;)[[1]])) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(chemokine == 1) %&gt;%
+  group_by(number_of_chemokines) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 8 x 3
+  number_of_chemokines     n percentage
+                 &lt;int&gt; &lt;int&gt;      &lt;dbl&gt;
+1                    1 45687       78.8
+2                    2  9479       16.3
+3                    3  2152        3.7
+4                    4   518        0.9
+5                    5   109        0.2
+6                    6    22        0  
+7                    7     8        0  
+8                    8     3        0  </code></pre>
+</div>
+<div id="ccl8-expression" class="section level2">
+<h2>CCL8 Expression</h2>
+<pre class="r"><code>data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(CCL8 == 1) %&gt;%
+  summarise(n=n())</code></pre>
+<pre><code>    n
+1 862</code></pre>
+</div>
+<div id="chemokine-expression-in-tumor-cells" class="section level2">
+<h2>Chemokine Expression in Tumor Cells</h2>
+<pre class="r"><code># Percentage of Tumor Cells that Express a Chemokine
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(celltype == &quot;Tumor&quot;) %&gt;%
+  group_by(chemokine) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 2 x 3
+  chemokine      n percentage
+  &lt;lgl&gt;      &lt;int&gt;      &lt;dbl&gt;
+1 FALSE     536188       97.6
+2 TRUE       12965        2.4</code></pre>
+<pre class="r"><code># CXCL10 in Tumor cells
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(CXCL10 == 1) %&gt;%
+  group_by(celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 10 x 3
+   celltype        n percentage
+   &lt;chr&gt;       &lt;int&gt;      &lt;dbl&gt;
+ 1 CD38           71        0.6
+ 2 HLA-DR        332        2.8
+ 3 Macrophage   3624       30.3
+ 4 Neutrophil    166        1.4
+ 5 Stroma        212        1.8
+ 6 Tcell        1275       10.7
+ 7 Tcytotoxic   1364       11.4
+ 8 Tumor        4778       40  
+ 9 unknown         3        0  
+10 Vasculature   117        1  </code></pre>
+<pre class="r"><code>data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(celltype == &quot;Tumor&quot;) %&gt;%
+  group_by(CXCL10) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 2 x 3
+  CXCL10      n percentage
+   &lt;dbl&gt;  &lt;int&gt;      &lt;dbl&gt;
+1      0 544375       99.1
+2      1   4778        0.9</code></pre>
+<pre class="r"><code># CCL2 in Tumor cells
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(CCL2 == 1) %&gt;%
+  group_by(celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 10 x 3
+   celltype        n percentage
+   &lt;chr&gt;       &lt;int&gt;      &lt;dbl&gt;
+ 1 CD38          270        2.7
+ 2 HLA-DR        327        3.3
+ 3 Macrophage   3041       30.3
+ 4 Neutrophil     89        0.9
+ 5 Stroma       1182       11.8
+ 6 Tcell        1198       11.9
+ 7 Tcytotoxic    768        7.7
+ 8 Tumor        2872       28.6
+ 9 unknown         7        0.1
+10 Vasculature   282        2.8</code></pre>
+<pre class="r"><code>data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(celltype == &quot;Tumor&quot;) %&gt;%
+  group_by(CCL2) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 2 x 3
+   CCL2      n percentage
+  &lt;dbl&gt;  &lt;int&gt;      &lt;dbl&gt;
+1     0 546281       99.5
+2     1   2872        0.5</code></pre>
+<pre class="r"><code># CXCL8 in Tumor cells
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(CXCL8 == 1) %&gt;%
+  group_by(celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 10 x 3
+   celltype        n percentage
+   &lt;chr&gt;       &lt;int&gt;      &lt;dbl&gt;
+ 1 CD38           18        0.4
+ 2 HLA-DR         53        1.2
+ 3 Macrophage    641       14.8
+ 4 Neutrophil   1058       24.4
+ 5 Stroma         69        1.6
+ 6 Tcell         133        3.1
+ 7 Tcytotoxic     95        2.2
+ 8 Tumor        2214       51  
+ 9 unknown        13        0.3
+10 Vasculature    46        1.1</code></pre>
+<pre class="r"><code>data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(celltype == &quot;Tumor&quot;) %&gt;%
+  group_by(CXCL8) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 2 x 3
+  CXCL8      n percentage
+  &lt;dbl&gt;  &lt;int&gt;      &lt;dbl&gt;
+1     0 546939       99.6
+2     1   2214        0.4</code></pre>
+<pre class="r"><code># CXCL12 in Tumor cells
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(CXCL12 == 1) %&gt;%
+  group_by(celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 10 x 3
+   celltype        n percentage
+   &lt;chr&gt;       &lt;int&gt;      &lt;dbl&gt;
+ 1 CD38          340        4.3
+ 2 HLA-DR        255        3.2
+ 3 Macrophage   1287       16.3
+ 4 Neutrophil     14        0.2
+ 5 Stroma       2373       30  
+ 6 Tcell        1445       18.3
+ 7 Tcytotoxic    681        8.6
+ 8 Tumor        1060       13.4
+ 9 unknown         3        0  
+10 Vasculature   453        5.7</code></pre>
+<pre class="r"><code>data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(celltype == &quot;Tumor&quot;) %&gt;%
+  group_by(CXCL12) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round((n / sum(n)) *100,1))</code></pre>
+<pre><code># A tibble: 2 x 3
+  CXCL12      n percentage
+   &lt;dbl&gt;  &lt;int&gt;      &lt;dbl&gt;
+1      0 548093       99.8
+2      1   1060        0.2</code></pre>
+</div>
+<div id="chemokine-expression-in-locations" class="section level2">
+<h2>Chemokine Expression in Locations</h2>
+<pre class="r"><code># overall chemokine expression
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location == &quot;CTRL&quot;) %&gt;%
+  group_by(chemokine, TissueType) %&gt;%
+  summarise(n=n()) %&gt;%
+  reshape2::dcast(TissueType ~ chemokine, value.var = &quot;n&quot;, fill = 0) %&gt;%
+  mutate(percentage_expressing = round(`TRUE` / (`FALSE`+`TRUE`) * 100,1))</code></pre>
+<pre><code>  TissueType FALSE TRUE percentage_expressing
+1  Lymphnode 16949 1001                   5.6
+2        PSO  2524  264                   9.5
+3       Skin  3097   33                   1.1</code></pre>
+<pre class="r"><code># CXCL13 expression in control samples
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location == &quot;CTRL&quot;) %&gt;%
+  group_by(CXCL13, TissueType) %&gt;%
+  summarise(n=n()) %&gt;%
+  reshape2::dcast(TissueType ~ CXCL13, value.var = &quot;n&quot;, fill = 0) %&gt;%
+  mutate(percentage_expressing = round(`1` / (`0`+`1`) * 100,1))</code></pre>
+<pre><code>  TissueType     0   1 percentage_expressing
+1  Lymphnode 17316 634                   3.5
+2        PSO  2787   1                   0.0
+3       Skin  3130   0                   0.0</code></pre>
+<pre class="r"><code># CXCL13 expression in tumor samples
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  group_by(CXCL13, MM_location) %&gt;%
+  summarise(n=n()) %&gt;%
+  reshape2::dcast(MM_location ~ CXCL13, value.var = &quot;n&quot;, fill = 0) %&gt;%
+  mutate(percentage_expressing = round(`1` / (`0`+`1`) * 100,1))</code></pre>
+<pre><code>         MM_location      0    1 percentage_expressing
+1              brain  28923  922                   3.1
+2                 LN 288382 5157                   1.8
+3  LN or soft tissue  21060  148                   0.7
+4            mucosal  20428   34                   0.2
+5      parotis or LN  12698   23                   0.2
+6               skin   9656   72                   0.7
+7     skin_cutaneous  64397   74                   0.1
+8  skin_subcutaneous 268021 1582                   0.6
+9      skin_undefine  38163  508                   1.3
+10       soft tissue  38483  159                   0.4
+11          visceral  41479   26                   0.1</code></pre>
+<pre class="r"><code># CXCL10 expression in control samples
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location == &quot;CTRL&quot;) %&gt;%
+  group_by(CXCL10, TissueType) %&gt;%
+  summarise(n=n()) %&gt;%
+  reshape2::dcast(TissueType ~ CXCL10, value.var = &quot;n&quot;, fill = 0) %&gt;%
+  mutate(percentage_expressing = round(`1` / (`0`+`1`) * 100,1))</code></pre>
+<pre><code>  TissueType     0  1 percentage_expressing
+1  Lymphnode 17916 34                   0.2
+2        PSO  2782  6                   0.2
+3       Skin  3130  0                   0.0</code></pre>
+<pre class="r"><code># CXCL10 expression in tumor samples
+data.frame(colData(sce_rna)) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  group_by(CXCL10, MM_location) %&gt;%
+  summarise(n=n()) %&gt;%
+  reshape2::dcast(MM_location ~ CXCL10, value.var = &quot;n&quot;, fill = 0) %&gt;%
+  mutate(percentage_expressing = round(`1` / (`0`+`1`) * 100,1))</code></pre>
+<pre><code>         MM_location      0    1 percentage_expressing
+1              brain  29336  509                   1.7
+2                 LN 289761 3778                   1.3
+3  LN or soft tissue  20929  279                   1.3
+4            mucosal  20405   57                   0.3
+5      parotis or LN  12714    7                   0.1
+6               skin   9681   47                   0.5
+7     skin_cutaneous  64227  244                   0.4
+8  skin_subcutaneous 264588 5015                   1.9
+9      skin_undefine  36915 1756                   4.5
+10       soft tissue  38399  243                   0.6
+11          visceral  41498    7                   0.0</code></pre>
+</div>
+</div>
+<div id="fisher-test-for-bcell-patches-and-dysfunction" class="section level1">
+<h1>Fisher Test for Bcell patches and Dysfunction</h1>
+<pre class="r"><code>cont_table &lt;- data.frame(colData(sce_prot)) %&gt;%
+  distinct(Description,.keep_all = T) %&gt;%
+  filter(is.na(dysfunction_score) == FALSE) %&gt;%
+  group_by(bcell_patch_score, dysfunction_score) %&gt;%
+  summarise(n=n()) %&gt;%
+  filter(bcell_patch_score %in% c(&quot;small patches&quot;, &quot;large patches&quot;)) %&gt;%
+  reshape2::dcast(bcell_patch_score ~ dysfunction_score, value.var = &quot;n&quot;, fill = 0)
+
+fisher.test(cont_table[,-1])</code></pre>
+<pre><code>
+    Fisher&#39;s Exact Test for Count Data
+
+data:  cont_table[, -1]
+p-value = 0.04056
+alternative hypothesis: true odds ratio is not equal to 1
+95 percent confidence interval:
+    1.087594 1088.437009
+sample estimates:
+odds ratio 
+  16.19942 </code></pre>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.0.3 (2020-10-10)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 20.04 LTS
+
+Matrix products: default
+BLAS/LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.8.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=C             
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] parallel  stats4    stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] readr_1.4.0                 SingleCellExperiment_1.12.0
+ [3] SummarizedExperiment_1.20.0 Biobase_2.50.0             
+ [5] GenomicRanges_1.42.0        GenomeInfoDb_1.26.2        
+ [7] IRanges_2.24.1              S4Vectors_0.28.1           
+ [9] BiocGenerics_0.36.0         MatrixGenerics_1.2.0       
+[11] matrixStats_0.57.0          dplyr_1.0.2                
+[13] data.table_1.13.6           workflowr_1.6.2            
+
+loaded via a namespace (and not attached):
+ [1] tidyselect_1.1.0       xfun_0.20              reshape2_1.4.4        
+ [4] purrr_0.3.4            lattice_0.20-41        vctrs_0.3.6           
+ [7] generics_0.1.0         htmltools_0.5.0        yaml_2.2.1            
+[10] utf8_1.1.4             rlang_0.4.10           later_1.1.0.1         
+[13] pillar_1.4.7           glue_1.4.2             plyr_1.8.6            
+[16] GenomeInfoDbData_1.2.4 lifecycle_0.2.0        stringr_1.4.0         
+[19] zlibbioc_1.36.0        evaluate_0.14          knitr_1.30            
+[22] httpuv_1.5.4           fansi_0.4.1            Rcpp_1.0.5            
+[25] promises_1.1.1         DelayedArray_0.16.0    XVector_0.30.0        
+[28] fs_1.5.0               hms_0.5.3              digest_0.6.27         
+[31] stringi_1.5.3          rprojroot_2.0.2        grid_4.0.3            
+[34] cli_2.2.0              tools_4.0.3            bitops_1.0-6          
+[37] magrittr_2.0.1         RCurl_1.98-1.2         tibble_3.0.4          
+[40] crayon_1.3.4           whisker_0.4            pkgconfig_2.0.3       
+[43] ellipsis_0.3.1         Matrix_1.3-2           assertthat_0.2.1      
+[46] rmarkdown_2.6          rstudioapi_0.13        R6_2.5.0              
+[49] git2r_0.28.0           compiler_4.0.3        </code></pre>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+http://docs.mathjax.org/en/latest/configuration.html.  This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open')
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
