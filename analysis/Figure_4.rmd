@@ -60,7 +60,6 @@ sce_prot = readRDS(file = "data/sce_protein.rds")
 # meta data
 dat_relation = fread(file = "data/protein/Object relationships.csv",stringsAsFactors = FALSE)
 dat_relation_rna = fread(file = "data/RNA/Object relationships.csv",stringsAsFactors = FALSE)
-dat_inflammation = fread(file = "data/manual_infiltration_scoring_BlockID.csv", header = TRUE)
 
 # image
 image_mat_prot <- read.csv("data/protein/Image.csv")
@@ -280,8 +279,8 @@ tumor_dat <- left_join(tumor_dat, cur_df)
 tumor_dat_chemokine <- left_join(tumor_dat, cur_df_chemokine)
 
 # remove bad images and controls
-tumor_dat <- tumor_dat#[!is.na(tumor_dat$manual_scoring) & tumor_dat$manual_scoring != "no assessment possible",]
-tumor_dat_chemokine <- tumor_dat_chemokine#[!is.na(tumor_dat_chemokine$manual_scoring) & tumor_dat_chemokine$manual_scoring != "no assessment possible",]
+tumor_dat <- tumor_dat
+tumor_dat_chemokine <- tumor_dat_chemokine
 
 # boxplot
 a <- ggplot(tumor_dat, aes(y=mean_B2M, x=log10(fraction))) + 

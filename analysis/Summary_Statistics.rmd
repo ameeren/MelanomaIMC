@@ -76,6 +76,38 @@ data.frame(colData(sce_prot)) %>%
   mutate(percentage = round(n/sum(n) *100,0))
 ```
 
+## Number of Samples per Patient
+
+```{r}
+# Number of Patients
+data.frame(colData(sce_prot)) %>%
+  filter(Location != "CTRL") %>%
+  distinct(Description, .keep_all = T) %>%
+  group_by(PatientID) %>%
+  summarise(n=n()) %>%
+  group_by(n) %>%
+  summarise(group_sizes = n())
+```
+
+## Samples per Location
+
+```{r}
+# Number Controls
+data.frame(colData(sce_prot)) %>%
+  filter(Location != "CTRL") %>%
+  distinct(Description, .keep_all = T) %>%
+  group_by(MM_location) %>%
+  summarise(n=n())
+
+# Number Controls
+data.frame(colData(sce_prot)) %>%
+  filter(Location == "CTRL") %>%
+  distinct(Description, .keep_all = T) %>%
+  group_by(TissueType) %>%
+  summarise(n=n())
+```
+
+
 ## Number of Cells in Data Sets
 
 ```{r}
@@ -304,7 +336,7 @@ data.frame(colData(sce_rna)) %>%
   mutate(percentage_expressing = round(`1` / (`0`+`1`) * 100,1))
 ```
 
-# Fisher Test for Bcell patches and Dysfunction
+## Fisher Test for Bcell patches and Dysfunction
 
 ```{r}
 cont_table <- data.frame(colData(sce_prot)) %>%

@@ -13,11 +13,8 @@ This file will load the single-cell data and store it in an SingleCellExperiment
 ## Load Libraries
 
 ```{r warning=F, message=F}
+library(data.table)
 library(SingleCellExperiment)
-library(dplyr)
-library(data.table)
-library(ggplot2)
-library(data.table)
 ```
 
 ## Load data (DOWNLOAD DATA SET AND STORE FILES IN CORRESPONDING FOLDER WITH CORRECT NAMING)

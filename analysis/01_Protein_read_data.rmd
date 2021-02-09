@@ -18,9 +18,7 @@ First, we will load the libraries needed for this part of the analysis.
 
 ```{r load-libraries, message=FALSE}
 library(data.table)
-library(S4Vectors)
 library(SingleCellExperiment)
-library(LSD)
 ```
 
 ## Read the data

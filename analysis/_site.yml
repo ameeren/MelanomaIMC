@@ -21,20 +21,8 @@ navbar:
       href: 04_2_RNA_classification_subclustering.html
     - text: Chemokine-Expressing Cells
       href: 05_RNA_chemokine_expressing_cells.html
-    - text: Mixed Chemokine Communities
-      href: 06_RNA_chemokine_community_definition.html
-    - text: Clustering of Mixed Chemokine Communities
-      href: 07_RNA_chemokine_community_clustering.html
-    - text: Pure Chemokine Communities
-      href: 08_RNA_neighbourhood_analysis_chemokines.html
-    - text: Scoring System
-      href: 09_manual_scoring.html
-    - text: Coloring Scheme
-      href: 10_coloring.html
-    - text: TLS Identification
-      href: 11_Bcell_TLS_identification.html
-    - text: Dysfunction
-      href: 12_dysfunction_score.html
+    - text: Chemokine Patches
+      href: 06_RNA_chemokine_patch_detection.html
   - text: Protein TMA
     menu:
     - text: Read Data
@@ -47,18 +35,18 @@ navbar:
       href: 04_1_Protein_celltype_classification.html
     - text: Subclustering
       href: 04_2_Protein_classification_subclustering.html
-    - text: Cytotoxic T cell Quantification
-      href: 05_Protein_Tcell_quantification.html
-    - text: Ki67 Scoring
-      href: 06_Protein_Ki67status.html
-    - text: Scoring System
-      href: 09_manual_scoring.rmd
-    - text: Coloring Scheme
-      href: 10_coloring.rmd
-    - text: TLS Identification
-      href: 11_Bcell_TLS_identification.html
+  - text: Misc.
+    menu:
     - text: TCF7/PD1 Gating
-      href: 13_TCF7_PD1.html
+      href: 07_TCF7_PD1_gating.html
+    - text: Color Vectors
+      href: 08_color_vectors.html
+    - text: Tcell Score
+      href: 09_Tcell_Score.html
+    - text: Dysfunction Score
+      href: 10_Dysfunction_Score.html
+    - text: Bcell Score
+      href: 11_Bcell_Score.html
   - text: Main Figures
     menu:
     - text: Figure 1
@@ -87,12 +75,10 @@ navbar:
     menu:
     - text: Summary Statistics
       href: Summary_Statistics.html
+    - text: Hazard Ratio Analysis
+      href: XX_hazard_ratio.html
     - text: License
       href: license.html
-  right:
-  - icon: fa-github
-    text: Source code
-    href: https://github.com/BodenmillerGroup/melanoma_publication
 output:
   workflowr::wflow_html:
     toc: yes

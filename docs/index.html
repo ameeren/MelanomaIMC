@@ -22,8 +22,6 @@
 <script src="site_libs/navigation-1.1/tabsets.js"></script>
 <link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
 <script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
-<link href="site_libs/font-awesome-5.1.0/css/all.css" rel="stylesheet" />
-<link href="site_libs/font-awesome-5.1.0/css/v4-shims.css" rel="stylesheet" />
 
 <link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/master/img/reproducible.png">
 <!-- Add a small amount of space between sections. -->
@@ -323,25 +321,7 @@ $(document).ready(function () {
       <a href="05_RNA_chemokine_expressing_cells.html">Chemokine-Expressing Cells</a>
     </li>
     <li>
-      <a href="06_RNA_chemokine_community_definition.html">Mixed Chemokine Communities</a>
-    </li>
-    <li>
-      <a href="07_RNA_chemokine_community_clustering.html">Clustering of Mixed Chemokine Communities</a>
-    </li>
-    <li>
-      <a href="08_RNA_neighbourhood_analysis_chemokines.html">Pure Chemokine Communities</a>
-    </li>
-    <li>
-      <a href="09_manual_scoring.html">Scoring System</a>
-    </li>
-    <li>
-      <a href="10_coloring.html">Coloring Scheme</a>
-    </li>
-    <li>
-      <a href="11_Bcell_TLS_identification.html">TLS Identification</a>
-    </li>
-    <li>
-      <a href="12_dysfunction_score.html">Dysfunction</a>
+      <a href="06_RNA_chemokine_patch_detection.html">Chemokine Patches</a>
     </li>
   </ul>
 </li>
@@ -367,23 +347,29 @@ $(document).ready(function () {
     <li>
       <a href="04_2_Protein_classification_subclustering.html">Subclustering</a>
     </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Misc.
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="05_Protein_Tcell_quantification.html">Cytotoxic T cell Quantification</a>
+      <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
     </li>
     <li>
-      <a href="06_Protein_Ki67status.html">Ki67 Scoring</a>
+      <a href="08_color_vectors.html">Color Vectors</a>
     </li>
     <li>
-      <a href="09_manual_scoring.rmd">Scoring System</a>
+      <a href="09_Tcell_Score.html">Tcell Score</a>
     </li>
     <li>
-      <a href="10_coloring.rmd">Coloring Scheme</a>
+      <a href="10_Dysfunction_Score.html">Dysfunction Score</a>
     </li>
     <li>
-      <a href="11_Bcell_TLS_identification.html">TLS Identification</a>
-    </li>
-    <li>
-      <a href="13_TCF7_PD1.html">TCF7/PD1 Gating</a>
+      <a href="11_Bcell_Score.html">Bcell Score</a>
     </li>
   </ul>
 </li>
@@ -446,19 +432,16 @@ $(document).ready(function () {
       <a href="Summary_Statistics.html">Summary Statistics</a>
     </li>
     <li>
+      <a href="XX_hazard_ratio.html">Hazard Ratio Analysis</a>
+    </li>
+    <li>
       <a href="license.html">License</a>
     </li>
   </ul>
 </li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
-        <li>
-  <a href="https://github.com/BodenmillerGroup/melanoma_publication">
-    <span class="fas fa-github"></span>
-     
-    Source code
-  </a>
-</li>
+        
       </ul>
     </div><!--/.nav-collapse -->
   </div><!--/.container -->
@@ -524,16 +507,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree3828d5300b2b2591a2cd904a016ee196eb0bd237targetblank3828d53a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/3828d5300b2b2591a2cd904a016ee196eb0bd237" target="_blank">3828d53</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreedd1e815492c2d2c5236ad455147834514d341cactargetblankdd1e815a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/dd1e815492c2d2c5236ad455147834514d341cac" target="_blank">dd1e815</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree3828d5300b2b2591a2cd904a016ee196eb0bd237targetblank3828d53a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreedd1e815492c2d2c5236ad455147834514d341cactargetblankdd1e815a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/3828d5300b2b2591a2cd904a016ee196eb0bd237" target="_blank">3828d53</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/dd1e815492c2d2c5236ad455147834514d341cac" target="_blank">dd1e815</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -582,8 +565,27 @@ Ignored files:
     Ignored:    output/bcell_grouping.png
     Ignored:    output/dysfunction_correlation.pdf
 
+Untracked files:
+    Untracked:  analysis/06_RNA_chemokine_patch_detection.rmd
+    Untracked:  analysis/07_TCF7_PD1_gating.rmd
+    Untracked:  analysis/08_color_vectors.rmd
+    Untracked:  analysis/09_Tcell_Score.Rmd
+    Untracked:  analysis/10_Dysfunction_Score.rmd
+    Untracked:  analysis/11_Bcell_Score.Rmd
+
 Unstaged changes:
     Modified:   .gitignore
+    Deleted:    analysis/05_protein_Tcell_quantification.Rmd
+    Deleted:    analysis/06_Protein_Ki67status.Rmd
+    Deleted:    analysis/06_RNA_chemokine_community_definition.rmd
+    Deleted:    analysis/07_RNA_chemokine_community_clustering.Rmd
+    Deleted:    analysis/08_RNA_neighbourhood_analysis_chemokines.rmd
+    Deleted:    analysis/09_manual_scoring.rmd
+    Deleted:    analysis/10_coloring.rmd
+    Deleted:    analysis/11_Bcell_TLS_identifiaction.Rmd
+    Deleted:    analysis/12_dysfunction_score.rmd
+    Deleted:    analysis/13_TCF7_PD1.rmd
+    Modified:   analysis/Figure_4.rmd
     Modified:   analysis/_site.yml
 
 </code></pre>
@@ -623,6 +625,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/d1c9a4196a9072752826b7de111a046850a35c14/docs/index.html" target="_blank">d1c9a41</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-09
+</td>
+<td>
+index file
+</td>
+</tr>
 <tr>
 <td>
 html
