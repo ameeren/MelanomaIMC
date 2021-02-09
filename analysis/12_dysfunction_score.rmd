@@ -37,17 +37,16 @@ sce_prot = readRDS(file = "data/sce_protein.rds")
 ```
 
 ## Derive Scoring
-We divide the images with a high CD8 cell density into two groups: low dysfunction (CD8+CXCL13+ < 5%) and high dysfunction (CD8+CXCL13+ >= 5%)
+We divide the images with a high CD8 cell density into two groups: low dysfunction (CD8+CXCL13+ < 5%) and high dysfunction (CD8+CXCL13+ >= 5%). Margin punches from LN are not considered. 
 
 ```{r exhaustion scoring}
 # paste density scoring and exhaustion scoring
 dysfunction <- data.frame(colData(sce_rna)) %>%
   filter(Location != "CTRL") %>% # remove controls
   mutate(MM_location_punch = paste(MM_location, Location, sep = "_")) %>%
-  #filter(MM_location != "LN") %>% ################### ATTENTION #################
   filter(MM_location_punch != "LN_M") %>% # remove LN margin samples
   filter(Tcell_density_score_image %in% c("high")) %>%
-  mutate(celltype2 = paste(celltype, CXCL13, sep = "_")) %>%
+  mutate(celltype2 = paste(celltype, CXCL13, sep = "_")) %>% # add CXCL13 info to celltype
   filter(celltype2 %in% c("Tcytotoxic_1", "Tcytotoxic_0")) %>%
   group_by(Description, celltype2) %>%
   summarise(n=n()) %>%

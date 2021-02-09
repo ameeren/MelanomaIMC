@@ -45,7 +45,6 @@ sce_prot = readRDS(file = "data/sce_protein.rds")
 sce_rna = readRDS(file = "data/sce_RNA.rds")
 
 image_prot <- read.csv("data/protein/Image.csv")
-image_rna <- read.csv("data/rna/Image.csv")
 
 sce_prot$bcell_patch_score <- NULL
 sce_rna$bcell_patch_score <- NULL
@@ -88,11 +87,6 @@ print(end-start)
 ## Cell Densities 
 
 ```{r}
-# RNA
-im_size_rna <- (image_rna$Height_cellmask * image_rna$Width_cellmask)/1000000
-im_size_rna <- data.frame(im_size_rna)
-im_size_rna$Description <- image_rna$Metadata_Description
-
 # Protein
 im_size_prot <- (image_prot$Height_cellmask * image_prot$Width_cellmask)/1000000
 im_size_prot <- data.frame(im_size_prot)

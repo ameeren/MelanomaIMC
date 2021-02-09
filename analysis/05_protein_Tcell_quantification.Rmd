@@ -72,7 +72,10 @@ sce_prot$cyotoxic_density_image <- cur_sce$density
 ```
 
 ## T cell density score per image
-images with up to 40 cytotoxic T cells/mm2 are called “absent” images with more than 40 and up to 100 cytotoxic T cells/mm2 are called “low” images with more than 100 and up to 400 cytotoxic T cells/mm2 are called “medium” images with more than 400 cytotoxic T cells/mm2 are called “high”
+- absent: up to 40 cytotoxic T cells/mm2
+- low: 40-100 cytotoxic T cells/mm2
+- med: 100-400 cytotoxic T cells/mm2
+- high: >400 cytotoxic T cells/mm2
 
 ```{r}
 # define a vector with all ImgeNumbers
