@@ -84,7 +84,7 @@ navbar:
     - text: Supp-Figure 5
       href: Supp-Figure_5.html
   - text: Additional Material
-  menu:
+    menu:
   - text: Summary Statistics
     href: Summary_Statistics.html
   - text: License
