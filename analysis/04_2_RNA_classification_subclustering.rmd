@@ -39,7 +39,7 @@ library(dplyr)
 ## Load data
 
 ```{r load data}
-sce <- readRDS(file = "data/sce_RNA.rds")
+sce <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 ```
 
 # Marker for Clustering
@@ -349,5 +349,5 @@ cur_exprs %>%
 ## Save the single cell object
 
 ```{r save object with clusters}
-saveRDS(sce, "data/sce_RNA.rds")
+saveRDS(sce, "data/data_for_analysis/sce_RNA.rds")
 ```

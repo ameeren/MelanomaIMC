@@ -32,7 +32,7 @@ library(ggridges)
 ## Read the data
 
 ```{r}
-sce_prot = readRDS(file = "data/sce_protein.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 ```
 
 ## TCF7 CD8 cells
@@ -74,5 +74,5 @@ sce_prot$PD1 <- ifelse(assay(sce_prot["PD1",], "asinh") > 1.5, "PD1+", "PD1-")
 ## Save SCE object
 
 ```{r save sce}
-saveRDS(sce_prot, file = "data/sce_protein.rds")
+saveRDS(sce_prot, file = "data/data_for_analysis/sce_protein.rds")
 ```

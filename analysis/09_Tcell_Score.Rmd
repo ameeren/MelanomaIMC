@@ -31,11 +31,11 @@ library(tidyverse)
 ## Load Data
 
 ```{r load data, echo=FALSE}
-sce_prot = readRDS(file = "data/sce_protein.rds")
-sce_rna = readRDS(file = "data/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 
-image_mat <- read.csv("data/protein/Image.csv")
-image_mat_rna <- read.csv("data/rna/Image.csv")
+image_mat <- read.csv("data/data_for_analysis/protein/Image.csv")
+image_mat_rna <- read.csv("data/data_for_analysis/rna/Image.csv")
 ```
 
 # Cytotoxic T cell Scoring
@@ -138,6 +138,6 @@ sce_rna$cyotoxic_density_image <- col_rna$density
 ## Save updated SCE
 
 ```{r save sce}
-saveRDS(sce_prot,file = "data/sce_protein.rds")
-saveRDS(sce_rna,file = "data/sce_RNA.rds")
+saveRDS(sce_prot,file = "data/data_for_analysis/sce_protein.rds")
+saveRDS(sce_rna,file = "data/data_for_analysis/sce_RNA.rds")
 ```

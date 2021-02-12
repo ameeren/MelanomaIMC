@@ -1,0 +1,163 @@
+---
+title: "12_prepare_clinical_dat"
+author: "Tobias Hoch and Daniel Schulz"
+date: "2021-02-11"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+In this script, we load the clinical data and clean and prepare the data for further analysis. Furthermore, we create two .csv files containing the clinical data for RNA and Protein TMA separately in order to attach them to the SingleCellExperiment in a later step. 
+
+# Preparations
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Load libraries
+```{r}
+library(dplyr)
+```
+
+## Load the data
+
+```{r}
+# load clinical data and TMA data to link images with patients
+clinical_mat <- read.csv(file = "data/data_for_analysis/200323_TMA_256_clinical_data_March2020.csv",
+                         sep=",",stringsAsFactors = FALSE)
+clinical_mat <- clinical_mat[is.na(clinical_mat$SpotNr) == FALSE,]
+
+spot_mat <- read.csv(file = "data/data_for_analysis/191119_TMA_spotmatrix.csv", sep= ";",stringsAsFactors = FALSE)
+
+# remove missing value rows from spot_mat
+spot_mat <- spot_mat[is.na(spot_mat$SpotNr) == FALSE,]
+# in the spot_mat  BlockID "B2017.47224" has a space incorporated: "B2017.47224 ". We will rename this BlockID here.
+spot_mat[which(spot_mat$BlockID == "B2017.47224 "),]$BlockID <- "B2017.47224"
+
+# load image metadata as output from CellProfiler
+image_mat_prot <- read.csv(file = "data/data_for_analysis/protein/Image.csv", stringsAsFactors = FALSE)
+image_mat_rna <- read.csv(file = "data/data_for_analysis/rna/Image.csv", stringsAsFactors = FALSE)
+```
+
+# Data cleaning
+
+## Assign clean column names
+
+```{r clean up the column names}
+colnames(clinical_mat)
+
+clean_names <- c("SpotNr","PatientID","BlockID","IHC_T_score","Age_range","Gender",
+                 "MM_location","Primary_melanoma_type","Cancer_Stage","Mutation",
+                 "Nr_treatments_before_surgery","Name_last_drug_used","Last_sys_treatment_before_surgery",
+                 "Last_prev_therapy","Date_surgery","Drug_after_surgery","Treatment_after_surgery","Adjuvant",
+                 "Start_treatment","End_treatment","Reason_to_stop_treatment","Date_progression",
+                 "Status_at_3m","Response_at_3m","Time_of_response_assesment","Response_at_6m",
+                 "Response_at_12m","Last_PET","Date_death")
+
+colnames(clinical_mat) <- clean_names
+
+# empty but non NA date_progression is equal to no progression
+clinical_mat <- data.frame(clinical_mat)
+clinical_mat$relapse <- NA
+clinical_mat[is.na(clinical_mat$Date_progression) & is.na(clinical_mat$Nr_treatments_before_surgery) == FALSE,]$relapse <- "untreated/lost"
+clinical_mat[clinical_mat$Date_progression %in% c("") & is.na(clinical_mat$Nr_treatments_before_surgery) == FALSE,]$relapse <- "no relapse"
+clinical_mat[is.na(clinical_mat$relapse) & is.na(clinical_mat$Nr_treatments_before_surgery) == FALSE,]$relapse <- "relapse"
+clinical_mat[is.na(clinical_mat$Nr_treatments_before_surgery),]$relapse <- "control"
+```
+
+# Calculate survival data
+Starting point is the beginning of the surgery, end point is death/progression or last PET
+
+## Convert Characters to Date
+
+```{r}
+clinical_mat$Date_surgery <- as.Date(clinical_mat$Date_surgery, format = "%d.%m.%Y")
+clinical_mat$Date_death <- as.Date(clinical_mat$Date_death, format = "%d.%m.%Y")
+clinical_mat$Date_progression <- as.Date(clinical_mat$Date_progression, format = "%d.%m.%Y")
+clinical_mat$Last_PET <- as.Date(clinical_mat$Last_PET, format = "%d.%m.%Y")
+clinical_mat$Start_treatment <- as.Date(clinical_mat$Start_treatment, format = "%d.%m.%Y")
+clinical_mat$End_treatment <- as.Date(clinical_mat$End_treatment, format = "%d.%m.%Y")
+```
+
+## Calculate time until last PET or death
+
+```{r}
+clinical_mat$Time_to_death_or_last_PET <- ifelse(is.na(clinical_mat$Date_death) == TRUE, # if no death, then
+                                                   clinical_mat$Last_PET - clinical_mat$Start_treatment, # time to last PET
+                                                   clinical_mat$Date_death - clinical_mat$Start_treatment) # else: time to progression
+
+clinical_mat$censoring_death <- ifelse(is.na(clinical_mat$Date_death) == TRUE, 0, 1) # 0: no Death, 1: Death
+```
+
+## Calculate time until last PET or relapse
+
+```{r}
+clinical_mat$Time_to_progression_or_last_PET <- ifelse(is.na(clinical_mat$Date_progression) == TRUE, # if no progression, then
+                                                   clinical_mat$Last_PET - clinical_mat$Start_treatment, # time to last PET
+                                                   clinical_mat$Date_progression - clinical_mat$Start_treatment) # else: time to progression
+
+clinical_mat$censoring_progression <- ifelse(is.na(clinical_mat$Date_progression) == TRUE, 0, 1) # 0: no Relapse, 1: Relapse
+```
+
+# Combine with RNA/Protein image_mat
+
+## RNA clinical matrix
+
+```{r}
+# SpotNr and Description in one mat
+full_mat_rna <- spot_mat[,c("SpotNr", "BlockID", "Description", "TissueType", "Location")]
+
+# add respective ImageNumber
+image_mat_rna$Description <- image_mat_rna$Metadata_Description
+full_mat_rna <- left_join(full_mat_rna, image_mat_rna[,c("ImageNumber", "Description")], by = "Description")
+
+# join with clinical_mat
+full_mat_rna <- left_join(full_mat_rna, clinical_mat[,-1], by="BlockID")
+
+# remove Images that were not acquired or removed after initial processing (missing on TMA or too bad quality)
+full_mat_rna <- full_mat_rna[is.na(full_mat_rna$ImageNumber) == FALSE,]
+```
+
+## Protein clinical matrix
+
+```{r}
+# SpotNr and Description in one mat
+full_mat_prot <- spot_mat[,c("SpotNr", "BlockID", "Description", "TissueType", "Location")]
+
+image_mat_prot$Description <- image_mat_prot$Metadata_Description
+
+# rename "G1 - split" row in image_mat (this core was acquired in two measurements because the machine stopped due to an error)
+image_mat_prot$Description <- ifelse(image_mat_prot$Description == "G1 - split", "G1", image_mat_prot$Description)
+
+# add respective ImageNumber
+full_mat_prot <- left_join(full_mat_prot, image_mat_prot[,c("ImageNumber", "Description")], by = "Description")
+
+# join with clinical_mat
+full_mat_prot <- left_join(full_mat_prot, clinical_mat[,-1], by = "BlockID")
+
+# remove Images that were not acquired or removed after initial processing (missing on TMA or too bad quality)
+full_mat_prot <- full_mat_prot[is.na(full_mat_prot$ImageNumber) == FALSE,]
+```
+
+## compare both matrices
+
+```{r}
+# check if the BlockID/PatientID of Description is the same in both data sets
+rna_sub <- full_mat_rna[,c("Description", "BlockID", "PatientID")]
+prot_sub <- full_mat_prot[,c("Description", "BlockID", "PatientID")]
+
+compare <- left_join(prot_sub, rna_sub, by = "Description")
+all(compare$BlockID.x == compare$BlockID.y)
+unique(compare$PatientID.x == compare$PatientID.y)
+```
+
+# Save .csv Files
+
+```{r}
+write.csv(x = full_mat_prot, file = "data/data_for_analysis/protein/clinical_data_protein.csv", row.names = F)
+write.csv(x = full_mat_rna, file = "data/data_for_analysis/rna/clinical_data_RNA.csv", row.names = F)
+```
+

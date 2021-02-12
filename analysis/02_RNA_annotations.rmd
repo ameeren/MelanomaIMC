@@ -20,7 +20,7 @@ library(dplyr)
 ## Load data
 
 ```{r}
-sce <- readRDS(file = "data/sce_RNA.rds")
+sce <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 cur_sce <- data.frame(colData(sce))
 cur_meta <- data.frame(metadata(sce))
 ```
@@ -31,13 +31,13 @@ cur_meta <- data.frame(metadata(sce))
 
 ```{r}
 cur_sce <- cur_sce %>%
-  left_join(., cur_meta[,c("ImageNumber", "Location", "Adjuvant", "E_I_D", "Mutation", 
+  left_join(., cur_meta[,c("ImageNumber", "Location", "Adjuvant", "IHC_T_score", "Mutation", 
                            "Cancer_Stage", "Status_at_3m", "BlockID", "Description", "TissueType",
-                           "MM_location", "Age_range", "Gender", "Internal_pat_ID")])
+                           "MM_location", "Age_range", "Gender", "PatientID", "relapse")])
 
 colData(sce)$Location <- cur_sce$Location
 colData(sce)$Adjuvant <- cur_sce$Adjuvant
-colData(sce)$E_I_D <- cur_sce$E_I_D
+colData(sce)$E_I_D <- cur_sce$IHC_T_score
 colData(sce)$Mutation <- cur_sce$Mutation
 colData(sce)$Cancer_Stage <- cur_sce$Cancer_Stage
 colData(sce)$Status_at_3m <- cur_sce$Status_at_3m
@@ -47,7 +47,8 @@ colData(sce)$TissueType <- cur_sce$TissueType
 colData(sce)$MM_location <- cur_sce$MM_location
 colData(sce)$Age <- cur_sce$Age_range
 colData(sce)$Gender <- cur_sce$Gender
-colData(sce)$PatientID <- cur_sce$Internal_pat_ID
+colData(sce)$PatientID <- cur_sce$PatientID
+colData(sce)$relapse <- cur_sce$relapse
 ```
 
 # Make clinical data interpretable for statistical analysis
@@ -67,23 +68,6 @@ colData(sce)$MM_location_simplified <- cur_sce$MM_location_simplified
 
 # add to metadata
 cur_meta <- left_join(cur_meta, distinct(cur_sce, MM_location_simplified, ImageNumber))
-```
-
-## Create relapse info based on clinical time-series data
-
-```{r}
-# add summarized relapse info to cur_meta
-cur_meta$relapse <- NA
-cur_meta[is.na(cur_meta$Date_progression) & cur_meta$MM_location_simplified != "control",]$relapse <- "untreated/lost"
-cur_meta[cur_meta$Date_progression %in% c("") & cur_meta$MM_location_simplified != "control" ,]$relapse <- "no relapse"
-cur_meta[is.na(cur_meta$relapse) & cur_meta$MM_location_simplified != "control",]$relapse <- "relapse"
-cur_meta[cur_meta$MM_location_simplified == "control",]$relapse <- "control"
-
-# add relapse info to cur_sce
-cur_sce <- left_join(cur_sce, cur_meta[,c("ImageNumber", "relapse")])
-
-# add relapse to SCE
-colData(sce)$relapse <- cur_sce$relapse
 ```
 
 ## Create therapy grouping before surgery
@@ -167,7 +151,7 @@ metadata(sce) <- as.list(cur_meta)
 ## Save the SCE object
 
 ```{r}
-saveRDS(sce,file = "data/sce_RNA.rds")
+saveRDS(sce,file = "data/data_for_analysis/sce_RNA.rds")
 ```
 
 

@@ -40,12 +40,12 @@ library(rstatix)
 
 ```{r}
 # SCE object
-sce_rna = readRDS(file = "data/sce_RNA.rds")
-sce_prot = readRDS(file = "data/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 # meta data
-dat_relation = fread(file = "data/protein/Object relationships.csv",stringsAsFactors = FALSE)
-dat_relation_rna = fread(file = "data/RNA/Object relationships.csv",stringsAsFactors = FALSE)
+dat_relation = fread(file = "data/data_for_analysis/protein/Object relationships.csv",stringsAsFactors = FALSE)
+dat_relation_rna = fread(file = "data/data_for_analysis/RNA/Object relationships.csv",stringsAsFactors = FALSE)
 
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 ```

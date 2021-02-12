@@ -32,7 +32,8 @@ library(tidyverse)
 library(viridis)
 library(dplyr)
 library(cytomapper)
-library(sp)
+library(concaveman)
+library(data.table)
 library(sf)
 library(ggbeeswarm)
 library(RANN)
@@ -41,10 +42,10 @@ library(RANN)
 ## Load data
 
 ```{r load data}
-sce_prot = readRDS(file = "data/sce_protein.rds")
-sce_rna = readRDS(file = "data/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 
-image_prot <- read.csv("data/protein/Image.csv")
+image_prot <- read.csv("data/data_for_analysis/protein/Image.csv")
 
 sce_prot$bcell_patch_score <- NULL
 sce_rna$bcell_patch_score <- NULL
@@ -64,7 +65,7 @@ start = Sys.time()
 quantile(sqrt(sce_prot[,sce_prot$celltype %in% c("Bcell")]$Area/pi))
 
 # find B cell clusters
-sce_prot <- findClusters(sce_prot, sce_prot[,colData(sce_prot)$celltype %in% c("Bcell", "BnTcell")]$cellID, 
+sce_prot <- findPatch(sce_prot, sce_prot[,colData(sce_prot)$celltype %in% c("Bcell", "BnTcell")]$cellID, 
                     'cellID', 'Center_X', 'Center_Y', 'ImageNumber', 
                     distance = 15, min_clust_size = 20, output_colname = "bcell_patch")
 
@@ -72,7 +73,7 @@ sce_prot <- findClusters(sce_prot, sce_prot[,colData(sce_prot)$celltype %in% c("
 length(unique(sce_prot$bcell_patch))
 
 # define cells within/surrounding a cluster of B cells
-sce_prot <- findCommunity(sce_prot, 
+sce_prot <- findMilieu(sce_prot, 
                      'cellID', 'Center_X', 'Center_Y', 'ImageNumber', 'bcell_patch', 
                      distance = 50, output_colname = "bcell_milieu")
 
@@ -119,8 +120,8 @@ ggplot(max_patch, aes(x=Description, y=max_patch_size)) +
 
 ## Plot some patches
 
-```{r Fig_3B_clusters_and_communities, fig.width=10, fig.height=10, dev=c('pdf')}
-example <- findClusters(sce_prot[,sce_prot$Description == "D4"], sce_prot[,sce_prot$celltype %in% c("Bcell", "BnTcell")]$cellID, 
+```{r example_patch, fig.width=10, fig.height=10, dev=c('pdf')}
+example <- findPatch(sce_prot[,sce_prot$Description %in% c("D4")], sce_prot[,sce_prot$celltype %in% c("Bcell", "BnTcell")]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
                     'ImageNumber', 
@@ -128,7 +129,7 @@ example <- findClusters(sce_prot[,sce_prot$Description == "D4"], sce_prot[,sce_p
                     min_clust_size = 20,
                     output_colname = "example_patch")
 
-example <- findCommunity(example, 
+example <- findMilieu(example, 
               'cellID', 
               'Center_X', 'Center_Y', 
               'ImageNumber', 
@@ -166,8 +167,8 @@ im_w_patches <- data.frame(colData(sce_prot)) %>%
 
 ```{r}
 Bcell$Bcell_patch_score <- ""
-Bcell[Bcell$density < 10,]$Bcell_patch_score <- "no B cells"
-Bcell[Bcell$density > 10,]$Bcell_patch_score <- "no B cell patches"
+Bcell$Bcell_patch_score <- ifelse(Bcell$density < 10,"no B cells", Bcell$Bcell_patch_score)
+Bcell$Bcell_patch_score <- ifelse(Bcell$density > 10,"no B cell patches", Bcell$Bcell_patch_score)
 Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size<250,]$Description,]$Bcell_patch_score <- "small B cell patches"
 Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size>=250,]$Description,]$Bcell_patch_score <- "TLS"
 
@@ -212,7 +213,7 @@ data.frame(colData(sce_rna)) %>%
 ## Save SCE object
 
 ```{r save sce}
-saveRDS(sce_prot, file = "data/sce_protein.rds")
-saveRDS(sce_rna, file = "data/sce_RNA.rds")
+saveRDS(sce_prot, file = "data/data_for_analysis/sce_protein.rds")
+saveRDS(sce_rna, file = "data/data_for_analysis/sce_RNA.rds")
 ```
 

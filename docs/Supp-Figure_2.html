@@ -399,25 +399,7 @@ div.tocify {
       <a href="05_RNA_chemokine_expressing_cells.html">Chemokine-Expressing Cells</a>
     </li>
     <li>
-      <a href="06_RNA_chemokine_community_definition.html">Mixed Chemokine Communities</a>
-    </li>
-    <li>
-      <a href="07_RNA_chemokine_community_clustering.html">Clustering of Mixed Chemokine Communities</a>
-    </li>
-    <li>
-      <a href="08_RNA_neighbourhood_analysis_chemokines.html">Pure Chemokine Communities</a>
-    </li>
-    <li>
-      <a href="09_manual_scoring.html">Scoring System</a>
-    </li>
-    <li>
-      <a href="10_coloring.html">Coloring Scheme</a>
-    </li>
-    <li>
-      <a href="11_Bcell_TLS_identification.html">TLS Identification</a>
-    </li>
-    <li>
-      <a href="12_dysfunction_score.html">Dysfunction</a>
+      <a href="06_RNA_chemokine_patch_detection.html">Chemokine Patches</a>
     </li>
   </ul>
 </li>
@@ -443,23 +425,29 @@ div.tocify {
     <li>
       <a href="04_2_Protein_classification_subclustering.html">Subclustering</a>
     </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Misc.
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="05_Protein_Tcell_quantification.html">Cytotoxic T cell Quantification</a>
+      <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
     </li>
     <li>
-      <a href="06_Protein_Ki67status.html">Ki67 Scoring</a>
+      <a href="08_color_vectors.html">Color Vectors</a>
     </li>
     <li>
-      <a href="09_manual_scoring.rmd">Scoring System</a>
+      <a href="09_Tcell_Score.html">Tcell Score</a>
     </li>
     <li>
-      <a href="10_coloring.rmd">Coloring Scheme</a>
+      <a href="10_Dysfunction_Score.html">Dysfunction Score</a>
     </li>
     <li>
-      <a href="11_Bcell_TLS_identification.html">TLS Identification</a>
-    </li>
-    <li>
-      <a href="13_TCF7_PD1.html">TCF7/PD1 Gating</a>
+      <a href="11_Bcell_Score.html">Bcell Score</a>
     </li>
   </ul>
 </li>
@@ -511,7 +499,24 @@ div.tocify {
     </li>
   </ul>
 </li>
-<li class="dropdown-header">Additional Material</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Additional Material
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Summary_Statistics.html">Summary Statistics</a>
+    </li>
+    <li>
+      <a href="XX_hazard_ratio.html">Hazard Ratio Analysis</a>
+    </li>
+    <li>
+      <a href="license.html">License</a>
+    </li>
+  </ul>
+</li>
       </ul>
       <ul class="nav navbar-nav navbar-right">
         
@@ -551,7 +556,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-08
+<strong>Last updated:</strong> 2021-02-10
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
@@ -642,16 +647,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree20a1458a4a84f38a314ea39a12a78aad3595e51dtargetblank20a1458a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/20a1458a4a84f38a314ea39a12a78aad3595e51d" target="_blank">20a1458</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree20a1458a4a84f38a314ea39a12a78aad3595e51dtargetblank20a1458a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/20a1458a4a84f38a314ea39a12a78aad3595e51d" target="_blank">20a1458</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -667,25 +672,13 @@ Ignored files:
     Ignored:    code/helper_functions/._findCommunity.R
     Ignored:    data/.DS_Store
     Ignored:    data/._.DS_Store
-    Ignored:    data/._density_infiltration_BlockID.csv
     Ignored:    data/._layer_1_classification_rna.csv
-    Ignored:    data/._manual_infiltration_scoring.csv
-    Ignored:    data/._manual_infiltration_scoring_BlockID.csv
-    Ignored:    data/._manual_infiltration_scoring_RC.csv
-    Ignored:    data/._manual_infiltration_scoring_TH.csv
     Ignored:    data/._survdat_for_modelling.csv
     Ignored:    data/12plex_validation/
     Ignored:    data/200323_TMA_256_Hot Cold_Clinical Data_Updated Response Data_For Collaborators_latest updated_Mar_2020_for_Coxph_modeling.csv
-    Ignored:    data/colour_vector.rds
-    Ignored:    data/density_infiltration_BlockID.csv
-    Ignored:    data/fraction_and_infiltration_scoring.csv
     Ignored:    data/layer_1_classification_protein.csv
-    Ignored:    data/layer_1_classification_protein.rds
     Ignored:    data/layer_1_classification_rna.csv
-    Ignored:    data/manual_infiltration_scoring.csv
-    Ignored:    data/manual_infiltration_scoring_BlockID.csv
-    Ignored:    data/manual_infiltration_scoring_RC.csv
-    Ignored:    data/manual_infiltration_scoring_TH.csv
+    Ignored:    data/manual_infiltration/
     Ignored:    data/protein/
     Ignored:    data/rna/
     Ignored:    data/safety_copy_SCE/
@@ -702,16 +695,11 @@ Ignored files:
 
 Unstaged changes:
     Modified:   .gitignore
-    Modified:   analysis/11_Bcell_TLS_identifiaction.Rmd
-    Modified:   analysis/Figure_2.rmd
-    Modified:   analysis/Figure_3.rmd
-    Modified:   analysis/Figure_4.rmd
-    Modified:   analysis/Figure_5.rmd
-    Modified:   analysis/Summary_Statistics.rmd
+    Modified:   analysis/04_1_Protein_celltype_classification.rmd
+    Modified:   analysis/04_1_RNA_celltype_classification.rmd
     Modified:   analysis/Supp-Figure_2.rmd
-    Modified:   analysis/Supp-Figure_3.rmd
     Modified:   analysis/Supp-Figure_4.rmd
-    Modified:   analysis/Supp-Figure_5.rmd
+    Deleted:    code/findPackages.R
 
 </code></pre>
 <p>
@@ -750,6 +738,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/3f5af3f59358eebb33aa2a8a06fddca34dad6a6b/docs/Supp-Figure_2.html" target="_blank">3f5af3f</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-09
+</td>
+<td>
+add .html files
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/afa7957551baf7d1a04d81ec4159f689d43513a3/analysis/Supp-Figure_2.rmd" target="_blank">afa7957</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-08
+</td>
+<td>
+minor changes on figures and figure order
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -987,7 +1009,6 @@ library(ggpubr)</code></pre>
 <pre class="r"><code># clinical data
 dat &lt;- read_csv(&quot;data/protein/clinical_data_protein.csv&quot;)
 dat_survival = fread(file = &quot;data/survdat_for_modelling.csv&quot;,stringsAsFactors = FALSE)
-dat_inflammation = fread(file = &quot;data/manual_infiltration_scoring_BlockID.csv&quot;, header = TRUE)
 
 # SCE object
 sce_prot = readRDS(file = &quot;data/sce_protein.rds&quot;)

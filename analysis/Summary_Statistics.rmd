@@ -30,16 +30,13 @@ library(readr)
 ## Load Data
 
 ```{r}
-# clinical data
-dat <- read_csv("data/protein/clinical_data_protein.csv")
-
 # SCE object
-sce_prot = readRDS(file = "data/sce_protein.rds")
-sce_rna = readRDS(file = "data/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 
 # image
-image_mat_rna <- read.csv("data/rna/Image.csv")
-image_mat_prot <- read.csv("data/protein/Image.csv")
+image_mat_rna <- read.csv("data/data_for_analysis/rna/Image.csv")
+image_mat_prot <- read.csv("data/data_for_analysis/protein/Image.csv")
 ```
 
 # Statistics
@@ -344,7 +341,7 @@ cont_table <- data.frame(colData(sce_prot)) %>%
   filter(is.na(dysfunction_score) == FALSE) %>%
   group_by(bcell_patch_score, dysfunction_score) %>%
   summarise(n=n()) %>%
-  filter(bcell_patch_score %in% c("small patches", "large patches")) %>%
+  filter(bcell_patch_score %in% c("small B cell patches", "TLS")) %>%
   reshape2::dcast(bcell_patch_score ~ dysfunction_score, value.var = "n", fill = 0)
 
 fisher.test(cont_table[,-1])

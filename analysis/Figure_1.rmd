@@ -10,7 +10,7 @@ editor_options:
 # Introduction
 This script generates plots for Figure 1. 
 
-# Preparations
+# Preparation
 
 ```{r setup}
 knitr::opts_chunk$set(echo = TRUE, message= FALSE)
@@ -19,7 +19,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
 ## Load libraries
 
-```{r, message=FALSE, warning=FALSE}
+```{r load_libraries, message=FALSE, warning=FALSE}
 library(SingleCellExperiment)
 library(data.table)
 library(scater)
@@ -41,9 +41,9 @@ library(dendextend)
 
 ## Load data
 
-```{r}
-sce_rna <- readRDS("data/sce_RNA.rds")
-sce_prot <- readRDS("data/sce_protein.rds")
+```{r load_data}
+sce_rna <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot <- readRDS(file = "data/data_for_analysis/sce_protein.rds")
 ```
 
 # Figure 1C
@@ -234,7 +234,7 @@ mean(c(cor(rna_sum$Macrophage, prot_sum$Macrophage, method = "pearson"),
 ## Load masks
 
 ```{r}
-all_mask <- loadImages(x = "/home/ubuntu/bbvolume/Data/Analysis/melanoma_cohort_new_cp_pipeline/protein/cpout/",
+all_mask <- loadImages(x = "data/full_data/protein/cpout/",
                        pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
 ```
 
@@ -242,7 +242,7 @@ all_mask <- loadImages(x = "/home/ubuntu/bbvolume/Data/Analysis/melanoma_cohort_
 
 ```{r match image numbers}
 # we load the metadata for the images.
-image_mat <- as.data.frame(read.csv(file = "data/protein/Image.csv",stringsAsFactors = FALSE))
+image_mat <- as.data.frame(read.csv(file = "data/data_for_analysis/protein/Image.csv",stringsAsFactors = FALSE))
 
 # we extract only the FileNames of the masks as they are in the all_masks object
 cur_df <- data.frame(cellmask = image_mat$FileName_cellmask,

@@ -30,9 +30,8 @@ library(workflowr)
 # load data
 
 ```{r load data}
-sce = readRDS(file = "data/sce_protein.rds")
+sce = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 ```
-
 
 ```{r scatter plot to check cut offs for single markers}
 for(i in 1:10){
@@ -74,8 +73,6 @@ plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",
             color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             zlim = c(-3,3), cluster_rows = TRUE, gaps_row = 10)
 ```
-
-
 
 ## definition of markers used for subclustering the super-classes
 
@@ -310,6 +307,6 @@ table(celltype_counts)
 # delete the "exprs" slot from the single cell experiment again.
 assay(sce,"exprs") <- NULL
 
-saveRDS(sce,file = "data/sce_protein.rds")
+saveRDS(sce,file = "data/data_for_analysis/sce_protein.rds")
 ```
 

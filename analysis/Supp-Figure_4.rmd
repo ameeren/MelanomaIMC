@@ -38,12 +38,8 @@ library(rstatix)
 ## Read the data
 
 ```{r}
-sce_rna = readRDS(file = "data/sce_RNA.rds")
-sce_prot = readRDS(file = "data/sce_protein.rds")
-
-# meta data
-dat_survival = fread(file = "data/survdat_for_modelling.csv",stringsAsFactors = FALSE)
-dat_inflammation = fread(file = "data/manual_infiltration_scoring_BlockID.csv", header = TRUE)
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 ```
 
 # Supp Figure 4A
@@ -253,17 +249,15 @@ ggplot(s100, aes(x=dysfunction_score, y=fraction)) +
 
 ```{r prepare_heatmap_data}
 cur_dt <- data.frame(colData(sce_rna))
-cur_dt_prot <- as.data.table(colData(sce_prot))
-cur_dt_prot <- distinct(cur_dt_prot, Description, .keep_all = T)
-
 clust <- data.frame()
 
-## wide table for communities - filter undefined or unclear E_I_D scores
+## wide table for communities 
 for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
   cur_dt_sub <- cur_dt[cur_dt[,i] > 0,]
   cur_dt_sub <- cbind(cur_dt_sub[,c(i, "Description")],
                       cur_dt_sub[,grepl(glob2rx("C*L*"),names(cur_dt_sub))])
   
+  # count numbers of chemokine-expressing cells per patch
   cur_dt_sub <- cur_dt_sub %>%
     group_by(Description) %>%
     group_by_at(i, .add = TRUE) %>%
@@ -279,7 +273,7 @@ for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
 # remove pure clusters with low abundance (CCL22, CCL4, CCL8)
 clust <- clust[!(clust$cluster_type %in% c("ccl22_pure", "ccl4_pure", "ccl8_pure")),]
 
-# summarize by image
+# number of patches by image
 clust <- clust %>%
   group_by(Description, cluster_type) %>%
   summarise(n=n()) %>%
@@ -291,17 +285,9 @@ to_add <- data.frame(colData(sce_rna)) %>%
 
 clust <- left_join(to_add[,c("Description", "dysfunction_score", "Tcell_density_score_image")], clust)
 
+# repalce NA with 0 
 cur_dt_wide <- clust %>%
   mutate_if(is.numeric,coalesce,0)
-
-# calculate row proportions (hard coded for 9 community modules,1-9)
-#cur_dt_wide[,grepl(glob2rx("*pure"),names(cur_dt_wide))] <- cur_dt_wide[,grepl(glob2rx("*pure"),names(cur_dt_wide))] / rowSums(cur_dt_wide[,grepl(glob2rx("*pure"),names(cur_dt_wide))])
-
-
-is.nan.data.frame <- function(x)
-do.call(cbind, lapply(x, is.nan))
-
-cur_dt_wide[is.nan(cur_dt_wide)] <- 0
 
 # order according to image infiltration score
 cur_dt_wide <- cur_dt_wide[order(cur_dt_wide$dysfunction_score),]
@@ -314,9 +300,10 @@ total_chemokines <- cur_dt %>%
   mutate(fraction = n/sum(n)) %>%
   filter(chemokine == TRUE)
 
-# community vs single producer - fraction per image
+# is a expressing cell part of a milieu?
 cur_dt$in_community <- ifelse(rowSums(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))]) > 0 & cur_dt$chemokine == TRUE, TRUE, FALSE)
 
+# fraction in_community 1vs.0 per image
 fractions <- cur_dt %>%
   filter(chemokine == TRUE) %>%
   group_by(Description, in_community) %>%
@@ -331,7 +318,7 @@ fractions[, 2:3][is.na(fractions[, 2:3])] <- 0
 # chemokines per image (regardless of combination, multi-producing cells count more than once)
 chemokines <- cbind(cur_dt[,c("Description", "in_community")], cur_dt[,grepl(glob2rx("C*L*"),names(cur_dt))])
 
-# reshape
+# long table - chemokine / in_community info and count (n) per image
 chemokines <- reshape2::melt(chemokines, id.vars = c("Description", "in_community"), variable.name = "chemokine", value.name = "n") %>%
   group_by(Description, in_community, chemokine) %>%
   summarise(total = sum(n)) %>%
@@ -339,7 +326,7 @@ chemokines <- reshape2::melt(chemokines, id.vars = c("Description", "in_communit
   replace(is.na(.), 0) %>%
   reshape2::melt(id.vars = c("Description", "chemokine"), variable.name = "in_community", value.name = "n")
 
-# join with wide table
+# combine all information
 cur_dt_wide <- left_join(cur_dt_wide, fractions)
 cur_dt_wide <- left_join(cur_dt_wide, total_chemokines)
 ```
@@ -347,7 +334,7 @@ cur_dt_wide <- left_join(cur_dt_wide, total_chemokines)
 ## Plot Heatmap
 
 ```{r Supp_Fig_4D_heatmap_modules_infiltration, fig.height=8, fig.width=14, dev=c('pdf')}
-# remove controls and bad images
+# remove controls and only keep images with dysfunction score
 cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$Description %in% unique(sce_rna[,sce_rna$Location != "CTRL"]$Description),]
 cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$dysfunction_score %in% c("high dysfunction", "low dysfunction"),]
 
@@ -355,13 +342,16 @@ cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$dysfunction_score %in% c("high dysfun
 subgroup = cur_dt_wide_sub[,"dysfunction_score"]
 
 # heatmap annotation
-row_ha2 = rowAnnotation("Production Mode of\nChemokine-Expressing Cells" = anno_barplot(cur_dt_wide_sub[,c("single", "community")], 
-                                                     gp = gpar(fill = c("#F8766D", "#00BFC4")), width = unit(1.5, "cm")),
-                        "Fraction of Chemokine- \n Expressing Cells" = anno_barplot(cur_dt_wide_sub[,"fraction"],
-                                                                   width = unit(1.5, "cm")),
-                       annotation_name_rot = 90, gap = unit(3, "mm"),
-                       col = list(Relapse = c("no relapse" = "orange", "relapse" = "black", "untreated/lost" = "grey")))
+row_ha2 = rowAnnotation("Production Mode of\nChemokine-Expressing Cells" = 
+                          anno_barplot(cur_dt_wide_sub[,c("single", "community")], 
+                                       gp = gpar(fill = c("#F8766D", "#00BFC4")), width = unit(1.5, "cm")),
+                        "Fraction of Chemokine- \n Expressing Cells" = 
+                          anno_barplot(cur_dt_wide_sub[,"fraction"],
+                                       width = unit(1.5, "cm")),
+                        annotation_name_rot = 90, gap = unit(3, "mm"),
+                        col = list(Relapse = c("no relapse" = "orange", "relapse" = "black", "untreated/lost" = "grey")))
 
+# function for the zoom-in plot
 panel_fun_chemokines = function(index, nm) {
     image_number = cur_dt_wide_sub[index,"Description"]
     if(length(unique(image_number)) > 9){
@@ -382,7 +372,7 @@ panel_fun_chemokines = function(index, nm) {
     }
 }
 
-# zoom-in 
+# create zoom-in 
 zoom = anno_zoom(align_to = subgroup, 
                  which = "row", panel_fun = panel_fun_chemokines, 
                  size = unit(6, "cm"), 
@@ -411,25 +401,20 @@ ht1 = Heatmap(m,
         show_heatmap_legend = F,
         show_row_dend = F,
         name = "Detected Patches",
-        column_title = "Chemokine Patch", 
+        column_title = "Chemokine Milieu", 
         column_title_side = "bottom",
         column_title_gp = gpar(fontsize=20),
-        #row_labels = cur_dt_wide_sub[,1],
-        #row_names_gp = gpar(cex=0.4),
-        #row_names_side = "left",
         show_row_names = F,
         width = unit(15,"cm"))
 
-#pdf("~/bbvolume/Git/melanoma_publication_old_data/output/heatmap_patches.pdf", width = 14, height = 8)
 draw(ht1)
-#dev.off()
 ```
 
 ```{r Supp_Fig_4D_legend, dev=c('pdf'), fig.width=3, fig.height=1}
 # manual legends
-lgd1 = Legend(labels = c("Stand-alone", "Patch"), title = "Production Mode", legend_gp = gpar(fill = c("#F8766D", "#00BFC4")))
+lgd1 = Legend(labels = c("Stand-alone", "Milieu"), title = "Production Mode", legend_gp = gpar(fill = c("#F8766D", "#00BFC4")))
 lgd2 = Legend(col_fun = colorRamp2(c(0:max(m)), colors = col_fun), 
-              at = seq(0, max(m)+2, by=5), title = "Detected Patches", direction = "horizontal", grid_width = unit(2, "cm"))
+              at = seq(0, max(m)+2, by=5), title = "Detected Milieus", direction = "horizontal", grid_width = unit(2, "cm"))
 
 # Draw Legend
 draw(packLegend(lgd2, lgd1, direction = "horizontal"))

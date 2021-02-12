@@ -33,10 +33,10 @@ library(doParallel)
 ## Load data
 
 ```{r}
-sce <- readRDS("data/sce_RNA.rds")
+sce <- readRDS("data/data_for_analysis/sce_RNA.rds")
 
 # load all subsetted sce object from hierarchichal gating and combine the
-label.files <- list.files("data/rna/celltype_classifier/", full.names = TRUE)
+label.files <- list.files("data/data_for_analysis/rna/celltype_classifier/", full.names = TRUE)
 
 # Read in SCE objects
 cur_sces <- lapply(label.files, readRDS)
@@ -448,12 +448,11 @@ metadata(sce)$colour_vectors$classified_celltypes <- layer1_colours
 # Save RDS
 
 ```{r saveRDS}
-saveRDS(sce, "data/sce_RNA.rds")
+saveRDS(sce, "data/data_for_analysis/sce_RNA.rds")
 
 # create data frame with class and probabilities and save as csv.
 layer_1_dat <- as.data.frame(cell_labels.prob)
 layer_1_dat$class <- cell_labels.class
 
-#write.csv(layer_1_dat, file = "data/layer_1_classification_rna.csv")
-saveRDS(layer_1_dat, "data/layer_1_classification_rna.csv")
+write.csv(layer_1_dat, file = "data/data_for_analysis/layer_1_classification_rna.csv")
 ```

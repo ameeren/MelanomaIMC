@@ -35,11 +35,11 @@ library(ggrastr)
 
 ```{r}
 # load data
-cells1 = fread("data/12plex_validation/overexpression/20190305/cell.csv", header = T,sep=",")
-cells2 = fread("data/12plex_validation/overexpression/20190306/cell.csv", header = T,sep=",")
-meta1 = fread("data/12plex_validation/overexpression/20190305/Image.csv",header = T,sep=",")
-meta2 = fread("data/12plex_validation/overexpression/20190306/Image.csv",header = T,sep=",")
-panel = fread( "data/12plex_validation/overexpression/20190305/20190305_A431_overexpression.csv")
+cells1 = fread("data/data_for_analysis/12plex_validation/overexpression/20190305/cell.csv", header = T,sep=",")
+cells2 = fread("data/data_for_analysis/12plex_validation/overexpression/20190306/cell.csv", header = T,sep=",")
+meta1 = fread("data/data_for_analysis/12plex_validation/overexpression/20190305/Image.csv",header = T,sep=",")
+meta2 = fread("data/data_for_analysis/12plex_validation/overexpression/20190306/Image.csv",header = T,sep=",")
+panel = fread( "data/data_for_analysis/12plex_validation/overexpression/20190305/20190305_A431_overexpression.csv")
 
 # extract replicate and stain info
 meta1 = meta1[,.(ImageNumber,FileName_CellImage, Group_Number, Metadata_Target)]
@@ -181,13 +181,13 @@ sapply(list.files("code/helper_functions", full.names = TRUE), source)
 ## Load the data
 
 ```{r}
-cells1 = fread("data/12plex_validation/HeLa/20190208/cell.csv", header = T,sep=",")
-cells3 = fread("data/12plex_validation/HeLa/20190215/cell.csv", header = T,sep=",")
-cells4 = fread("data/12plex_validation/HeLa/20190222/cell.csv", header = T,sep=",")
+cells1 = fread("data/data_for_analysis/12plex_validation/HeLa/20190208/cell.csv", header = T,sep=",")
+cells3 = fread("data/data_for_analysis/12plex_validation/HeLa/20190215/cell.csv", header = T,sep=",")
+cells4 = fread("data/data_for_analysis/12plex_validation/HeLa/20190222/cell.csv", header = T,sep=",")
 
-meta1 = fread("data/12plex_validation/HeLa/20190208/Image.csv",header = T,sep=",")
-meta3 = fread("data/12plex_validation/HeLa/20190215/Image.csv",header = T,sep=",")
-meta4 = fread("data/12plex_validation/HeLa/20190222/Image.csv",header = T,sep=",")
+meta1 = fread("data/data_for_analysis/12plex_validation/HeLa/20190208/Image.csv",header = T,sep=",")
+meta3 = fread("data/data_for_analysis/12plex_validation/HeLa/20190215/Image.csv",header = T,sep=",")
+meta4 = fread("data/data_for_analysis/12plex_validation/HeLa/20190222/Image.csv",header = T,sep=",")
 
 meta1 = meta1[,.(ImageNumber,FileName_CellImage)]
 meta3 = meta3[,.(ImageNumber,FileName_CellImage)]
@@ -221,7 +221,7 @@ meta3[meta3$stain=="T5new",]$stain = "T5"
 meta3[meta3$stain=="T11new",]$stain = "T11"
 meta3[meta3$replicate =="20190221",]$replicate = "20190215"
 
-panel = fread( "data/12plex_validation/HeLa/20190212_HeLa_12plex_validation.csv")
+panel = fread( "data/data_for_analysis/12plex_validation/HeLa/20190212_HeLa_12plex_validation.csv")
 
 # sort Metal Number in same order than in the Image.csv file!!
 panel$`Metal Number` = str_extract(panel$`Metal Tag`, "[0-9]+")
@@ -296,7 +296,7 @@ cells_panel <- cells_panel[Target %in% c("T1","T2","T3","T4","T5","T6","T7","T8"
 
 ```{r}
 # import data from 8plex validation
-cells_panel_8plex = readRDS(file = "data/12plex_validation/HeLa/2018_data_8plex_validation_DS.rds")
+cells_panel_8plex = readRDS(file = "data/data_for_analysis/12plex_validation/HeLa/2018_data_8plex_validation_DS.rds")
 
 # make both data.frames same so they can be merged
 cells_panel = cells_panel[, !("measurement")]
@@ -449,7 +449,7 @@ cor(sum$expression_RNAScope, sum$expression_RNAseq, method = c("spearman"))
 ## Load Data
 
 ```{r}
-sce_rna <- readRDS("data/sce_RNA.rds")
+sce_rna <- readRDS("data/data_for_analysis/sce_RNA.rds")
 ```
 
 ## Detection of chemokine expressing cells

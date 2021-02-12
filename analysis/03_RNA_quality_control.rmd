@@ -29,7 +29,7 @@ library(dittoSeq)
 ## Load the single cell experiment object and the image metadata
 
 ```{r}
-sce <- readRDS(file = "data/sce_RNA.rds")
+sce <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 ```
 
 # Assay
@@ -202,5 +202,5 @@ plot_grid(plotlist = p.list, ncol = 7)
 ## Save updated SCE object
 
 ```{r save updated sce file}
-saveRDS(sce, file = "data/sce_RNA.rds")
+saveRDS(sce, file = "data/data_for_analysis/sce_RNA.rds")
 ```

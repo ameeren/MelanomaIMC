@@ -47,16 +47,19 @@ library(cowplot)
 library(viridis)
 library(ggpubr)
 library(rstatix)
+library(sf)
+library(concaveman)
+library(RANN)
 ```
 
 ## Read the data
 
 ```{r load data}
-sce_rna = readRDS(file = "data/sce_RNA.rds")
-sce_prot = readRDS(file = "data/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 # meta data
-dat_relation = fread(file = "data/rna/Object relationships.csv",stringsAsFactors = FALSE)
+dat_relation = fread(file = "data/data_for_analysis/rna/Object relationships.csv",stringsAsFactors = FALSE)
 ```
 
 ## Prepare Relation Table
@@ -73,8 +76,8 @@ dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Numb
 
 ```{r}
 # Load and prepare
-dat_cells = fread(file = "data/rna/cell.csv",stringsAsFactors = FALSE)
-dat_relation = fread(file = "data/rna/Object relationships.csv",stringsAsFactors = FALSE)
+dat_cells = fread(file = "data/data_for_analysis/rna/cell.csv",stringsAsFactors = FALSE)
+dat_relation = fread(file = "data/data_for_analysis/rna/Object relationships.csv",stringsAsFactors = FALSE)
 
 # Number of cores used for multicore:
 if(detectCores() >= 12){
@@ -270,7 +273,7 @@ image_df[image_df$interaction == "1_1",]
 ## Example of CXCL10 Cluster and corresponding Community
 
 ```{r Fig_3C_clusters_and_communities, fig.width=10, fig.height=10, dev=c('pdf')}
-example <- findClusters(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CXCL10 == 1]$cellID, 
+example <- findPatch(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CXCL10 == 1]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
                     'ImageNumber', 
@@ -278,7 +281,7 @@ example <- findClusters(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CX
                     min_clust_size = 10,
                     output_colname = "example_cluster")
 
-example <- findCommunity(example, 
+example <- findMilieu(example, 
               'cellID', 
               'Center_X', 'Center_Y', 
               'ImageNumber', 
@@ -291,7 +294,7 @@ example <- findCommunity(example,
 ## Zoom-in plot for patch/milieu
 
 ```{r Fig_3B_clusters_and_communities_zoom, fig.width=10, fig.height=10, dev=c('pdf')}
-example <- findClusters(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CXCL10 == 1]$cellID, 
+example <- findPatch(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CXCL10 == 1]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
                     'ImageNumber', 
@@ -299,7 +302,7 @@ example <- findClusters(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CX
                     min_clust_size = 10,
                     output_colname = "example_cluster")
 
-example <- findCommunity(example, 
+example <- findMilieu(example, 
               'cellID', 
               'Center_X', 'Center_Y', 
               'ImageNumber', 
@@ -325,7 +328,7 @@ plot_list <- list()
 for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
   chemokine_name <- toupper(str_split(i, "_")[[1]][1])
   
-  # select all chemokine-producing cells in a community
+  # select all cells that are in a milieu
   unique_comms <- unique(cur_dt[cur_dt[,i] > 0,i])
   cur_dt_sub <- cur_dt[cur_dt[,i] %in% unique_comms,]
   
@@ -342,12 +345,14 @@ for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
   cur_dt_sub <- cur_dt_sub %>%
     reshape2::melt(id.vars = c("cellID", "celltype", "MM_location_simplified", i), variable.name = "chemokine", value.name = "status")
   
+  # all cells that do not produce a chemokine
   non_producer <- cur_dt_sub %>%
     group_by(cellID) %>%
     summarise(sum = sum(status)) %>%
     filter(sum == 0) %>%
     select(cellID)
-    
+  
+  # all cells that produce a chemokine - regardless of what chemokine
   producer <- cur_dt_sub %>%
     group_by(cellID) %>%
     summarise(sum = sum(status)) %>%
@@ -370,23 +375,20 @@ for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
   
   summary <- rbind(producer, non_producer)
   
+  # celltypes numbers
   summary_celltypes <- summary %>%
     group_by(celltype) %>%
-    summarise(n=sum(n)) %>%
-    mutate(percentage = n / sum(n) * 100) #%>%
-    #filter(percentage > 5)
+    summarise(n=sum(n)) 
   
+  # chemokines per celltype numbers
   summary_chemokines <- summary %>%
     group_by(celltype, chemokine) %>%
-    summarise(n=sum(n)) #%>%
-    #filter(celltype %in% summary_celltypes$celltype)
+    summarise(n=sum(n))
   
-  # color_vector
+  # color_vector for cells and chemokines
   col_vector_cells <- metadata(sce_rna)$colour_vector$celltype
   col_vector_chemokines <- metadata(sce_rna)$colour_vectors$chemokine_single
-  
   col_vector <- c(col_vector_cells, col_vector_chemokines)
-  
   # add "no chemokine" to col_vector
   col_vector <- c(col_vector, "white")
   names(col_vector) <- c(names(col_vector[-length(col_vector)]), "no chemokine")
@@ -403,7 +405,7 @@ for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
     mutate(median = median(n))
   medianCells <- paste(round(unique(medianCells$median)), " Cells", sep = "")
     
-  # Percentage of Chemokine produced in a Patch 
+  # Percentage of chemokines produced by milieu cells 
   percentageInPatches <- cur_dt[cur_dt[,chemokine_name] == 1,] %>%
     mutate(in_patch = ifelse(.[,i] > 0, 1, 0)) %>%
     group_by(in_patch) %>%
@@ -427,7 +429,6 @@ for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
     scale_fill_manual(values = unname(col_vector),
                         breaks = names(col_vector),
                         labels = names(col_vector)) + 
-    coord_polar(theta = "y") + 
     ggtitle(chemokine_name) +
     theme_void() +
     theme(axis.ticks=element_blank(),
@@ -436,7 +437,8 @@ for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
           axis.title=element_blank(),
           legend.position = "none",
           text = element_text(size = 18),
-          plot.title = element_text(hjust = 0.5))
+          plot.title = element_text(hjust = 0.5)) +
+        coord_polar(theta = "y")
   
   # add to list
   plot_list[[i]] <- plot_grid(plt)

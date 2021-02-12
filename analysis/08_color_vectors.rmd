@@ -27,8 +27,8 @@ library(colorRamps)
 ## Load data
 
 ```{r}
-sce_rna <- readRDS("data/sce_RNA.rds")
-sce_prot <- readRDS("data/sce_protein.rds")
+sce_rna <- readRDS("data/data_for_analysis/sce_RNA.rds")
+sce_prot <- readRDS("data/data_for_analysis/sce_protein.rds")
 ```
 
 ## All celltypes
@@ -103,7 +103,7 @@ metadata(sce_prot)$colour_vectors$celltype <- cell_protein
 ## Save RDS
 
 ```{r}
-saveRDS(sce_rna, "data/sce_RNA.rds")
-saveRDS(sce_prot, "data/sce_protein.rds")
+saveRDS(sce_rna, "data/data_for_analysis/sce_RNA.rds")
+saveRDS(sce_prot, "data/data_for_analysis/sce_protein.rds")
 ```
 

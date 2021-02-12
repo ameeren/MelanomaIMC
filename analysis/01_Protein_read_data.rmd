@@ -25,22 +25,22 @@ library(SingleCellExperiment)
 
 ```{r load data}
 # load the single cell data
-cells <- as.data.frame(fread(file = "data/protein/cell.csv",stringsAsFactors = FALSE))
+cells <- as.data.frame(fread(file = "data/data_for_analysis/protein/cell.csv",stringsAsFactors = FALSE))
 
 # load the image level metadata
-image_mat <- as.data.frame(read.csv(file = "data/protein/Image.csv",stringsAsFactors = FALSE))
+image_mat <- as.data.frame(read.csv(file = "data/data_for_analysis/protein/Image.csv",stringsAsFactors = FALSE))
 
 # load the panel information
-panel_mat <- read.csv(file = "data/protein/melanoma_1.06_protein.csv", sep= ",",  stringsAsFactors = FALSE )
+panel_mat <- read.csv(file = "data/data_for_analysis/protein/melanoma_1.06_protein.csv", sep= ",",  stringsAsFactors = FALSE )
 
 # get an example file that contains the channel order
-tags <- read.csv( "data/protein/20191021_ZTMA256.1_slide3_TH_s0_p9_r1_a1_ac_full.csv", header = FALSE)
+tags <- read.csv( "data/data_for_analysis/protein/20191021_ZTMA256.1_slide3_TH_s0_p9_r1_a1_ac_full.csv", header = FALSE)
 
 # load acqusition meta data
-acquisition_meta <- read.csv(file = "data/protein/acquisition_metadata.csv", stringsAsFactors = FALSE)
+acquisition_meta <- read.csv(file = "data/data_for_analysis/protein/acquisition_metadata.csv", stringsAsFactors = FALSE)
 
 # load the clinical data. this is a clinical datatable that already contains the ImageNumbers. It has been prepared in the clinical metadata preparation.Rmd script (prepared for RNA and protein dataset separately)
-clinical_mat <- read.csv("data/protein/clinical_data_protein.csv",stringsAsFactors = FALSE)
+clinical_mat <- read.csv("data/data_for_analysis/protein/clinical_data_protein.csv",stringsAsFactors = FALSE)
 ```
 
 # Pre-processing
@@ -157,5 +157,5 @@ metadata(sce) <- as.list(clinical_mat)
 ## Save the SCE object
 
 ```{r save sce object}
-saveRDS(sce,file = "data/sce_protein.rds")
+saveRDS(sce,file = "data/data_for_analysis/sce_protein.rds")
 ```

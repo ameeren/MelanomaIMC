@@ -42,7 +42,7 @@ library(colorRamps)
 ## Load the single cell experiment object and the image metadata
 
 ```{r}
-sce <- readRDS(file = "data/sce_RNA.rds")
+sce <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 ```
 
 # Detect Chemokine Expressing Cells
@@ -231,5 +231,5 @@ metadata(sce)$chemokines_morethan600_withcontrol <- targets
 ## Save SCE object
 
 ```{r save sce object}
-saveRDS(object = sce,file = "data/sce_RNA.rds")
+saveRDS(object = sce,file = "data/data_for_analysis/sce_RNA.rds")
 ```

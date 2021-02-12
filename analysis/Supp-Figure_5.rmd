@@ -49,14 +49,14 @@ library(rstatix)
 ## Read the data
 
 ```{r load data}
-sce_rna = readRDS(file = "data/sce_RNA.rds")
-sce_prot = readRDS(file = "data/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 # image
-image_mat_prot <- read.csv("data/protein/Image.csv")
+image_mat_prot <- read.csv("data/data_for_analysis/protein/Image.csv")
 
 # surv_dat
-dat_survival_prot <- fread(file = "data/protein/clinical_data_protein.csv")
+dat_survival_prot <- fread(file = "data/data_for_analysis/protein/clinical_data_protein.csv")
 ```
 
 ## Prepare image size data

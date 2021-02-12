@@ -54,18 +54,18 @@ library(rstatix)
 ## Read the data
 
 ```{r}
-sce_rna = readRDS(file = "data/sce_RNA.rds")
-sce_prot = readRDS(file = "data/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 # meta data
-dat_relation = fread(file = "data/protein/Object relationships.csv",stringsAsFactors = FALSE)
-dat_relation_rna = fread(file = "data/RNA/Object relationships.csv",stringsAsFactors = FALSE)
+dat_relation = fread(file = "data/data_for_analysis/protein/Object relationships.csv",stringsAsFactors = FALSE)
+dat_relation_rna = fread(file = "data/data_for_analysis/RNA/Object relationships.csv",stringsAsFactors = FALSE)
 
 # image
-image_mat_prot <- read.csv("data/protein/Image.csv")
+image_mat_prot <- read.csv("data/data_for_analysis/protein/Image.csv")
 
 # surv_dat
-dat_survival_prot <- fread(file = "data/protein/clinical_data_protein.csv")
+dat_survival_prot <- fread(file = "data/data_for_analysis/protein/clinical_data_protein.csv")
 ```
 
 ## Prepare Relation Data Protein
@@ -199,7 +199,7 @@ grid.arrange(leg)
 ## Load masks
 
 ```{r}
-all_mask <- loadImages(x = "/home/ubuntu/bbvolume/Data/Analysis/melanoma_cohort_new_cp_pipeline/rna/cpout/",
+all_mask <- loadImages(x = "data/full_data/rna/cpout/",
                        pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
 ```
 
@@ -207,7 +207,7 @@ all_mask <- loadImages(x = "/home/ubuntu/bbvolume/Data/Analysis/melanoma_cohort_
 
 ```{r match image numbers}
 # we load the metadata for the images.
-image_mat_rna <- as.data.frame(read.csv(file = "data/rna/Image.csv",stringsAsFactors = FALSE))
+image_mat_rna <- as.data.frame(read.csv(file = "data/data_for_analysis/rna/Image.csv",stringsAsFactors = FALSE))
 
 # we extract only the FileNames of the masks as they are in the all_masks object
 cur_df <- data.frame(cellmask = image_mat_rna$FileName_cellmask,

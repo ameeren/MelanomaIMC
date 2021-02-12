@@ -32,8 +32,8 @@ library(dplyr)
 ## Read the data
 
 ```{r}
-sce_rna = readRDS(file = "data/sce_RNA.rds")
-sce_prot = readRDS(file = "data/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 ```
 
 ## Derive Scoring
@@ -85,7 +85,7 @@ data.frame(colData(sce_rna)) %>%
 ## save SCE
 
 ```{r save sce}
-saveRDS(sce_prot, file = "data/sce_protein.rds")
-saveRDS(sce_rna, file = "data/sce_RNA.rds")
+saveRDS(sce_prot, file = "data/data_for_analysis/sce_protein.rds")
+saveRDS(sce_rna, file = "data/data_for_analysis/sce_RNA.rds")
 ```
 

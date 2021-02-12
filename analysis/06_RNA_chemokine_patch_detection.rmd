@@ -26,29 +26,35 @@ library(ggplot2)
 library(ggrepel)
 library(dplyr)
 library(data.table)
-library(sf)
 library(stringr)
+library(sf)
+library(concaveman)
 library(RANN)
 ```
 
 ## Load data
 
 ```{r load data}
-sce = readRDS(file = "data/sce_RNA.rds")
+sce = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 ```
 
-# Chemokine Cluster Detection and Analysis
+# Chemokine Patch Detection and Analysis
 
-## Detect Clusters for Single Chemokines
+## Detect Pachtes for Single Chemokines
+Here we use our patch detection algorithm to detect patches of cells that express a certain chemokine. The following settings are used:
+- We loop through all chemokines. If a cell produces mulitple chemokines, each chemokine is treated in a separate round of patch detection.
+- min_clust_size: 1, even a single cell without producing neighbours is considered a patch. In the next chunk, we select only patches that at least contain 10 producing cells. 
+- distance patch neighbours: 25µm
+- expansion milieu: 30µm
 
-```{r}
+```{r patch_milieu_detection}
 start = Sys.time()
 cur_sce <- data.frame(colData(sce))
 # loop through all chemokines
 for(i in names(cur_sce[,grepl(glob2rx("C*L*"),names(cur_sce))])) {
 
   # find clusters
-  sce <- findClusters(input_sce = sce, 
+  sce <- findPatch(input_sce = sce, 
                     IDs_of_interest = cur_sce[cur_sce[,names(cur_sce) == i] == 1,]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
@@ -59,7 +65,7 @@ for(i in names(cur_sce[,grepl(glob2rx("C*L*"),names(cur_sce))])) {
 
   
   # define cells within/surrounding a cluster of chemokine producing cells
-  sce <- findCommunity(sce, 
+  sce <- findMilieu(sce, 
                      'cellID', 
                      'Center_X', 
                      'Center_Y', 
@@ -73,20 +79,22 @@ print(end-start)
 ```
 
 ## Define pure clusters that contain more than 10 producing cells
+Here we select patches which contain at least 10 producing cells. We then assign a to all milieu cells from that patch the milieu ID that was already assigned above.
+All smaller patches get a 0. 
 
-```{r}
+```{r bigger_patches}
 cur_sce <- data.frame(colData(sce))
-clust_sum <- data.frame()
 
 for(i in names(cur_sce[,grepl(glob2rx("*only_clust"),names(cur_sce))])) {
-  # select cluster with more than 10 producing cells
+ 
+   # select cluster with more than 10 producing cells
   clust <- cur_sce %>%
     group_by_at(i) %>%
     summarise(n=n()) %>%
     distinct_at(i, .keep_all = TRUE) %>%
     filter(n>10)
   
-  # remove cluster 0
+  # remove cluster 0 (non-producing cells)
   clust <- clust[clust[,i] > 0,]
   
   # create new column
@@ -118,5 +126,5 @@ sce$ccl19_pure <- cur_sce$ccl19only_pure
 ## Save SCE
 
 ```{r}
-saveRDS(sce, file = "data/sce_RNA.rds")
+saveRDS(sce, file = "data/data_for_analysis/sce_RNA.rds")
 ```

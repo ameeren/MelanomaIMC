@@ -43,8 +43,8 @@ library(ggpmisc)
 ## Load data
 
 ```{r}
-sce_rna <- readRDS(file = "data/sce_RNA.rds")
-sce_prot <- readRDS(file= "data/sce_protein.rds")
+sce_rna <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot <- readRDS(file= "data/data_for_analysis/sce_protein.rds")
 ```
 
 # Figure 2B

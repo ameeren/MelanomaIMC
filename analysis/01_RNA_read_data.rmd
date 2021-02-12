@@ -21,20 +21,20 @@ library(SingleCellExperiment)
 
 ```{r}
 # load cell data
-cells <- data.frame(fread(file = "data/rna/cell.csv",stringsAsFactors = FALSE))
+cells <- data.frame(fread(file = "data/data_for_analysis/rna/cell.csv",stringsAsFactors = FALSE))
 
 # load image metadata as output from CellProfiler
-image_mat <- read.csv(file = "data/rna/Image.csv", stringsAsFactors = FALSE)
+image_mat <- read.csv(file = "data/data_for_analysis/rna/Image.csv", stringsAsFactors = FALSE)
 
 # load panel information as exported from AirLab and modified to contain ilastik and full columns and nicely written Target names.
-panel_mat <- read.csv(file = "data/rna/panel_mat.csv", stringsAsFactors = FALSE )
+panel_mat <- read.csv(file = "data/data_for_analysis/rna/panel_mat.csv", stringsAsFactors = FALSE )
 
 # load the channel order information. this information is created from the jupyter notebook in the tiffs folder for every single tiff that is created. 
 # since it is the same panel for all images we just select one single file. the order or the metals in this file is the actual channels order.
-tags <- read.csv( "data/rna/20190731_ZTMA256.1_slide2_TH_s1_p14_r1_a1_ac_full.csv", header = FALSE)
+tags <- read.csv( "data/data_for_analysis/rna/20190731_ZTMA256.1_slide2_TH_s1_p14_r1_a1_ac_full.csv", header = FALSE)
 
 # load clinical data and TMA data to link images with patients
-clinical_mat <- read.csv(file = "data/rna/clinical_data_RNA.csv",stringsAsFactors = FALSE)
+clinical_mat <- read.csv(file = "data/data_for_analysis/rna/clinical_data_RNA.csv",stringsAsFactors = FALSE)
 ```
 
 # Pre-processing
@@ -137,5 +137,5 @@ metadata(sce) <- as.list(clinical_mat)
 ## Save the SCE object
 
 ```{r}
-saveRDS(sce,file = "data/sce_RNA.rds")
+saveRDS(sce,file = "data/data_for_analysis/sce_RNA.rds")
 ```

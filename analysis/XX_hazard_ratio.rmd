@@ -28,13 +28,11 @@ library(survival)
 ## Read the data
 
 ```{r}
-sce_rna = readRDS(file = "data/sce_RNA.rds")
-sce_prot = readRDS(file = "data/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 # meta data
-dat_survival = fread(file = "data/protein/clinical_data_protein.csv",stringsAsFactors = FALSE)
-time_data = fread(file = "data/survdat_for_modelling.csv",stringsAsFactors = FALSE)
-time_data$BlockID <- time_data$Block.ID
+dat_survival = fread(file = "data/data_for_analysis/protein/clinical_data_protein.csv",stringsAsFactors = FALSE)
 ```
 
 ## Prepare data
@@ -47,7 +45,7 @@ cur_dat <- data.frame(colData(sce_prot)) %>%
   filter(treatment_status_before_surgery != "control")
 
 # derive Tcell Score for Block (max score per block)
-score <- data.frame(colData(sce_prot)) %>%
+tcell_score <- data.frame(colData(sce_prot)) %>%
   distinct(Description, .keep_all = T) %>%
   filter(paste(MM_location, Location, sep = "_") != "LN_M") %>% # remove LN margin samples as these are not relevant 
   group_by(BlockID, Tcell_density_score_image) %>%
@@ -55,34 +53,51 @@ score <- data.frame(colData(sce_prot)) %>%
   filter(row_number()==n()) %>% # select last row of groups since this will always be the highest ranking
   select(BlockID, Tcell_density_score_image)
 
-cur_dat <- left_join(cur_dat, score)
+# derive Bcell Score for Block (max score per block)
+bcell_score <- data.frame(colData(sce_prot)) %>%
+  distinct(Description, .keep_all = T) %>%
+  filter(paste(MM_location, Location, sep = "_") != "LN_M") %>% # remove LN margin samples as these are not relevant 
+  group_by(BlockID, bcell_patch_score) %>%
+  summarise(n=n()) %>%
+  filter(row_number()==n()) %>% # select last row of groups since this will always be the highest ranking
+  select(BlockID, bcell_patch_score)
+
+cur_dat <- left_join(cur_dat, tcell_score)
+cur_dat <- left_join(cur_dat, bcell_score)
 
 # change certain levels
 cur_dat$Age <- ifelse(cur_dat$Age == "?60", ">60", cur_dat$Age)
 cur_dat$Cancer_Stage <- ifelse(cur_dat$Cancer_Stage == "III or IV", "IV/III", cur_dat$Cancer_Stage)
 
 # relevel factors
-cur_dat$Age <- factor(cur_dat$Age, levels = c("<45", "45-59", ">60"))
-cur_dat$Mutation <- factor(cur_dat$Mutation, levels = c("wt", "BRAF", "NRAS", "unknown"))
+cur_dat$Age <- factor(cur_dat$Age, levels = c(">60", "45-59", "<45"))
+cur_dat$Mutation <- factor(cur_dat$Mutation, levels = c("wt", "BRAF", "NRAS"))
 cur_dat$Cancer_Stage <- factor(cur_dat$Cancer_Stage, levels = c("III", "IV"))
 cur_dat$treatment_status_before_surgery <- factor(cur_dat$treatment_status_before_surgery, levels = c("naive", "non-naive"))
 cur_dat$Tcell_density_score_image <- factor(cur_dat$Tcell_density_score_image, levels = c("high", "med", "low", "absent"))
+cur_dat$bcell_patch_score <- factor(cur_dat$bcell_patch_score, levels = c("no B cells", "no B cell patches", "small patches", "TLS"))
 
-# join with survival dat
-surv <- left_join(time_data[,c("BlockID", "Time_to_.progression_or_last_PET", "censoring_progression", "Time_to_death_or_last_PET", "censoring_death")], cur_dat)
+# add survival times
+surv <- left_join(cur_dat, dat_survival[,c("BlockID", "censoring_death", "Time_to_death_or_last_PET")])
 ```
 
 ## Hazard Ratio Plot 
 
 ```{r Hazard_Ratio_Analysis, fig.width=7, fig.height=5, dev=("pdf")}
 # exclude GNAQ and KRAS mutation due to too few data points
-surv_sub <- surv[!(surv$Mutation %in% c("KRAS", "GNAQ")),]
+surv_sub <- surv[!(surv$Mutation %in% c("KRAS", "GNAQ", "unknown")),]
 surv_sub <- surv[!(surv$Cancer_Stage %in% c("III/IV", "unknown")),]
-colnames(surv_sub) <- c("BlockID", "Time_progression", "censoring_progression", "Time_death", "censoring_death", 
-                        "Mutation", "Age", "Cancer Stage", "Treatment Status", "Max Tcell Score")
+surv_sub <- surv_sub[is.na(surv_sub$Time_to_death_or_last_PET) == FALSE,]
 
-model <- coxph(Surv(Time_death, censoring_death) ~ 
-                 Age + `Cancer Stage` + `Treatment Status` + `Max Tcell Score` + Mutation,
+# unique Blocks
+surv_sub <- surv_sub %>%
+  distinct(BlockID, .keep_all = T)
+
+colnames(surv_sub) <- c("BlockID", "Mutation", "Age", "Cancer Stage", "Treatment Status", "Max Tcell Density", "Max Bcell Score", "censoring_death", "Time_to_death_or_last_PET")
+
+# coxph model
+model <- coxph(Surv(Time_to_death_or_last_PET, censoring_death) ~ 
+                 Age + `Cancer Stage` + `Treatment Status` + `Max Tcell Density` + Mutation,
                 data = surv_sub)
 
 ggforest(model, data=surv_sub)

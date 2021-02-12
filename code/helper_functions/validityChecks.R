@@ -1,6 +1,6 @@
-# Input Check for Cluster Detection
+# Input Check for Patch Detection
 
-.checkInputCluster <- function(input_sce,
+.checkInputPatch <- function(input_sce,
                                IDs_of_interest,
                                cellID,
                                X_coord, Y_coord,
@@ -27,13 +27,13 @@
     stop("One or multiple of the indicated columns are not part of colData of the input SCE object. Verify colnames.")
   }
   if(output_colname %in% colnames(colData(input_sce))){
-    stop("A column with the indicated output_colname already exists. Please indicate a unique column name. ")
+    stop("A column with the indicated output_colname already exists. Please indicate a unique column name.")
   }
 }
 
-# Input Check for Community Detection
+# Input Check for Milieu Detection
 
-.checkInputCommunity <- function(input_sce,
+.checkInputMilieu <- function(input_sce,
                                  cellID,
                                  X_coord, Y_coord,
                                  ImageNumber,

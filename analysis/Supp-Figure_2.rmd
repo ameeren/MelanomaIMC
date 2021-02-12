@@ -49,13 +49,11 @@ library(ggpubr)
 
 ```{r}
 # clinical data
-dat <- read_csv("data/protein/clinical_data_protein.csv")
-dat_survival = fread(file = "data/survdat_for_modelling.csv",stringsAsFactors = FALSE)
-dat_inflammation = fread(file = "data/manual_infiltration_scoring_BlockID.csv", header = TRUE)
+dat <- read_csv("data/data_for_analysis/protein/clinical_data_protein.csv")
 
 # SCE object
-sce_prot = readRDS(file = "data/sce_protein.rds")
-sce_rna = readRDS(file = "data/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 ```
