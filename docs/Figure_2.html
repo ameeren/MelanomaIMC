@@ -435,6 +435,9 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="00_prepare_clinical_dat.html">Prep Clinical Table</a>
+    </li>
+    <li>
       <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
     </li>
     <li>
@@ -556,7 +559,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-11
+<strong>Last updated:</strong> 2021-02-18
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
@@ -647,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -664,10 +667,9 @@ Note that you need to be careful to ensure that all relevant files for the analy
 <pre><code>
 Ignored files:
     Ignored:    .DS_Store
-    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
     Ignored:    ._.DS_Store
-    Ignored:    analysis/figure/
+    Ignored:    analysis/._clinical metadata preparation.Rmd
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
     Ignored:    data/.DS_Store
@@ -682,24 +684,12 @@ Ignored files:
     Ignored:    output/bcell_grouping.png
     Ignored:    output/dysfunction_correlation.pdf
 
-Untracked files:
-    Untracked:  code/helper_functions/findMilieu.R
-    Untracked:  code/helper_functions/findPatch.R
-
 Unstaged changes:
     Modified:   .gitignore
-    Modified:   analysis/01_Protein_read_data.rmd
-    Modified:   analysis/01_RNA_read_data.rmd
-    Modified:   analysis/02_Protein_annotations.rmd
-    Modified:   analysis/02_RNA_annotations.rmd
-    Modified:   analysis/03_Protein_quality_control.rmd
-    Modified:   analysis/03_RNA_quality_control.rmd
     Modified:   analysis/04_1_Protein_celltype_classification.rmd
     Modified:   analysis/04_1_RNA_celltype_classification.rmd
     Modified:   analysis/04_2_RNA_classification_subclustering.rmd
     Modified:   analysis/04_2_protein_classification_subclustering.rmd
-    Modified:   analysis/05_RNA_chemokine_expressing_cells.rmd
-    Modified:   analysis/06_RNA_chemokine_patch_detection.rmd
     Modified:   analysis/07_TCF7_PD1_gating.rmd
     Modified:   analysis/08_color_vectors.rmd
     Modified:   analysis/09_Tcell_Score.Rmd
@@ -710,27 +700,11 @@ Unstaged changes:
     Modified:   analysis/Figure_3.rmd
     Modified:   analysis/Figure_4.rmd
     Modified:   analysis/Figure_5.rmd
-    Modified:   analysis/Summary_Statistics.rmd
     Modified:   analysis/Supp-Figure_1.rmd
     Modified:   analysis/Supp-Figure_2.rmd
     Modified:   analysis/Supp-Figure_3.rmd
     Modified:   analysis/Supp-Figure_4.rmd
     Modified:   analysis/Supp-Figure_5.rmd
-    Modified:   analysis/XX_hazard_ratio.rmd
-    Deleted:    code/findPackages.R
-    Deleted:    code/helper_functions/findClusters.R
-    Deleted:    code/helper_functions/findCommunity.R
-    Deleted:    code/helper_functions/getCellCount.R
-    Deleted:    code/helper_functions/plotBarFracCluster.R
-    Deleted:    code/helper_functions/plotCellFrac.R
-    Deleted:    code/helper_functions/plotCellFracGroups.R
-    Deleted:    code/helper_functions/plotCellFracGroupsSubset.R
-    Deleted:    code/helper_functions/scatter_function.R
-    Modified:   code/helper_functions/validityChecks.R
-    Deleted:    data/mask_comparison/20190809_ZTMA256.1_slide2_TH_s1_p1_r15_a15_ac_full.tiff
-    Deleted:    data/mask_comparison/20190809_ZTMA256.1_slide2_TH_s1_p1_r15_a15_ac_ilastik_s2_Probabilities_equalized_cellmask.tiff
-    Deleted:    data/mask_comparison/20191023_ZTMA256.1_slide3_TH_s0_p10_r4_a4_ac_full.tiff
-    Deleted:    data/mask_comparison/20191023_ZTMA256.1_slide3_TH_s0_p10_r4_a4_ac_ilastik_s2_Probabilities_equalized_cellmask.tiff
 
 </code></pre>
 <p>
@@ -769,6 +743,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/ee1595de9ec17ee414a5beafb9ed08d174e12139/analysis/Figure_2.rmd" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/ee1595de9ec17ee414a5beafb9ed08d174e12139/docs/Figure_2.html" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -1001,9 +1009,15 @@ visible FALSE
         code/helper_functions/plotCellFractions.R
 value   ?                                        
 visible FALSE                                    
-        code/helper_functions/plotDist.R code/helper_functions/sceChecks.R
-value   ?                                ?                                
-visible FALSE                            FALSE                            
+        code/helper_functions/plotDist.R
+value   ?                               
+visible FALSE                           
+        code/helper_functions/scatter_function.R
+value   ?                                       
+visible FALSE                                   
+        code/helper_functions/sceChecks.R
+value   ?                                
+visible FALSE                            
         code/helper_functions/validityChecks.R
 value   ?                                     
 visible FALSE                                 </code></pre>
@@ -1299,47 +1313,6 @@ draw(lgd_list)</code></pre>
 </div>
 <div id="figure-2d" class="section level1">
 <h1>Figure 2D</h1>
-<div id="fraction-of-tumor-cells-that-express-chemokines" class="section level2">
-<h2>Fraction of Tumor Cells that express chemokines</h2>
-<pre class="r"><code>cur_dat &lt;- data.frame(colData(sce_rna))
-cur_dat &lt;- cur_dat %&gt;%
-  filter(celltype == &quot;Tumor&quot;) %&gt;%
-  filter(Location != &quot;CTRL&quot;)
-
-cur_dat &lt;- cur_dat[,c(&quot;ImageNumber&quot;, &quot;Mutation&quot;, colnames(cur_dat)[grepl(glob2rx(&quot;C*L*&quot;),names(cur_dat))])]
-
-# colSums of Chemokines in Tumor Cells (Multiple Producer count more than once)
-cur_dat &lt;- cur_dat %&gt;%
-  group_by(ImageNumber, Mutation) %&gt;%
-  mutate(cells = n()) %&gt;%
-  group_by(ImageNumber, cells, Mutation) %&gt;%
-  summarise_each(funs(sum))</code></pre>
-<pre><code>Warning: `summarise_each_()` is deprecated as of dplyr 0.7.0.
-Please use `across()` instead.
-This warning is displayed once every 8 hours.
-Call `lifecycle::last_warnings()` to see where this warning was generated.</code></pre>
-<pre class="r"><code># compute fractions
-cur_dat[,4:14] &lt;- cur_dat[,4:14] / t(cur_dat$cells)
-
-cur_dat &lt;- cur_dat %&gt;%
-  filter(cells &gt; 200) %&gt;%
-  reshape2::melt(id.vars=c(&quot;ImageNumber&quot;, &quot;cells&quot;, &quot;Mutation&quot;), variable.name=&quot;chemokine&quot;, value.name=&quot;fraction&quot;)
-
-ggplot(cur_dat,aes(x=fct_reorder(chemokine, fraction, .fun = median, .desc = TRUE), y=fraction+0.001)) + 
-  geom_boxplot(alpha=.5) +
-  geom_quasirandom(alpha=.2) +
-  theme_bw() + 
-  theme(text=element_text(size=16)) +
-  ylab(&quot;Fraction of Expressing Tumor\n(fraction + 0.001)&quot;) +
-  xlab(&quot;&quot;) +
-  scale_y_log10() +
-  annotation_logticks(sides = &quot;l&quot;) +
-  geom_hline(yintercept = median(cur_dat$fraction+0.001), linetype = 2) </code></pre>
-<embed src="figure/Figure_2.rmd/Fig_2D_tumor_cells_chemokine-1.pdf" width="864" style="display: block; margin: auto;" type="application/pdf" />
-</div>
-</div>
-<div id="figure-2e" class="section level1">
-<h1>Figure 2E</h1>
 <div id="correlation-of-chemokines-with-celltypes" class="section level2">
 <h2>Correlation of Chemokines with Celltypes</h2>
 <pre class="r"><code># top abundant chemokines
@@ -1363,11 +1336,11 @@ corrplot(cor,
          method = &quot;circle&quot;,
          tl.col=&quot;black&quot;,
          tl.cex = 1.5)</code></pre>
-<embed src="figure/Figure_2.rmd/Fig_2E_correlation_chemokines-1.pdf" width="864" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="figure/Figure_2.rmd/Fig_2D_correlation_chemokines-1.pdf" width="864" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 </div>
-<div id="figure-2f" class="section level1">
-<h1>Figure 2F</h1>
+<div id="figure-2e" class="section level1">
+<h1>Figure 2E</h1>
 <div id="correlation-of-chemokines-with-celltypes-based-on-fractions" class="section level2">
 <h2>Correlation of Chemokines with Celltypes (based on fractions)</h2>
 <pre class="r"><code># top abundant chemokines
@@ -1407,7 +1380,7 @@ corrplot(cor,
          method = &quot;circle&quot;,
          tl.col=&quot;black&quot;,
          tl.cex = 1.5)</code></pre>
-<embed src="figure/Figure_2.rmd/Fig_2F_pearson_correlation_chemokines_prot_data-1.pdf" width="864" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="figure/Figure_2.rmd/Fig_2E_pearson_correlation_chemokines_prot_data-1.pdf" width="864" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 <div id="scatter-plot-for-cd8-and-chemokine-selection" class="section level2">
 <h2>Scatter Plot for CD8+ and Chemokine Selection</h2>
@@ -1427,7 +1400,7 @@ celltypes &lt;- data.frame(colData(sce_prot)) %&gt;%
   summarise(n=n()) %&gt;%
   mutate(fraction=n/sum(n)) %&gt;%
   reshape2::dcast(Description ~ celltype, value.var = &quot;fraction&quot;, fill = 0) %&gt;%
-  select(Description, Tcytotoxic, pDC, Tregulatory) %&gt;%
+  select(Description, `CD8+ T cell`, pDC, `FOXP3+ T cell`) %&gt;%
   reshape2::melt(id.vars = &quot;Description&quot;, variable.name = &quot;celltype&quot;, value.name = &quot;cell_fraction&quot;)
 
 sum &lt;- left_join(celltypes, chemokines, by = &quot;Description&quot;) %&gt;%
@@ -1435,17 +1408,13 @@ sum &lt;- left_join(celltypes, chemokines, by = &quot;Description&quot;) %&gt;%
 
 sum &lt;- sum %&gt;%
   mutate(celltype_chemo = paste(celltype, expressor, sep = &quot; ~ &quot;)) %&gt;%
-  filter(celltype_chemo %in% c(&quot;Tcytotoxic ~ CXCL9&quot;, &quot;pDC ~ CXCL12&quot;, &quot;Tregulatory ~ CCL22&quot;))
+  filter(celltype_chemo %in% c(&quot;`CD8+ T cell` ~ CXCL9&quot;, &quot;pDC ~ CXCL12&quot;, &quot;`FOXP3+ T cell` ~ CCL22&quot;))
 
-sum$celltype_chemo &lt;- factor(sum$celltype_chemo, levels = c(&quot;pDC ~ CXCL12&quot;, &quot;Tregulatory ~ CCL22&quot;,&quot;Tcytotoxic ~ CXCL9&quot;))
+sum$celltype_chemo &lt;- factor(sum$celltype_chemo, levels = c(&quot;pDC ~ CXCL12&quot;, &quot;`FOXP3+ T cell` ~ CCL22&quot;,&quot;`CD8+ T cell` ~ CXCL9&quot;))
 
 ggplot(sum, aes(x=log10(chemo_fraction), y=log10(cell_fraction))) + 
   geom_point() + 
   geom_smooth(method=&quot;lm&quot;) +
-  #scale_x_log10() + 
-  #scale_y_log10() +
-  #annotation_logticks(sides = &quot;l&quot;) +
-  #annotation_logticks(sides = &quot;b&quot;) +
   ylab(&quot;Celltype Fraction (log10)\n&quot;) +
   xlab(&quot;Chemokine Fraction (log10)&quot;) +
   scale_y_continuous(position = &quot;right&quot;) +
@@ -1458,8 +1427,8 @@ ggplot(sum, aes(x=log10(chemo_fraction), y=log10(cell_fraction))) +
                aes(label = ..rr.label..), 
                parse = TRUE) + 
   facet_wrap(~celltype_chemo, ncol = 2, scales = &quot;free&quot;, as.table = FALSE)</code></pre>
-<pre><code>Warning: Removed 148 rows containing non-finite values (stat_smooth).</code></pre>
-<pre><code>Warning: Removed 148 rows containing non-finite values (stat_poly_eq).</code></pre>
+<pre><code>Warning: Removed 48 rows containing non-finite values (stat_smooth).</code></pre>
+<pre><code>Warning: Removed 48 rows containing non-finite values (stat_poly_eq).</code></pre>
 <embed src="figure/Figure_2.rmd/Fig_2F_cd8_chemokine_correlation-1.pdf" width="1248" style="display: block; margin: auto;" type="application/pdf" />
 <br>
 <p>

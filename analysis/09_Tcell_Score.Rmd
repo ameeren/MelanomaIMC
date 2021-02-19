@@ -59,7 +59,7 @@ cellcount <- data.frame(cellcount)
 
 # we calculate the density for each celltype for 1 mm2
 cellcount$density <- cellcount$Freq/im_size[cellcount$ImageNumber]
-cellcount <- cellcount[cellcount$celltype == "Tcytotoxic",]
+cellcount <- cellcount[cellcount$celltype == "CD8+ T cell",]
 
 # there are roughly 60 images with 50 or less cytotoxic T cells
 hist(cellcount$density,breaks = 300)
@@ -84,7 +84,7 @@ T_density_scores <- c(1:length(unique(cellcount$ImageNumber)))
 T_density_scores  <- rep("unassigned",length(unique(cellcount$ImageNumber)))
 
 T_absent <- which(cellcount$density <= 40)
-T_low <- which(cellcount$density > 40 & cellcount[cellcount$celltype == "Tcytotoxic",]$density <= 100)
+T_low <- which(cellcount$density > 40 & cellcount[cellcount$celltype == "CD8+ T cell",]$density <= 100)
 T_med <- which(cellcount$density > 100 & cellcount$density <= 400)
 T_high <- which(cellcount$density > 400)
 

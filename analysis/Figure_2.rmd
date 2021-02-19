@@ -304,47 +304,9 @@ draw(lgd_list)
 
 # Figure 2D
 
-## Fraction of Tumor Cells that express chemokines
-
-```{r Fig_2D_tumor_cells_chemokine, dev=("pdf"), fig.width=9, fig.height=5}
-cur_dat <- data.frame(colData(sce_rna))
-cur_dat <- cur_dat %>%
-  filter(celltype == "Tumor") %>%
-  filter(Location != "CTRL")
-
-cur_dat <- cur_dat[,c("ImageNumber", "Mutation", colnames(cur_dat)[grepl(glob2rx("C*L*"),names(cur_dat))])]
-
-# colSums of Chemokines in Tumor Cells (Multiple Producer count more than once)
-cur_dat <- cur_dat %>%
-  group_by(ImageNumber, Mutation) %>%
-  mutate(cells = n()) %>%
-  group_by(ImageNumber, cells, Mutation) %>%
-  summarise_each(funs(sum))
-
-# compute fractions
-cur_dat[,4:14] <- cur_dat[,4:14] / t(cur_dat$cells)
-
-cur_dat <- cur_dat %>%
-  filter(cells > 200) %>%
-  reshape2::melt(id.vars=c("ImageNumber", "cells", "Mutation"), variable.name="chemokine", value.name="fraction")
-
-ggplot(cur_dat,aes(x=fct_reorder(chemokine, fraction, .fun = median, .desc = TRUE), y=fraction+0.001)) + 
-  geom_boxplot(alpha=.5) +
-  geom_quasirandom(alpha=.2) +
-  theme_bw() + 
-  theme(text=element_text(size=16)) +
-  ylab("Fraction of Expressing Tumor\n(fraction + 0.001)") +
-  xlab("") +
-  scale_y_log10() +
-  annotation_logticks(sides = "l") +
-  geom_hline(yintercept = median(cur_dat$fraction+0.001), linetype = 2) 
-```
-
-# Figure 2E
-
 ## Correlation of Chemokines with Celltypes
 
-```{r Fig_2E_correlation_chemokines, fig.width=9, fig.height=9, dev=c('pdf')}
+```{r Fig_2D_correlation_chemokines, fig.width=9, fig.height=9, dev=c('pdf')}
 # top abundant chemokines
 cur_rna <- data.frame(colData(sce_rna))
 
@@ -368,11 +330,11 @@ corrplot(cor,
          tl.cex = 1.5)
 ```
 
-# Figure 2F
+# Figure 2E
 
 ## Correlation of Chemokines with Celltypes (based on fractions)
 
-```{r Fig_2F_pearson_correlation_chemokines_prot_data, fig.width=9, fig.height=9, dev=c('pdf')}
+```{r Fig_2E_pearson_correlation_chemokines_prot_data, fig.width=9, fig.height=9, dev=c('pdf')}
 # top abundant chemokines
 cur_rna <- data.frame(colData(sce_rna))
 
@@ -431,7 +393,7 @@ celltypes <- data.frame(colData(sce_prot)) %>%
   summarise(n=n()) %>%
   mutate(fraction=n/sum(n)) %>%
   reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0) %>%
-  select(Description, Tcytotoxic, pDC, Tregulatory) %>%
+  select(Description, `CD8+ T cell`, pDC, `FOXP3+ T cell`) %>%
   reshape2::melt(id.vars = "Description", variable.name = "celltype", value.name = "cell_fraction")
 
 sum <- left_join(celltypes, chemokines, by = "Description") %>%
@@ -439,17 +401,13 @@ sum <- left_join(celltypes, chemokines, by = "Description") %>%
 
 sum <- sum %>%
   mutate(celltype_chemo = paste(celltype, expressor, sep = " ~ ")) %>%
-  filter(celltype_chemo %in% c("Tcytotoxic ~ CXCL9", "pDC ~ CXCL12", "Tregulatory ~ CCL22"))
+  filter(celltype_chemo %in% c("`CD8+ T cell` ~ CXCL9", "pDC ~ CXCL12", "`FOXP3+ T cell` ~ CCL22"))
 
-sum$celltype_chemo <- factor(sum$celltype_chemo, levels = c("pDC ~ CXCL12", "Tregulatory ~ CCL22","Tcytotoxic ~ CXCL9"))
+sum$celltype_chemo <- factor(sum$celltype_chemo, levels = c("pDC ~ CXCL12", "`FOXP3+ T cell` ~ CCL22","`CD8+ T cell` ~ CXCL9"))
 
 ggplot(sum, aes(x=log10(chemo_fraction), y=log10(cell_fraction))) + 
   geom_point() + 
   geom_smooth(method="lm") +
-  #scale_x_log10() + 
-  #scale_y_log10() +
-  #annotation_logticks(sides = "l") +
-  #annotation_logticks(sides = "b") +
   ylab("Celltype Fraction (log10)\n") +
   xlab("Chemokine Fraction (log10)") +
   scale_y_continuous(position = "right") +

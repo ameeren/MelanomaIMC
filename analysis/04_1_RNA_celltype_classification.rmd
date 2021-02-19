@@ -420,31 +420,6 @@ dittoHeatmap(agr_sce[cur_markers,], assay = "asinh",
             breaks = seq(-3, 3, length.out = 101))
 ```
 
-## Create updated colour vector
-
-Here, we will define a colour vector for the cell-types contained in layer 1 (without unlabelled).
-
-```{r}
-layer1_colours <- vector(length = length(unique(sce$celltypes_layer1)))
-names(layer1_colours) <- unique(sce$celltypes_layer1)
-
-layer1_colours["CD38"] <- "goldenrod2"
-layer1_colours["HLA-DR"] <- "green1"
-layer1_colours["Macrophage"] <- "greenyellow"
-layer1_colours["Neutrophil"] <- "blue1"
-layer1_colours["CD134- Tcell"] <- "yellow"
-layer1_colours["CD134+ Tcell"] <- "sienna1"
-layer1_colours["Vasculature"] <- "red2"
-layer1_colours["Stroma"] <- "tomato"
-layer1_colours["Tcytotoxic"] <- "deepskyblue"
-layer1_colours["exhausted Tcytotoxic"] <- "deeppink"
-layer1_colours["Tumor"] <- "sienna4"
-layer1_colours["unknown"] <- "darkgray"
-
-# Save in SCE object
-metadata(sce)$colour_vectors$classified_celltypes <- layer1_colours
-```
-
 # Save RDS
 
 ```{r saveRDS}

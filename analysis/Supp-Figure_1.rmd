@@ -425,14 +425,14 @@ rna_seq$expression_RNAseq <- c(145.3, 89.2, 217.1, 21.3, 74.9, 1.2, 54.7, 87.9, 
 sum <- left_join(median_per_gene, rna_seq)
 
 # plot 
-ggplot(sum, aes(x=expression_RNAseq, y=expression_RNAScope, label=gene)) + 
+ggplot(sum, aes(x=log2(expression_RNAseq), y=expression_RNAScope, label=gene)) + 
   geom_label_repel(size=7, fill="deepskyblue1") + 
   geom_smooth(method = "lm") +
-  xlab("Normalized Expression RNA-Seq") +
+  xlab("Normalized Expression RNA-Seq [log2]") +
   ylab("Median Expression RNAScope [asinh]") + 
-   stat_poly_eq(formula = y ~ x, 
-                aes(label = ..rr.label..), 
-                parse = TRUE, size=10) +
+  stat_cor(method = "pearson",
+           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
+           size = 10, cor.coef.name = "R", label.sep="\n", label.y.npc = "top") + 
   theme_minimal() + 
   theme(text = element_text(size=20)) 
 ```

@@ -44,7 +44,7 @@ y <- c(rep(1:10,16),rep(11,7))
 sce_prot$groups <- y[colData(sce_prot)$ImageNumber]
 
 # now we use the function written by Nils
-plotDist(sce_prot["TCF7", sce_prot$celltype == "Tcytotoxic"], plot_type = "ridges", 
+plotDist(sce_prot["TCF7", sce_prot$celltype == "CD8+ T cell"], plot_type = "ridges", 
          colour_by = "groups", split_by = "rows", 
          exprs_values = "asinh") +
   geom_vline(xintercept = 1.5)
@@ -62,7 +62,7 @@ y <- c(rep(1:10,16),rep(11,7))
 sce_prot$groups <- y[colData(sce_prot)$ImageNumber]
 
 # now we use the function written by Nils
-plotDist(sce_prot["PD1", sce_prot$celltype == "Tcytotoxic"], plot_type = "ridges", 
+plotDist(sce_prot["PD1", sce_prot$celltype == "CD8+ T cell"], plot_type = "ridges", 
          colour_by = "groups", split_by = "rows", 
          exprs_values = "asinh") +
   geom_vline(xintercept = 1.5)

@@ -151,7 +151,7 @@ for (i in c("high - high dysfunction", "high - low dysfunction")){
     data.frame()
   
   # remove tumor-tumor interactions
-  cur_dat_relation_subcluster <- cur_dat_relation_subcluster[cur_dat_relation_subcluster$celltype_first == "Tcytotoxic",]
+  cur_dat_relation_subcluster <- cur_dat_relation_subcluster[cur_dat_relation_subcluster$celltype_first == "CD8+ T cell",]
   cur_dat_relation_subcluster <- cur_dat_relation_subcluster[cur_dat_relation_subcluster$celltype_clust_second %in% 
                                                                unique(sce_prot[,sce_prot$celltype == "Tumor"]$celltype_clustered),]
   # return subcluster adj df
@@ -161,7 +161,7 @@ for (i in c("high - high dysfunction", "high - low dysfunction")){
   chordDiagramFromDataFrame(cur_dat_relation,
                             grid.col = metadata(sce_prot)$colour_vectors$celltype,
                             reduce = 0.05, 
-                            transparency = ifelse(cur_dat_relation[[1]] %in% c("Tcytotoxic"),0,0.6),
+                            transparency = ifelse(cur_dat_relation[[1]] %in% c("CD8+ T cell"),0,0.6),
                             annotationTrack = c("grid"))
   
   # add percentages
@@ -210,21 +210,18 @@ stat.test <- celltypes %>%
   group_by(celltype) %>%
   wilcox_test(data = ., fraction ~ dysfunction_score) %>%
   adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
   add_x_position(x = "dysfunction_score", dodge = 0.8)
 
 
 ggplot(celltypes, aes(x=celltype, y=fraction)) +
   geom_boxplot(alpha=.5, lwd = 1, outlier.shape = NA, aes(fill=dysfunction_score)) +
-  #geom_jitter(alpha=1, position = position_jitterdodge(dodge.width = 0.75,jitter.width = 0.1), size = 4, 
-              #aes(x = celltype, y = fraction, #col=ifelse(celltype %in% c("Bcell", "BnTcell"), bcell_patch_score, " "),
-                  #group = dysfunction_score)) + 
-  geom_quasirandom(dodge.width=0.75, alpha=1, size=1) + 
+  geom_quasirandom(dodge.width=0.75, alpha=1, size=1, aes(group=dysfunction_score)) + 
   stat_pvalue_manual(stat.test, x = "celltype", label = "p.adj.signif", size = 7, y.position = -0.05) + 
   theme_bw() +
   theme(text = element_text(size = 16),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
-  guides(fill=guide_legend(title="Dysfunction Score", override.aes = c(lwd=0.5, alpha=1)), col=guide_legend(title="Bcell Score")) +
+  guides(fill=guide_legend(title="Dysfunction Score", override.aes = c(lwd=0.5, alpha=1)), col=guide_legend(title="B cell Score")) +
   xlab("") + 
   ylab("Cell Type Fractions") +
   scale_color_manual(values = c("black", "lightblue", "darkblue", "red", "red4"),
@@ -234,7 +231,7 @@ ggplot(celltypes, aes(x=celltype, y=fraction)) +
 # check images above median in low dysfunction group for B cells (all have large patches)
 celltypes %>%
   filter(dysfunction_score == "low dysfunction") %>%
-  filter(celltype == "Bcell") %>%
+  filter(celltype == "B cell") %>%
   group_by(dysfunction_score) %>%
   mutate(median_frac = median(fraction)) %>%
   filter(fraction > median_frac)
@@ -279,7 +276,7 @@ ggplot(a) +
   theme(text = element_text(size = 22)) +
   xlab("Fraction of Samples") +
   ylab("") +
-  guides(fill=guide_legend(title="Bcell Score"))
+  guides(fill=guide_legend(title="B cell Score"))
 ```
 
 # Figure 5D
@@ -327,26 +324,20 @@ Bcell <- data.frame(colData(sce_rna)) %>%
 
 # add grouping
 all_images <- left_join(all_images, Bcell[,c("Description","bcell_patch_score")]) %>%
-  filter(celltype %in% c("Tcytotoxic", "Tcell", "HLA-DR")) 
+  filter(celltype %in% c("CD8+ T cell", "CD8- T cell", "HLA-DR")) 
 
 #all_images$interaction <- interaction(all_images$celltype, all_images$bcell_patch_score)
 
 ggplot(all_images,aes(x=bcell_patch_score, y = log10(as.numeric(density+1)), fill=celltype)) + 
   geom_boxplot(alpha=1, lwd=1, outlier.shape = NA) + 
-  #scale_x_discrete(labels = rep(unique(all_images$bcell_patch_score), each = 3)) +
   geom_quasirandom(dodge.width=0.75, alpha=1, size=2) +
-  #geom_line(aes(group = Description), alpha = ifelse(all_images$celltype != "HLA-DR", 0.6, 0), colour = "black") +
-  #geom_point(aes(group= interaction), position = position_dodge(0.75)) +
   ylab("CXCL13 Expressing Cells per mm2\n(log10 + 1)") +
   xlab("") + 
   theme_bw() +
   theme(text = element_text(size=18),
         axis.text.x = element_text(angle=45, vjust=1, hjust=1)) +
-  scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype[c("Tcytotoxic", "Tcell", "HLA-DR")]),
-                    breaks = names(metadata(sce_rna)$colour_vectors$celltype[c("Tcytotoxic", "Tcell", "HLA-DR")])) +
-  #scale_color_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype[c("Tcytotoxic", "Tcell", "HLA-DR")]),
-                    #breaks = names(metadata(sce_rna)$colour_vectors$celltype[c("Tcytotoxic", "Tcell", "HLA-DR")]),
-                    #guide = FALSE) +
+  scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype[c("CD8+ T cell", "CD8- T cell", "HLA-DR")]),
+                    breaks = names(metadata(sce_rna)$colour_vectors$celltype[c("CD8+ T cell", "CD8- T cell", "HLA-DR")])) +
   guides(fill=guide_legend(title="Cell Type", override.aes = c(lwd=0.5)))
 ```
 
@@ -355,7 +346,7 @@ ggplot(all_images,aes(x=bcell_patch_score, y = log10(as.numeric(density+1)), fil
 ## Example of CXCL10 Cluster and corresponding Community
 
 ```{r Fig_5E_clusters_and_communities, fig.width=6, fig.height=6, dev=c('pdf')}
-example <- findPatch(sce_prot[,sce_prot$Description == "C9"], sce_prot[,colData(sce_prot)$celltype %in% c("Bcell", "BnTcell")]$cellID, 
+example <- findPatch(sce_prot[,sce_prot$Description == "C9"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
                     'Description', 
@@ -375,7 +366,7 @@ example <- findMilieu(example,
 
 # Figure 5F
 
-## Fraction of Tcf7 Tcells cells in bcell patch groups
+## Fraction of Tcf7 Tcells cells in B cell patch groups
 
 ```{r Fig_5F_cd8_tcf7_pd1_bcells, dev=("pdf"), fig.width=9, fig.height=4}
 celltypes <- data.frame(colData(sce_prot)) %>%
@@ -392,7 +383,7 @@ celltypes <- data.frame(colData(sce_prot)) %>%
   mutate(fraction = n/sum(n)) %>%
   mutate(total_cells = sum(n)) %>%
   ungroup() %>%
-  filter(celltype %in% c("Tcytotoxic", "Thelper")) 
+  filter(celltype %in% c("CD8+ T cell", "CD4+ T cell")) 
 
 celltypes$bcell_patch_score <- as.character(celltypes$bcell_patch_score)
 celltypes$bcell_patch_score <- factor(celltypes$bcell_patch_score, levels = c("no B cells", "no B cell patches", "small B cell patches", "TLS"))
@@ -401,7 +392,7 @@ stat.test <- celltypes %>%
   group_by(celltype, TCF7_PD1) %>%
   kruskal_test(data = ., fraction ~ bcell_patch_score) %>%
   adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
   mutate(group1 = celltype, group2 = TCF7_PD1) %>%
   add_xy_position()
 
@@ -411,22 +402,38 @@ ggplot(celltypes, aes(x=TCF7_PD1, y=fraction)) +
   theme_bw() +
   theme(text = element_text(size = 14),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
-  guides(fill=guide_legend(title="Bcell Score", override.aes = c(lwd=0.5))) +
+  guides(fill=guide_legend(title="B cell Score", override.aes = c(lwd=0.5))) +
   xlab("") + 
   ylab("Fraction of Population") +
   facet_wrap(~celltype, scales = "free") +
   ylim(-0.1,1.1)
 ```
 
+## Magnify TCF7+PD1+ population
+
+```{r Fig_5F_zoom, dev=("pdf"), fig.width=4.3, fig.height=2.3}
+# magnify PD1+TCF7+ population
+ggplot(celltypes[celltypes$TCF7_PD1 == "PD1+_TCF7+",], aes(x=TCF7_PD1, y=fraction)) +
+  geom_boxplot(alpha=1, lwd = 0.5, outlier.size = 0.5, aes(fill=bcell_patch_score)) +
+  theme_bw() +
+  theme(text = element_text(size = 14),
+        axis.text.x = element_blank(),
+        legend.position = "none") + 
+  xlab("") + 
+  ylab("") +
+  facet_wrap(~celltype, scales = "free") +
+  coord_cartesian(ylim = c(0,0.05))
+```
+
 # Figure 5G
 
 ## Percentage of TCF7+PD1+CD8+ cells that are part of a Bcell milieu
 
-```{r Fig_5G_milieu_presence_tcells, fig.height=5, fig.width=8, dev=("pdf")}
+```{r Fig_5G_milieu_presence_tcells, fig.height=4, fig.width=6.75, dev=("pdf")}
 # what fraction of each celltype is part of a milieu?
 cur_dat <- data.frame(colData(sce_prot)) %>%
   filter(Location != "CTRL") %>%
-  filter(celltype %in% c("Tcytotoxic", "Thelper")) %>%
+  filter(celltype %in% c("CD8+ T cell", "CD4+ T cell")) %>%
   mutate(status = paste(TCF7, PD1, sep = "_")) %>%
   #filter(status == "TCF7+_PD1+") %>%
   mutate(milieu_binary = ifelse(bcell_milieu > 0, 1, 0)) %>%
@@ -457,7 +464,7 @@ stat.test <- sum %>%
   mutate(log10_metric = log10(metric)) %>%
   t_test(log10_metric ~ 1, mu = 0, alternative = "greater", detailed = TRUE) %>%
   adjust_pvalue() %>%
-  add_significance("p.adj")
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1))
 
 ggplot(sum, aes(x=sum$status, y=log10(metric))) +
   geom_boxplot(outlier.shape = NA) + 
@@ -471,8 +478,8 @@ ggplot(sum, aes(x=sum$status, y=log10(metric))) +
     stat.test, x = "status", y.position = 1.5,
     label = "p.adj.signif",
     position = position_dodge(0.8), 
-    size=7) + 
-  ylab("Area-Normalized Log10 Fold-Change") +
+    size=6) + 
+  ylab("Area-Normalized Log10 FC") +
   xlab("") #+
   #coord_cartesian(ylim=c(-1,1.75))
 ```

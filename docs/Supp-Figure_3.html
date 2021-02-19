@@ -435,6 +435,9 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="00_prepare_clinical_dat.html">Prep Clinical Table</a>
+    </li>
+    <li>
       <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
     </li>
     <li>
@@ -538,7 +541,7 @@ div.tocify {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -547,7 +550,7 @@ div.tocify {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -556,10 +559,10 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-10
+<strong>Last updated:</strong> 2021-02-19
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>melanoma_publication_old_data/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -575,12 +578,12 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -647,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -664,27 +667,15 @@ Note that you need to be careful to ensure that all relevant files for the analy
 <pre><code>
 Ignored files:
     Ignored:    .DS_Store
-    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
     Ignored:    ._.DS_Store
+    Ignored:    analysis/._clinical metadata preparation.Rmd
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
-    Ignored:    code/helper_functions/._findCommunity.R
     Ignored:    data/.DS_Store
     Ignored:    data/._.DS_Store
-    Ignored:    data/._layer_1_classification_rna.csv
-    Ignored:    data/._survdat_for_modelling.csv
-    Ignored:    data/12plex_validation/
-    Ignored:    data/200323_TMA_256_Hot Cold_Clinical Data_Updated Response Data_For Collaborators_latest updated_Mar_2020_for_Coxph_modeling.csv
-    Ignored:    data/layer_1_classification_protein.csv
-    Ignored:    data/layer_1_classification_rna.csv
-    Ignored:    data/manual_infiltration/
-    Ignored:    data/protein/
-    Ignored:    data/rna/
-    Ignored:    data/safety_copy_SCE/
-    Ignored:    data/sce_RNA.rds
-    Ignored:    data/sce_protein.rds
-    Ignored:    data/survdat_for_modelling.csv
+    Ignored:    data/data_for_analysis/
+    Ignored:    data/full_data/
     Ignored:    output/.DS_Store
     Ignored:    output/._.DS_Store
     Ignored:    output/._protein_neutrophil.png
@@ -697,9 +688,23 @@ Unstaged changes:
     Modified:   .gitignore
     Modified:   analysis/04_1_Protein_celltype_classification.rmd
     Modified:   analysis/04_1_RNA_celltype_classification.rmd
+    Modified:   analysis/04_2_RNA_classification_subclustering.rmd
+    Modified:   analysis/04_2_protein_classification_subclustering.rmd
+    Modified:   analysis/07_TCF7_PD1_gating.rmd
+    Modified:   analysis/08_color_vectors.rmd
+    Modified:   analysis/09_Tcell_Score.Rmd
+    Modified:   analysis/10_Dysfunction_Score.rmd
+    Modified:   analysis/11_Bcell_Score.Rmd
+    Modified:   analysis/Figure_1.rmd
+    Modified:   analysis/Figure_2.rmd
+    Modified:   analysis/Figure_3.rmd
+    Modified:   analysis/Figure_4.rmd
+    Modified:   analysis/Figure_5.rmd
+    Modified:   analysis/Supp-Figure_1.rmd
     Modified:   analysis/Supp-Figure_2.rmd
+    Modified:   analysis/Supp-Figure_3.rmd
     Modified:   analysis/Supp-Figure_4.rmd
-    Deleted:    code/findPackages.R
+    Modified:   analysis/Supp-Figure_5.rmd
 
 </code></pre>
 <p>
@@ -738,6 +743,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/ee1595de9ec17ee414a5beafb9ed08d174e12139/analysis/Supp-Figure_3.rmd" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/ee1595de9ec17ee414a5beafb9ed08d174e12139/docs/Supp-Figure_3.html" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -902,36 +941,18 @@ visible FALSE
         code/helper_functions/DistanceToClusterCenter.R
 value   ?                                              
 visible FALSE                                          
-        code/helper_functions/findClusters.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/findCommunity.R
-value   ?                                    
-visible FALSE                                
-        code/helper_functions/getCellCount.R
-value   ?                                   
-visible FALSE                               
+        code/helper_functions/findMilieu.R code/helper_functions/findPatch.R
+value   ?                                  ?                                
+visible FALSE                              FALSE                            
         code/helper_functions/getInfoFromString.R
 value   ?                                        
 visible FALSE                                    
         code/helper_functions/getSpotnumber.R
 value   ?                                    
 visible FALSE                                
-        code/helper_functions/plotBarFracCluster.R
-value   ?                                         
-visible FALSE                                     
         code/helper_functions/plotCellCounts.R
 value   ?                                     
 visible FALSE                                 
-        code/helper_functions/plotCellFrac.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/plotCellFracGroups.R
-value   ?                                         
-visible FALSE                                     
-        code/helper_functions/plotCellFracGroupsSubset.R
-value   ?                                               
-visible FALSE                                           
         code/helper_functions/plotCellFractions.R
 value   ?                                        
 visible FALSE                                    
@@ -964,12 +985,12 @@ library(rstatix)</code></pre>
 <div id="load-data" class="section level2">
 <h2>Load Data</h2>
 <pre class="r"><code># SCE object
-sce_rna = readRDS(file = &quot;data/sce_RNA.rds&quot;)
-sce_prot = readRDS(file = &quot;data/sce_protein.rds&quot;)
+sce_rna = readRDS(file = &quot;data/data_for_analysis/sce_RNA.rds&quot;)
+sce_prot = readRDS(file = &quot;data/data_for_analysis/sce_protein.rds&quot;)
 
 # meta data
-dat_relation = fread(file = &quot;data/protein/Object relationships.csv&quot;,stringsAsFactors = FALSE)
-dat_relation_rna = fread(file = &quot;data/RNA/Object relationships.csv&quot;,stringsAsFactors = FALSE)
+dat_relation = fread(file = &quot;data/data_for_analysis/protein/Object relationships.csv&quot;,stringsAsFactors = FALSE)
+dat_relation_rna = fread(file = &quot;data/data_for_analysis/RNA/Object relationships.csv&quot;,stringsAsFactors = FALSE)
 
 targets &lt;- metadata(sce_rna)$chemokines_morethan600_withcontrol</code></pre>
 </div>
@@ -989,14 +1010,25 @@ frac &lt;- data.frame(colData(sce_rna)) %&gt;%
   reshape2::dcast(Description + Tcell_density_score_image ~ expressor, value.var = &quot;fraction&quot;, fill = 0) %&gt;%
   reshape2::melt(id.vars = c(&quot;Description&quot;, &quot;Tcell_density_score_image&quot;), variable.name = &quot;expressor&quot;, value.name = &quot;fraction&quot;)
 
-ggplot(frac, aes(x=expressor, y = fraction, fill = Tcell_density_score_image)) + 
-  geom_boxplot(alpha=.75, outlier.size = 0.5) +
-  #geom_jitter(size = 1, alpha=0.7, position = position_jitterdodge(dodge.width = 0.75,jitter.width = 0.05), aes(col=Tcell_density_score_image)) +
+stat.test &lt;- frac %&gt;%
+  group_by(expressor) %&gt;%
+  kruskal_test(data = ., fraction ~ Tcell_density_score_image) %&gt;%
+  adjust_pvalue(method = &quot;BH&quot;) %&gt;%
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %&gt;%
+  arrange(p.adj) %&gt;%
+  mutate(group1 = expressor, group2 = expressor) %&gt;%
+  add_x_position()
+
+frac$expressor &lt;- factor(frac$expressor, levels = stat.test$expressor)
+
+ggplot(frac, aes(x=expressor, y = fraction)) + 
+  geom_boxplot(alpha=.75, outlier.size = 0.5, aes(fill = Tcell_density_score_image)) +
+  stat_pvalue_manual(x = &quot;group1&quot;, y.position = 0.055, stat.test, size = 4) +
   scale_color_discrete(guide = FALSE) +
   theme_bw() +
   theme(text = element_text(size = 15),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
-  guides(fill=guide_legend(title=&quot;Tcell Score&quot;)) +
+  guides(fill=guide_legend(title=&quot;T cell Score&quot;)) +
   xlab(&quot;&quot;) + 
   ylab(&quot;Fractions&quot;)  +
   coord_cartesian(ylim = c(0,0.06))</code></pre>
@@ -1005,8 +1037,8 @@ ggplot(frac, aes(x=expressor, y = fraction, fill = Tcell_density_score_image)) +
 </div>
 <div id="supp-figure-3b" class="section level1">
 <h1>Supp Figure 3B</h1>
-<div id="tumor-marker-profile-for-different-tcell-scoring-groups" class="section level2">
-<h2>Tumor Marker Profile for different Tcell Scoring Groups</h2>
+<div id="tumor-marker-profile-for-different-t-cell-scoring-groups" class="section level2">
+<h2>Tumor Marker Profile for different T cell Scoring Groups</h2>
 <pre class="r"><code>tumor_marker_protein &lt;- c(&quot;bCatenin&quot;, &quot;Sox9&quot;, &quot;pERK&quot;, &quot;p75&quot;, &quot;Ki67&quot;, &quot;SOX10&quot;, &quot;PARP&quot;, &quot;S100&quot;, &quot;MiTF&quot;)
 tumor_marker_rna &lt;- c(&quot;Mart1&quot;, &quot;pRB&quot;)
 
@@ -1058,7 +1090,7 @@ stat.test &lt;- comb %&gt;%
   group_by(channel) %&gt;%
   wilcox_test(data = ., asinh ~ Tcell_density_score_image) %&gt;%
   adjust_pvalue(method = &quot;BH&quot;) %&gt;%
-  add_significance(&quot;p.adj&quot;) %&gt;%
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %&gt;%
   add_xy_position(x = &quot;Tcell_density_score_image&quot;, dodge = 0.8, comparisons = group_comparison) %&gt;%
   filter(is.na(y.position) == FALSE)
 
@@ -1077,7 +1109,7 @@ p &lt;- ggplot(comb, aes(x=Tcell_density_score_image, y=asinh)) +
   xlab(&quot;&quot;) + 
   ylab(&quot;Mean Count per Image (asinh)&quot;) +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
-  guides(fill=guide_legend(title=&quot;Tcell Score&quot;, override.aes = c(lwd=0.5, alpha=1)))
+  guides(fill=guide_legend(title=&quot;T cell Score&quot;, override.aes = c(lwd=0.5, alpha=1)))
 
 leg &lt;- get_legend(p)
 
@@ -1108,8 +1140,8 @@ colnames(dat_relation_rna)[5] &lt;- &quot;FirstImageNumber&quot;</code></pre>
 </div>
 <div id="cd8tumor-interactions-and-chemokine-freqs" class="section level2">
 <h2>CD8/Tumor Interactions and Chemokine Freqs</h2>
-<pre class="r"><code># number of interactions tcytotoxic and tumor per image
-dat_relation_sub &lt;- dat_relation_rna[dat_relation_rna$celltype_first %in% c(&quot;Tcytotoxic&quot;) &amp; 
+<pre class="r"><code># number of interactions CD8+ T cell and tumor per image
+dat_relation_sub &lt;- dat_relation_rna[dat_relation_rna$celltype_first %in% c(&quot;CD8+ T cell&quot;) &amp; 
                                    dat_relation_rna$celltype_second == &quot;Tumor&quot;]
 
 # count number of interactions
@@ -1134,16 +1166,16 @@ cur_dat[is.na(cur_dat$n),]$n &lt;- 0
 ggplot(cur_dat, aes(x=log10(fraction), y=log10(n))) + 
   geom_point(size=2) + 
   geom_smooth(method=&quot;lm&quot;) +
-  stat_poly_eq(formula = y ~ x, 
-                aes(label =  ..rr.label..), 
-                parse = TRUE, size=5, label.y = 0.01, label.x = 1) +
+  stat_cor(method = &quot;pearson&quot;,
+           aes(label = paste0(&quot;atop(&quot;, ..r.label..,  &quot;,&quot;, ..rr.label.. ,&quot;)&quot;)),
+           size = 3, cor.coef.name = &quot;R&quot;, label.sep=&quot;\n&quot;, label.x = -1.875, label.y = 0.3) + 
   theme_bw() +
   theme(text = element_text(size=15)) +
   xlab(&quot;Chemokine Fraction (log10)&quot;) +
   ylab(&quot;Number of CD8/Tumor Interactions (log10)&quot;) +
   facet_wrap(~expressor)</code></pre>
 <pre><code>Warning: Removed 684 rows containing non-finite values (stat_smooth).</code></pre>
-<pre><code>Warning: Removed 684 rows containing non-finite values (stat_poly_eq).</code></pre>
+<pre><code>Warning: Removed 684 rows containing non-finite values (stat_cor).</code></pre>
 <embed src="figure/Supp-Figure_3.rmd/Supp_Fig_3C_chemokines_tumor_interaction-1.pdf" width="864" style="display: block; margin: auto;" type="application/pdf" />
 <br>
 <p>
@@ -1194,44 +1226,43 @@ loaded via a namespace (and not attached):
  [9] fs_1.5.0                  rstudioapi_0.13          
 [11] farver_2.0.3              ggrepel_0.9.0            
 [13] splines_4.0.3             knitr_1.30               
-[15] polynom_1.4-0             broom_0.7.3              
-[17] pheatmap_1.0.12           compiler_4.0.3           
-[19] backports_1.2.1           Matrix_1.3-2             
-[21] limma_3.44.3              later_1.1.0.1            
-[23] BiocSingular_1.4.0        htmltools_0.5.0          
-[25] tools_4.0.3               rsvd_1.0.3               
-[27] gtable_0.3.0              glue_1.4.2               
-[29] GenomeInfoDbData_1.2.4    reshape2_1.4.4           
-[31] Rcpp_1.0.5                carData_3.0-4            
-[33] cellranger_1.1.0          vctrs_0.3.6              
-[35] nlme_3.1-151              DelayedMatrixStats_1.10.1
-[37] xfun_0.20                 stringr_1.4.0            
-[39] openxlsx_4.2.3            lifecycle_0.2.0          
-[41] irlba_2.3.3               edgeR_3.30.3             
-[43] zlibbioc_1.36.0           scales_1.1.1             
-[45] hms_0.5.3                 promises_1.1.1           
-[47] RColorBrewer_1.1-2        yaml_2.2.1               
-[49] curl_4.3                  stringi_1.5.3            
-[51] zip_2.1.1                 BiocParallel_1.22.0      
-[53] rlang_0.4.10              pkgconfig_2.0.3          
-[55] bitops_1.0-6              evaluate_0.14            
-[57] lattice_0.20-41           purrr_0.3.4              
-[59] labeling_0.4.2            tidyselect_1.1.0         
-[61] plyr_1.8.6                magrittr_2.0.1           
-[63] R6_2.5.0                  generics_0.1.0           
-[65] DelayedArray_0.16.0       pillar_1.4.7             
-[67] haven_2.3.1               whisker_0.4              
-[69] foreign_0.8-81            withr_2.3.0              
-[71] mgcv_1.8-33               abind_1.4-5              
-[73] RCurl_1.98-1.2            tibble_3.0.4             
-[75] crayon_1.3.4              car_3.0-10               
-[77] rmarkdown_2.6             viridis_0.5.1            
-[79] locfit_1.5-9.4            grid_4.0.3               
-[81] readxl_1.3.1              git2r_0.28.0             
-[83] forcats_0.5.0             digest_0.6.27            
-[85] httpuv_1.5.4              munsell_0.5.0            
-[87] beeswarm_0.2.3            viridisLite_0.3.0        
-[89] vipor_0.4.5              </code></pre>
+[15] broom_0.7.3               pheatmap_1.0.12          
+[17] compiler_4.0.3            backports_1.2.1          
+[19] Matrix_1.3-2              limma_3.44.3             
+[21] later_1.1.0.1             BiocSingular_1.4.0       
+[23] htmltools_0.5.0           tools_4.0.3              
+[25] rsvd_1.0.3                gtable_0.3.0             
+[27] glue_1.4.2                GenomeInfoDbData_1.2.4   
+[29] reshape2_1.4.4            Rcpp_1.0.5               
+[31] carData_3.0-4             cellranger_1.1.0         
+[33] vctrs_0.3.6               nlme_3.1-151             
+[35] DelayedMatrixStats_1.10.1 xfun_0.20                
+[37] stringr_1.4.0             openxlsx_4.2.3           
+[39] lifecycle_0.2.0           irlba_2.3.3              
+[41] edgeR_3.30.3              zlibbioc_1.36.0          
+[43] scales_1.1.1              hms_0.5.3                
+[45] promises_1.1.1            RColorBrewer_1.1-2       
+[47] yaml_2.2.1                curl_4.3                 
+[49] stringi_1.5.3             zip_2.1.1                
+[51] BiocParallel_1.22.0       rlang_0.4.10             
+[53] pkgconfig_2.0.3           bitops_1.0-6             
+[55] evaluate_0.14             lattice_0.20-41          
+[57] purrr_0.3.4               labeling_0.4.2           
+[59] tidyselect_1.1.0          plyr_1.8.6               
+[61] magrittr_2.0.1            R6_2.5.0                 
+[63] generics_0.1.0            DelayedArray_0.16.0      
+[65] pillar_1.4.7              haven_2.3.1              
+[67] whisker_0.4               foreign_0.8-81           
+[69] withr_2.3.0               mgcv_1.8-33              
+[71] abind_1.4-5               RCurl_1.98-1.2           
+[73] tibble_3.0.4              crayon_1.3.4             
+[75] car_3.0-10                rmarkdown_2.6            
+[77] viridis_0.5.1             locfit_1.5-9.4           
+[79] grid_4.0.3                readxl_1.3.1             
+[81] git2r_0.28.0              forcats_0.5.0            
+[83] digest_0.6.27             httpuv_1.5.4             
+[85] munsell_0.5.0             beeswarm_0.2.3           
+[87] viridisLite_0.3.0         vipor_0.4.5              </code></pre>
 </div>
 </div>
 </div>

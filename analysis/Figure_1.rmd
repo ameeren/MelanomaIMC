@@ -123,7 +123,7 @@ draw(h, heatmap_legend_side = "bottom")
 
 ## Heatmap showing marker expression of celltypes
 
-```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=10, fig.height=11, dev=c('pdf')}
+```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=10, fig.height=11.2, dev=c('pdf')}
 # add marker expression to cells
 marker_expression <- data.frame(t(assay(sce_prot[rowData(sce_prot)$good_marker,], "asinh")))
 marker_expression$cellID <- rownames(marker_expression)
@@ -214,9 +214,11 @@ prot_sum <- cur_prot %>%
   reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
 
 # Correlation Plot - shared celltypes
-shared <- c("Macrophage", "Neutrophil", "Tcytotoxic", "Tumor")
+shared <- c("CD8+ T cell", "Macrophage", "Neutrophil", "Tumor")
+order_prot <- c("B cell", "BnT cell", "pDC", "Stroma", "unknown", "FOXP3+ T cell", "CD4+ T cell", shared)
+order_rna <- c("CD38", "HLA-DR", "Stroma", "Vasculature", "unknown", "CD8- T cell", shared)
 
-corrplot(cor(rna_sum[,-1], prot_sum[,-1], method = "pearson"), 
+corrplot(cor(rna_sum[,order_rna], prot_sum[,order_prot], method = "pearson"), 
          addCoef.col = "white",
          method = "circle",
          tl.col="black",
@@ -225,7 +227,7 @@ corrplot(cor(rna_sum[,-1], prot_sum[,-1], method = "pearson"),
 # Mean Correlation between shared celltypes
 mean(c(cor(rna_sum$Macrophage, prot_sum$Macrophage, method = "pearson"), 
        cor(rna_sum$Neutrophil, prot_sum$Neutrophil, method = "pearson"), 
-       cor(rna_sum$Tcytotoxic, prot_sum$Tcytotoxic, method = "pearson"), 
+       cor(rna_sum$`CD8+ T cell`, prot_sum$`CD8+ T cell`, method = "pearson"), 
        cor(rna_sum$Tumor, prot_sum$Tumor, method = "pearson")))
 ```
 
@@ -270,7 +272,7 @@ mask_sub <- all_mask[mcols(all_mask)$Description %in% c("H9", "L7", "H2")]
 sce_prot_sub <- sce_prot[,sce_prot$Description %in% c("H9", "L7", "H2")]
 
 # rename all cells that are not tumor and not tcytotoxic
-#sce_prot_sub$celltype <- ifelse(sce_prot_sub$celltype %in% c("Tumor", "Tcytotoxic"), sce_prot_sub$celltype, "other")
+#sce_prot_sub$celltype <- ifelse(sce_prot_sub$celltype %in% c("Tumor", "CD8+ T cell"), sce_prot_sub$celltype, "other")
 
 col_list <- list()
 col_list$`Cell Type` <- metadata(sce_prot)$colour_vectors$celltype
@@ -333,7 +335,7 @@ patient_meta <- data.frame(patient_meta[row_sorted,])
 hm_dat <- hm_dat[row_sorted,]
 
 # bring cell types in order (column order)
-col_order <- c("Tumor", "Macrophage", "Neutrophil", "Tcytotoxic", "Thelper", "Tregulatory", "Bcell", "BnTcell", "pDC", "Stroma", "unknown")
+col_order <- c("Tumor", "Macrophage", "Neutrophil", "CD8+ T cell", "CD4+ T cell", "FOXP3+ T cell", "B cell", "BnT cell", "pDC", "Stroma", "unknown")
 hm_dat <- hm_dat[, col_order]
 
 col_vector <- metadata(sce_prot)$colour_vector$celltype[colnames(hm_dat)]

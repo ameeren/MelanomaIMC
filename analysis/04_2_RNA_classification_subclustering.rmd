@@ -51,29 +51,8 @@ sce <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 sce$celltype_rf <- sce$celltype
 
 # assign superclasses
-sce[,sce$celltype_rf %in% c("exhausted Tcytotoxic", "Tcytotoxic")]$celltype <- "Tcytotoxic"
-sce[,sce$celltype_rf %in% c("CD134+ Tcell", "CD134- Tcell")]$celltype <- "Tcell"
-```
-
-## Define color vector for superclasses
-
-```{r}
-celltype_color <- vector(length = length(unique(sce$celltype)))
-names(celltype_color) <- unique(sce$celltype)
-
-celltype_color["CD38"] <- "gold"
-celltype_color["HLA-DR"] <- "darkolivegreen"
-celltype_color["Macrophage"] <- "yellow2"
-celltype_color["Neutrophil"] <- "thistle"
-celltype_color["Tcell"] <- "cyan3"
-celltype_color["Vasculature"] <- "sienna1"
-celltype_color["Stroma"] <- "tomato"
-celltype_color["Tcytotoxic"] <- "deepskyblue"
-celltype_color["Tumor"] <- "sienna4"
-celltype_color["unknown"] <- "gray88"
-
-# Save in SCE object
-metadata(sce)$colour_vectors$celltype <- celltype_color
+sce[,sce$celltype_rf %in% c("exhausted Tcytotoxic", "Tcytotoxic")]$celltype <- "CD8+ T cell"
+sce[,sce$celltype_rf %in% c("CD134+ Tcell", "CD134- Tcell")]$celltype <- "CD8- T cell"
 ```
 
 ## Definition of markers used for subclustering the classified cells
@@ -93,11 +72,11 @@ marker_list$Neutrophil <- c("CD15", "PDL1","GLUT1", "MPO","T5_CCL4","T7_CCL18","
                        "T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9","T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
 
 
-marker_list$Tcell <- c("CD3", "CD8", "PD1", "Lag3", "CCR2","CD38","PDL1", "HLADR", "CD134","T5_CCL4", "B2M", "CD31",
+marker_list$`CD8- T cell` <- c("CD3", "CD8", "PD1", "Lag3", "CCR2","CD38","PDL1", "HLADR", "CD134","T5_CCL4", "B2M", "CD31",
                        "T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13","T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9",
                        "T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
 
-marker_list$Tcytotoxic <- c("CD3", "CD8", "PD1", "Lag3", "CCR2","CD38","PDL1", "HLADR", "CD134","T5_CCL4", "B2M", "CD31",
+marker_list$`CD8+ T cell` <- c("CD3", "CD8", "PD1", "Lag3", "CCR2","CD38","PDL1", "HLADR", "CD134","T5_CCL4", "B2M", "CD31",
                        "T7_CCL18","T1_CXCL8","T4_CXCL10","T8_CXCL13","T3_CXCL12","T12_CCL2","T2_CCL22","T9_CXCL9",
                        "T11_CCL8","T10_CCL19","cleavedPARP", "pRB")
 
@@ -133,11 +112,11 @@ rowData(sce)$marker_class <- "state"
 # vector for clustering
 fs_clustering <- vector(length = ncol(sce))
 
-# Macrophage, Tcell, Tcytotoxic, Tumor will be clustered for a total of 6 clustes each
+# Macrophage, CD8- T cell, CD8+ T cell, Tumor will be clustered for a total of 6 clustes each
 set.seed(12345)
 
 # 6 clusters
-for(i in c("Tcell","Macrophage","Tcytotoxic","Tumor")){
+for(i in c("CD8- T cell","Macrophage","CD8+ T cell","Tumor")){
   #subset cells for clustering
   cur_sce <- sce[,sce$celltype == i]
   names(assays(cur_sce)) <- c("counts", "exprs","scaled_counts", "scaled_asinh")
@@ -228,10 +207,10 @@ plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled",
 
 # Clustering Quality Control
 
-## Marker expression density of clusters vs. manually gated - Tcytotoxic
+## Marker expression density of clusters vs. manually gated - CD8+ T cell
 
 ```{r density_marker_Tcytotoxic, fig.width=15, fig.height=10}
-# Density of Expression in different Tcytotoxic clusters vs. manually gated Lag3+ cells
+# Density of Expression in different CD8+ T cell clusters vs. manually gated Lag3+ cells
 cur_sce <- data.frame(colData(sce))
 cur_exprs <- data.frame(t(assays(sce)[[2]]))
 cur_exprs <- cbind(cur_exprs, cur_sce[,c("celltype", "celltype_rf", "celltype_clustered")])
@@ -243,7 +222,7 @@ cur_exprs <- cur_exprs %>%
 
 # clustering
 a <- cur_exprs %>%
-  filter(celltype == "Tcytotoxic" & marker %in% marker_list$Tcytotoxic) %>%
+  filter(celltype == "CD8+ T cell" & marker %in% marker_list$`CD8+ T cell`) %>%
   ggplot(data=., aes(asinh, color = celltype_clustered)) + 
   geom_density() +
   xlim(0,4) + 
@@ -251,7 +230,7 @@ a <- cur_exprs %>%
 
 # manual gating
 b <- cur_exprs %>%
-  filter(celltype == "Tcytotoxic" & marker %in% marker_list$Tcytotoxic) %>%
+  filter(celltype == "CD8+ T cell" & marker %in% marker_list$`CD8+ T cell`) %>%
   ggplot(data=., aes(asinh, color = celltype_rf)) + 
   geom_density() +
   xlim(0,4) + 
@@ -260,14 +239,13 @@ b <- cur_exprs %>%
 grid.arrange(a, b, ncol = 2)
 ```
 
-Conclusion: if you want to catch REAL biological signal than flowSOM clustering isn't gonna do it!
 
-## Tcell
+## CD8- T cell
 
 ```{r density_marker_Tcells, fig.width=15, fig.height=10}
 # clustering
 a <- cur_exprs %>%
-  filter(celltype == "Tcell" & marker %in% marker_list$Tcell) %>%
+  filter(celltype == "CD8- T cell" & marker %in% marker_list$`CD8- T cell`) %>%
   ggplot(data=., aes(asinh, color = celltype_clustered)) + 
   geom_density() +
   xlim(0,4) + 
@@ -275,7 +253,7 @@ a <- cur_exprs %>%
 
 # manual gating
 b <- cur_exprs %>%
-  filter(celltype == "Tcell" & marker %in% marker_list$Tcell) %>%
+  filter(celltype == "CD8- T cell" & marker %in% marker_list$`CD8- T cell`) %>%
   ggplot(data=., aes(asinh, color = celltype_rf)) + 
   geom_density() +
   xlim(0,4) + 

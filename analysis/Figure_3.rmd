@@ -197,7 +197,7 @@ Heatmap(m,
         heatmap_legend_param = list(
           title = "% Significant\nImages", at = c(0, 10, 20, 30, 40, 50),
           labels = c("0%", "10%", "20%", "30%","40%", "50%")),
-        row_title = "Patch Size",
+        row_title = "Motif Size",
         row_names_side = "left",
         width = unit(15, "cm"),
         height = unit(8, "cm"))
@@ -473,13 +473,13 @@ draw(packLegend(lgd2, lgd1, direction = "horizontal"))
 
 ```{r}
 milieus <- data.frame(colData(sce_rna)) %>%
-  filter(celltype == "Tcytotoxic") %>%
+  filter(celltype == "CD8+ T cell") %>%
   select(cellID, contains("pure")) %>%
   mutate_if(is.numeric, ~1 * (. > 0))
 
 milieus$number_of_milieus <- rowSums(milieus[,-1])
 
-# keep Tcytotoxics that are part of at least one milieu
+# keep CD8+ T cells that are part of at least one milieu
 milieus <- milieus %>%
   filter(number_of_milieus > 0) %>%
   select(-number_of_milieus) %>%
@@ -494,7 +494,7 @@ milieus <- milieus %>%
 marker_rna <- c("Lag3", "T8_CXCL13", "T5_CCL4")
 
 # rna data 
-dat_rna <- data.frame(t(assay(sce_rna[marker_rna, sce_rna$celltype == "Tcytotoxic"], "asinh")))
+dat_rna <- data.frame(t(assay(sce_rna[marker_rna, sce_rna$celltype == "CD8+ T cell"], "asinh")))
 dat_rna$cellID <- rownames(dat_rna)
 dat_rna <- left_join(milieus, dat_rna)
 
@@ -526,17 +526,19 @@ for(j in unique(dat_rna$channel)){
   
   # calculate p-value for different milieus in one channel and adjust pvalue 
   cur.test <- dat_rna[dat_rna$channel == j, ] %>%
-    group_by(channel, milieu_short) %>%
-    t_test(asinh ~ 1, mu = cur.mu, detailed = TRUE) %>%
-    adjust_pvalue()
+    group_by(channel) %>%
+    wilcox_test(asinh ~ milieu_short, ref.group = ".all.") %>%
+    adjust_pvalue(method = "BH") %>%
+    add_x_position(x="milieu_short")
       
   stat.test <- rbind(stat.test, cur.test)
 }
 
 # adjust again for testing across different channels
 stat.test <- stat.test %>%
-    adjust_pvalue() %>%
-    add_significance("p.adj")
+  group_by(channel) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1))
 
 # plot
 plot_list <- list()
@@ -544,8 +546,8 @@ ylim_list <- list("Lag3" = c(0,0.9), "T8_CXCL13" = c(0,2.3), "T5_CCL4" = c(0,1))
 for(i in unique(dat_rna$channel)){
   cur.stat.test <- stat.test[stat.test$channel == i, ]
   
-  plot_list[[i]] <- ggplot(dat_rna[dat_rna$channel == i,], aes(x=milieu_short, y=asinh, fill=milieu_short)) + 
-    geom_boxplot(alpha=.6, lwd=0.5, outlier.shape = NA, position = position_dodge(1.1)) +
+  plot_list[[i]] <- ggplot(dat_rna[dat_rna$channel == i,], aes(x=milieu_short, y=asinh)) + 
+    geom_boxplot(alpha=1, lwd=0.5, outlier.shape = NA, position = position_dodge(1.1), aes(fill=milieu_short)) +
     theme_bw() +
     theme(text = element_text(size=18),
           axis.title.x=element_blank(),
@@ -553,7 +555,7 @@ for(i in unique(dat_rna$channel)){
           axis.ticks.x=element_blank()) +
     guides(fill=guide_legend("Milieu", override.aes = list(alpha=1)), col="none") +
     stat_pvalue_manual(
-      cur.stat.test, x = "milieu_short", y.position = ylim_list[[i]][2]-0.05,
+      cur.stat.test, x = "xmin", y.position = ylim_list[[i]][2]-0.05,
       label = "p.adj.signif",
       position = position_dodge(0.8), 
       size=4) + 

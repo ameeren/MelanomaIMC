@@ -86,23 +86,23 @@ marker_list$Tumor <- c("Ki67", "PDL1", "PARP", "H3K27me3","CXCR2","HLADR","S100"
 marker_list$Neutrophil <- c("CD15", "PDL1", "MPO", "CD11b")
 
 
-marker_list$Tregulatory <- c("IDO1", "PD1", "FOXP3", "ICOS", "CD4", "Ki67", "GrzB",
+marker_list$`FOXP3+ T cell` <- c("IDO1", "PD1", "FOXP3", "ICOS", "CD4", "Ki67", "GrzB",
                         "CD45RA", "CD45RO")
 
-marker_list$Tcytotoxic <- c("IDO1", "TOX1", "PD1", "TCF7", "ICOS", "CD8","Ki67", "GrzB",
+marker_list$`CD8+ T cell` <- c("IDO1", "TOX1", "PD1", "TCF7", "ICOS", "CD8","Ki67", "GrzB",
                         "CD45RA", "CD45RO")
 
-marker_list$Thelper <- c("IDO1", "TOX1", "PD1", "TCF7", 
+marker_list$`CD4+ T cell` <- c("IDO1", "TOX1", "PD1", "TCF7", 
                         "FOXP3", "ICOS", "CD4", "Ki67", "GrzB",
                         "CD45RA", "CD45RO")
 
-marker_list$BnTcell <- c("IDO1", "TOX1", "PD1", "TCF7", 
+marker_list$`BnT cell` <- c("IDO1", "TOX1", "PD1", "TCF7", 
                         "FOXP3", "ICOS", "CD8", "CD4", "Ki67", "GrzB",
                         "CD45RA", "CD45RO", "CD20","HLADR","H3K27me3","pS6","pERK", "CD7")
 
 marker_list$pDC <- c("CD303","IDO1","GrzB","CXCR2","CD11b")
 
-marker_list$Bcell <- c("Ki67","CD45RA", "CD45RO", "CD20","HLADR","H3K27me3","pS6","pERK")
+marker_list$`B cell` <- c("Ki67","CD45RA", "CD45RO", "CD20","HLADR","H3K27me3","pS6","pERK")
 
 marker_list$Macrophage <- c("Caveolin1", "PDL1", "PARP", "H3K27me3","CXCR2","HLADR","CD45RO","CD45RA","CD68","pERK","CD36", "Collagen1","CD11c","pS6","IDO1","CD206")
 
@@ -125,9 +125,9 @@ fs_clustering <- vector(length = ncol(sce))
 # create the "exprs" slot in the assay data (needed for CATALYST)
 assay(sce, "exprs") <- assay(sce,"asinh")
 
-# Macrophage, Bcells, Thelper, Tcytotoxic, Tother and BnT cells will be clustered for a total of 6 clustes each
+# Macrophage, B cells, CD4+ T cell, CD8+ T cell, Tother and BnT cells will be clustered for a total of 6 clustes each
 set.seed(12345)
-for(i in c("Macrophage","Thelper","Tcytotoxic")){
+for(i in c("Macrophage","CD4+ T cell","CD8+ T cell")){
   cur_sce <- sce[,sce$celltype == i]
   
   cur_sce <- cluster(cur_sce,features = marker_list[i][[1]],ydim = 2,xdim = 3,maxK = 4)
@@ -136,7 +136,7 @@ for(i in c("Macrophage","Thelper","Tcytotoxic")){
 }
 
 # pDCs and Neutrophils will be clustered to 4 clusteres
-for(i in c("pDC","Neutrophil","BnTcell","Bcell","Tregulatory","Stroma", "unknown")){
+for(i in c("pDC","Neutrophil","BnT cell","B cell","FOXP3+ T cell","Stroma", "unknown")){
   cur_sce <- sce[,sce$celltype == i]
   
   cur_sce <- cluster(cur_sce,features = marker_list[i][[1]],ydim = 2,xdim = 2,maxK = 3)
@@ -218,15 +218,15 @@ annotations <- sce$celltype_clustered
 # annotations[annotations == "Tumor_1"] <- "Tumor_SOX10Low_MITFLow_HLADR+"
 # annotations[annotations == "Tumor_7"] <- "Tumor_SOX10+_MITF++_S100+_pS6+"
 # 
-# annotations[annotations == "Bcells_1"] <- "Bcells_pErkLow_H3K27meLow"
-# annotations[annotations == "Bcells_4"] <- "Bcells_pErkLow_H3K27meLow"
-# annotations[annotations == "Bcells_2"] <- "Bcells_H3K27me_LowpS6Low"
-# annotations[annotations == "Bcells_3"] <- "Bcells_CD19++_pErkLow_H3K27meLow"
-# annotations[annotations == "Bcells_5"] <- "Bcells_Ki67++"
-# annotations[annotations == "Bcells_6"] <- "Bcells_SMALow"
+# annotations[annotations == "B cells_1"] <- "B cells_pErkLow_H3K27meLow"
+# annotations[annotations == "B cells_4"] <- "B cells_pErkLow_H3K27meLow"
+# annotations[annotations == "B cells_2"] <- "B cells_H3K27me_LowpS6Low"
+# annotations[annotations == "B cells_3"] <- "B cells_CD19++_pErkLow_H3K27meLow"
+# annotations[annotations == "B cells_5"] <- "B cells_Ki67++"
+# annotations[annotations == "B cells_6"] <- "B cells_SMALow"
 # 
-# annotations[annotations == "BnT_1"] <- "Bcells_CD3Low_CD4Low"
-# annotations[annotations == "BnT_2"] <- "Bcells_pErkLow_H3K27meLow"
+# annotations[annotations == "BnT_1"] <- "B cells_CD3Low_CD4Low"
+# annotations[annotations == "BnT_2"] <- "B cells_pErkLow_H3K27meLow"
 # annotations[annotations == "BnT_6"] <- "BnT_CD8+"
 # annotations[annotations == "BnT_4"] <- "BnT_CD8+"
 # annotations[annotations == "BnT_5"] <- "BnT_CD4+_TCF7+"
@@ -239,19 +239,19 @@ annotations <- sce$celltype_clustered
 # annotations[annotations == "T_other_2"] <- "Tcells_CaveolinLow_SMALow"
 # annotations[annotations == "T_other_6"] <- "Tcells_undefined"
 # 
-# annotations[annotations == "T_helper_2"] <- "Thelper_CD11cLow_HLADRLow"
-# annotations[annotations == "T_helper_5"] <- "Thelper_SMALow_CaveolinLow"
-# annotations[annotations == "T_helper_1"] <- "Thelper_TCF7++"
-# annotations[annotations == "T_helper_6"] <- "Thelper_FoxP3++_ICOS+_CD11cLow_CD206Low"
-# annotations[annotations == "T_helper_3"] <- "Thelper_FoxP3Low_pERKLow"
-# annotations[annotations == "T_helper_4"] <- "Thelper_FoxP3Low"
+# annotations[annotations == "T_helper_2"] <- "CD4+ T cell_CD11cLow_HLADRLow"
+# annotations[annotations == "T_helper_5"] <- "CD4+ T cell_SMALow_CaveolinLow"
+# annotations[annotations == "T_helper_1"] <- "CD4+ T cell_TCF7++"
+# annotations[annotations == "T_helper_6"] <- "CD4+ T cell_FoxP3++_ICOS+_CD11cLow_CD206Low"
+# annotations[annotations == "T_helper_3"] <- "CD4+ T cell_FoxP3Low_pERKLow"
+# annotations[annotations == "T_helper_4"] <- "CD4+ T cell_FoxP3Low"
 # 
-# annotations[annotations == "T_cytotoxic_3"] <- "Tcytotoxic_PD1+_TOX1+_GrzBLow"
-# annotations[annotations == "T_cytotoxic_5"] <- "Tcytotoxic_TCF7+_H3K27meLow"
-# annotations[annotations == "T_cytotoxic_6"] <- "Tcytotoxic_PD1+_TOX1+_GrzB+_ICOSLow_Ki67+"
-# annotations[annotations == "T_cytotoxic_1"] <- "Tcytotoxic_GrzBLow_SMALow_CaveolinLow"
-# annotations[annotations == "T_cytotoxic_2"] <- "Tcytotoxic_GrzBLow_pS6Low"
-# annotations[annotations == "T_cytotoxic_4"] <- "Tcytotoxic_PD1+_TOX1+_GrzBLow_ICOSLow_CD11cLow_CD206Low"
+# annotations[annotations == "T_cytotoxic_3"] <- "CD8+ T cell_PD1+_TOX1+_GrzBLow"
+# annotations[annotations == "T_cytotoxic_5"] <- "CD8+ T cell_TCF7+_H3K27meLow"
+# annotations[annotations == "T_cytotoxic_6"] <- "CD8+ T cell_PD1+_TOX1+_GrzB+_ICOSLow_Ki67+"
+# annotations[annotations == "T_cytotoxic_1"] <- "CD8+ T cell_GrzBLow_SMALow_CaveolinLow"
+# annotations[annotations == "T_cytotoxic_2"] <- "CD8+ T cell_GrzBLow_pS6Low"
+# annotations[annotations == "T_cytotoxic_4"] <- "CD8+ T cell_PD1+_TOX1+_GrzBLow_ICOSLow_CD11cLow_CD206Low"
 # 
 # annotations[annotations == "Macrophage_4"] <- "Macrophage_CD68Low_CaveolinLow"
 # annotations[annotations == "Macrophage_6"] <- "Tumor_CD68Low_S100Low_bCateninLow_MITFLow_SOX10Low_HLADR+"

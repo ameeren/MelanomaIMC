@@ -74,17 +74,17 @@ m <- as.matrix(t(dat_aggr[,-c(1)]))
 colnames(m) <- dat_aggr$celltype_clustered
 
 # top annotation with number of cells
-ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>20000, 20100, as.numeric(dat_sum[2,])),
+ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>25000, 25100, as.numeric(dat_sum[2,])),
                                                          height = unit(2,"cm"),
-                                                         ylim = range(0,20000),
-                                                         gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 20000, "white", "black"),
+                                                         ylim = range(0,25000),
+                                                         gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 25000, "white", "black"),
                                                                    col = "white")),
                         "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
                                                    which = "column", 
                                                    rot = 90, 
                                                    just = "center", 
                                                    location = 0.5,
-                                                   gp = gpar(fontsize=8,col = ifelse(as.numeric(dat_sum[2,]) > 20000, "red", "black"))))
+                                                   gp = gpar(fontsize=8,col = ifelse(as.numeric(dat_sum[2,]) > 25000, "red", "black"))))
 
 # row_split for markers
 rowData(sce_prot)$heatmap_relevance <- ""
@@ -94,7 +94,7 @@ rowData(sce_prot[grepl("PDL1|CD11b|CD206|PARP|CXCR2|CD11c|pS6|GrzB|IDO1|CD45RA|H
 # plot heatmap
 h <- Heatmap(m, name = "Scaled Expression",
              row_split = rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance,
-             cluster_columns = TRUE,
+             cluster_columns = FALSE,
              show_column_dend = FALSE,
              column_names_gp = gpar(fontsize=12),
              column_names_rot = 90,
@@ -163,7 +163,7 @@ stat.test <- comb %>%
   group_by(channel) %>%
   wilcox_test(data = ., asinh ~ dysfunction_score) %>%
   adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
   add_xy_position(x = "celltype", dodge = 0.8)
 
 
@@ -197,7 +197,7 @@ grid.arrange(leg)
 
 ## Define S100+ cells
 
-```{r signal_strength_distrubution_Ki67, eval = F}
+```{r signal_strength_distrubution_S100, eval = F}
 y <- c(rep(1:10,16),rep(11,7))
 
 # add the group information to the sce object
@@ -228,7 +228,7 @@ stat.test <- s100 %>%
   group_by(S100) %>%
   wilcox_test(data = ., fraction ~ dysfunction_score) %>%
   adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
   add_x_position(dodge = 0.8)
 
 ggplot(s100, aes(x=dysfunction_score, y=fraction)) + 

@@ -435,6 +435,9 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="00_prepare_clinical_dat.html">Prep Clinical Table</a>
+    </li>
+    <li>
       <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
     </li>
     <li>
@@ -538,7 +541,7 @@ div.tocify {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -547,7 +550,7 @@ div.tocify {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -556,10 +559,10 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-10
+<strong>Last updated:</strong> 2021-02-19
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>melanoma_publication_old_data/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -575,12 +578,12 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -647,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -664,27 +667,15 @@ Note that you need to be careful to ensure that all relevant files for the analy
 <pre><code>
 Ignored files:
     Ignored:    .DS_Store
-    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
     Ignored:    ._.DS_Store
+    Ignored:    analysis/._clinical metadata preparation.Rmd
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
-    Ignored:    code/helper_functions/._findCommunity.R
     Ignored:    data/.DS_Store
     Ignored:    data/._.DS_Store
-    Ignored:    data/._layer_1_classification_rna.csv
-    Ignored:    data/._survdat_for_modelling.csv
-    Ignored:    data/12plex_validation/
-    Ignored:    data/200323_TMA_256_Hot Cold_Clinical Data_Updated Response Data_For Collaborators_latest updated_Mar_2020_for_Coxph_modeling.csv
-    Ignored:    data/layer_1_classification_protein.csv
-    Ignored:    data/layer_1_classification_rna.csv
-    Ignored:    data/manual_infiltration/
-    Ignored:    data/protein/
-    Ignored:    data/rna/
-    Ignored:    data/safety_copy_SCE/
-    Ignored:    data/sce_RNA.rds
-    Ignored:    data/sce_protein.rds
-    Ignored:    data/survdat_for_modelling.csv
+    Ignored:    data/data_for_analysis/
+    Ignored:    data/full_data/
     Ignored:    output/.DS_Store
     Ignored:    output/._.DS_Store
     Ignored:    output/._protein_neutrophil.png
@@ -697,9 +688,23 @@ Unstaged changes:
     Modified:   .gitignore
     Modified:   analysis/04_1_Protein_celltype_classification.rmd
     Modified:   analysis/04_1_RNA_celltype_classification.rmd
+    Modified:   analysis/04_2_RNA_classification_subclustering.rmd
+    Modified:   analysis/04_2_protein_classification_subclustering.rmd
+    Modified:   analysis/07_TCF7_PD1_gating.rmd
+    Modified:   analysis/08_color_vectors.rmd
+    Modified:   analysis/09_Tcell_Score.Rmd
+    Modified:   analysis/10_Dysfunction_Score.rmd
+    Modified:   analysis/11_Bcell_Score.Rmd
+    Modified:   analysis/Figure_1.rmd
+    Modified:   analysis/Figure_2.rmd
+    Modified:   analysis/Figure_3.rmd
+    Modified:   analysis/Figure_4.rmd
+    Modified:   analysis/Figure_5.rmd
+    Modified:   analysis/Supp-Figure_1.rmd
     Modified:   analysis/Supp-Figure_2.rmd
+    Modified:   analysis/Supp-Figure_3.rmd
     Modified:   analysis/Supp-Figure_4.rmd
-    Deleted:    code/findPackages.R
+    Modified:   analysis/Supp-Figure_5.rmd
 
 </code></pre>
 <p>
@@ -738,6 +743,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/ee1595de9ec17ee414a5beafb9ed08d174e12139/analysis/Supp-Figure_5.rmd" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/ee1595de9ec17ee414a5beafb9ed08d174e12139/docs/Supp-Figure_5.html" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -922,36 +961,18 @@ visible FALSE
         code/helper_functions/DistanceToClusterCenter.R
 value   ?                                              
 visible FALSE                                          
-        code/helper_functions/findClusters.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/findCommunity.R
-value   ?                                    
-visible FALSE                                
-        code/helper_functions/getCellCount.R
-value   ?                                   
-visible FALSE                               
+        code/helper_functions/findMilieu.R code/helper_functions/findPatch.R
+value   ?                                  ?                                
+visible FALSE                              FALSE                            
         code/helper_functions/getInfoFromString.R
 value   ?                                        
 visible FALSE                                    
         code/helper_functions/getSpotnumber.R
 value   ?                                    
 visible FALSE                                
-        code/helper_functions/plotBarFracCluster.R
-value   ?                                         
-visible FALSE                                     
         code/helper_functions/plotCellCounts.R
 value   ?                                     
 visible FALSE                                 
-        code/helper_functions/plotCellFrac.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/plotCellFracGroups.R
-value   ?                                         
-visible FALSE                                     
-        code/helper_functions/plotCellFracGroupsSubset.R
-value   ?                                               
-visible FALSE                                           
         code/helper_functions/plotCellFractions.R
 value   ?                                        
 visible FALSE                                    
@@ -991,14 +1012,20 @@ library(rstatix)</code></pre>
 </div>
 <div id="read-the-data" class="section level2">
 <h2>Read the data</h2>
-<pre class="r"><code>sce_rna = readRDS(file = &quot;data/sce_RNA.rds&quot;)
-sce_prot = readRDS(file = &quot;data/sce_protein.rds&quot;)
+<pre class="r"><code>sce_rna = readRDS(file = &quot;data/data_for_analysis/sce_RNA.rds&quot;)
+sce_prot = readRDS(file = &quot;data/data_for_analysis/sce_protein.rds&quot;)
+
+# remove LN margin samples and control samples
+sce_rna$PunchLocation &lt;- paste(sce_rna$MM_location, sce_rna$Location, sep = &quot;_&quot;)
+sce_prot$PunchLocation &lt;- paste(sce_prot$MM_location, sce_prot$Location, sep = &quot;_&quot;)
+sce_rna &lt;- sce_rna[,sce_rna$PunchLocation != &quot;LN_M&quot; &amp; sce_rna$Location != &quot;CTRL&quot;]
+sce_prot &lt;- sce_prot[,sce_prot$PunchLocation != &quot;LN_M&quot; &amp; sce_prot$Location != &quot;CTRL&quot;]
 
 # image
-image_mat_prot &lt;- read.csv(&quot;data/protein/Image.csv&quot;)
+image_mat_prot &lt;- read.csv(&quot;data/data_for_analysis/protein/Image.csv&quot;)
 
 # surv_dat
-dat_survival_prot &lt;- fread(file = &quot;data/protein/clinical_data_protein.csv&quot;)</code></pre>
+dat_survival_prot &lt;- fread(file = &quot;data/data_for_analysis/protein/clinical_data_protein.csv&quot;)</code></pre>
 </div>
 <div id="prepare-image-size-data" class="section level2">
 <h2>Prepare image size data</h2>
@@ -1049,10 +1076,10 @@ for(i in c(&quot;cxcl13only_clust&quot;)){
                     max.color = &quot;red&quot;, min.color = &quot;blue&quot;,
                     main = NULL,
                     legend.title = &quot;Patch Size (log10)&quot;) +
-    xlim(quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,1], 0.01)[[1]],
-         quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,1], 0.99)[[1]]) +
-    ylim(quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,2], 0.01)[[1]],
-         quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,2], 0.99)[[1]]) +
+    xlim(quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,1], 0.05)[[1]],
+         quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,1], 0.95)[[1]]) +
+    ylim(quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,2], 0.05)[[1]],
+         quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,2], 0.95)[[1]]) +
     theme_bw() +
     theme(text = element_text(size=18))
 
@@ -1067,10 +1094,10 @@ for(i in c(&quot;cxcl13only_clust&quot;)){
                     main = NULL,
              legend.title = &quot;Cell Type&quot;) +
     theme_bw() +
-    xlim(quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,1], 0.01)[[1]],
-         quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,1], 0.99)[[1]]) +
-    ylim(quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,2], 0.01)[[1]],
-         quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,2], 0.99)[[1]]) +
+    xlim(quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,1], 0.05)[[1]],
+         quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,1], 0.95)[[1]]) +
+    ylim(quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,2], 0.05)[[1]],
+         quantile(reducedDim(sce_sub, &quot;DiffusionMap&quot;)[,2], 0.95)[[1]]) +
     theme(text = element_text(size=18)) + 
     guides(colour = guide_legend(override.aes = list(alpha = 1, size=3))) 
   
@@ -1078,9 +1105,9 @@ for(i in c(&quot;cxcl13only_clust&quot;)){
   leg_b &lt;- cowplot::get_legend(b)
 
 }</code></pre>
-<pre><code>Warning: Removed 332 rows containing missing values (geom_point).
+<pre><code>Warning: Removed 1063 rows containing missing values (geom_point).
 
-Warning: Removed 332 rows containing missing values (geom_point).</code></pre>
+Warning: Removed 1063 rows containing missing values (geom_point).</code></pre>
 <pre class="r"><code>sce_sub &lt;- sce_rna[,colData(sce_rna)[,&quot;cxcl13only_clust&quot;] &gt; 0]
 
 # add patch size to sce
@@ -1118,7 +1145,7 @@ Bcell &lt;- data.frame(colData(sce_prot)) %&gt;%
   summarise(n=n()) %&gt;%
   mutate(fraction = n / sum(n)) %&gt;%
   reshape2::dcast(Description ~ celltype, value.var = &quot;fraction&quot;, fill = 0) %&gt;%
-  select(Description, Bcell)
+  select(Description, `B cell`)
 
 Bcell &lt;- left_join(Bcell, clust_size)
 Bcell[is.na(Bcell$maxClustSize), ]$maxClustSize &lt;- 0
@@ -1127,40 +1154,24 @@ Bcell[is.na(Bcell$maxClustSize), ]$maxClustSize &lt;- 0
 c &lt;- ggplot(Bcell_patch[rowSums(Bcell_patch[,-1]) &gt; 0,], aes(x = maxClustSize, y = maxPatchSize, label=Description)) + 
   geom_point() +
   geom_smooth(method=&quot;lm&quot;) + 
-  stat_poly_eq(formula = y ~ x, 
-                aes(label =  ..rr.label..), 
-                parse = TRUE, size=10) +
-  ylab(&quot;Max Size of Bcell\nPatches (log10)&quot;) +
+  stat_cor(method = &quot;pearson&quot;,
+           aes(label = paste0(&quot;atop(&quot;, ..r.label..,  &quot;,&quot;, ..rr.label.. ,&quot;)&quot;)),
+           size = 6, cor.coef.name = &quot;R&quot;, label.sep=&quot;\n&quot;, label.y = 0.5, label.x = 2) + 
+  ylab(&quot;Max Size of B cell\nPatches (log10)&quot;) +
   xlab(&quot;Max Size of CXCL13 Patches (log10)&quot;) +
   theme_bw() + 
   theme(text = element_text(size=18))
 
-d &lt;- ggplot(Bcell, aes(x = maxClustSize, y =Bcell, label=Description)) + 
+d &lt;- ggplot(Bcell, aes(x = maxClustSize, y = `B cell`, label=Description)) + 
   geom_point() +
   geom_smooth(method=&quot;lm&quot;) + 
-  stat_poly_eq(formula = y ~ x, 
-                aes(label =  ..rr.label..), 
-                parse = TRUE, size=10) +
+  stat_cor(method = &quot;pearson&quot;,
+           aes(label = paste0(&quot;atop(&quot;, ..r.label..,  &quot;,&quot;, ..rr.label.. ,&quot;)&quot;)),
+           size = 6, cor.coef.name = &quot;R&quot;, label.sep=&quot;\n&quot;, label.y = 0.05, label.x = 2) + 
   ylab(&quot;B Cell Fraction&quot;) +
   xlab(&quot;Max Size of CXCL13 Patches (log10)&quot;) +
   theme_bw() + 
   theme(text = element_text(size=18))
-
-# add clust size correlation plot 
-clust_size &lt;- data.frame(colData(sce_sub)) %&gt;%
-  distinct(Description, cxcl13only_clust, .keep_all = T) %&gt;%
-  group_by(Description) %&gt;%
-  summarise(maxClustSize = max(clust_size))
-
-Bcell &lt;- data.frame(colData(sce_prot)) %&gt;%
-  group_by(Description, celltype) %&gt;%
-  summarise(n=n()) %&gt;%
-  mutate(fraction = n / sum(n)) %&gt;%
-  reshape2::dcast(Description ~ celltype, value.var = &quot;fraction&quot;, fill = 0) %&gt;%
-  select(Description, Bcell)
-
-Bcell &lt;- left_join(Bcell, clust_size)
-Bcell[is.na(Bcell$maxClustSize), ]$maxClustSize &lt;- 0
 
 plot_grid(grid.arrange(a + theme(legend.position = &quot;none&quot;), 
                        b + theme(legend.position = &quot;none&quot;),
@@ -1168,9 +1179,9 @@ plot_grid(grid.arrange(a + theme(legend.position = &quot;none&quot;),
           grid.arrange(d,c, ncol = 2),
           ncol = 1, 
           rel_heights = c(0.65,0.35))</code></pre>
-<pre><code>Warning: Removed 332 rows containing missing values (geom_point).
+<pre><code>Warning: Removed 1063 rows containing missing values (geom_point).
 
-Warning: Removed 332 rows containing missing values (geom_point).</code></pre>
+Warning: Removed 1063 rows containing missing values (geom_point).</code></pre>
 <embed src="figure/Supp-Figure_5.rmd/Fig_5A5B_DiffusionMap_producing_cells-1.pdf" width="1056" style="display: block; margin: auto;" type="application/pdf" />
 <embed src="figure/Supp-Figure_5.rmd/Fig_5A5B_DiffusionMap_producing_cells-2.pdf" width="1056" style="display: block; margin: auto;" type="application/pdf" />
 <embed src="figure/Supp-Figure_5.rmd/Fig_5A5B_DiffusionMap_producing_cells-3.pdf" width="1056" style="display: block; margin: auto;" type="application/pdf" />
@@ -1201,7 +1212,7 @@ Warning: Removed 332 rows containing missing values (geom_point).</code></pre>
   mutate(fraction = n/sum(n)) %&gt;%
   mutate(total_cells = sum(n)) %&gt;%
   ungroup() %&gt;%
-  filter(celltype %in% c(&quot;Tcytotoxic&quot;, &quot;Thelper&quot;)) 
+  filter(celltype %in% c(&quot;CD8+ T cell&quot;, &quot;CD4+ T cell&quot;)) 
 
 cur_dat &lt;- left_join(cur_dat, im_size)
 
@@ -1214,15 +1225,15 @@ cur_dat &lt;- cur_dat %&gt;%
 ggplot(cur_dat, aes(x=log10(`TCF7+_PD1+`+1), y=log10(`TCF7+_PD1-`+1))) + 
   geom_point(size=3) + 
   geom_smooth(method=&quot;lm&quot;) +
-  stat_poly_eq(formula = y ~ x, 
-                aes(label =  ..rr.label..), 
-                parse = TRUE, size=10, label.y = 3) +
+  stat_cor(method = &quot;pearson&quot;,
+           aes(label = paste0(&quot;atop(&quot;, ..r.label..,  &quot;,&quot;, ..rr.label.. ,&quot;)&quot;)),
+           size = 7, cor.coef.name = &quot;R&quot;, label.sep=&quot;\n&quot;, label.y.npc = &quot;top&quot;) +
   theme_bw() +
   theme(text = element_text(size=16)) +
   xlab(&quot;TCF7+PD1+ Cells per mm2 (log10+1)&quot;) +
   ylab(&quot;TCF7+PD1- Cells per mm2 (log10+1)&quot;) +
-  facet_wrap(~celltype, scales = &quot;free&quot;)</code></pre>
-<embed src="figure/Supp-Figure_5.rmd/Supp_Fig_5C_tcf7_pd1_tcell_corr-1.pdf" width="960" style="display: block; margin: auto;" type="application/pdf" />
+  facet_wrap(~celltype)</code></pre>
+<embed src="figure/Supp-Figure_5.rmd/Supp_Fig_5C_tcf7_pd1_tcell_corr-1.pdf" width="796.8" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 </div>
 <div id="supp-figure-5d" class="section level1">
@@ -1245,7 +1256,7 @@ dat_survival_prot_sub &lt;- dat_survival_prot_sub %&gt;%
 
 # group sizes
 dat_survival_prot_sub %&gt;%
-  distinct(Internal_pat_ID, .keep_all = T) %&gt;%
+  distinct(PatientID, .keep_all = T) %&gt;%
   group_by(Status_at_3m) %&gt;%
   summarise(n=n())</code></pre>
 <pre><code># A tibble: 2 x 2
@@ -1270,7 +1281,7 @@ dat_survival_prot_sub %&gt;%
   mutate(fraction = n/sum(n)) %&gt;%
   mutate(total_cells = sum(n)) %&gt;%
   ungroup() %&gt;%
-  filter(celltype %in% c(&quot;Tcytotoxic&quot;, &quot;Thelper&quot;)) 
+  filter(celltype %in% c(&quot;CD8+ T cell&quot;, &quot;CD4+ T cell&quot;)) 
 
 cur_dat &lt;- left_join(cur_dat, dat_survival_prot_sub[,c(&quot;BlockID&quot;, &quot;Status_at_3m&quot;, &quot;Primary_melanoma_type&quot;)]) %&gt;%
   distinct(Description, celltype, TCF7_PD1, .keep_all = T)
@@ -1280,13 +1291,17 @@ cur_dat$n_per_mm2 &lt;- cur_dat$n / cur_dat$mm2
 cur_dat$celltype2 &lt;- paste(cur_dat$celltype, cur_dat$TCF7_PD1, sep = &quot;, &quot;)
 
 stat.test &lt;- cur_dat %&gt;%
+  filter(TCF7_PD1 %in% c(&quot;TCF7+_PD1+&quot;, &quot;TCF7+_PD1-&quot;)) %&gt;%
   mutate(log10_n_per_mm2 = log10(n_per_mm2 + 1)) %&gt;%
   group_by(celltype2) %&gt;%
-  wilcox_test(data = ., n_per_mm2 ~ Status_at_3m) %&gt;%
+  wilcox_test(data = ., log10_n_per_mm2 ~ Status_at_3m) %&gt;%
   adjust_pvalue(method = &quot;BH&quot;) %&gt;%
-  add_significance(&quot;p.adj&quot;)
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1))
 
-info &lt;- cur_dat[,c(&quot;celltype2&quot;, &quot;TCF7_PD1&quot;)] %&gt;%
+# check adjusted p-values with another function
+p.adjust(stat.test$p, method = &quot;BH&quot;)</code></pre>
+<pre><code>[1] 0.0566 0.0566 0.0566 0.0566</code></pre>
+<pre class="r"><code>info &lt;- cur_dat[,c(&quot;celltype2&quot;, &quot;TCF7_PD1&quot;)] %&gt;%
   distinct(celltype2, .keep_all = T)
 
 # filter relevant tests
@@ -1299,20 +1314,20 @@ ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c(&quot;TCF7+_PD1+&quot;, &quot;TCF7+_PD1-&
   geom_boxplot(alpha=.4, outlier.shape = NA, aes(fill=Status_at_3m)) +
   geom_beeswarm(size=3) +
   geom_label_repel(aes(label=PatientID), max.overlaps = 12, size = 5, alpha=.5) + 
-  #stat_compare_means(label.x.npc = &quot;left&quot;, label.y = -0.9, size=6, label = &quot;p.format&quot;) +
   stat_pvalue_manual(stat.test, label = &quot;p_and_p.adj&quot;, size=5, label.x.npc = &quot;left&quot;, y.position = -0.9, bracket.size = 0) +
   theme_bw() +
   theme(text = element_text(size=18)) +
   ylab(&quot;Cells per mm2 (log10)&quot;) +
+  scale_fill_manual(values=c(&quot;blue&quot;, &quot;orange&quot;)) + 
   xlab(&quot;&quot;) +
   guides(fill=guide_legend(title=&quot;Response 3m&quot;, override.aes = c(lwd=0.5, size=1))) +
   facet_wrap(~celltype2, scales = &quot;free&quot;)</code></pre>
 <pre><code>Warning: Duplicated aesthetics after name standardisation: size</code></pre>
 <pre><code>Warning: ggrepel: 5 unlabeled data points (too many overlaps). Consider
 increasing max.overlaps</code></pre>
-<pre><code>Warning: ggrepel: 13 unlabeled data points (too many overlaps). Consider
-increasing max.overlaps</code></pre>
 <pre><code>Warning: ggrepel: 10 unlabeled data points (too many overlaps). Consider
+increasing max.overlaps</code></pre>
+<pre><code>Warning: ggrepel: 13 unlabeled data points (too many overlaps). Consider
 increasing max.overlaps</code></pre>
 <embed src="figure/Supp-Figure_5.rmd/Supp_Fig_5D_responder_nonresponder_tcf7pd1-1.pdf" width="960" style="display: block; margin: auto;" type="application/pdf" />
 </div>
@@ -1345,15 +1360,15 @@ rna_sum &lt;- cur_rna %&gt;%
 rna_sum &lt;- rna_sum[,c(&quot;Description&quot;, targets)]
 
 prot_sum &lt;- cur_prot %&gt;%
-  mutate(celltype2 = ifelse(celltype %in% c(&quot;Thelper&quot;, &quot;Tcytotoxic&quot;), 
+  mutate(celltype2 = ifelse(celltype %in% c(&quot;CD4+ T cell&quot;, &quot;CD8+ T cell&quot;), 
                             paste(paste(celltype, TCF7, sep=&quot;_&quot;), PD1, sep = &quot;_&quot;), celltype)) %&gt;%
   group_by(Description, celltype2) %&gt;%
   summarise(n = n()) %&gt;%
   group_by(Description) %&gt;%
   mutate(fraction = n/sum(n)) %&gt;%
-  filter(!celltype2 %in% c(&quot;Thelper_TCF7+_PD1+&quot;, &quot;Thelper_TCF7-_PD1+&quot;, &quot;Tcytotoxic_TCF7+_PD1+&quot;)) %&gt;%
+  filter(!celltype2 %in% c(&quot;CD4+ T cell_TCF7+_PD1+&quot;, &quot;CD4+ T cell_TCF7-_PD1+&quot;, &quot;CD8+ T cell_TCF7+_PD1+&quot;)) %&gt;%
   reshape2::dcast(Description ~ celltype2, value.var = &quot;fraction&quot;, fill = 0) %&gt;%
-  select(Description,contains(c(&quot;Tcytotoxic&quot;, &quot;Thelper&quot;)))
+  select(Description,contains(c(&quot;CD8+ T cell&quot;, &quot;CD4+ T cell&quot;)))
 
 # equal images
 all(rna_sum$Description == prot_sum$Description)</code></pre>
@@ -1365,7 +1380,7 @@ ha &lt;- t(str_split_fixed(colnames(cor), &quot;_&quot;, n=3))
 
 ha1 &lt;- HeatmapAnnotation(&quot;TCF7_PD1&quot; = anno_text(paste(ha[2,], ha[3,], sep = &quot; &quot;)),
                          &quot;Cell Type&quot; = ha[1,],
-                         col = list(&quot;Cell Type&quot; = metadata(sce_prot)$colour_vectors$celltype[c(&quot;Thelper&quot;, &quot;Tcytotoxic&quot;)]),
+                         col = list(&quot;Cell Type&quot; = metadata(sce_prot)$colour_vectors$celltype[c(&quot;CD4+ T cell&quot;, &quot;CD8+ T cell&quot;)]),
                          show_legend = FALSE)
 
 h &lt;- Heatmap(cor,
@@ -1474,50 +1489,50 @@ loaded via a namespace (and not attached):
  [51] modelr_0.1.8              backports_1.2.1          
  [53] httpuv_1.5.4              tools_4.0.3              
  [55] ellipsis_0.3.1            raster_3.4-5             
- [57] proxy_0.4-24              polynom_1.4-0            
- [59] ggridges_0.5.3            Rcpp_1.0.5               
- [61] plyr_1.8.6                zlibbioc_1.36.0          
- [63] RCurl_1.98-1.2            GetoptLong_1.0.5         
- [65] viridis_0.5.1             zoo_1.8-8                
- [67] haven_2.3.1               cluster_2.1.0            
- [69] fs_1.5.0                  magrittr_2.0.1           
- [71] RSpectra_0.16-0           openxlsx_4.2.3           
- [73] lmtest_0.9-38             reprex_0.3.0             
- [75] pcaMethods_1.80.0         whisker_0.4              
- [77] hms_0.5.3                 mime_0.9                 
- [79] fftwtools_0.9-9           evaluate_0.14            
- [81] xtable_1.8-4              smoother_1.1             
- [83] rio_0.5.16                jpeg_0.1-8.1             
- [85] readxl_1.3.1              shape_1.4.5              
- [87] compiler_4.0.3            crayon_1.3.4             
- [89] htmltools_0.5.0           mgcv_1.8-33              
- [91] later_1.1.0.1             tiff_0.1-6               
- [93] lubridate_1.7.9.2         DBI_1.1.0                
- [95] dbplyr_2.0.0              MASS_7.3-53              
- [97] boot_1.3-25               Matrix_1.3-2             
- [99] car_3.0-10                cli_2.2.0                
-[101] pkgconfig_2.0.3           foreign_0.8-81           
-[103] laeken_0.5.1              sp_1.4-5                 
-[105] xml2_1.3.2                svglite_1.2.3.2          
-[107] vipor_0.4.5               XVector_0.30.0           
-[109] rvest_0.3.6               digest_0.6.27            
-[111] rmarkdown_2.6             cellranger_1.1.0         
-[113] edgeR_3.30.3              DelayedMatrixStats_1.10.1
-[115] gdtools_0.2.3             curl_4.3                 
-[117] shiny_1.5.0               ggplot.multistats_1.0.0  
-[119] rjson_0.2.20              nlme_3.1-151             
-[121] lifecycle_0.2.0           jsonlite_1.7.2           
-[123] carData_3.0-4             BiocNeighbors_1.6.0      
-[125] viridisLite_0.3.0         limma_3.44.3             
-[127] fansi_0.4.1               pillar_1.4.7             
-[129] lattice_0.20-41           fastmap_1.0.1            
-[131] httr_1.4.2                DEoptimR_1.0-8           
-[133] xts_0.12.1                glue_1.4.2               
-[135] zip_2.1.1                 png_0.1-7                
-[137] svgPanZoom_0.3.4          class_7.3-17             
-[139] stringi_1.5.3             RcppHNSW_0.3.0           
-[141] BiocSingular_1.4.0        knn.covertree_1.0        
-[143] irlba_2.3.3               e1071_1.7-4              </code></pre>
+ [57] proxy_0.4-24              ggridges_0.5.3           
+ [59] Rcpp_1.0.5                plyr_1.8.6               
+ [61] zlibbioc_1.36.0           RCurl_1.98-1.2           
+ [63] GetoptLong_1.0.5          viridis_0.5.1            
+ [65] zoo_1.8-8                 haven_2.3.1              
+ [67] cluster_2.1.0             fs_1.5.0                 
+ [69] magrittr_2.0.1            RSpectra_0.16-0          
+ [71] openxlsx_4.2.3            lmtest_0.9-38            
+ [73] reprex_0.3.0              pcaMethods_1.80.0        
+ [75] whisker_0.4               hms_0.5.3                
+ [77] mime_0.9                  fftwtools_0.9-9          
+ [79] evaluate_0.14             xtable_1.8-4             
+ [81] smoother_1.1              rio_0.5.16               
+ [83] jpeg_0.1-8.1              readxl_1.3.1             
+ [85] shape_1.4.5               compiler_4.0.3           
+ [87] crayon_1.3.4              htmltools_0.5.0          
+ [89] mgcv_1.8-33               later_1.1.0.1            
+ [91] tiff_0.1-6                lubridate_1.7.9.2        
+ [93] DBI_1.1.0                 dbplyr_2.0.0             
+ [95] MASS_7.3-53               boot_1.3-25              
+ [97] Matrix_1.3-2              car_3.0-10               
+ [99] cli_2.2.0                 pkgconfig_2.0.3          
+[101] foreign_0.8-81            laeken_0.5.1             
+[103] sp_1.4-5                  xml2_1.3.2               
+[105] svglite_1.2.3.2           vipor_0.4.5              
+[107] XVector_0.30.0            rvest_0.3.6              
+[109] digest_0.6.27             rmarkdown_2.6            
+[111] cellranger_1.1.0          edgeR_3.30.3             
+[113] DelayedMatrixStats_1.10.1 gdtools_0.2.3            
+[115] curl_4.3                  shiny_1.5.0              
+[117] ggplot.multistats_1.0.0   rjson_0.2.20             
+[119] nlme_3.1-151              lifecycle_0.2.0          
+[121] jsonlite_1.7.2            carData_3.0-4            
+[123] BiocNeighbors_1.6.0       viridisLite_0.3.0        
+[125] limma_3.44.3              fansi_0.4.1              
+[127] pillar_1.4.7              lattice_0.20-41          
+[129] fastmap_1.0.1             httr_1.4.2               
+[131] DEoptimR_1.0-8            xts_0.12.1               
+[133] glue_1.4.2                zip_2.1.1                
+[135] png_0.1-7                 svgPanZoom_0.3.4         
+[137] class_7.3-17              stringi_1.5.3            
+[139] RcppHNSW_0.3.0            BiocSingular_1.4.0       
+[141] knn.covertree_1.0         irlba_2.3.3              
+[143] e1071_1.7-4              </code></pre>
 </div>
 </div>
 </div>

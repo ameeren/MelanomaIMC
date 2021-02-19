@@ -435,6 +435,9 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="00_prepare_clinical_dat.html">Prep Clinical Table</a>
+    </li>
+    <li>
       <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
     </li>
     <li>
@@ -538,7 +541,7 @@ div.tocify {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -547,7 +550,7 @@ div.tocify {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -556,10 +559,10 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-10
+<strong>Last updated:</strong> 2021-02-18
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>melanoma_publication_old_data/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -575,12 +578,12 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -647,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -664,27 +667,15 @@ Note that you need to be careful to ensure that all relevant files for the analy
 <pre><code>
 Ignored files:
     Ignored:    .DS_Store
-    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
     Ignored:    ._.DS_Store
+    Ignored:    analysis/._clinical metadata preparation.Rmd
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
-    Ignored:    code/helper_functions/._findCommunity.R
     Ignored:    data/.DS_Store
     Ignored:    data/._.DS_Store
-    Ignored:    data/._layer_1_classification_rna.csv
-    Ignored:    data/._survdat_for_modelling.csv
-    Ignored:    data/12plex_validation/
-    Ignored:    data/200323_TMA_256_Hot Cold_Clinical Data_Updated Response Data_For Collaborators_latest updated_Mar_2020_for_Coxph_modeling.csv
-    Ignored:    data/layer_1_classification_protein.csv
-    Ignored:    data/layer_1_classification_rna.csv
-    Ignored:    data/manual_infiltration/
-    Ignored:    data/protein/
-    Ignored:    data/rna/
-    Ignored:    data/safety_copy_SCE/
-    Ignored:    data/sce_RNA.rds
-    Ignored:    data/sce_protein.rds
-    Ignored:    data/survdat_for_modelling.csv
+    Ignored:    data/data_for_analysis/
+    Ignored:    data/full_data/
     Ignored:    output/.DS_Store
     Ignored:    output/._.DS_Store
     Ignored:    output/._protein_neutrophil.png
@@ -697,7 +688,23 @@ Unstaged changes:
     Modified:   .gitignore
     Modified:   analysis/04_1_Protein_celltype_classification.rmd
     Modified:   analysis/04_1_RNA_celltype_classification.rmd
-    Deleted:    code/findPackages.R
+    Modified:   analysis/04_2_RNA_classification_subclustering.rmd
+    Modified:   analysis/04_2_protein_classification_subclustering.rmd
+    Modified:   analysis/07_TCF7_PD1_gating.rmd
+    Modified:   analysis/08_color_vectors.rmd
+    Modified:   analysis/09_Tcell_Score.Rmd
+    Modified:   analysis/10_Dysfunction_Score.rmd
+    Modified:   analysis/11_Bcell_Score.Rmd
+    Modified:   analysis/Figure_1.rmd
+    Modified:   analysis/Figure_2.rmd
+    Modified:   analysis/Figure_3.rmd
+    Modified:   analysis/Figure_4.rmd
+    Modified:   analysis/Figure_5.rmd
+    Modified:   analysis/Supp-Figure_1.rmd
+    Modified:   analysis/Supp-Figure_2.rmd
+    Modified:   analysis/Supp-Figure_3.rmd
+    Modified:   analysis/Supp-Figure_4.rmd
+    Modified:   analysis/Supp-Figure_5.rmd
 
 </code></pre>
 <p>
@@ -736,6 +743,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/ee1595de9ec17ee414a5beafb9ed08d174e12139/analysis/Figure_3.rmd" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/ee1595de9ec17ee414a5beafb9ed08d174e12139/docs/Figure_3.html" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -971,36 +1012,18 @@ visible FALSE
         code/helper_functions/DistanceToClusterCenter.R
 value   ?                                              
 visible FALSE                                          
-        code/helper_functions/findClusters.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/findCommunity.R
-value   ?                                    
-visible FALSE                                
-        code/helper_functions/getCellCount.R
-value   ?                                   
-visible FALSE                               
+        code/helper_functions/findMilieu.R code/helper_functions/findPatch.R
+value   ?                                  ?                                
+visible FALSE                              FALSE                            
         code/helper_functions/getInfoFromString.R
 value   ?                                        
 visible FALSE                                    
         code/helper_functions/getSpotnumber.R
 value   ?                                    
 visible FALSE                                
-        code/helper_functions/plotBarFracCluster.R
-value   ?                                         
-visible FALSE                                     
         code/helper_functions/plotCellCounts.R
 value   ?                                     
 visible FALSE                                 
-        code/helper_functions/plotCellFrac.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/plotCellFracGroups.R
-value   ?                                         
-visible FALSE                                     
-        code/helper_functions/plotCellFracGroupsSubset.R
-value   ?                                               
-visible FALSE                                           
         code/helper_functions/plotCellFractions.R
 value   ?                                        
 visible FALSE                                    
@@ -1039,15 +1062,18 @@ library(neighbouRhood)
 library(cowplot)
 library(viridis)
 library(ggpubr)
-library(rstatix)</code></pre>
+library(rstatix)
+library(sf)
+library(concaveman)
+library(RANN)</code></pre>
 </div>
 <div id="read-the-data" class="section level2">
 <h2>Read the data</h2>
-<pre class="r"><code>sce_rna = readRDS(file = &quot;data/sce_RNA.rds&quot;)
-sce_prot = readRDS(file = &quot;data/sce_protein.rds&quot;)
+<pre class="r"><code>sce_rna = readRDS(file = &quot;data/data_for_analysis/sce_RNA.rds&quot;)
+sce_prot = readRDS(file = &quot;data/data_for_analysis/sce_protein.rds&quot;)
 
 # meta data
-dat_relation = fread(file = &quot;data/rna/Object relationships.csv&quot;,stringsAsFactors = FALSE)</code></pre>
+dat_relation = fread(file = &quot;data/data_for_analysis/rna/Object relationships.csv&quot;,stringsAsFactors = FALSE)</code></pre>
 </div>
 <div id="prepare-relation-table" class="section level2">
 <h2>Prepare Relation Table</h2>
@@ -1061,8 +1087,8 @@ dat_relation$cellID_second &lt;- paste(&quot;RNA&quot;, paste(dat_relation$`Seco
 <div id="cp-output" class="section level2">
 <h2>CP output</h2>
 <pre class="r"><code># Load and prepare
-dat_cells = fread(file = &quot;data/rna/cell.csv&quot;,stringsAsFactors = FALSE)
-dat_relation = fread(file = &quot;data/rna/Object relationships.csv&quot;,stringsAsFactors = FALSE)
+dat_cells = fread(file = &quot;data/data_for_analysis/rna/cell.csv&quot;,stringsAsFactors = FALSE)
+dat_relation = fread(file = &quot;data/data_for_analysis/rna/Object relationships.csv&quot;,stringsAsFactors = FALSE)
 
 # Number of cores used for multicore:
 if(detectCores() &gt;= 12){
@@ -1153,7 +1179,7 @@ for(size in c(2,3,4,5,6)) {
 end = Sys.time()
 
 print(end-start)</code></pre>
-<pre><code>Time difference of 21.94326 mins</code></pre>
+<pre><code>Time difference of 22.66207 mins</code></pre>
 </div>
 <div id="visualize" class="section level2">
 <h2>Visualize</h2>
@@ -1179,7 +1205,7 @@ Heatmap(m,
         heatmap_legend_param = list(
           title = &quot;% Significant\nImages&quot;, at = c(0, 10, 20, 30, 40, 50),
           labels = c(&quot;0%&quot;, &quot;10%&quot;, &quot;20%&quot;, &quot;30%&quot;,&quot;40%&quot;, &quot;50%&quot;)),
-        row_title = &quot;Patch Size&quot;,
+        row_title = &quot;Motif Size&quot;,
         row_names_side = &quot;left&quot;,
         width = unit(15, &quot;cm&quot;),
         height = unit(8, &quot;cm&quot;))</code></pre>
@@ -1244,7 +1270,7 @@ for(size in c(2,3,4,5,6,7,8,9,10)) {
 
 end = Sys.time()
 print(end-start)</code></pre>
-<pre><code>Time difference of 1.056387 mins</code></pre>
+<pre><code>Time difference of 1.084213 mins</code></pre>
 <pre class="r"><code># Significant Self-Interatcions
 image_df[image_df$interaction == &quot;1_1&quot;,]</code></pre>
 <pre><code>   group FirstLabel SecondLabel       p_gt p_lt direction          p   sig
@@ -1273,16 +1299,16 @@ image_df[image_df$interaction == &quot;1_1&quot;,]</code></pre>
 <h1>Figure 3C</h1>
 <div id="example-of-cxcl10-cluster-and-corresponding-community" class="section level2">
 <h2>Example of CXCL10 Cluster and corresponding Community</h2>
-<pre class="r"><code>example &lt;- findClusters(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CXCL10 == 1]$cellID, 
+<pre class="r"><code>example &lt;- findPatch(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CXCL10 == 1]$cellID, 
                     &#39;cellID&#39;, 
                     &#39;Center_X&#39;, &#39;Center_Y&#39;, 
                     &#39;ImageNumber&#39;, 
                     distance = 20, 
                     min_clust_size = 10,
                     output_colname = &quot;example_cluster&quot;)</code></pre>
-<pre><code>Time difference of 1.139391 secs
-[1] &quot;clusters successfully added to sce object&quot;</code></pre>
-<pre class="r"><code>example &lt;- findCommunity(example, 
+<pre><code>Time difference of 1.181726 secs
+[1] &quot;patches successfully added to sce object&quot;</code></pre>
+<pre class="r"><code>example &lt;- findMilieu(example, 
               &#39;cellID&#39;, 
               &#39;Center_X&#39;, &#39;Center_Y&#39;, 
               &#39;ImageNumber&#39;, 
@@ -1290,217 +1316,22 @@ image_df[image_df$interaction == &quot;1_1&quot;,]</code></pre>
               distance = 25,
               output_colname = &quot;chemokine_community_i&quot;,
               plot = TRUE)</code></pre>
-<pre><code>Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.</code></pre>
 <embed src="figure/Figure_3.rmd/Fig_3C_clusters_and_communities-1.pdf" width="960" style="display: block; margin: auto;" type="application/pdf" />
-<pre><code>Time difference of 3.615983 secs
-[1] &quot;communities successfully added to sce object&quot;</code></pre>
+<pre><code>Time difference of 3.4429 secs
+[1] &quot;milieus successfully added to sce object&quot;</code></pre>
 </div>
 <div id="zoom-in-plot-for-patchmilieu" class="section level2">
 <h2>Zoom-in plot for patch/milieu</h2>
-<pre class="r"><code>example &lt;- findClusters(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CXCL10 == 1]$cellID, 
+<pre class="r"><code>example &lt;- findPatch(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CXCL10 == 1]$cellID, 
                     &#39;cellID&#39;, 
                     &#39;Center_X&#39;, &#39;Center_Y&#39;, 
                     &#39;ImageNumber&#39;, 
                     distance = 20, 
                     min_clust_size = 10,
                     output_colname = &quot;example_cluster&quot;)</code></pre>
-<pre><code>Time difference of 0.845577 secs
-[1] &quot;clusters successfully added to sce object&quot;</code></pre>
-<pre class="r"><code>example &lt;- findCommunity(example, 
+<pre><code>Time difference of 0.8379529 secs
+[1] &quot;patches successfully added to sce object&quot;</code></pre>
+<pre class="r"><code>example &lt;- findMilieu(example, 
               &#39;cellID&#39;, 
               &#39;Center_X&#39;, &#39;Center_Y&#39;, 
               &#39;ImageNumber&#39;, 
@@ -1511,205 +1342,10 @@ Warning: You are using a dplyr method on a raw data.table, which will call the
               xlim = c(725,850),
               ylim = c(500,675),
               point_size = 14)</code></pre>
-<pre><code>Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.
-
-Warning: You are using a dplyr method on a raw data.table, which will call the
-* data frame implementation, and is likely to be inefficient.
-* 
-* To suppress this message, either generate a data.table translation with
-* `lazy_dt()` or convert to a data frame or tibble with
-* `as.data.frame()`/`as_tibble()`.</code></pre>
 <pre><code>Warning: Removed 533 rows containing missing values (geom_point).</code></pre>
 <embed src="figure/Figure_3.rmd/Fig_3B_clusters_and_communities_zoom-1.pdf" width="960" style="display: block; margin: auto;" type="application/pdf" />
-<pre><code>Time difference of 3.229455 secs
-[1] &quot;communities successfully added to sce object&quot;</code></pre>
+<pre><code>Time difference of 3.235821 secs
+[1] &quot;milieus successfully added to sce object&quot;</code></pre>
 </div>
 </div>
 <div id="figure-3d" class="section level1">
@@ -1724,7 +1360,7 @@ plot_list &lt;- list()
 for(i in names(cur_dt[,grepl(glob2rx(&quot;*pure&quot;),names(cur_dt))])) {
   chemokine_name &lt;- toupper(str_split(i, &quot;_&quot;)[[1]][1])
   
-  # select all chemokine-producing cells in a community
+  # select all cells that are in a milieu
   unique_comms &lt;- unique(cur_dt[cur_dt[,i] &gt; 0,i])
   cur_dt_sub &lt;- cur_dt[cur_dt[,i] %in% unique_comms,]
   
@@ -1741,12 +1377,14 @@ for(i in names(cur_dt[,grepl(glob2rx(&quot;*pure&quot;),names(cur_dt))])) {
   cur_dt_sub &lt;- cur_dt_sub %&gt;%
     reshape2::melt(id.vars = c(&quot;cellID&quot;, &quot;celltype&quot;, &quot;MM_location_simplified&quot;, i), variable.name = &quot;chemokine&quot;, value.name = &quot;status&quot;)
   
+  # all cells that do not produce a chemokine
   non_producer &lt;- cur_dt_sub %&gt;%
     group_by(cellID) %&gt;%
     summarise(sum = sum(status)) %&gt;%
     filter(sum == 0) %&gt;%
     select(cellID)
-    
+  
+  # all cells that produce a chemokine - regardless of what chemokine
   producer &lt;- cur_dt_sub %&gt;%
     group_by(cellID) %&gt;%
     summarise(sum = sum(status)) %&gt;%
@@ -1769,23 +1407,20 @@ for(i in names(cur_dt[,grepl(glob2rx(&quot;*pure&quot;),names(cur_dt))])) {
   
   summary &lt;- rbind(producer, non_producer)
   
+  # celltypes numbers
   summary_celltypes &lt;- summary %&gt;%
     group_by(celltype) %&gt;%
-    summarise(n=sum(n)) %&gt;%
-    mutate(percentage = n / sum(n) * 100) #%&gt;%
-    #filter(percentage &gt; 5)
+    summarise(n=sum(n)) 
   
+  # chemokines per celltype numbers
   summary_chemokines &lt;- summary %&gt;%
     group_by(celltype, chemokine) %&gt;%
-    summarise(n=sum(n)) #%&gt;%
-    #filter(celltype %in% summary_celltypes$celltype)
+    summarise(n=sum(n))
   
-  # color_vector
+  # color_vector for cells and chemokines
   col_vector_cells &lt;- metadata(sce_rna)$colour_vector$celltype
   col_vector_chemokines &lt;- metadata(sce_rna)$colour_vectors$chemokine_single
-  
   col_vector &lt;- c(col_vector_cells, col_vector_chemokines)
-  
   # add &quot;no chemokine&quot; to col_vector
   col_vector &lt;- c(col_vector, &quot;white&quot;)
   names(col_vector) &lt;- c(names(col_vector[-length(col_vector)]), &quot;no chemokine&quot;)
@@ -1802,7 +1437,7 @@ for(i in names(cur_dt[,grepl(glob2rx(&quot;*pure&quot;),names(cur_dt))])) {
     mutate(median = median(n))
   medianCells &lt;- paste(round(unique(medianCells$median)), &quot; Cells&quot;, sep = &quot;&quot;)
     
-  # Percentage of Chemokine produced in a Patch 
+  # Percentage of chemokines produced by milieu cells 
   percentageInPatches &lt;- cur_dt[cur_dt[,chemokine_name] == 1,] %&gt;%
     mutate(in_patch = ifelse(.[,i] &gt; 0, 1, 0)) %&gt;%
     group_by(in_patch) %&gt;%
@@ -1826,7 +1461,6 @@ for(i in names(cur_dt[,grepl(glob2rx(&quot;*pure&quot;),names(cur_dt))])) {
     scale_fill_manual(values = unname(col_vector),
                         breaks = names(col_vector),
                         labels = names(col_vector)) + 
-    coord_polar(theta = &quot;y&quot;) + 
     ggtitle(chemokine_name) +
     theme_void() +
     theme(axis.ticks=element_blank(),
@@ -1835,7 +1469,8 @@ for(i in names(cur_dt[,grepl(glob2rx(&quot;*pure&quot;),names(cur_dt))])) {
           axis.title=element_blank(),
           legend.position = &quot;none&quot;,
           text = element_text(size = 18),
-          plot.title = element_text(hjust = 0.5))
+          plot.title = element_text(hjust = 0.5)) +
+        coord_polar(theta = &quot;y&quot;)
   
   # add to list
   plot_list[[i]] &lt;- plot_grid(plt)
@@ -1871,13 +1506,13 @@ draw(packLegend(lgd2, lgd1, direction = &quot;horizontal&quot;))</code></pre>
 <div id="expression-levels-in-cd8-cells-in-milieus" class="section level2">
 <h2>Expression levels in CD8 cells in milieus</h2>
 <pre class="r"><code>milieus &lt;- data.frame(colData(sce_rna)) %&gt;%
-  filter(celltype == &quot;Tcytotoxic&quot;) %&gt;%
+  filter(celltype == &quot;CD8+ T cell&quot;) %&gt;%
   select(cellID, contains(&quot;pure&quot;)) %&gt;%
   mutate_if(is.numeric, ~1 * (. &gt; 0))
 
 milieus$number_of_milieus &lt;- rowSums(milieus[,-1])
 
-# keep Tcytotoxics that are part of at least one milieu
+# keep CD8+ T cells that are part of at least one milieu
 milieus &lt;- milieus %&gt;%
   filter(number_of_milieus &gt; 0) %&gt;%
   select(-number_of_milieus) %&gt;%
@@ -1890,7 +1525,7 @@ milieus &lt;- milieus %&gt;%
 <pre class="r"><code>marker_rna &lt;- c(&quot;Lag3&quot;, &quot;T8_CXCL13&quot;, &quot;T5_CCL4&quot;)
 
 # rna data 
-dat_rna &lt;- data.frame(t(assay(sce_rna[marker_rna, sce_rna$celltype == &quot;Tcytotoxic&quot;], &quot;asinh&quot;)))
+dat_rna &lt;- data.frame(t(assay(sce_rna[marker_rna, sce_rna$celltype == &quot;CD8+ T cell&quot;], &quot;asinh&quot;)))
 dat_rna$cellID &lt;- rownames(dat_rna)
 dat_rna &lt;- left_join(milieus, dat_rna)
 
@@ -1922,17 +1557,19 @@ for(j in unique(dat_rna$channel)){
   
   # calculate p-value for different milieus in one channel and adjust pvalue 
   cur.test &lt;- dat_rna[dat_rna$channel == j, ] %&gt;%
-    group_by(channel, milieu_short) %&gt;%
-    t_test(asinh ~ 1, mu = cur.mu, detailed = TRUE) %&gt;%
-    adjust_pvalue()
+    group_by(channel) %&gt;%
+    wilcox_test(asinh ~ milieu_short, ref.group = &quot;.all.&quot;) %&gt;%
+    adjust_pvalue(method = &quot;BH&quot;) %&gt;%
+    add_x_position(x=&quot;milieu_short&quot;)
       
   stat.test &lt;- rbind(stat.test, cur.test)
 }
 
 # adjust again for testing across different channels
 stat.test &lt;- stat.test %&gt;%
-    adjust_pvalue() %&gt;%
-    add_significance(&quot;p.adj&quot;)
+  group_by(channel) %&gt;%
+  adjust_pvalue(method = &quot;BH&quot;) %&gt;%
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1))
 
 # plot
 plot_list &lt;- list()
@@ -1940,8 +1577,8 @@ ylim_list &lt;- list(&quot;Lag3&quot; = c(0,0.9), &quot;T8_CXCL13&quot; = c(0,2.
 for(i in unique(dat_rna$channel)){
   cur.stat.test &lt;- stat.test[stat.test$channel == i, ]
   
-  plot_list[[i]] &lt;- ggplot(dat_rna[dat_rna$channel == i,], aes(x=milieu_short, y=asinh, fill=milieu_short)) + 
-    geom_boxplot(alpha=.6, lwd=0.5, outlier.shape = NA, position = position_dodge(1.1)) +
+  plot_list[[i]] &lt;- ggplot(dat_rna[dat_rna$channel == i,], aes(x=milieu_short, y=asinh)) + 
+    geom_boxplot(alpha=1, lwd=0.5, outlier.shape = NA, position = position_dodge(1.1), aes(fill=milieu_short)) +
     theme_bw() +
     theme(text = element_text(size=18),
           axis.title.x=element_blank(),
@@ -1949,7 +1586,7 @@ for(i in unique(dat_rna$channel)){
           axis.ticks.x=element_blank()) +
     guides(fill=guide_legend(&quot;Milieu&quot;, override.aes = list(alpha=1)), col=&quot;none&quot;) +
     stat_pvalue_manual(
-      cur.stat.test, x = &quot;milieu_short&quot;, y.position = ylim_list[[i]][2]-0.05,
+      cur.stat.test, x = &quot;xmin&quot;, y.position = ylim_list[[i]][2]-0.05,
       label = &quot;p.adj.signif&quot;,
       position = position_dodge(0.8), 
       size=4) + 
@@ -2003,28 +1640,30 @@ attached base packages:
  [8] datasets  methods   base     
 
 other attached packages:
- [1] rstatix_0.6.0               ggpubr_0.4.0               
- [3] viridis_0.5.1               viridisLite_0.3.0          
- [5] cowplot_1.1.1               neighbouRhood_0.4          
- [7] magrittr_2.0.1              dtplyr_1.0.1               
- [9] ggpmisc_0.3.7               gridExtra_2.3              
-[11] dittoSeq_1.0.2              scater_1.16.2              
-[13] destiny_3.2.0               ggbeeswarm_0.6.0           
-[15] RColorBrewer_1.1-2          circlize_0.4.12            
-[17] colorRamps_2.3              ComplexHeatmap_2.4.3       
-[19] cba_0.2-21                  proxy_0.4-24               
-[21] fpc_2.2-9                   data.table_1.13.6          
-[23] umap_0.2.7.0                forcats_0.5.0              
-[25] stringr_1.4.0               dplyr_1.0.2                
-[27] purrr_0.3.4                 readr_1.4.0                
-[29] tidyr_1.1.2                 tibble_3.0.4               
-[31] ggplot2_3.3.3               tidyverse_1.3.0            
-[33] reshape2_1.4.4              SingleCellExperiment_1.12.0
-[35] SummarizedExperiment_1.20.0 Biobase_2.50.0             
-[37] GenomicRanges_1.42.0        GenomeInfoDb_1.26.2        
-[39] IRanges_2.24.1              S4Vectors_0.28.1           
-[41] BiocGenerics_0.36.0         MatrixGenerics_1.2.0       
-[43] matrixStats_0.57.0          workflowr_1.6.2            
+ [1] RANN_2.6.1                  concaveman_1.1.0           
+ [3] sf_0.9-7                    rstatix_0.6.0              
+ [5] ggpubr_0.4.0                viridis_0.5.1              
+ [7] viridisLite_0.3.0           cowplot_1.1.1              
+ [9] neighbouRhood_0.4           magrittr_2.0.1             
+[11] dtplyr_1.0.1                ggpmisc_0.3.7              
+[13] gridExtra_2.3               dittoSeq_1.0.2             
+[15] scater_1.16.2               destiny_3.2.0              
+[17] ggbeeswarm_0.6.0            RColorBrewer_1.1-2         
+[19] circlize_0.4.12             colorRamps_2.3             
+[21] ComplexHeatmap_2.4.3        cba_0.2-21                 
+[23] proxy_0.4-24                fpc_2.2-9                  
+[25] data.table_1.13.6           umap_0.2.7.0               
+[27] forcats_0.5.0               stringr_1.4.0              
+[29] dplyr_1.0.2                 purrr_0.3.4                
+[31] readr_1.4.0                 tidyr_1.1.2                
+[33] tibble_3.0.4                ggplot2_3.3.3              
+[35] tidyverse_1.3.0             reshape2_1.4.4             
+[37] SingleCellExperiment_1.12.0 SummarizedExperiment_1.20.0
+[39] Biobase_2.50.0              GenomicRanges_1.42.0       
+[41] GenomeInfoDb_1.26.2         IRanges_2.24.1             
+[43] S4Vectors_0.28.1            BiocGenerics_0.36.0        
+[45] MatrixGenerics_1.2.0        matrixStats_0.57.0         
+[47] workflowr_1.6.2            
 
 loaded via a namespace (and not attached):
   [1] reticulate_1.18           tidyselect_1.1.0         
@@ -2043,58 +1682,57 @@ loaded via a namespace (and not attached):
  [27] diptest_0.75-7            R6_2.5.0                 
  [29] clue_0.3-58               rsvd_1.0.3               
  [31] RcppEigen_0.3.3.9.1       locfit_1.5-9.4           
- [33] concaveman_1.1.0          flexmix_2.3-17           
- [35] bitops_1.0-6              DelayedArray_0.16.0      
- [37] assertthat_0.2.1          promises_1.1.1           
- [39] scales_1.1.1              nnet_7.3-14              
- [41] beeswarm_0.2.3            gtable_0.3.0             
- [43] rlang_0.4.10              scatterplot3d_0.3-41     
- [45] GlobalOptions_0.1.2       hexbin_1.28.2            
- [47] broom_0.7.3               yaml_2.2.1               
- [49] abind_1.4-5               modelr_0.1.8             
- [51] backports_1.2.1           httpuv_1.5.4             
- [53] tools_4.0.3               ellipsis_0.3.1           
- [55] ggridges_0.5.3            Rcpp_1.0.5               
- [57] plyr_1.8.6                zlibbioc_1.36.0          
- [59] classInt_0.4-3            RCurl_1.98-1.2           
- [61] openssl_1.4.3             GetoptLong_1.0.5         
- [63] zoo_1.8-8                 haven_2.3.1              
- [65] ggrepel_0.9.0             cluster_2.1.0            
- [67] fs_1.5.0                  RSpectra_0.16-0          
- [69] openxlsx_4.2.3            RANN_2.6.1               
- [71] lmtest_0.9-38             reprex_0.3.0             
- [73] pcaMethods_1.80.0         whisker_0.4              
- [75] hms_0.5.3                 evaluate_0.14            
- [77] smoother_1.1              rio_0.5.16               
- [79] mclust_5.4.7              readxl_1.3.1             
- [81] shape_1.4.5               compiler_4.0.3           
- [83] V8_3.4.0                  KernSmooth_2.23-18       
- [85] crayon_1.3.4              htmltools_0.5.0          
- [87] later_1.1.0.1             lubridate_1.7.9.2        
- [89] DBI_1.1.0                 dbplyr_2.0.0             
- [91] MASS_7.3-53               sf_0.9-7                 
- [93] boot_1.3-25               Matrix_1.3-2             
- [95] car_3.0-10                cli_2.2.0                
- [97] pkgconfig_2.0.3           foreign_0.8-81           
- [99] laeken_0.5.1              sp_1.4-5                 
-[101] xml2_1.3.2                vipor_0.4.5              
-[103] XVector_0.30.0            rvest_0.3.6              
-[105] digest_0.6.27             rmarkdown_2.6            
-[107] cellranger_1.1.0          edgeR_3.30.3             
-[109] DelayedMatrixStats_1.10.1 curl_4.3                 
-[111] kernlab_0.9-29            modeltools_0.2-23        
-[113] ggplot.multistats_1.0.0   rjson_0.2.20             
-[115] lifecycle_0.2.0           jsonlite_1.7.2           
-[117] carData_3.0-4             BiocNeighbors_1.6.0      
-[119] askpass_1.1               limma_3.44.3             
-[121] fansi_0.4.1               pillar_1.4.7             
-[123] lattice_0.20-41           httr_1.4.2               
-[125] DEoptimR_1.0-8            glue_1.4.2               
-[127] xts_0.12.1                zip_2.1.1                
-[129] png_0.1-7                 prabclus_2.3-2           
-[131] class_7.3-17              stringi_1.5.3            
-[133] RcppHNSW_0.3.0            BiocSingular_1.4.0       
-[135] irlba_2.3.3               e1071_1.7-4              </code></pre>
+ [33] flexmix_2.3-17            bitops_1.0-6             
+ [35] DelayedArray_0.16.0       assertthat_0.2.1         
+ [37] promises_1.1.1            scales_1.1.1             
+ [39] nnet_7.3-14               beeswarm_0.2.3           
+ [41] gtable_0.3.0              rlang_0.4.10             
+ [43] scatterplot3d_0.3-41      GlobalOptions_0.1.2      
+ [45] hexbin_1.28.2             broom_0.7.3              
+ [47] yaml_2.2.1                abind_1.4-5              
+ [49] modelr_0.1.8              backports_1.2.1          
+ [51] httpuv_1.5.4              tools_4.0.3              
+ [53] ellipsis_0.3.1            ggridges_0.5.3           
+ [55] Rcpp_1.0.5                plyr_1.8.6               
+ [57] zlibbioc_1.36.0           classInt_0.4-3           
+ [59] RCurl_1.98-1.2            openssl_1.4.3            
+ [61] GetoptLong_1.0.5          zoo_1.8-8                
+ [63] haven_2.3.1               ggrepel_0.9.0            
+ [65] cluster_2.1.0             fs_1.5.0                 
+ [67] RSpectra_0.16-0           openxlsx_4.2.3           
+ [69] lmtest_0.9-38             reprex_0.3.0             
+ [71] pcaMethods_1.80.0         whisker_0.4              
+ [73] hms_0.5.3                 evaluate_0.14            
+ [75] smoother_1.1              rio_0.5.16               
+ [77] mclust_5.4.7              readxl_1.3.1             
+ [79] shape_1.4.5               compiler_4.0.3           
+ [81] V8_3.4.0                  KernSmooth_2.23-18       
+ [83] crayon_1.3.4              htmltools_0.5.0          
+ [85] later_1.1.0.1             lubridate_1.7.9.2        
+ [87] DBI_1.1.0                 dbplyr_2.0.0             
+ [89] MASS_7.3-53               boot_1.3-25              
+ [91] Matrix_1.3-2              car_3.0-10               
+ [93] cli_2.2.0                 pkgconfig_2.0.3          
+ [95] foreign_0.8-81            laeken_0.5.1             
+ [97] sp_1.4-5                  xml2_1.3.2               
+ [99] vipor_0.4.5               XVector_0.30.0           
+[101] rvest_0.3.6               digest_0.6.27            
+[103] rmarkdown_2.6             cellranger_1.1.0         
+[105] edgeR_3.30.3              DelayedMatrixStats_1.10.1
+[107] curl_4.3                  kernlab_0.9-29           
+[109] modeltools_0.2-23         ggplot.multistats_1.0.0  
+[111] rjson_0.2.20              lifecycle_0.2.0          
+[113] jsonlite_1.7.2            carData_3.0-4            
+[115] BiocNeighbors_1.6.0       askpass_1.1              
+[117] limma_3.44.3              fansi_0.4.1              
+[119] pillar_1.4.7              lattice_0.20-41          
+[121] httr_1.4.2                DEoptimR_1.0-8           
+[123] glue_1.4.2                xts_0.12.1               
+[125] zip_2.1.1                 png_0.1-7                
+[127] prabclus_2.3-2            class_7.3-17             
+[129] stringi_1.5.3             RcppHNSW_0.3.0           
+[131] BiocSingular_1.4.0        irlba_2.3.3              
+[133] e1071_1.7-4              </code></pre>
 </div>
 </div>
 </div>

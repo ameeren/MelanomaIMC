@@ -57,6 +57,19 @@ labelled_sce <- do.call("cbind", cur_sces)
 rowData(labelled_sce) <- rowData(sce)
 ```
 
+## Rename Celltypes
+
+```{r}
+unique(labelled_sce$cytomapper_CellLabel)
+
+labelled_sce[,labelled_sce$cytomapper_CellLabel == "Bcell"]$cytomapper_CellLabel <- "B cell"
+labelled_sce[,labelled_sce$cytomapper_CellLabel == "BnTcell"]$cytomapper_CellLabel <- "BnT cell"
+labelled_sce[,labelled_sce$cytomapper_CellLabel == "Tcytotoxic"]$cytomapper_CellLabel <- "CD8+ T cell"
+labelled_sce[,labelled_sce$cytomapper_CellLabel == "Thelper"]$cytomapper_CellLabel <- "CD4+ T cell"
+labelled_sce[,labelled_sce$cytomapper_CellLabel == "Tregulatory"]$cytomapper_CellLabel <- "FOXP3+ T cell"
+```
+
+
 ## Duplicates
 
 ```{r}
@@ -88,15 +101,15 @@ Here, we will define a colour vector for the cell-types contained in layer 1.
 layer1_colours <- vector(length = length(unique(label_vector)))
 names(layer1_colours) <- unique(label_vector)
 
-layer1_colours["BnTcell"] <- "goldenrod2"
-layer1_colours["Bcell"] <- "green1"
+layer1_colours["BnT cell"] <- "goldenrod2"
+layer1_colours["B cell"] <- "green1"
 layer1_colours["Macrophage"] <- "greenyellow"
 layer1_colours["Neutrophil"] <- "blue1"
-layer1_colours["Thelper"] <- "yellow"
-layer1_colours["Tregulatory"] <- "sienna1"
+layer1_colours["CD4+ T cell"] <- "yellow"
+layer1_colours["FOXP3+ T cell"] <- "sienna1"
 layer1_colours["pDC"] <- "red2"
 layer1_colours["Stroma"] <- "tomato"
-layer1_colours["Tcytotoxic"] <- "deepskyblue"
+layer1_colours["CD8+ T cell"] <- "deepskyblue"
 layer1_colours["Tumor"] <- "sienna4"
 layer1_colours["unknown"] <- "gray"
 layer1_colours["unlabelled"] <- "gray"
@@ -421,30 +434,6 @@ dittoHeatmap(agr_sce[cur_markers,], assay = "asinh",
             annotation_colors = list(celltype = metadata(sce)$colour_vectors$layer_1),
             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             breaks = seq(-3, 3, length.out = 101))
-```
-
-## Create updated colour vector
-
-Here, we will define a colour vector for the cell-types contained in layer 1 (without unlabelled).
-
-```{r}
-layer1_colours <- vector(length = length(unique(sce$celltype)))
-names(layer1_colours) <- unique(sce$celltype)
-
-layer1_colours["BnTcell"] <- "goldenrod2"
-layer1_colours["Bcell"] <- "green1"
-layer1_colours["Macrophage"] <- "greenyellow"
-layer1_colours["Neutrophil"] <- "blue1"
-layer1_colours["Thelper"] <- "yellow"
-layer1_colours["Tregulatory"] <- "sienna1"
-layer1_colours["pDC"] <- "red2"
-layer1_colours["Stroma"] <- "tomato"
-layer1_colours["Tcytotoxic"] <- "deepskyblue"
-layer1_colours["Tumor"] <- "sienna4"
-layer1_colours["unknown"] <- "darkgray"
-
-# Save in SCE object
-metadata(sce)$colour_vectors$celltype <- layer1_colours
 ```
 
 # Save RDS

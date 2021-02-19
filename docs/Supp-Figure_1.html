@@ -435,6 +435,9 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="00_prepare_clinical_dat.html">Prep Clinical Table</a>
+    </li>
+    <li>
       <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
     </li>
     <li>
@@ -538,7 +541,7 @@ div.tocify {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -547,7 +550,7 @@ div.tocify {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -556,10 +559,10 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-10
+<strong>Last updated:</strong> 2021-02-19
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>melanoma_publication_old_data/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -575,12 +578,12 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -647,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -664,27 +667,15 @@ Note that you need to be careful to ensure that all relevant files for the analy
 <pre><code>
 Ignored files:
     Ignored:    .DS_Store
-    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
     Ignored:    ._.DS_Store
+    Ignored:    analysis/._clinical metadata preparation.Rmd
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
-    Ignored:    code/helper_functions/._findCommunity.R
     Ignored:    data/.DS_Store
     Ignored:    data/._.DS_Store
-    Ignored:    data/._layer_1_classification_rna.csv
-    Ignored:    data/._survdat_for_modelling.csv
-    Ignored:    data/12plex_validation/
-    Ignored:    data/200323_TMA_256_Hot Cold_Clinical Data_Updated Response Data_For Collaborators_latest updated_Mar_2020_for_Coxph_modeling.csv
-    Ignored:    data/layer_1_classification_protein.csv
-    Ignored:    data/layer_1_classification_rna.csv
-    Ignored:    data/manual_infiltration/
-    Ignored:    data/protein/
-    Ignored:    data/rna/
-    Ignored:    data/safety_copy_SCE/
-    Ignored:    data/sce_RNA.rds
-    Ignored:    data/sce_protein.rds
-    Ignored:    data/survdat_for_modelling.csv
+    Ignored:    data/data_for_analysis/
+    Ignored:    data/full_data/
     Ignored:    output/.DS_Store
     Ignored:    output/._.DS_Store
     Ignored:    output/._protein_neutrophil.png
@@ -697,9 +688,23 @@ Unstaged changes:
     Modified:   .gitignore
     Modified:   analysis/04_1_Protein_celltype_classification.rmd
     Modified:   analysis/04_1_RNA_celltype_classification.rmd
+    Modified:   analysis/04_2_RNA_classification_subclustering.rmd
+    Modified:   analysis/04_2_protein_classification_subclustering.rmd
+    Modified:   analysis/07_TCF7_PD1_gating.rmd
+    Modified:   analysis/08_color_vectors.rmd
+    Modified:   analysis/09_Tcell_Score.Rmd
+    Modified:   analysis/10_Dysfunction_Score.rmd
+    Modified:   analysis/11_Bcell_Score.Rmd
+    Modified:   analysis/Figure_1.rmd
+    Modified:   analysis/Figure_2.rmd
+    Modified:   analysis/Figure_3.rmd
+    Modified:   analysis/Figure_4.rmd
+    Modified:   analysis/Figure_5.rmd
+    Modified:   analysis/Supp-Figure_1.rmd
     Modified:   analysis/Supp-Figure_2.rmd
+    Modified:   analysis/Supp-Figure_3.rmd
     Modified:   analysis/Supp-Figure_4.rmd
-    Deleted:    code/findPackages.R
+    Modified:   analysis/Supp-Figure_5.rmd
 
 </code></pre>
 <p>
@@ -738,6 +743,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/ee1595de9ec17ee414a5beafb9ed08d174e12139/analysis/Supp-Figure_1.rmd" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/ee1595de9ec17ee414a5beafb9ed08d174e12139/docs/Supp-Figure_1.html" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -885,36 +924,18 @@ visible FALSE
         code/helper_functions/DistanceToClusterCenter.R
 value   ?                                              
 visible FALSE                                          
-        code/helper_functions/findClusters.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/findCommunity.R
-value   ?                                    
-visible FALSE                                
-        code/helper_functions/getCellCount.R
-value   ?                                   
-visible FALSE                               
+        code/helper_functions/findMilieu.R code/helper_functions/findPatch.R
+value   ?                                  ?                                
+visible FALSE                              FALSE                            
         code/helper_functions/getInfoFromString.R
 value   ?                                        
 visible FALSE                                    
         code/helper_functions/getSpotnumber.R
 value   ?                                    
 visible FALSE                                
-        code/helper_functions/plotBarFracCluster.R
-value   ?                                         
-visible FALSE                                     
         code/helper_functions/plotCellCounts.R
 value   ?                                     
 visible FALSE                                 
-        code/helper_functions/plotCellFrac.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/plotCellFracGroups.R
-value   ?                                         
-visible FALSE                                     
-        code/helper_functions/plotCellFracGroupsSubset.R
-value   ?                                               
-visible FALSE                                           
         code/helper_functions/plotCellFractions.R
 value   ?                                        
 visible FALSE                                    
@@ -1102,21 +1123,21 @@ Attaching package: &#39;ggpmisc&#39;</code></pre>
 <div id="load-and-process-the-data" class="section level2">
 <h2>Load and process the data</h2>
 <pre class="r"><code># load data
-cells1 = fread(&quot;data/12plex_validation/overexpression/20190305/cell.csv&quot;, header = T,sep=&quot;,&quot;)
-cells2 = fread(&quot;data/12plex_validation/overexpression/20190306/cell.csv&quot;, header = T,sep=&quot;,&quot;)
-meta1 = fread(&quot;data/12plex_validation/overexpression/20190305/Image.csv&quot;,header = T,sep=&quot;,&quot;)</code></pre>
+cells1 = fread(&quot;data/data_for_analysis/12plex_validation/overexpression/20190305/cell.csv&quot;, header = T,sep=&quot;,&quot;)
+cells2 = fread(&quot;data/data_for_analysis/12plex_validation/overexpression/20190306/cell.csv&quot;, header = T,sep=&quot;,&quot;)
+meta1 = fread(&quot;data/data_for_analysis/12plex_validation/overexpression/20190305/Image.csv&quot;,header = T,sep=&quot;,&quot;)</code></pre>
 <pre><code>Warning in require_bit64_if_needed(ans): Some columns are type &#39;integer64&#39;
 but package bit64 is not installed. Those columns will print as strange
 looking floating point data. There is no need to reload the data. Simply
 install.packages(&#39;bit64&#39;) to obtain the integer64 print method and print the
 data again.</code></pre>
-<pre class="r"><code>meta2 = fread(&quot;data/12plex_validation/overexpression/20190306/Image.csv&quot;,header = T,sep=&quot;,&quot;)</code></pre>
+<pre class="r"><code>meta2 = fread(&quot;data/data_for_analysis/12plex_validation/overexpression/20190306/Image.csv&quot;,header = T,sep=&quot;,&quot;)</code></pre>
 <pre><code>Warning in require_bit64_if_needed(ans): Some columns are type &#39;integer64&#39;
 but package bit64 is not installed. Those columns will print as strange
 looking floating point data. There is no need to reload the data. Simply
 install.packages(&#39;bit64&#39;) to obtain the integer64 print method and print the
 data again.</code></pre>
-<pre class="r"><code>panel = fread( &quot;data/12plex_validation/overexpression/20190305/20190305_A431_overexpression.csv&quot;)
+<pre class="r"><code>panel = fread( &quot;data/data_for_analysis/12plex_validation/overexpression/20190305/20190305_A431_overexpression.csv&quot;)
 
 # extract replicate and stain info
 meta1 = meta1[,.(ImageNumber,FileName_CellImage, Group_Number, Metadata_Target)]
@@ -1263,36 +1284,18 @@ visible FALSE
         code/helper_functions/DistanceToClusterCenter.R
 value   ?                                              
 visible FALSE                                          
-        code/helper_functions/findClusters.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/findCommunity.R
-value   ?                                    
-visible FALSE                                
-        code/helper_functions/getCellCount.R
-value   ?                                   
-visible FALSE                               
+        code/helper_functions/findMilieu.R code/helper_functions/findPatch.R
+value   ?                                  ?                                
+visible FALSE                              FALSE                            
         code/helper_functions/getInfoFromString.R
 value   ?                                        
 visible FALSE                                    
         code/helper_functions/getSpotnumber.R
 value   ?                                    
 visible FALSE                                
-        code/helper_functions/plotBarFracCluster.R
-value   ?                                         
-visible FALSE                                     
         code/helper_functions/plotCellCounts.R
 value   ?                                     
 visible FALSE                                 
-        code/helper_functions/plotCellFrac.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/plotCellFracGroups.R
-value   ?                                         
-visible FALSE                                     
-        code/helper_functions/plotCellFracGroupsSubset.R
-value   ?                                               
-visible FALSE                                           
         code/helper_functions/plotCellFractions.R
 value   ?                                        
 visible FALSE                                    
@@ -1311,13 +1314,13 @@ visible FALSE                                 </code></pre>
 </div>
 <div id="load-the-data" class="section level2">
 <h2>Load the data</h2>
-<pre class="r"><code>cells1 = fread(&quot;data/12plex_validation/HeLa/20190208/cell.csv&quot;, header = T,sep=&quot;,&quot;)
-cells3 = fread(&quot;data/12plex_validation/HeLa/20190215/cell.csv&quot;, header = T,sep=&quot;,&quot;)
-cells4 = fread(&quot;data/12plex_validation/HeLa/20190222/cell.csv&quot;, header = T,sep=&quot;,&quot;)
+<pre class="r"><code>cells1 = fread(&quot;data/data_for_analysis/12plex_validation/HeLa/20190208/cell.csv&quot;, header = T,sep=&quot;,&quot;)
+cells3 = fread(&quot;data/data_for_analysis/12plex_validation/HeLa/20190215/cell.csv&quot;, header = T,sep=&quot;,&quot;)
+cells4 = fread(&quot;data/data_for_analysis/12plex_validation/HeLa/20190222/cell.csv&quot;, header = T,sep=&quot;,&quot;)
 
-meta1 = fread(&quot;data/12plex_validation/HeLa/20190208/Image.csv&quot;,header = T,sep=&quot;,&quot;)
-meta3 = fread(&quot;data/12plex_validation/HeLa/20190215/Image.csv&quot;,header = T,sep=&quot;,&quot;)
-meta4 = fread(&quot;data/12plex_validation/HeLa/20190222/Image.csv&quot;,header = T,sep=&quot;,&quot;)
+meta1 = fread(&quot;data/data_for_analysis/12plex_validation/HeLa/20190208/Image.csv&quot;,header = T,sep=&quot;,&quot;)
+meta3 = fread(&quot;data/data_for_analysis/12plex_validation/HeLa/20190215/Image.csv&quot;,header = T,sep=&quot;,&quot;)
+meta4 = fread(&quot;data/data_for_analysis/12plex_validation/HeLa/20190222/Image.csv&quot;,header = T,sep=&quot;,&quot;)
 
 meta1 = meta1[,.(ImageNumber,FileName_CellImage)]
 meta3 = meta3[,.(ImageNumber,FileName_CellImage)]
@@ -1351,7 +1354,7 @@ meta3[meta3$stain==&quot;T5new&quot;,]$stain = &quot;T5&quot;
 meta3[meta3$stain==&quot;T11new&quot;,]$stain = &quot;T11&quot;
 meta3[meta3$replicate ==&quot;20190221&quot;,]$replicate = &quot;20190215&quot;
 
-panel = fread( &quot;data/12plex_validation/HeLa/20190212_HeLa_12plex_validation.csv&quot;)
+panel = fread( &quot;data/data_for_analysis/12plex_validation/HeLa/20190212_HeLa_12plex_validation.csv&quot;)
 
 # sort Metal Number in same order than in the Image.csv file!!
 panel$`Metal Number` = str_extract(panel$`Metal Tag`, &quot;[0-9]+&quot;)
@@ -1420,7 +1423,7 @@ cells_panel &lt;- cells_panel[Target %in% c(&quot;T1&quot;,&quot;T2&quot;,&quot;
 <div id="load-data-frolm-8plex-validation-and-make-it-comparable" class="section level2">
 <h2>Load data frolm 8plex validation and make it comparable</h2>
 <pre class="r"><code># import data from 8plex validation
-cells_panel_8plex = readRDS(file = &quot;data/12plex_validation/HeLa/2018_data_8plex_validation_DS.rds&quot;)
+cells_panel_8plex = readRDS(file = &quot;data/data_for_analysis/12plex_validation/HeLa/2018_data_8plex_validation_DS.rds&quot;)
 
 # make both data.frames same so they can be merged
 cells_panel = cells_panel[, !(&quot;measurement&quot;)]
@@ -1568,14 +1571,14 @@ rna_seq$expression_RNAseq &lt;- c(145.3, 89.2, 217.1, 21.3, 74.9, 1.2, 54.7, 87.
 sum &lt;- left_join(median_per_gene, rna_seq)</code></pre>
 <pre><code>Joining, by = &quot;gene&quot;</code></pre>
 <pre class="r"><code># plot 
-ggplot(sum, aes(x=expression_RNAseq, y=expression_RNAScope, label=gene)) + 
+ggplot(sum, aes(x=log2(expression_RNAseq), y=expression_RNAScope, label=gene)) + 
   geom_label_repel(size=7, fill=&quot;deepskyblue1&quot;) + 
   geom_smooth(method = &quot;lm&quot;) +
-  xlab(&quot;Normalized Expression RNA-Seq&quot;) +
+  xlab(&quot;Normalized Expression RNA-Seq [log2]&quot;) +
   ylab(&quot;Median Expression RNAScope [asinh]&quot;) + 
-   stat_poly_eq(formula = y ~ x, 
-                aes(label = ..rr.label..), 
-                parse = TRUE, size=10) +
+  stat_cor(method = &quot;pearson&quot;,
+           aes(label = paste0(&quot;atop(&quot;, ..r.label..,  &quot;,&quot;, ..rr.label.. ,&quot;)&quot;)),
+           size = 10, cor.coef.name = &quot;R&quot;, label.sep=&quot;\n&quot;, label.y.npc = &quot;top&quot;) + 
   theme_minimal() + 
   theme(text = element_text(size=20)) </code></pre>
 <pre><code>`geom_smooth()` using formula &#39;y ~ x&#39;</code></pre>
@@ -1592,7 +1595,7 @@ cor(sum$expression_RNAScope, sum$expression_RNAseq, method = c(&quot;spearman&qu
 <h1>Supp Figure 1F</h1>
 <div id="load-data" class="section level2">
 <h2>Load Data</h2>
-<pre class="r"><code>sce_rna &lt;- readRDS(&quot;data/sce_RNA.rds&quot;)</code></pre>
+<pre class="r"><code>sce_rna &lt;- readRDS(&quot;data/data_for_analysis/sce_RNA.rds&quot;)</code></pre>
 </div>
 <div id="detection-of-chemokine-expressing-cells" class="section level2">
 <h2>Detection of chemokine expressing cells</h2>
@@ -1705,22 +1708,21 @@ loaded via a namespace (and not attached):
 [31] rlang_0.4.10           GlobalOptions_0.1.2    readxl_1.3.1          
 [34] rstudioapi_0.13        farver_2.0.3           shape_1.4.5           
 [37] generics_0.1.0         zip_2.1.1              car_3.0-10            
-[40] RCurl_1.98-1.2         magrittr_2.0.1         polynom_1.4-0         
-[43] GenomeInfoDbData_1.2.4 Matrix_1.3-2           fansi_0.4.1           
-[46] Rcpp_1.0.5             munsell_0.5.0          abind_1.4-5           
-[49] lifecycle_0.2.0        stringi_1.5.3          whisker_0.4           
-[52] yaml_2.2.1             carData_3.0-4          zlibbioc_1.36.0       
-[55] promises_1.1.1         forcats_0.5.0          crayon_1.3.4          
-[58] lattice_0.20-41        splines_4.0.3          haven_2.3.1           
-[61] hms_0.5.3              knitr_1.30             pillar_1.4.7          
-[64] rjson_0.2.20           ggsignif_0.6.0         glue_1.4.2            
-[67] evaluate_0.14          vctrs_0.3.6            png_0.1-7             
-[70] httpuv_1.5.4           cellranger_1.1.0       gtable_0.3.0          
-[73] purrr_0.3.4            tidyr_1.1.2            assertthat_0.2.1      
-[76] clue_0.3-58            xfun_0.20              openxlsx_4.2.3        
-[79] broom_0.7.3            rstatix_0.6.0          later_1.1.0.1         
-[82] tibble_3.0.4           beeswarm_0.2.3         cluster_2.1.0         
-[85] ellipsis_0.3.1        </code></pre>
+[40] RCurl_1.98-1.2         magrittr_2.0.1         GenomeInfoDbData_1.2.4
+[43] Matrix_1.3-2           fansi_0.4.1            Rcpp_1.0.5            
+[46] munsell_0.5.0          abind_1.4-5            lifecycle_0.2.0       
+[49] stringi_1.5.3          whisker_0.4            yaml_2.2.1            
+[52] carData_3.0-4          zlibbioc_1.36.0        promises_1.1.1        
+[55] forcats_0.5.0          crayon_1.3.4           lattice_0.20-41       
+[58] splines_4.0.3          haven_2.3.1            hms_0.5.3             
+[61] knitr_1.30             pillar_1.4.7           rjson_0.2.20          
+[64] ggsignif_0.6.0         glue_1.4.2             evaluate_0.14         
+[67] vctrs_0.3.6            png_0.1-7              httpuv_1.5.4          
+[70] cellranger_1.1.0       gtable_0.3.0           purrr_0.3.4           
+[73] tidyr_1.1.2            assertthat_0.2.1       clue_0.3-58           
+[76] xfun_0.20              openxlsx_4.2.3         broom_0.7.3           
+[79] rstatix_0.6.0          later_1.1.0.1          tibble_3.0.4          
+[82] beeswarm_0.2.3         cluster_2.1.0          ellipsis_0.3.1        </code></pre>
 </div>
 </div>
 </div>

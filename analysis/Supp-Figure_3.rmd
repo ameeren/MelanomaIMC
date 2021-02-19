@@ -66,14 +66,25 @@ frac <- data.frame(colData(sce_rna)) %>%
   reshape2::dcast(Description + Tcell_density_score_image ~ expressor, value.var = "fraction", fill = 0) %>%
   reshape2::melt(id.vars = c("Description", "Tcell_density_score_image"), variable.name = "expressor", value.name = "fraction")
 
-ggplot(frac, aes(x=expressor, y = fraction, fill = Tcell_density_score_image)) + 
-  geom_boxplot(alpha=.75, outlier.size = 0.5) +
-  #geom_jitter(size = 1, alpha=0.7, position = position_jitterdodge(dodge.width = 0.75,jitter.width = 0.05), aes(col=Tcell_density_score_image)) +
+stat.test <- frac %>%
+  group_by(expressor) %>%
+  kruskal_test(data = ., fraction ~ Tcell_density_score_image) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  arrange(p.adj) %>%
+  mutate(group1 = expressor, group2 = expressor) %>%
+  add_x_position()
+
+frac$expressor <- factor(frac$expressor, levels = stat.test$expressor)
+
+ggplot(frac, aes(x=expressor, y = fraction)) + 
+  geom_boxplot(alpha=.75, outlier.size = 0.5, aes(fill = Tcell_density_score_image)) +
+  stat_pvalue_manual(x = "group1", y.position = 0.055, stat.test, size = 4) +
   scale_color_discrete(guide = FALSE) +
   theme_bw() +
   theme(text = element_text(size = 15),
         axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
-  guides(fill=guide_legend(title="Tcell Score")) +
+  guides(fill=guide_legend(title="T cell Score")) +
   xlab("") + 
   ylab("Fractions")  +
   coord_cartesian(ylim = c(0,0.06))
@@ -81,7 +92,7 @@ ggplot(frac, aes(x=expressor, y = fraction, fill = Tcell_density_score_image)) +
 
 # Supp Figure 3B
 
-## Tumor Marker Profile for different Tcell Scoring Groups
+## Tumor Marker Profile for different T cell Scoring Groups
 
 ```{r Supp_Fig_3B_tumor_profile_tcell, fig.height=8, fig.width=10, dev=c('pdf')}
 tumor_marker_protein <- c("bCatenin", "Sox9", "pERK", "p75", "Ki67", "SOX10", "PARP", "S100", "MiTF")
@@ -135,7 +146,7 @@ stat.test <- comb %>%
   group_by(channel) %>%
   wilcox_test(data = ., asinh ~ Tcell_density_score_image) %>%
   adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
   add_xy_position(x = "Tcell_density_score_image", dodge = 0.8, comparisons = group_comparison) %>%
   filter(is.na(y.position) == FALSE)
 
@@ -154,7 +165,7 @@ p <- ggplot(comb, aes(x=Tcell_density_score_image, y=asinh)) +
   xlab("") + 
   ylab("Mean Count per Image (asinh)") +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
-  guides(fill=guide_legend(title="Tcell Score", override.aes = c(lwd=0.5, alpha=1)))
+  guides(fill=guide_legend(title="T cell Score", override.aes = c(lwd=0.5, alpha=1)))
 
 leg <- get_legend(p)
 
@@ -189,8 +200,8 @@ colnames(dat_relation_rna)[5] <- "FirstImageNumber"
 ## CD8/Tumor Interactions and Chemokine Freqs
 
 ```{r Supp_Fig_3C_chemokines_tumor_interaction, dev=("pdf"), fig.width=9, fig.height=8}
-# number of interactions tcytotoxic and tumor per image
-dat_relation_sub <- dat_relation_rna[dat_relation_rna$celltype_first %in% c("Tcytotoxic") & 
+# number of interactions CD8+ T cell and tumor per image
+dat_relation_sub <- dat_relation_rna[dat_relation_rna$celltype_first %in% c("CD8+ T cell") & 
                                    dat_relation_rna$celltype_second == "Tumor"]
 
 # count number of interactions
@@ -215,9 +226,9 @@ cur_dat[is.na(cur_dat$n),]$n <- 0
 ggplot(cur_dat, aes(x=log10(fraction), y=log10(n))) + 
   geom_point(size=2) + 
   geom_smooth(method="lm") +
-  stat_poly_eq(formula = y ~ x, 
-                aes(label =  ..rr.label..), 
-                parse = TRUE, size=5, label.y = 0.01, label.x = 1) +
+  stat_cor(method = "pearson",
+           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
+           size = 3, cor.coef.name = "R", label.sep="\n", label.x = -1.875, label.y = 0.3) + 
   theme_bw() +
   theme(text = element_text(size=15)) +
   xlab("Chemokine Fraction (log10)") +

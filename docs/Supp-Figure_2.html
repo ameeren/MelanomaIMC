@@ -435,6 +435,9 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="00_prepare_clinical_dat.html">Prep Clinical Table</a>
+    </li>
+    <li>
       <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
     </li>
     <li>
@@ -556,7 +559,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-10
+<strong>Last updated:</strong> 2021-02-19
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
@@ -647,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -664,27 +667,15 @@ Note that you need to be careful to ensure that all relevant files for the analy
 <pre><code>
 Ignored files:
     Ignored:    .DS_Store
-    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
     Ignored:    ._.DS_Store
+    Ignored:    analysis/._clinical metadata preparation.Rmd
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
-    Ignored:    code/helper_functions/._findCommunity.R
     Ignored:    data/.DS_Store
     Ignored:    data/._.DS_Store
-    Ignored:    data/._layer_1_classification_rna.csv
-    Ignored:    data/._survdat_for_modelling.csv
-    Ignored:    data/12plex_validation/
-    Ignored:    data/200323_TMA_256_Hot Cold_Clinical Data_Updated Response Data_For Collaborators_latest updated_Mar_2020_for_Coxph_modeling.csv
-    Ignored:    data/layer_1_classification_protein.csv
-    Ignored:    data/layer_1_classification_rna.csv
-    Ignored:    data/manual_infiltration/
-    Ignored:    data/protein/
-    Ignored:    data/rna/
-    Ignored:    data/safety_copy_SCE/
-    Ignored:    data/sce_RNA.rds
-    Ignored:    data/sce_protein.rds
-    Ignored:    data/survdat_for_modelling.csv
+    Ignored:    data/data_for_analysis/
+    Ignored:    data/full_data/
     Ignored:    output/.DS_Store
     Ignored:    output/._.DS_Store
     Ignored:    output/._protein_neutrophil.png
@@ -697,9 +688,23 @@ Unstaged changes:
     Modified:   .gitignore
     Modified:   analysis/04_1_Protein_celltype_classification.rmd
     Modified:   analysis/04_1_RNA_celltype_classification.rmd
+    Modified:   analysis/04_2_RNA_classification_subclustering.rmd
+    Modified:   analysis/04_2_protein_classification_subclustering.rmd
+    Modified:   analysis/07_TCF7_PD1_gating.rmd
+    Modified:   analysis/08_color_vectors.rmd
+    Modified:   analysis/09_Tcell_Score.Rmd
+    Modified:   analysis/10_Dysfunction_Score.rmd
+    Modified:   analysis/11_Bcell_Score.Rmd
+    Modified:   analysis/Figure_1.rmd
+    Modified:   analysis/Figure_2.rmd
+    Modified:   analysis/Figure_3.rmd
+    Modified:   analysis/Figure_4.rmd
+    Modified:   analysis/Figure_5.rmd
+    Modified:   analysis/Supp-Figure_1.rmd
     Modified:   analysis/Supp-Figure_2.rmd
+    Modified:   analysis/Supp-Figure_3.rmd
     Modified:   analysis/Supp-Figure_4.rmd
-    Deleted:    code/findPackages.R
+    Modified:   analysis/Supp-Figure_5.rmd
 
 </code></pre>
 <p>
@@ -738,6 +743,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/ee1595de9ec17ee414a5beafb9ed08d174e12139/analysis/Supp-Figure_2.rmd" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/ee1595de9ec17ee414a5beafb9ed08d174e12139/docs/Supp-Figure_2.html" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -936,36 +975,18 @@ visible FALSE
         code/helper_functions/DistanceToClusterCenter.R
 value   ?                                              
 visible FALSE                                          
-        code/helper_functions/findClusters.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/findCommunity.R
-value   ?                                    
-visible FALSE                                
-        code/helper_functions/getCellCount.R
-value   ?                                   
-visible FALSE                               
+        code/helper_functions/findMilieu.R code/helper_functions/findPatch.R
+value   ?                                  ?                                
+visible FALSE                              FALSE                            
         code/helper_functions/getInfoFromString.R
 value   ?                                        
 visible FALSE                                    
         code/helper_functions/getSpotnumber.R
 value   ?                                    
 visible FALSE                                
-        code/helper_functions/plotBarFracCluster.R
-value   ?                                         
-visible FALSE                                     
         code/helper_functions/plotCellCounts.R
 value   ?                                     
 visible FALSE                                 
-        code/helper_functions/plotCellFrac.R
-value   ?                                   
-visible FALSE                               
-        code/helper_functions/plotCellFracGroups.R
-value   ?                                         
-visible FALSE                                     
-        code/helper_functions/plotCellFracGroupsSubset.R
-value   ?                                               
-visible FALSE                                           
         code/helper_functions/plotCellFractions.R
 value   ?                                        
 visible FALSE                                    
@@ -1007,14 +1028,69 @@ library(ggpubr)</code></pre>
 <div id="load-data" class="section level2">
 <h2>Load Data</h2>
 <pre class="r"><code># clinical data
-dat &lt;- read_csv(&quot;data/protein/clinical_data_protein.csv&quot;)
-dat_survival = fread(file = &quot;data/survdat_for_modelling.csv&quot;,stringsAsFactors = FALSE)
+dat &lt;- read_csv(&quot;data/data_for_analysis/protein/clinical_data_protein.csv&quot;)
 
 # SCE object
-sce_prot = readRDS(file = &quot;data/sce_protein.rds&quot;)
-sce_rna = readRDS(file = &quot;data/sce_RNA.rds&quot;)
+sce_prot = readRDS(file = &quot;data/data_for_analysis/sce_protein.rds&quot;)
+sce_rna = readRDS(file = &quot;data/data_for_analysis/sce_RNA.rds&quot;)
+
+clincial = read.csv(file = &quot;data/data_for_analysis/protein/clinical_data_protein.csv&quot;)
 
 targets &lt;- metadata(sce_rna)$chemokines_morethan600_withcontrol</code></pre>
+</div>
+</div>
+<div id="supp-figure-2a" class="section level1">
+<h1>Supp Figure 2A</h1>
+<div id="fraction-of-tumor-cells-that-express-chemokines" class="section level2">
+<h2>Fraction of Tumor Cells that express chemokines</h2>
+<pre class="r"><code>cur_dat &lt;- data.frame(colData(sce_rna))
+cur_dat &lt;- cur_dat %&gt;%
+  filter(celltype == &quot;Tumor&quot;) %&gt;%
+  filter(Location != &quot;CTRL&quot;)
+
+cur_dat &lt;- cur_dat[,c(&quot;ImageNumber&quot;, &quot;Mutation&quot;, colnames(cur_dat)[grepl(glob2rx(&quot;C*L*&quot;),names(cur_dat))])]
+
+# colSums of Chemokines in Tumor Cells (Multiple Producer count more than once)
+cur_dat &lt;- cur_dat %&gt;%
+  group_by(ImageNumber, Mutation) %&gt;%
+  mutate(cells = n()) %&gt;%
+  group_by(ImageNumber, cells, Mutation) %&gt;%
+  summarise_each(funs(sum))</code></pre>
+<pre><code>Warning: `summarise_each_()` is deprecated as of dplyr 0.7.0.
+Please use `across()` instead.
+This warning is displayed once every 8 hours.
+Call `lifecycle::last_warnings()` to see where this warning was generated.</code></pre>
+<pre><code>Warning: `funs()` is deprecated as of dplyr 0.8.0.
+Please use a list of either functions or lambdas: 
+
+  # Simple named list: 
+  list(mean = mean, median = median)
+
+  # Auto named with `tibble::lst()`: 
+  tibble::lst(mean, median)
+
+  # Using lambdas
+  list(~ mean(., trim = .2), ~ median(., na.rm = TRUE))
+This warning is displayed once every 8 hours.
+Call `lifecycle::last_warnings()` to see where this warning was generated.</code></pre>
+<pre class="r"><code># compute fractions
+cur_dat[,4:14] &lt;- cur_dat[,4:14] / t(cur_dat$cells)
+
+cur_dat &lt;- cur_dat %&gt;%
+  filter(cells &gt; 200) %&gt;%
+  reshape2::melt(id.vars=c(&quot;ImageNumber&quot;, &quot;cells&quot;, &quot;Mutation&quot;), variable.name=&quot;chemokine&quot;, value.name=&quot;fraction&quot;)
+
+ggplot(cur_dat,aes(x=fct_reorder(chemokine, fraction, .fun = median, .desc = TRUE), y=fraction+0.001)) + 
+  geom_boxplot(alpha=.5) +
+  geom_quasirandom(alpha=.2) +
+  theme_bw() + 
+  theme(text=element_text(size=16)) +
+  ylab(&quot;Fraction of Expressing Tumor\n(fraction + 0.001)&quot;) +
+  xlab(&quot;&quot;) +
+  scale_y_log10() +
+  annotation_logticks(sides = &quot;l&quot;) +
+  geom_hline(yintercept = median(cur_dat$fraction+0.001), linetype = 2) </code></pre>
+<embed src="figure/Supp-Figure_2.rmd/Supp_Fig_2A_tumor_cells_chemokine-1.pdf" width="864" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 </div>
 <div id="supp-figure-2b" class="section level1">
@@ -1049,7 +1125,7 @@ p2 &lt;- dat %&gt;%
         axis.text.x = element_text(size=7))
 
 plot_grid(p1,p2,rel_widths = c(1.25,3))  </code></pre>
-<embed src="figure/Supp-Figure_2.rmd/Supp_Fig_2B_number_of_samples-1.pdf" width="1440" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="figure/Supp-Figure_2.rmd/Supp_Fig_2B_number_of_samples-1.pdf" width="1632" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 </div>
 <div id="supp-figure-2c" class="section level1">
@@ -1097,36 +1173,46 @@ celltype_fractions &lt;- fractions_per_image %&gt;%
   group_by(MM_location, expressor, celltype) %&gt;%
   summarise(sum_fraction = sum(fraction_per_image)) %&gt;% # sum-up fractions over all images 
   group_by(MM_location, expressor) %&gt;%
-  mutate(proportions = sum_fraction / sum(sum_fraction)) # calculate proportions for each expressor
-
-#median_celltype_fraction &lt;- fractions_per_image %&gt;%
-  #distinct(ImageNumber, celltype, expressor, .keep_all = T) %&gt;%
-  #reshape2::dcast(ImageNumber + MM_location + expressor ~ celltype, value.var = &quot;fraction_per_image&quot;, fill = 0) %&gt;%
-  #reshape2::melt(id.vars = c(&quot;ImageNumber&quot;, &quot;MM_location&quot;, &quot;expressor&quot;), 
-                 #variable.name = &quot;celltype&quot;, value.name = &quot;fraction_per_image&quot;) %&gt;%
-  #reshape2::dcast(ImageNumber + MM_location + celltype ~ expressor, value.var = &quot;fraction_per_image&quot;, fill = 0) %&gt;%
-  #reshape2::melt(id.vars = c(&quot;ImageNumber&quot;, &quot;MM_location&quot;, &quot;celltype&quot;), 
-                 #variable.name = &quot;expressor&quot;, value.name = &quot;fraction_per_image&quot;) %&gt;%
-  #group_by(MM_location, expressor, celltype) %&gt;%
-  #summarise(median_fraction = median(fraction_per_image)) %&gt;%
-  #group_by(MM_location, expressor) %&gt;%
-  #mutate(proportions = median_fraction / sum(median_fraction))</code></pre>
+  mutate(proportions = sum_fraction / sum(sum_fraction)) # calculate proportions for each expressor</code></pre>
 </div>
 <div id="plot" class="section level2">
 <h2>Plot</h2>
+<pre class="r"><code># calculate signif of expressor-fractions per MM_location
+fraction_expressor_per_image %&gt;%
+  group_by(expressor) %&gt;%
+  wilcox_test(fraction_per_image ~ MM_location) %&gt;%
+  adjust_pvalue(method = &quot;BH&quot;) %&gt;%
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %&gt;%
+  arrange(p.adj)</code></pre>
+<pre><code># A tibble: 14 x 10
+   expressor .y.   group1 group2    n1    n2 statistic       p  p.adj
+   &lt;fct&gt;     &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;   &lt;dbl&gt;  &lt;dbl&gt;
+ 1 CCL19     frac… LN     skin_…    49    52     1739  0.00129 0.0181
+ 2 CXCL13    frac… LN     skin_…    49    52     1634. 0.0138  0.0966
+ 3 CCL22     frac… LN     skin_…    49    52     1557  0.0548  0.145 
+ 4 CXCL12_C… frac… LN     skin_…    49    52     1535  0.062   0.145 
+ 5 CXCL8     frac… LN     skin_…    49    52     1580  0.0378  0.145 
+ 6 CXCL9_CC… frac… LN     skin_…    49    52     1523  0.0487  0.145 
+ 7 CCL18     frac… LN     skin_…    49    52     1501  0.124   0.217 
+ 8 CXCL10_C… frac… LN     skin_…    49    52     1054  0.121   0.217 
+ 9 CXCL10    frac… LN     skin_…    49    52     1095  0.225   0.315 
+10 CXCL12    frac… LN     skin_…    49    52     1457  0.215   0.315 
+11 CCL4      frac… LN     skin_…    49    52     1382  0.465   0.592 
+12 CCL2      frac… LN     skin_…    49    52     1326. 0.724   0.845 
+13 CXCL10_C… frac… LN     skin_…    49    52     1270  0.981   0.981 
+14 CXCL9     frac… LN     skin_…    49    52     1288  0.926   0.981 
+# … with 1 more variable: p.adj.signif &lt;chr&gt;</code></pre>
 <pre class="r"><code>plot_list &lt;- list()
 for(i in groups$MM_location) {
   a &lt;- fraction_expressor_per_image %&gt;%
     filter(MM_location == i) %&gt;%  
     group_by(ImageNumber, expressor) %&gt;%
-    ggplot(., aes(y=expressor, x=fraction_per_image)) + 
+    ggplot(., aes(y=as.factor(expressor), x=fraction_per_image)) + 
     geom_boxplot() + 
     geom_point(alpha=0.2) +
     theme_bw() +
     theme(axis.title.y = element_blank(),
           axis.text.y = element_text(hjust=0.5)) +
-    #scale_x_log10() +
-    #annotation_logticks(sides = &quot;bottom&quot;) + 
     xlab(&quot;Cell Fraction per Image&quot;) + 
     coord_cartesian(xlim = c(0,0.05))
   
@@ -1136,8 +1222,8 @@ for(i in groups$MM_location) {
     geom_bar(stat = &quot;identity&quot;) +
     theme_bw() +
     theme(axis.text.y = element_blank(),
-          axis.title.y = element_blank(),
-          legend.position = &quot;none&quot;) +
+          axis.title.y = element_blank()) +
+    guides(fill=guide_legend(title = &quot;Cell Type&quot;,nrow=2,byrow=TRUE)) +
     xlab(&quot;Producing Cell Types&quot;) +
           scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype),
                         breaks = names(metadata(sce_rna)$colour_vectors$celltype),
@@ -1145,12 +1231,16 @@ for(i in groups$MM_location) {
     scale_x_continuous(breaks=c(-1.00,-0.75,-0.5, -0.25, 0.00),
                      labels=c(&quot;100%&quot;, &quot;75%&quot;, &quot;50%&quot;, &quot;25%&quot;, &quot;0%&quot;))
   
-  grid.arrange(b,a,nrow=1,
+  leg &lt;- get_legend(b)
+  
+  grid.arrange(b+theme(legend.position = &quot;none&quot;),a,nrow=1,
                widths = c(.75,1),
                top = i)
 }</code></pre>
 <embed src="figure/Supp-Figure_2.rmd/Supp_Fig_2C_expression_per_location-1.pdf" width="672" style="display: block; margin: auto;" type="application/pdf" />
 <embed src="figure/Supp-Figure_2.rmd/Supp_Fig_2C_expression_per_location-2.pdf" width="672" style="display: block; margin: auto;" type="application/pdf" />
+<pre class="r"><code>grid.arrange(leg)</code></pre>
+<embed src="figure/Supp-Figure_2.rmd/Supp_Fig_2C_legend-1.pdf" width="480" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 </div>
 <div id="supp-figure-2d" class="section level1">
@@ -1172,9 +1262,8 @@ frac &lt;- data.frame(colData(sce_rna)) %&gt;%
   reshape2::dcast(Description + MM_location_simplified2 ~ expressor, value.var = &quot;fraction&quot;, fill = 0) %&gt;%
   reshape2::melt(id.vars = c(&quot;Description&quot;, &quot;MM_location_simplified2&quot;), variable.name = &quot;expressor&quot;, value.name = &quot;fraction&quot;)
 
-ggplot(frac, aes(x=expressor, y = fraction, fill = MM_location_simplified2)) + 
-  geom_boxplot(alpha=1, outlier.size = 0.5) +
-  #geom_jitter(size = 0.75, alpha=0.6, position = position_jitterdodge(dodge.width = 0.75,jitter.width = 0.05), aes(col=MM_location_simplified2)) + 
+ggplot(frac, aes(x=expressor, y = fraction)) + 
+  geom_boxplot(alpha=1, outlier.size = 0.5, aes(fill = MM_location_simplified2)) +
   scale_color_discrete(guide=FALSE) +
   theme_bw() +
   theme(text = element_text(size = 15),
@@ -1182,7 +1271,7 @@ ggplot(frac, aes(x=expressor, y = fraction, fill = MM_location_simplified2)) +
   guides(fill=guide_legend(title=&quot;Met Location&quot;, override.aes = aes(lwd=0.5))) +
   xlab(&quot;&quot;) + 
   ylab(&quot;Fractions&quot;) +
-  coord_cartesian(ylim = c(0,0.075))</code></pre>
+  coord_cartesian(ylim = c(0,0.06))</code></pre>
 <embed src="figure/Supp-Figure_2.rmd/Supp_Fig_2D_expressor_per_location-1.pdf" width="960" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 </div>
@@ -1202,8 +1291,8 @@ group_size &lt;- data.frame(colData(sce_rna)) %&gt;%
 
 sce_rna_sub &lt;- sce_rna[,sce_rna$Mutation %in% group_size$Mutation]
 
-a &lt;- plotCellCounts(sce = sce_rna_sub, 
-                    sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+a1 &lt;- plotCellCounts(sce = sce_rna_sub[,sce_rna_sub$MM_location == &quot;LN&quot;], 
+                    sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets &amp; sce_rna_sub$MM_location == &quot;LN&quot;)],
                     cellID = &quot;cellID&quot;,
                     colour_by = &quot;expressor&quot;,
                     split_by = &quot;Mutation&quot;,
@@ -1212,9 +1301,34 @@ a &lt;- plotCellCounts(sce = sce_rna_sub,
                     show_n = FALSE,
                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
   guides(fill=guide_legend(&quot;Chemokine&quot;)) +
+  theme(text = element_text(size=16)) +
+  ylab(&quot;Normalized Cell Fraction&quot;)
+
+b1 &lt;- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets &amp; sce_rna_sub$MM_location == &quot;LN&quot;)],
+                    cellID = &quot;cellID&quot;,
+                    colour_by = &quot;celltype&quot;,
+                    split_by = &quot;Mutation&quot;,
+                    imageID = &quot;ImageNumber&quot;,
+                    proportion = TRUE,
+                    show_n = FALSE,
+                    colour_vector = metadata(sce_rna)$colour_vectors$celltype) + 
+  guides(fill=guide_legend(&quot;Cell Type&quot;)) +
   theme(text = element_text(size=16))
 
-b &lt;- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+a2 &lt;- plotCellCounts(sce = sce_rna_sub[,sce_rna_sub$MM_location == &quot;skin_subcutaneous&quot;], 
+                    sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets &amp; sce_rna_sub$MM_location == &quot;skin_subcutaneous&quot;)],
+                    cellID = &quot;cellID&quot;,
+                    colour_by = &quot;expressor&quot;,
+                    split_by = &quot;Mutation&quot;,
+                    imageID = &quot;ImageNumber&quot;,
+                    normalize = TRUE,
+                    show_n = FALSE,
+                    colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend(&quot;Chemokine&quot;)) +
+  theme(text = element_text(size=16)) +
+  ylab(&quot;Normalized Cell Fraction&quot;)
+
+b2 &lt;- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets &amp; sce_rna_sub$MM_location == &quot;skin_subcutaneous&quot;)],
                     cellID = &quot;cellID&quot;,
                     colour_by = &quot;celltype&quot;,
                     split_by = &quot;Mutation&quot;,
@@ -1226,58 +1340,129 @@ b &lt;- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targe
   theme(text = element_text(size=16))
 
 # fraction of chemokine-expressing cells per image
-t &lt;- data.frame(colData(sce_rna_sub)) %&gt;%
-  group_by(ImageNumber, Mutation, chemokine, MM_location_simplified) %&gt;%
+chemo &lt;- data.frame(colData(sce_rna_sub)) %&gt;%
+  filter(MM_location %in% c(&quot;skin_subcutaneous&quot;, &quot;LN&quot;)) %&gt;%
+  group_by(ImageNumber, Mutation, chemokine, MM_location) %&gt;%
   summarise(n=n()) %&gt;%
   group_by(ImageNumber) %&gt;%
   mutate(fraction = n / sum(n)) %&gt;%
-  reshape2::dcast(ImageNumber + Mutation + MM_location_simplified ~ chemokine, value.var = &quot;fraction&quot;)
+  reshape2::dcast(ImageNumber + Mutation + MM_location ~ chemokine, value.var = &quot;fraction&quot;)
 
-median_expression &lt;- median(t$`TRUE`)
+median_expression &lt;- median(chemo$`TRUE`)
 
-stat.test &lt;- t %&gt;%
-  group_by(Mutation) %&gt;%
-  t_test(data = ., mu = median_expression, `TRUE` ~ 1, alternative = &quot;greater&quot;) %&gt;%
+stat.test &lt;- chemo %&gt;%
+  group_by(MM_location) %&gt;%
+  wilcox_test(`TRUE` ~ Mutation) %&gt;%
   adjust_pvalue(method=&quot;BH&quot;) %&gt;%
-  add_significance() %&gt;%
-  add_x_position(x = &quot;Mutation&quot;, dodge = 0.8)
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %&gt;%
+  add_xy_position(x = &quot;Mutation&quot;)
 
-c &lt;- ggplot(t, aes(x=Mutation, y=`TRUE`)) + 
+stat.test$y.position &lt;- stat.test$y.position - 0.025
+
+c &lt;- ggplot(chemo, aes(x=Mutation, y=`TRUE`)) + 
   geom_boxplot(alpha=0.2, lwd=1.5) + 
-  geom_quasirandom(aes(col=MM_location_simplified), size=2, alpha=.8) +
-  geom_hline(yintercept = median_expression, linetype=2, size=2) + 
-  stat_pvalue_manual(stat.test, x = &quot;x&quot;, label = &quot;p.adj.signif&quot;, size = 7, y.position = 0.3) + 
+  geom_quasirandom(aes(col=MM_location), size=2, alpha=.8) +
+  #geom_hline(yintercept = median_expression, linetype=2, size=2) + 
+  #stat_pvalue_manual(stat.test, label = &quot;p.adj.signif&quot;, size = 7) + 
   xlab(&quot;&quot;) + 
   ylab(&quot;Fraction of Chemokine-Expressing Cells&quot;) +
   theme_bw() +
   theme(text = element_text(size=16),
         axis.text.x = element_text(angle=45, hjust=1, vjust=1)) +
-  guides(col=guide_legend(&quot;Location&quot;)) +
-  coord_cartesian(ylim=c(0,0.3))
+  guides(col=guide_legend(&quot;Location&quot;)) + 
+  coord_cartesian(ylim=c(0,0.25)) +
+  facet_wrap(~MM_location)
 
-grid.arrange(a,b,c,nrow=1,
-             widths = c(1,1,1))</code></pre>
-<embed src="figure/Supp-Figure_2.rmd/Supp_Fig_2E_mutation-1.pdf" width="1152" style="display: block; margin: auto;" type="application/pdf" />
-<pre class="r"><code># MM_location for Mutations
+margin_top &lt;- theme(plot.margin = unit(c(1,1,2,1), &quot;cm&quot;))
+margin_bottom &lt;- theme(plot.margin = unit(c(2,1,1,1), &quot;cm&quot;))
+p &lt;- grid.arrange(a1+margin_top,b1+margin_top,a2+margin_bottom,b2+margin_bottom, ncol=2, nrow=2)
+
+grid.arrange(p,c,nrow=1, widths = c(0.65,0.35))
+
+# MM_location for Mutations
 data.frame(colData(sce_rna_sub)) %&gt;%
   distinct(ImageNumber, .keep_all = T) %&gt;%
   group_by(Mutation, MM_location_simplified) %&gt;%
   summarise(n=n()) %&gt;%
   group_by(Mutation) %&gt;%
   mutate(percentage = n / sum(n) * 100)</code></pre>
-<pre><code># A tibble: 9 x 4
-# Groups:   Mutation [3]
-  Mutation MM_location_simplified     n percentage
-  &lt;chr&gt;    &lt;chr&gt;                  &lt;int&gt;      &lt;dbl&gt;
-1 BRAF     LN                        30       42.3
-2 BRAF     other                     10       14.1
-3 BRAF     skin                      31       43.7
-4 NRAS     LN                        16       32  
-5 NRAS     other                     10       20  
-6 NRAS     skin                      24       48  
-7 wt       LN                         6       21.4
-8 wt       other                      5       17.9
-9 wt       skin                      17       60.7</code></pre>
+</div>
+<div id="b2m-and-s100a1-expression-by-mutation-type" class="section level2">
+<h2>B2M and S100A1 expression by Mutation Type</h2>
+<pre class="r"><code>tumor_marker_protein &lt;- c(&quot;bCatenin&quot;, &quot;Sox9&quot;, &quot;pERK&quot;, &quot;p75&quot;, &quot;Ki67&quot;, &quot;SOX10&quot;, &quot;PARP&quot;, &quot;S100&quot;, &quot;MiTF&quot;, &quot;IDO1&quot;, &quot;PDL1&quot;)
+tumor_marker_rna &lt;- c(&quot;Mart1&quot;, &quot;pRB&quot;, &quot;B2M&quot;)
+
+# rna data 
+dat_rna &lt;- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == &quot;Tumor&quot;], &quot;asinh&quot;)))
+dat_rna$cellID &lt;- rownames(dat_rna)
+dat_rna &lt;- left_join(dat_rna, data.frame(colData(sce_rna))[,c(&quot;cellID&quot;, &quot;Mutation&quot;, &quot;Description&quot;, &quot;MM_location&quot;, &quot;Location&quot;)])
+
+# filter
+dat_rna &lt;- dat_rna %&gt;%
+  filter(Location != &quot;CTRL&quot;)
+
+# mean per image
+dat_rna &lt;- dat_rna %&gt;%
+  select(-cellID) %&gt;%
+  group_by(Description, Mutation) %&gt;%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_rna &lt;- dat_rna %&gt;%
+  reshape2::melt(id.vars = c(&quot;Description&quot;, &quot;Mutation&quot;), variable.name = &quot;channel&quot;, value.name = &quot;asinh&quot;)
+
+# protein data
+dat_prot &lt;- data.frame(t(assay(sce_prot[tumor_marker_protein,, sce_prot$celltype == &quot;Tumor&quot;], &quot;asinh&quot;)))
+dat_prot$cellID &lt;- rownames(dat_prot)
+dat_prot &lt;- left_join(dat_prot, data.frame(colData(sce_prot))[,c(&quot;cellID&quot;, &quot;Mutation&quot;, &quot;Description&quot;, &quot;MM_location&quot;, &quot;Location&quot;)])
+
+# filter
+dat_prot &lt;- dat_prot %&gt;%
+  filter(Location != &quot;CTRL&quot;)
+
+# mean per image
+dat_prot &lt;- dat_prot %&gt;%
+  select(-cellID) %&gt;%
+  group_by(Description, Mutation) %&gt;%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_prot &lt;- dat_prot %&gt;%
+  reshape2::melt(id.vars = c(&quot;Description&quot;, &quot;Mutation&quot;), variable.name = &quot;channel&quot;, value.name = &quot;asinh&quot;)
+
+# join both data sets
+comb &lt;- rbind(dat_prot, dat_rna) %&gt;%
+  filter(Mutation %in% c(&quot;BRAF&quot;, &quot;NRAS&quot;, &quot;wt&quot;))
+
+stat.test &lt;- comb %&gt;%
+  group_by(channel) %&gt;%
+  wilcox_test(data = ., asinh ~ Mutation) %&gt;%
+  adjust_pvalue(method = &quot;BH&quot;) %&gt;%
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %&gt;%
+  add_xy_position(x = &quot;Mutation&quot;, dodge = 0.8) %&gt;%
+  filter(is.na(y.position) == FALSE)
+
+# plot 
+p &lt;- ggplot(comb, aes(x=Mutation, y=asinh)) + 
+  geom_boxplot(alpha=0.2, lwd=1, aes(fill=Mutation)) +
+  geom_quasirandom(alpha=0.6, size=2, aes(col=Mutation)) +
+  scale_color_discrete(guide = FALSE) +
+  theme_bw() +
+  theme(text = element_text(size=18),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank()) +
+  facet_wrap(~channel, scales = &quot;free&quot;) + 
+  stat_pvalue_manual(stat.test, label = &quot;p.adj.signif&quot;, size = 7) + 
+  xlab(&quot;&quot;) + 
+  ylab(&quot;Mean Count per Image (asinh)&quot;) +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
+  guides(fill=guide_legend(title=&quot;Mutation&quot;, override.aes = c(lwd=0.5, alpha=1)))
+
+leg &lt;- get_legend(p)
+
+grid.arrange(p + theme(legend.position = &quot;none&quot;))</code></pre>
+<pre class="r"><code>grid.arrange(leg)</code></pre>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">

@@ -62,10 +62,10 @@ sce_prot$bcell_patch_score <- NULL
 
 start = Sys.time()
 # quantiles of cell radius
-quantile(sqrt(sce_prot[,sce_prot$celltype %in% c("Bcell")]$Area/pi))
+quantile(sqrt(sce_prot[,sce_prot$celltype %in% c("B cell")]$Area/pi))
 
 # find B cell clusters
-sce_prot <- findPatch(sce_prot, sce_prot[,colData(sce_prot)$celltype %in% c("Bcell", "BnTcell")]$cellID, 
+sce_prot <- findPatch(sce_prot, sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
                     'cellID', 'Center_X', 'Center_Y', 'ImageNumber', 
                     distance = 15, min_clust_size = 20, output_colname = "bcell_patch")
 
@@ -121,7 +121,7 @@ ggplot(max_patch, aes(x=Description, y=max_patch_size)) +
 ## Plot some patches
 
 ```{r example_patch, fig.width=10, fig.height=10, dev=c('pdf')}
-example <- findPatch(sce_prot[,sce_prot$Description %in% c("D4")], sce_prot[,sce_prot$celltype %in% c("Bcell", "BnTcell")]$cellID, 
+example <- findPatch(sce_prot[,sce_prot$Description %in% c("D4")], sce_prot[,sce_prot$celltype %in% c("B cell", "BnT cell")]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
                     'ImageNumber', 
@@ -151,9 +151,9 @@ Bcell <- data.frame(colData(sce_prot)) %>%
   group_by(Description,celltype) %>%
   summarise(n=n()) %>%
   reshape2::dcast(Description ~ celltype, value.var = "n", fill = 0) %>%
-  select(Description, Bcell)
+  select(Description, `B cell`)
 
-Bcell$density <- Bcell$Bcell / im_size_prot[match(Bcell$Description, im_size_prot$Description),]$im_size_prot
+Bcell$density <- Bcell$`B cell` / im_size_prot[match(Bcell$Description, im_size_prot$Description),]$im_size_prot
 
 ggplot(Bcell) + geom_col(aes(x=Description, y=density))
 

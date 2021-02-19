@@ -435,6 +435,9 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
+      <a href="00_prepare_clinical_dat.html">Prep Clinical Table</a>
+    </li>
+    <li>
       <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
     </li>
     <li>
@@ -556,7 +559,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-11
+<strong>Last updated:</strong> 2021-02-18
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
@@ -647,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree2e443a5cda5affb9de9ca1eb678438325319a857targetblank2e443a5a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/2e443a5cda5affb9de9ca1eb678438325319a857" target="_blank">2e443a5</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -664,7 +667,6 @@ Note that you need to be careful to ensure that all relevant files for the analy
 <pre><code>
 Ignored files:
     Ignored:    .DS_Store
-    Ignored:    .Rhistory
     Ignored:    .Rproj.user/
     Ignored:    ._.DS_Store
     Ignored:    analysis/._clinical metadata preparation.Rmd
@@ -682,25 +684,12 @@ Ignored files:
     Ignored:    output/bcell_grouping.png
     Ignored:    output/dysfunction_correlation.pdf
 
-Untracked files:
-    Untracked:  analysis/00_prepare_clinical_dat.rmd
-    Untracked:  code/helper_functions/findMilieu.R
-    Untracked:  code/helper_functions/findPatch.R
-
 Unstaged changes:
     Modified:   .gitignore
-    Modified:   analysis/01_Protein_read_data.rmd
-    Modified:   analysis/01_RNA_read_data.rmd
-    Modified:   analysis/02_Protein_annotations.rmd
-    Modified:   analysis/02_RNA_annotations.rmd
-    Modified:   analysis/03_Protein_quality_control.rmd
-    Modified:   analysis/03_RNA_quality_control.rmd
     Modified:   analysis/04_1_Protein_celltype_classification.rmd
     Modified:   analysis/04_1_RNA_celltype_classification.rmd
     Modified:   analysis/04_2_RNA_classification_subclustering.rmd
     Modified:   analysis/04_2_protein_classification_subclustering.rmd
-    Modified:   analysis/05_RNA_chemokine_expressing_cells.rmd
-    Modified:   analysis/06_RNA_chemokine_patch_detection.rmd
     Modified:   analysis/07_TCF7_PD1_gating.rmd
     Modified:   analysis/08_color_vectors.rmd
     Modified:   analysis/09_Tcell_Score.Rmd
@@ -711,27 +700,11 @@ Unstaged changes:
     Modified:   analysis/Figure_3.rmd
     Modified:   analysis/Figure_4.rmd
     Modified:   analysis/Figure_5.rmd
-    Modified:   analysis/Summary_Statistics.rmd
     Modified:   analysis/Supp-Figure_1.rmd
     Modified:   analysis/Supp-Figure_2.rmd
     Modified:   analysis/Supp-Figure_3.rmd
     Modified:   analysis/Supp-Figure_4.rmd
     Modified:   analysis/Supp-Figure_5.rmd
-    Modified:   analysis/XX_hazard_ratio.rmd
-    Deleted:    code/findPackages.R
-    Deleted:    code/helper_functions/findClusters.R
-    Deleted:    code/helper_functions/findCommunity.R
-    Deleted:    code/helper_functions/getCellCount.R
-    Deleted:    code/helper_functions/plotBarFracCluster.R
-    Deleted:    code/helper_functions/plotCellFrac.R
-    Deleted:    code/helper_functions/plotCellFracGroups.R
-    Deleted:    code/helper_functions/plotCellFracGroupsSubset.R
-    Deleted:    code/helper_functions/scatter_function.R
-    Modified:   code/helper_functions/validityChecks.R
-    Deleted:    data/mask_comparison/20190809_ZTMA256.1_slide2_TH_s1_p1_r15_a15_ac_full.tiff
-    Deleted:    data/mask_comparison/20190809_ZTMA256.1_slide2_TH_s1_p1_r15_a15_ac_ilastik_s2_Probabilities_equalized_cellmask.tiff
-    Deleted:    data/mask_comparison/20191023_ZTMA256.1_slide3_TH_s0_p10_r4_a4_ac_full.tiff
-    Deleted:    data/mask_comparison/20191023_ZTMA256.1_slide3_TH_s0_p10_r4_a4_ac_ilastik_s2_Probabilities_equalized_cellmask.tiff
 
 </code></pre>
 <p>
@@ -770,6 +743,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/ee1595de9ec17ee414a5beafb9ed08d174e12139/analysis/04_1_RNA_celltype_classification.rmd" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/ee1595de9ec17ee414a5beafb9ed08d174e12139/docs/04_1_RNA_celltype_classification.html" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -1393,7 +1400,7 @@ rffit &lt;- train(x = t(assay(train_sce, &quot;asinh&quot;)[rowData(sce)$good_ma
 stopCluster(cl)
 end = Sys.time()
 print(end-start)</code></pre>
-<pre><code>Time difference of 32.05456 mins</code></pre>
+<pre><code>Time difference of 31.26501 mins</code></pre>
 <pre class="r"><code>rffit</code></pre>
 <pre><code>Random Forest 
 
@@ -1631,7 +1638,7 @@ cell_labels.prob &lt;- predict.train(rffit,
                        type = &quot;prob&quot;)
 end = Sys.time()
 print(end-start)</code></pre>
-<pre><code>Time difference of 1.051166 mins</code></pre>
+<pre><code>Time difference of 1.015276 mins</code></pre>
 <p>Store predictions in SCE object. We will not overwrite the labels of the already labelled cells.</p>
 <pre class="r"><code>cell_labels &lt;- sce$layer_1_gated
 cell_labels[colnames(unlab_sce)] &lt;- cell_labels.class
@@ -1690,28 +1697,6 @@ dittoHeatmap(agr_sce[cur_markers,], assay = &quot;asinh&quot;,
             heatmap.colors = colorRampPalette(c(&quot;dark blue&quot;, &quot;white&quot;, &quot;dark red&quot;))(100),
             breaks = seq(-3, 3, length.out = 101))</code></pre>
 <p><img src="figure/04_1_RNA_celltype_classification.rmd/heatmap-visualization-2.png" width="672" style="display: block; margin: auto;" /></p>
-</div>
-<div id="create-updated-colour-vector" class="section level2">
-<h2>Create updated colour vector</h2>
-<p>Here, we will define a colour vector for the cell-types contained in layer 1 (without unlabelled).</p>
-<pre class="r"><code>layer1_colours &lt;- vector(length = length(unique(sce$celltypes_layer1)))
-names(layer1_colours) &lt;- unique(sce$celltypes_layer1)
-
-layer1_colours[&quot;CD38&quot;] &lt;- &quot;goldenrod2&quot;
-layer1_colours[&quot;HLA-DR&quot;] &lt;- &quot;green1&quot;
-layer1_colours[&quot;Macrophage&quot;] &lt;- &quot;greenyellow&quot;
-layer1_colours[&quot;Neutrophil&quot;] &lt;- &quot;blue1&quot;
-layer1_colours[&quot;CD134- Tcell&quot;] &lt;- &quot;yellow&quot;
-layer1_colours[&quot;CD134+ Tcell&quot;] &lt;- &quot;sienna1&quot;
-layer1_colours[&quot;Vasculature&quot;] &lt;- &quot;red2&quot;
-layer1_colours[&quot;Stroma&quot;] &lt;- &quot;tomato&quot;
-layer1_colours[&quot;Tcytotoxic&quot;] &lt;- &quot;deepskyblue&quot;
-layer1_colours[&quot;exhausted Tcytotoxic&quot;] &lt;- &quot;deeppink&quot;
-layer1_colours[&quot;Tumor&quot;] &lt;- &quot;sienna4&quot;
-layer1_colours[&quot;unknown&quot;] &lt;- &quot;darkgray&quot;
-
-# Save in SCE object
-metadata(sce)$colour_vectors$classified_celltypes &lt;- layer1_colours</code></pre>
 </div>
 </div>
 <div id="save-rds" class="section level1">

@@ -35,13 +35,13 @@ sce_prot <- readRDS("data/data_for_analysis/sce_protein.rds")
 
 ```{r}
 col <- c("sienna4", "tomato", "gray65", "sienna1", "lightblue", "deepskyblue", "cyan",
-         "dodgerblue2", "darkolivegreen1", "darkolivegreen4", "darkolivegreen","darkgreen", "yellow2",
-         "khaki", "gold")
+         "dodgerblue2", "darkolivegreen1", "darkolivegreen4", "springgreen3","darkgreen", "yellow3",
+         "khaki3", "gold")
 
-names <- c("Tumor", "Stroma", "unknown", "Vasculature", "Tcell", "Tcytotoxic", "Thelper",
-           "Tregulatory", "Bcell", "BnTcell", "HLA-DR", "CD38" ,"Macrophage", "Neutrophil", "pDC")
+names <- c("Tumor", "Stroma", "unknown", "Vasculature", "CD8- T cell", "CD8+ T cell", "CD4+ T cell",
+           "FOXP3+ T cell", "B cell", "BnT cell", "HLA-DR", "CD38" ,"Macrophage", "Neutrophil", "pDC")
 
-#barplot(seq_along(names), col=col, main="Pastel_hcl", names.arg = names)
+barplot(seq_along(names), col=col, main="Pastel_hcl", names.arg = names)
 
 col_celltypes <- col
 names(col_celltypes) <- names
@@ -52,8 +52,8 @@ names(col_celltypes) <- names
 ## Celltypes
 
 ```{r}
-cell_rna <- col_celltypes[c("Tumor", "Stroma", "unknown", "Vasculature", "Tcell", 
-                            "Tcytotoxic", "HLA-DR", "CD38","Macrophage", "Neutrophil")]
+cell_rna <- col_celltypes[c("Tumor", "Stroma", "unknown", "Vasculature", "CD8- T cell", 
+                            "CD8+ T cell", "HLA-DR", "CD38","Macrophage", "Neutrophil")]
 
 metadata(sce_rna)$colour_vectors$celltype <- cell_rna
 ```
@@ -68,11 +68,6 @@ names(color_chemo) <- targets
 
 #barplot(seq_along(targets), col=color_chemo, main="Pastel_hcl", names.arg = targets)
 metadata(sce_rna)$colour_vectors$chemokine_combinations <- color_chemo
-
-# replace order of chemokines to match order without control samples for upset plot only (ATTENTION! HARD CODED)
-new_order <- replace(targets, match(c("CXCL8", "CCL18"),targets), c("CCL18", "CXCL8"))
-color_chemo <- color_chemo[new_order]
-metadata(sce_rna)$colour_vectors$chemokine_combinations_no_control_UPSETplot <- color_chemo
 ```
 
 ## Chemokines (single)
@@ -93,8 +88,8 @@ metadata(sce_rna)$colour_vectors$chemokine_single <- col_vector_chemokines
 ## Celltypes
 
 ```{r}
-cell_protein <- col_celltypes[c("Tumor", "Stroma", "unknown", "Tcytotoxic", 
-                                "Thelper", "Tregulatory", "Bcell", "BnTcell",
+cell_protein <- col_celltypes[c("Tumor", "Stroma", "unknown", "CD8+ T cell", 
+                                "CD4+ T cell", "FOXP3+ T cell", "B cell", "BnT cell",
                                 "Macrophage", "Neutrophil", "pDC")]
 
 metadata(sce_prot)$colour_vectors$celltype <- cell_protein

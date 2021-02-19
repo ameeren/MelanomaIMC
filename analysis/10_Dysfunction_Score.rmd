@@ -47,14 +47,14 @@ dysfunction <- data.frame(colData(sce_rna)) %>%
   filter(MM_location_punch != "LN_M") %>% # remove LN margin samples
   filter(Tcell_density_score_image %in% c("high")) %>%
   mutate(celltype2 = paste(celltype, CXCL13, sep = "_")) %>% # add CXCL13 info to celltype
-  filter(celltype2 %in% c("Tcytotoxic_1", "Tcytotoxic_0")) %>%
+  filter(celltype2 %in% c("CD8+ T cell_1", "CD8+ T cell_0")) %>%
   group_by(Description, celltype2) %>%
   summarise(n=n()) %>%
   reshape2::dcast(Description ~ celltype2, value.var = "n", fill = 0) %>%
   reshape2::melt(id.vars = c("Description"), variable.name = "celltype2", value.name = "n") %>%
   group_by(Description) %>%
   mutate(fraction = n / sum(n)) %>%
-  filter(celltype2 == "Tcytotoxic_1") %>%
+  filter(celltype2 == "CD8+ T cell_1") %>%
   mutate(dysfunction_score = ifelse(fraction >= 0.05, "high dysfunction", "low dysfunction")) %>%
   ungroup() %>%
   select(Description, dysfunction_score, fraction)

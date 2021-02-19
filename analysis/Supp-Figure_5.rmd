@@ -52,6 +52,12 @@ library(rstatix)
 sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
+# remove LN margin samples and control samples
+sce_rna$PunchLocation <- paste(sce_rna$MM_location, sce_rna$Location, sep = "_")
+sce_prot$PunchLocation <- paste(sce_prot$MM_location, sce_prot$Location, sep = "_")
+sce_rna <- sce_rna[,sce_rna$PunchLocation != "LN_M" & sce_rna$Location != "CTRL"]
+sce_prot <- sce_prot[,sce_prot$PunchLocation != "LN_M" & sce_prot$Location != "CTRL"]
+
 # image
 image_mat_prot <- read.csv("data/data_for_analysis/protein/Image.csv")
 
@@ -110,10 +116,10 @@ for(i in c("cxcl13only_clust")){
                     max.color = "red", min.color = "blue",
                     main = NULL,
                     legend.title = "Patch Size (log10)") +
-    xlim(quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.01)[[1]],
-         quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.99)[[1]]) +
-    ylim(quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.01)[[1]],
-         quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.99)[[1]]) +
+    xlim(quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.05)[[1]],
+         quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.95)[[1]]) +
+    ylim(quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.05)[[1]],
+         quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.95)[[1]]) +
     theme_bw() +
     theme(text = element_text(size=18))
 
@@ -128,10 +134,10 @@ for(i in c("cxcl13only_clust")){
                     main = NULL,
              legend.title = "Cell Type") +
     theme_bw() +
-    xlim(quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.01)[[1]],
-         quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.99)[[1]]) +
-    ylim(quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.01)[[1]],
-         quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.99)[[1]]) +
+    xlim(quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.05)[[1]],
+         quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.95)[[1]]) +
+    ylim(quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.05)[[1]],
+         quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.95)[[1]]) +
     theme(text = element_text(size=18)) + 
     guides(colour = guide_legend(override.aes = list(alpha = 1, size=3))) 
   
@@ -177,7 +183,7 @@ Bcell <- data.frame(colData(sce_prot)) %>%
   summarise(n=n()) %>%
   mutate(fraction = n / sum(n)) %>%
   reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0) %>%
-  select(Description, Bcell)
+  select(Description, `B cell`)
 
 Bcell <- left_join(Bcell, clust_size)
 Bcell[is.na(Bcell$maxClustSize), ]$maxClustSize <- 0
@@ -186,40 +192,24 @@ Bcell[is.na(Bcell$maxClustSize), ]$maxClustSize <- 0
 c <- ggplot(Bcell_patch[rowSums(Bcell_patch[,-1]) > 0,], aes(x = maxClustSize, y = maxPatchSize, label=Description)) + 
   geom_point() +
   geom_smooth(method="lm") + 
-  stat_poly_eq(formula = y ~ x, 
-                aes(label =  ..rr.label..), 
-                parse = TRUE, size=10) +
-  ylab("Max Size of Bcell\nPatches (log10)") +
+  stat_cor(method = "pearson",
+           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
+           size = 6, cor.coef.name = "R", label.sep="\n", label.y = 0.5, label.x = 2) + 
+  ylab("Max Size of B cell\nPatches (log10)") +
   xlab("Max Size of CXCL13 Patches (log10)") +
   theme_bw() + 
   theme(text = element_text(size=18))
 
-d <- ggplot(Bcell, aes(x = maxClustSize, y =Bcell, label=Description)) + 
+d <- ggplot(Bcell, aes(x = maxClustSize, y = `B cell`, label=Description)) + 
   geom_point() +
   geom_smooth(method="lm") + 
-  stat_poly_eq(formula = y ~ x, 
-                aes(label =  ..rr.label..), 
-                parse = TRUE, size=10) +
+  stat_cor(method = "pearson",
+           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
+           size = 6, cor.coef.name = "R", label.sep="\n", label.y = 0.05, label.x = 2) + 
   ylab("B Cell Fraction") +
   xlab("Max Size of CXCL13 Patches (log10)") +
   theme_bw() + 
   theme(text = element_text(size=18))
-
-# add clust size correlation plot 
-clust_size <- data.frame(colData(sce_sub)) %>%
-  distinct(Description, cxcl13only_clust, .keep_all = T) %>%
-  group_by(Description) %>%
-  summarise(maxClustSize = max(clust_size))
-
-Bcell <- data.frame(colData(sce_prot)) %>%
-  group_by(Description, celltype) %>%
-  summarise(n=n()) %>%
-  mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0) %>%
-  select(Description, Bcell)
-
-Bcell <- left_join(Bcell, clust_size)
-Bcell[is.na(Bcell$maxClustSize), ]$maxClustSize <- 0
 
 plot_grid(grid.arrange(a + theme(legend.position = "none"), 
                        b + theme(legend.position = "none"),
@@ -240,7 +230,7 @@ grid.arrange(leg_b)
 
 ## Tcf7+ correlation with Tcf7+PD1+ in Tcells
 
-```{r, Supp_Fig_5C_tcf7_pd1_tcell_corr, fig.width=10, fig.height=4, dev=("pdf")}
+```{r, Supp_Fig_5C_tcf7_pd1_tcell_corr, fig.width=8.3, fig.height=5.3, dev=("pdf")}
 cur_dat <- data.frame(colData(sce_prot)) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
@@ -255,7 +245,7 @@ cur_dat <- data.frame(colData(sce_prot)) %>%
   mutate(fraction = n/sum(n)) %>%
   mutate(total_cells = sum(n)) %>%
   ungroup() %>%
-  filter(celltype %in% c("Tcytotoxic", "Thelper")) 
+  filter(celltype %in% c("CD8+ T cell", "CD4+ T cell")) 
 
 cur_dat <- left_join(cur_dat, im_size)
 
@@ -268,14 +258,14 @@ cur_dat <- cur_dat %>%
 ggplot(cur_dat, aes(x=log10(`TCF7+_PD1+`+1), y=log10(`TCF7+_PD1-`+1))) + 
   geom_point(size=3) + 
   geom_smooth(method="lm") +
-  stat_poly_eq(formula = y ~ x, 
-                aes(label =  ..rr.label..), 
-                parse = TRUE, size=10, label.y = 3) +
+  stat_cor(method = "pearson",
+           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
+           size = 7, cor.coef.name = "R", label.sep="\n", label.y.npc = "top") +
   theme_bw() +
   theme(text = element_text(size=16)) +
   xlab("TCF7+PD1+ Cells per mm2 (log10+1)") +
   ylab("TCF7+PD1- Cells per mm2 (log10+1)") +
-  facet_wrap(~celltype, scales = "free")
+  facet_wrap(~celltype)
 ```
 
 # Supp Figure 5D
@@ -299,7 +289,7 @@ dat_survival_prot_sub <- dat_survival_prot_sub %>%
 
 # group sizes
 dat_survival_prot_sub %>%
-  distinct(Internal_pat_ID, .keep_all = T) %>%
+  distinct(PatientID, .keep_all = T) %>%
   group_by(Status_at_3m) %>%
   summarise(n=n())
 ```
@@ -321,7 +311,7 @@ cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_surviva
   mutate(fraction = n/sum(n)) %>%
   mutate(total_cells = sum(n)) %>%
   ungroup() %>%
-  filter(celltype %in% c("Tcytotoxic", "Thelper")) 
+  filter(celltype %in% c("CD8+ T cell", "CD4+ T cell")) 
 
 cur_dat <- left_join(cur_dat, dat_survival_prot_sub[,c("BlockID", "Status_at_3m", "Primary_melanoma_type")]) %>%
   distinct(Description, celltype, TCF7_PD1, .keep_all = T)
@@ -331,11 +321,15 @@ cur_dat$n_per_mm2 <- cur_dat$n / cur_dat$mm2
 cur_dat$celltype2 <- paste(cur_dat$celltype, cur_dat$TCF7_PD1, sep = ", ")
 
 stat.test <- cur_dat %>%
+  filter(TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-")) %>%
   mutate(log10_n_per_mm2 = log10(n_per_mm2 + 1)) %>%
   group_by(celltype2) %>%
-  wilcox_test(data = ., n_per_mm2 ~ Status_at_3m) %>%
+  wilcox_test(data = ., log10_n_per_mm2 ~ Status_at_3m) %>%
   adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj")
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1))
+
+# check adjusted p-values with another function
+p.adjust(stat.test$p, method = "BH")
 
 info <- cur_dat[,c("celltype2", "TCF7_PD1")] %>%
   distinct(celltype2, .keep_all = T)
@@ -350,11 +344,11 @@ ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Stat
   geom_boxplot(alpha=.4, outlier.shape = NA, aes(fill=Status_at_3m)) +
   geom_beeswarm(size=3) +
   geom_label_repel(aes(label=PatientID), max.overlaps = 12, size = 5, alpha=.5) + 
-  #stat_compare_means(label.x.npc = "left", label.y = -0.9, size=6, label = "p.format") +
   stat_pvalue_manual(stat.test, label = "p_and_p.adj", size=5, label.x.npc = "left", y.position = -0.9, bracket.size = 0) +
   theme_bw() +
   theme(text = element_text(size=18)) +
   ylab("Cells per mm2 (log10)") +
+  scale_fill_manual(values=c("blue", "orange")) + 
   xlab("") +
   guides(fill=guide_legend(title="Response 3m", override.aes = c(lwd=0.5, size=1))) +
   facet_wrap(~celltype2, scales = "free")
@@ -389,15 +383,15 @@ rna_sum <- cur_rna %>%
 rna_sum <- rna_sum[,c("Description", targets)]
 
 prot_sum <- cur_prot %>%
-  mutate(celltype2 = ifelse(celltype %in% c("Thelper", "Tcytotoxic"), 
+  mutate(celltype2 = ifelse(celltype %in% c("CD4+ T cell", "CD8+ T cell"), 
                             paste(paste(celltype, TCF7, sep="_"), PD1, sep = "_"), celltype)) %>%
   group_by(Description, celltype2) %>%
   summarise(n = n()) %>%
   group_by(Description) %>%
   mutate(fraction = n/sum(n)) %>%
-  filter(!celltype2 %in% c("Thelper_TCF7+_PD1+", "Thelper_TCF7-_PD1+", "Tcytotoxic_TCF7+_PD1+")) %>%
+  filter(!celltype2 %in% c("CD4+ T cell_TCF7+_PD1+", "CD4+ T cell_TCF7-_PD1+", "CD8+ T cell_TCF7+_PD1+")) %>%
   reshape2::dcast(Description ~ celltype2, value.var = "fraction", fill = 0) %>%
-  select(Description,contains(c("Tcytotoxic", "Thelper")))
+  select(Description,contains(c("CD8+ T cell", "CD4+ T cell")))
 
 # equal images
 all(rna_sum$Description == prot_sum$Description)
@@ -409,7 +403,7 @@ ha <- t(str_split_fixed(colnames(cor), "_", n=3))
 
 ha1 <- HeatmapAnnotation("TCF7_PD1" = anno_text(paste(ha[2,], ha[3,], sep = " ")),
                          "Cell Type" = ha[1,],
-                         col = list("Cell Type" = metadata(sce_prot)$colour_vectors$celltype[c("Thelper", "Tcytotoxic")]),
+                         col = list("Cell Type" = metadata(sce_prot)$colour_vectors$celltype[c("CD4+ T cell", "CD8+ T cell")]),
                          show_legend = FALSE)
 
 h <- Heatmap(cor,
