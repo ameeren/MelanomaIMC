@@ -50,7 +50,7 @@ sce_prot <- readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 ## Heatmap showing marker expression of celltypes
 
-```{r Fig_1C_Scaled_Heatmap_RNA, fig.width=10, fig.height=11, dev=c('pdf')}
+```{r Fig_1C_Scaled_Heatmap_RNA, fig.width=10, fig.height=11.2, dev=c('pdf')}
 # add marker expression to cells
 marker_expression <- data.frame(t(assay(sce_rna[rowData(sce_rna)$good_marker,], "asinh")))
 marker_expression$cellID <- rownames(marker_expression)
@@ -78,25 +78,34 @@ m <- as.matrix(t(dat_aggr[,-c(1)]))
 colnames(m) <- dat_aggr$celltype
 
 # top annotation with number of cells
-ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>100000, 101000, as.numeric(dat_sum[2,])),
-                                                         height = unit(3,"cm"),
-                                                         ylim = range(0,100000),
-                                                         gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 100000, "white", "black"),
-                                                                   col="white"),
-                                                         axis_param = list(gp = gpar(fontsize=14))),
-                        "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
+# ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>100000, 101000, as.numeric(dat_sum[2,])),
+#                                                          height = unit(3,"cm"),
+#                                                          ylim = range(0,100000),
+#                                                          gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 100000, "white", "black"),
+#                                                                    col="white"),
+#                                                          axis_param = list(gp = gpar(fontsize=14))),
+#                         "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
+#                                               which = "column", 
+#                                               rot = 0, 
+#                                               height = unit(0.5,"cm"),
+#                                               just = "center", 
+#                                               location = 0.5,
+#                                               gp = gpar(fontsize=10,col = ifelse(as.numeric(dat_sum[2,]) > 100000, "red", "black"))),
+#                         annotation_name_gp = gpar(fontsize = 16))
+
+ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,])), nsmall = 0, big.mark = "'"), 
                                                    which = "column", 
                                                    rot = 0, 
-                                                   just = "center", 
+                                                   just = "center",
+                                              height = unit(1,"cm"),
                                                    location = 0.5,
-                                                   gp = gpar(fontsize=10,col = ifelse(as.numeric(dat_sum[2,]) > 100000, "red", "black"))),
-                        annotation_name_gp = gpar(fontsize = 16))
+                                                   gp = gpar(fontsize=12,col = "black", border = "black")))
 
 # row_split for markers
 rowData(sce_rna)$heatmap_relevance <- ""
-rowData(sce_rna[rowData(sce_rna)$good_marker,])$heatmap_relevance <- "lineage"
-rowData(sce_rna[grepl("CXCL|CCL|DapB", rownames(sce_rna)),])$heatmap_relevance <- "chemokine"
-rowData(sce_rna[grepl("B2M|GLUT1|CD134|Lag3|CD163|cleavedPARP|pRB", rownames(sce_rna)),])$heatmap_relevance <- "other"
+rowData(sce_rna[rowData(sce_rna)$good_marker,])$heatmap_relevance <- "Lineage"
+rowData(sce_rna[grepl("CXCL|CCL|DapB", rownames(sce_rna)),])$heatmap_relevance <- "Chemokine"
+rowData(sce_rna[grepl("B2M|GLUT1|CD134|Lag3|CD163|cleavedPARP|pRB", rownames(sce_rna)),])$heatmap_relevance <- "Other"
 
 # plot heatmap
 h <- Heatmap(m, name = "Scaled Expression",
@@ -105,7 +114,7 @@ h <- Heatmap(m, name = "Scaled Expression",
              show_column_dend = FALSE,
              column_names_gp = gpar(fontsize=18),
              column_names_rot = 45,
-             column_names_centered = TRUE,
+             column_names_centered = FALSE,
              show_column_names = TRUE,
              top_annotation = ha,
              row_names_gp = gpar(fontsize = 16),
@@ -113,7 +122,7 @@ h <- Heatmap(m, name = "Scaled Expression",
              col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
              heatmap_legend_param = list(at = c(-2:2), legend_width = unit(6,"cm"), 
                                          direction="horizontal", title_gp = gpar(fontsize=16),
-                                         labels_gp = gpar(fontsize=12)),
+                                         labels_gp = gpar(fontsize=12), title_position = "topcenter"),
              column_names_side = "top",
              height = unit(20, "cm"),
              width = unit(17,"cm"))
@@ -123,7 +132,7 @@ draw(h, heatmap_legend_side = "bottom")
 
 ## Heatmap showing marker expression of celltypes
 
-```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=10, fig.height=11.2, dev=c('pdf')}
+```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=10, fig.height=11.4, dev=c('pdf')}
 # add marker expression to cells
 marker_expression <- data.frame(t(assay(sce_prot[rowData(sce_prot)$good_marker,], "asinh")))
 marker_expression$cellID <- rownames(marker_expression)
@@ -151,24 +160,33 @@ m <- as.matrix(t(dat_aggr[,-c(1)]))
 colnames(m) <- dat_aggr$celltype
 
 # top annotation with number of cells
-ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>70000, 70000, as.numeric(dat_sum[2,])),
-                                                         height = unit(3,"cm"),
-                                                         ylim = range(0,70000),
-                                                         gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 70000, "white", "black"),
-                                                                   col = "white"),
-                                                         axis_param = list(gp = gpar(fontsize=14))),
-                        "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
+# ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>70000, 70000, as.numeric(dat_sum[2,])),
+#                                                          height = unit(3,"cm"),
+#                                                          ylim = range(0,70000),
+#                                                          gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 70000, "white", "black"),
+#                                                                    col = "white"),
+#                                                          axis_param = list(gp = gpar(fontsize=14))),
+#                         "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
+#                                               which = "column", 
+#                                               rot = 0, 
+#                                               just = "center",
+#                                               height = unit(0.5,"cm"),
+#                                               location = 0.5,
+#                                               gp = gpar(fontsize=10,col = ifelse(as.numeric(dat_sum[2,]) > 70000, "red", "black"))),
+#                         annotation_name_gp = gpar(fontsize = 16))
+
+ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,])), nsmall = 0, big.mark = "'"), 
                                                    which = "column", 
                                                    rot = 0, 
-                                                   just = "center", 
+                                                   just = "center",
+                                              height = unit(1,"cm"),
                                                    location = 0.5,
-                                                   gp = gpar(fontsize=10,col = ifelse(as.numeric(dat_sum[2,]) > 70000, "red", "black"))),
-                        annotation_name_gp = gpar(fontsize = 16))
+                                                   gp = gpar(fontsize=12,col = "black", border = "black")))
 
 # row_split for markers
 rowData(sce_prot)$heatmap_relevance <- ""
-rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance <- "lineage"
-rowData(sce_prot[grepl("PDL1|CD11b|CD206|PARP|CXCR2|CD11c|pS6|GrzB|IDO1|CD45RA|H3K27me3|TCF7|CD45RO|PD1|pERK|ICOS|Ki67", rownames(sce_prot)),])$heatmap_relevance <- "other"
+rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance <- "Lineage"
+rowData(sce_prot[grepl("PDL1|CD11b|CD206|PARP|CXCR2|CD11c|pS6|GrzB|IDO1|CD45RA|H3K27me3|TCF7|CD45RO|PD1|pERK|ICOS|Ki67", rownames(sce_prot)),])$heatmap_relevance <- "Other"
 
 # plot heatmap
 h <- Heatmap(m, name = "Scaled Expression",
@@ -177,14 +195,14 @@ h <- Heatmap(m, name = "Scaled Expression",
              show_column_dend = FALSE,
              column_names_gp = gpar(fontsize=18),
              column_names_rot = 45,
-             column_names_centered = TRUE,
+             column_names_centered = FALSE,
              show_column_names = TRUE,
              row_names_gp = gpar(fontsize = 16),
              row_title_gp = gpar(fontsize = 23),
              top_annotation = ha,
              col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
              heatmap_legend_param = list(at = c(-2:2), legend_width = unit(6,"cm"), 
-                                         direction="horizontal", title_gp = gpar(fontsize=16),
+                                         direction="horizontal", title_gp = gpar(fontsize=16),title_position = "topcenter",
                                          labels_gp = gpar(fontsize=12)),
              column_names_side = "top",
              height = unit(20, "cm"),
@@ -363,7 +381,7 @@ ha <- rowAnnotation(`Punch Location` = patient_meta[,c("Location")],
 
 
 dend <- as.dendrogram(hclust(dist(hm_dat, method = "euclidean"), method = "ward.D2"), ylim = c(0,10))
-dend <- color_branches(dend, k = 4, groupLabels = TRUE) # `color_branches()` returns a dendrogram object
+dend <- color_branches(dend, k = 4, col = c("gray50", "blue", "green", "red"), groupLabels = TRUE) # `color_branches()` returns a dendrogram object
 #plot(dend)
 
 # heatmap consisting of the patient_IDs. one color per patient

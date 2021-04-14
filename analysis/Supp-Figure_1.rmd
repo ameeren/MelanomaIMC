@@ -166,7 +166,7 @@ ggplot(cells_panel2[cells_panel2$Metadata_Target == "T9",], aes(x=`Metal Tag`, y
   guides(fill=guide_legend(title="Signal")) +
   ylab("Mean Count (asinh)") +
   xlab("") +
-  facet_wrap(~Metadata_Target,labeller = as_labeller(c(T9 = "mRNA probe for Channel 9 (Er168)")))
+  facet_wrap(~Metadata_Target,labeller = as_labeller(c(T9 = "mRNA Probe for Channel 9 (Er168)")))
 ```
 
 ## Remove previous data 

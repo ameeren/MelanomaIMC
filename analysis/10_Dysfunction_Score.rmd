@@ -34,10 +34,15 @@ library(dplyr)
 ```{r}
 sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+
+sce_rna$dysfunction_score <- NULL
+sce_rna$dysfunction_density <- NULL
+sce_prot$dysfunction_score <- NULL
+sce_prot$dysfunction_density <- NULL
 ```
 
 ## Derive Scoring
-We divide the images with a high CD8 cell density into two groups: low dysfunction (CD8+CXCL13+ < 5%) and high dysfunction (CD8+CXCL13+ >= 5%). Margin punches from LN are not considered. 
+We divide the images with a high CD8 cell density into two groups: Low Dysfunction (CD8+CXCL13+ < 5%) and High Dysfunction (CD8+CXCL13+ >= 5%). Margin punches from LN are not considered. 
 
 ```{r exhaustion scoring}
 # paste density scoring and exhaustion scoring
@@ -55,11 +60,11 @@ dysfunction <- data.frame(colData(sce_rna)) %>%
   group_by(Description) %>%
   mutate(fraction = n / sum(n)) %>%
   filter(celltype2 == "CD8+ T cell_1") %>%
-  mutate(dysfunction_score = ifelse(fraction >= 0.05, "high dysfunction", "low dysfunction")) %>%
+  mutate(dysfunction_score = ifelse(fraction >= 0.05, "High Dysfunction", "Low Dysfunction")) %>%
   ungroup() %>%
   select(Description, dysfunction_score, fraction)
 
-#dysfunction[dysfunction$Description == "L10", ]$dysfunction_score <- "low dysfunction"
+#dysfunction[dysfunction$Description == "L10", ]$dysfunction_score <- "Low Dysfunction"
   
 cur_rna <- data.frame(colData(sce_rna))
 cur_rna <- left_join(cur_rna, dysfunction)
@@ -80,6 +85,18 @@ data.frame(colData(sce_rna)) %>%
   distinct(PatientID, .keep_all = T) %>%
   group_by(dysfunction_score) %>%
   summarise(patients = n())
+```
+
+## Fraction of Dysfunctional Cells per Image
+
+```{r}
+ggplot(dysfunction, aes(x=reorder(Description,-fraction), y=fraction)) + 
+  geom_bar(stat="identity") +
+  geom_hline(yintercept = 0.05) +
+  xlab("Description") +
+  ylab("Fraction of CXCL13+ CD8+ T cells")
+
+median(dysfunction$fraction)
 ```
 
 ## save SCE

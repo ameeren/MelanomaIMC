@@ -141,10 +141,10 @@ example <- findMilieu(example,
 
 ## Make grouping
 
-1 no B cells (B cell density < 10 Bcells/mm2 and no patches)
-2 no B cell patches (B cell density > 10 Bcells/mm2 and no patches)
-3 small B cell patches (max patch size < 250 B cells)
-4 TLS (max patch size > 250 B cells)
+1 No B cells (B cell density < 10 Bcells/mm2 and no patches)
+2 No B cell Patches (B cell density > 10 Bcells/mm2 and no patches)
+3 Small B cell Patches (max patch size < 250 B cells)
+4 B cell Follicles (max patch size > 250 B cells)
 
 ```{r}
 Bcell <- data.frame(colData(sce_prot)) %>%
@@ -167,16 +167,16 @@ im_w_patches <- data.frame(colData(sce_prot)) %>%
 
 ```{r}
 Bcell$Bcell_patch_score <- ""
-Bcell$Bcell_patch_score <- ifelse(Bcell$density < 10,"no B cells", Bcell$Bcell_patch_score)
-Bcell$Bcell_patch_score <- ifelse(Bcell$density > 10,"no B cell patches", Bcell$Bcell_patch_score)
-Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size<250,]$Description,]$Bcell_patch_score <- "small B cell patches"
-Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size>=250,]$Description,]$Bcell_patch_score <- "TLS"
+Bcell$Bcell_patch_score <- ifelse(Bcell$density < 10,"No B cells", Bcell$Bcell_patch_score)
+Bcell$Bcell_patch_score <- ifelse(Bcell$density > 10,"No B cell Patches", Bcell$Bcell_patch_score)
+Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size<250,]$Description,]$Bcell_patch_score <- "Small B cell Patches"
+Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size>=250,]$Description,]$Bcell_patch_score <- "B cell Follicles"
 
 Bcell %>%
   group_by(Bcell_patch_score) %>%
   summarise(n=n())
 
-Bcell$Bcell_patch_score <- factor(Bcell$Bcell_patch_score, levels = c("no B cells", "no B cell patches", "small B cell patches", "TLS"))
+Bcell$Bcell_patch_score <- factor(Bcell$Bcell_patch_score, levels = c("No B cells", "No B cell Patches", "Small B cell Patches", "B cell Follicles"))
 
 # add to sce
 cur_df <- data.frame(colData(sce_prot))

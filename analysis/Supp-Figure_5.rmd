@@ -358,7 +358,7 @@ ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Stat
 
 ## Chemokine Correlation with Tcf7+CD8+
 
-```{r Supp_Fig_5E_chemokines_tcfpd1_correlation, fig.height=5.3, fig.width=9.8, dev=("pdf")}
+```{r Supp_Fig_5E_chemokines_tcfpd1_correlation, fig.height=6.2, fig.width=10.1, dev=("pdf")}
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 
 # top abundant chemokines
@@ -389,7 +389,7 @@ prot_sum <- cur_prot %>%
   summarise(n = n()) %>%
   group_by(Description) %>%
   mutate(fraction = n/sum(n)) %>%
-  filter(!celltype2 %in% c("CD4+ T cell_TCF7+_PD1+", "CD4+ T cell_TCF7-_PD1+", "CD8+ T cell_TCF7+_PD1+")) %>%
+  #filter(!celltype2 %in% c("CD4+ T cell_TCF7+_PD1+", "CD4+ T cell_TCF7-_PD1+", "CD8+ T cell_TCF7+_PD1+")) %>%
   reshape2::dcast(Description ~ celltype2, value.var = "fraction", fill = 0) %>%
   select(Description,contains(c("CD8+ T cell", "CD4+ T cell")))
 
@@ -401,8 +401,25 @@ cor <- cor(rna_sum[,-1], prot_sum[,-1], method = "pearson")
 
 ha <- t(str_split_fixed(colnames(cor), "_", n=3))
 
+dat_sum <- cur_prot %>%
+  filter(celltype %in% c("CD4+ T cell", "CD8+ T cell")) %>%
+  mutate(celltype2 = ifelse(celltype %in% c("CD4+ T cell", "CD8+ T cell"), 
+                            paste(paste(celltype, TCF7, sep="_"), PD1, sep = "_"), celltype)) %>%
+  group_by(celltype2) %>%
+  summarise(n = n())
+
+
 ha1 <- HeatmapAnnotation("TCF7_PD1" = anno_text(paste(ha[2,], ha[3,], sep = " ")),
                          "Cell Type" = ha[1,],
+                         "Number of Cells" = anno_barplot(dat_sum$n,
+                                                         height = unit(2,"cm"),
+                                                         axis_param = list(gp = gpar(fontsize=14))),
+                        "Numbers" = anno_text(dat_sum$n, 
+                                              which = "column", 
+                                              rot = 0,
+                                              height = unit(0.5,"cm"),
+                                              just = "center", 
+                                              location = 0.5),
                          col = list("Cell Type" = metadata(sce_prot)$colour_vectors$celltype[c("CD4+ T cell", "CD8+ T cell")]),
                          show_legend = FALSE)
 

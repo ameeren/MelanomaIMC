@@ -74,17 +74,24 @@ m <- as.matrix(t(dat_aggr[,-c(1)]))
 colnames(m) <- dat_aggr$celltype_clustered
 
 # top annotation with number of cells
-ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>25000, 25100, as.numeric(dat_sum[2,])),
-                                                         height = unit(2,"cm"),
-                                                         ylim = range(0,25000),
-                                                         gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 25000, "white", "black"),
-                                                                   col = "white")),
-                        "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
+# ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>25000, 25100, as.numeric(dat_sum[2,])),
+#                                                          height = unit(2,"cm"),
+#                                                          ylim = range(0,25000),
+#                                                          gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 25000, "white", "black"),
+#                                                                    col = "white")),
+#                         "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
+#                                                    which = "column", 
+#                                                    rot = 90, 
+#                                                    just = "center", 
+#                                                    location = 0.5,
+#                                                    gp = gpar(fontsize=8,col = ifelse(as.numeric(dat_sum[2,]) > 25000, "red", "black"))))
+
+ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,])), nsmall = 0, big.mark = "'"), 
                                                    which = "column", 
                                                    rot = 90, 
-                                                   just = "center", 
+                                                   just = "center",
                                                    location = 0.5,
-                                                   gp = gpar(fontsize=8,col = ifelse(as.numeric(dat_sum[2,]) > 25000, "red", "black"))))
+                                                   gp = gpar(fontsize=10,col = "black", border = "black")))
 
 # row_split for markers
 rowData(sce_prot)$heatmap_relevance <- ""
@@ -98,11 +105,11 @@ h <- Heatmap(m, name = "Scaled Expression",
              show_column_dend = FALSE,
              column_names_gp = gpar(fontsize=12),
              column_names_rot = 90,
-             column_names_centered = TRUE,
+             column_names_centered = FALSE,
              show_column_names = TRUE,
              top_annotation = ha,
              col = colorRamp2(c(-3, 0, 3), c("blue", "white", "red")),
-             heatmap_legend_param = list(at = c(-3:3),legend_width = unit(6,"cm"), direction="horizontal"),
+             heatmap_legend_param = list(at = c(-3:3),legend_width = unit(6,"cm"), direction="horizontal",title_position = "topcenter"),
              column_names_side = "top",
              height = unit(20, "cm"),
              width = unit(20,"cm"))
@@ -125,7 +132,7 @@ dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "dysfunc
 
 # filter
 dat_rna <- dat_rna %>%
-  filter(dysfunction_score %in% c("high dysfunction", "low dysfunction"))
+  filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
 
 # mean per image
 dat_rna <- dat_rna %>%
@@ -144,7 +151,7 @@ dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "dysf
 
 # filter
 dat_prot <- dat_prot %>%
-  filter(dysfunction_score %in% c("high dysfunction", "low dysfunction"))
+  filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
 
 # mean per image
 dat_prot <- dat_prot %>%
@@ -336,7 +343,7 @@ cur_dt_wide <- left_join(cur_dt_wide, total_chemokines)
 ```{r Supp_Fig_4D_heatmap_modules_infiltration, fig.height=8, fig.width=14, dev=c('pdf')}
 # remove controls and only keep images with dysfunction score
 cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$Description %in% unique(sce_rna[,sce_rna$Location != "CTRL"]$Description),]
-cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$dysfunction_score %in% c("high dysfunction", "low dysfunction"),]
+cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"),]
 
 # define subgroups to split  heatmap
 subgroup = cur_dt_wide_sub[,"dysfunction_score"]

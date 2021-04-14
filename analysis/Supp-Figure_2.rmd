@@ -91,7 +91,7 @@ ggplot(cur_dat,aes(x=fct_reorder(chemokine, fraction, .fun = median, .desc = TRU
   geom_quasirandom(alpha=.2) +
   theme_bw() + 
   theme(text=element_text(size=16)) +
-  ylab("Fraction of Expressing Tumor\n(fraction + 0.001)") +
+  ylab("Fraction of Expressing Tumor Cells\n(fraction + 0.001)") +
   xlab("") +
   scale_y_log10() +
   annotation_logticks(sides = "l") +
@@ -115,7 +115,7 @@ dat <- dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location != "CTRL"]$BlockI
 p1 <- unique(dat[,c("BlockID","MM_location")]) %>%
   ggplot()+
   geom_bar(aes(y=MM_location),stat ="count") +
-  xlab("BlockIDs per Location") +
+  xlab("Biopsy Blocks per Location") +
   ylab("Metastasis Location") +
   theme_bw()+
   theme(text = element_text(size=16))
@@ -124,11 +124,13 @@ p2 <- dat %>%
   ggplot()+
   geom_bar(aes(x=BlockID, fill=(MM_location)),stat="count")+
   theme_bw()+
-  theme(axis.text.x = element_text(angle = 90,vjust = 0.5)) + 
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        text = element_text(size=16)) + 
   ylab("Number of Samples") +
-  guides(fill=guide_legend(title="Metasis Location")) +
-  theme(text = element_text(size=16),
-        axis.text.x = element_text(size=7))
+  xlab("Biopsy Blocks") +
+  scale_y_continuous(limits = c(0,4), expand = c(0, 0)) +
+  guides(fill=guide_legend(title="Metasis Location"))
 
 plot_grid(p1,p2,rel_widths = c(1.25,3))  
 ```
@@ -271,9 +273,92 @@ ggplot(frac, aes(x=expressor, y = fraction)) +
 
 # Supp Figure 2E
 
-## Mutation
+## Mutation split by Location
 
-```{r Supp_Fig_2E_mutation, dev=c('pdf'), fig.width=15, fig.height=9.5, eval=F}
+```{r Supp_Fig_2X_mutation, dev=c('pdf'), fig.width=15, fig.height=9.5}
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
+# subset sce_rna
+group_size <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, Mutation) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Mutation) %>%
+  summarise(n=n()) %>%
+  filter(n>10 & Mutation != "")
+
+sce_rna_sub <- sce_rna[,sce_rna$Mutation %in% group_size$Mutation]
+
+a <- plotCellCounts(sce = sce_rna_sub, 
+                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "expressor",
+                     split_by = "Mutation",
+                     imageID = "ImageNumber",
+                     normalize = TRUE,
+                    show_n = FALSE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
+  guides(fill=guide_legend("Chemokine")) +
+  theme(text = element_text(size=18))
+
+b <- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
+                     cellID = "cellID",
+                     colour_by = "celltype",
+                     split_by = "Mutation",
+                     imageID = "ImageNumber",
+                     proportion = TRUE,
+                    show_n = FALSE,
+                     colour_vector = metadata(sce_rna)$colour_vectors$celltype) + 
+  guides(fill=guide_legend("Cell Type")) +
+  theme(text = element_text(size=18))
+
+# fraction of chemokine-expressing cells per image
+chemo <- data.frame(colData(sce_rna_sub)) %>%
+  #filter(MM_location_simplified2 %in% c("skin_subcutaneous", "LN")) %>%
+  group_by(ImageNumber, Mutation, chemokine, MM_location_simplified2) %>%
+  summarise(n=n()) %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber + Mutation + MM_location_simplified2 ~ chemokine, value.var = "fraction")
+
+median_expression <- median(chemo$`TRUE`)
+
+stat.test <- chemo %>%
+  wilcox_test(`TRUE` ~ Mutation) %>%
+  adjust_pvalue(method="BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_xy_position(x = "Mutation")
+
+stat.test$y.position <- stat.test$y.position - 0.125
+
+c <- ggplot(chemo, aes(x=Mutation, y=`TRUE`)) + 
+  geom_boxplot(alpha=0.2, lwd=1.5) + 
+  geom_quasirandom(aes(col=MM_location_simplified2), size=2, alpha=.8) +
+  #geom_hline(yintercept = median_expression, linetype=2, size=2) + 
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
+  xlab("") + 
+  ylab("Fraction of Chemokine-Expressing Cells") +
+  theme_bw() +
+  theme(text = element_text(size=16),
+        axis.text.x = element_text(angle=45, hjust=1, vjust=1)) +
+  guides(col=guide_legend("Location")) + 
+  coord_cartesian(ylim=c(0,0.35))
+
+p <- grid.arrange(a,b, ncol=2, nrow=1)
+
+grid.arrange(p,c,nrow=1, widths = c(0.65,0.35))
+
+# MM_location for Mutations
+data.frame(colData(sce_rna_sub)) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  group_by(Mutation, MM_location_simplified) %>%
+  summarise(n=n()) %>%
+  group_by(Mutation) %>%
+  mutate(percentage = n / sum(n) * 100)
+```
+
+## Mutation split by Location
+
+```{r Supp_Fig_2D_mutation, dev=c('pdf'), fig.width=15, fig.height=9.5, eval=F}
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 
 # subset sce_rna
@@ -464,4 +549,3 @@ grid.arrange(p + theme(legend.position = "none"))
 ```{r Supp_Fig_XX_legend, fig.height=2, fig.width=2, dev=c('pdf'), eval=F}
 grid.arrange(leg)
 ```
-

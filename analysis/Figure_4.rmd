@@ -313,7 +313,7 @@ grid.arrange(a,b, nrow=1)
 
 ## Interaction between Dysfunctional CD8 and Tumor Cells
 
-```{r Fig_4D_corr_interaction_and_dysfunction, dev=("pdf"), fig.width=8.4, fig.height=3.5}
+```{r Fig_4D_corr_interaction_and_dysfunction, dev=("pdf"), fig.width=8.5, fig.height=3.9}
 # number of interactions CD8+ T cell and tumor per image
 dat_relation_sub <- dat_relation_rna[dat_relation_rna$celltype_first %in% c("exhausted Tcytotoxic", "Tcytotoxic") & 
                                    dat_relation_rna$celltype_second == "Tumor"]
@@ -349,14 +349,121 @@ ggplot(cur_dat, aes(x=log10(fraction), y=log10(n))) +
   theme_bw() +
   theme(text = element_text(size=14)) +
   xlab("Fraction of Dysfunctional Cytotoxic T Cells (log10)") +
-  ylab("Number of CD8/Tumor Interactions\n(log10)")
+  ylab("Number of CD8-Tumor Cell Interactions\n(log10)")
+```
+
+## Number of CD8 per Tumor Cell
+
+```{r Fig_4D_corr_interaction_and_dysfunction_normalizedTumor, dev=("pdf"), fig.width=8.4, fig.height=3.5, eval=F}
+# number of interactions CD8+ T cell and tumor per image
+dat_relation_sub <- dat_relation_rna[dat_relation_rna$celltype_first %in% c("exhausted Tcytotoxic", "Tcytotoxic") & 
+                                   dat_relation_rna$celltype_second == "Tumor"]
+
+# number of cd8+ cells
+cd8_cells <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, celltype) %>%
+  summarise(n_cells = n()) %>%
+  filter(celltype == "Tumor") %>%
+  select(ImageNumber, n_cells)
+
+# count number of interactions
+count <- dat_relation_sub %>%
+  group_by(FirstImageNumber) %>%
+  summarise(n=n())
+names(count)[1] <- "ImageNumber"
+
+count <- left_join(count, cd8_cells)
+
+# number of tumor-interactions per cd8 cell
+count$interaction_per_cd8 <- count$n / count$n_cells
+
+# fraction of exhausted cd8 per image
+dysfunction <- data.frame(colData(sce_rna)) %>%
+  mutate(celltype2 = paste(celltype, CXCL13, sep = "_")) %>%
+  group_by(ImageNumber, celltype2) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(ImageNumber ~ celltype2, value.var = "n", fill = 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber"), variable.name = "celltype2", value.name = "n") %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(celltype2 == "CD8+ T cell_1") %>%
+  ungroup() %>%
+  select(ImageNumber, fraction)
+
+# correlation plot
+cur_dat <- left_join(count, dysfunction)
+
+ggplot(cur_dat, aes(x=log10(fraction), y=interaction_per_cd8)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "pearson",
+           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
+           size = 8, cor.coef.name = "R", label.sep="\n", label.y = 1, label.x = -2) + 
+  theme_bw() +
+  theme(text = element_text(size=14)) +
+  xlab("Fraction of Dysfunctional Cytotoxic T Cells (log10)") +
+  ylab("CD8/Tumor Interactions per Tumor Cell")
+```
+
+## Number of Tumor per CD8+
+
+```{r Fig_4D_corr_interaction_and_dysfunction_normalizedCD8, dev=("pdf"), fig.width=8.4, fig.height=3.5, eval=F}
+# number of interactions CD8+ T cell and tumor per image
+dat_relation_sub <- dat_relation_rna[dat_relation_rna$celltype_first %in% c("exhausted Tcytotoxic", "Tcytotoxic") & 
+                                   dat_relation_rna$celltype_second == "Tumor"]
+
+
+# number of cd8+ cells
+cd8_cells <- data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, celltype) %>%
+  summarise(n_cells = n()) %>%
+  filter(celltype == "CD8+ T cell") %>%
+  select(ImageNumber, n_cells)
+
+# count number of interactions
+count <- dat_relation_sub %>%
+  group_by(FirstImageNumber) %>%
+  summarise(n=n())
+names(count)[1] <- "ImageNumber"
+
+count <- left_join(count, cd8_cells)
+
+# number of tumor-interactions per cd8 cell
+count$interaction_per_cd8 <- count$n / count$n_cells
+
+# fraction of exhausted cd8 per image
+dysfunction <- data.frame(colData(sce_rna)) %>%
+  mutate(celltype2 = paste(celltype, CXCL13, sep = "_")) %>%
+  group_by(ImageNumber, celltype2) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(ImageNumber ~ celltype2, value.var = "n", fill = 0) %>%
+  reshape2::melt(id.vars = c("ImageNumber"), variable.name = "celltype2", value.name = "n") %>%
+  group_by(ImageNumber) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(celltype2 == "CD8+ T cell_1") %>%
+  ungroup() %>%
+  select(ImageNumber, fraction)
+
+# correlation plot
+cur_dat <- left_join(count, dysfunction)
+
+ggplot(cur_dat, aes(x=log10(fraction), y=interaction_per_cd8)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "pearson",
+           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
+           size = 8, cor.coef.name = "R", label.sep="\n", label.y = 1, label.x = -2) + 
+  theme_bw() +
+  theme(text = element_text(size=14)) +
+  xlab("Fraction of Dysfunctional Cytotoxic T Cells (log10)") +
+  ylab("CD8/Tumor Interactions per CD8+ T Cell")
 ```
 
 # Figure 4E
 
 ## Boxplots with interaction counts per Image 
 
-```{r Fig_4E_interaction_cytotoxic_tumor_boxplots, fig.width=8.8, fig.height=3.7, dev=("pdf")}
+```{r Fig_4E_interaction_cytotoxic_tumor_boxplots, fig.width=8.8, fig.height=4, dev=("pdf")}
 # add dysfunction score to dat_relation
 ex_score <- data.frame(colData(sce_prot)) %>%
   distinct(ImageNumber, .keep_all = T) %>%
@@ -380,6 +487,9 @@ sum2 <- sum %>%
   group_by(FirstImageNumber) %>%
   mutate(fraction = n/sum(n)) %>%
   ungroup()
+
+# change naming of tumor clusters
+#sum2$celltype2 <- str_replace_all(sum2$celltype, "_", "_cluster_")
 
 stat.test <- sum2 %>%
   group_by(celltype) %>%
@@ -417,7 +527,7 @@ dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "dysfunc
 
 # filter
 dat_rna <- dat_rna %>%
-  filter(dysfunction_score %in% c("high dysfunction", "low dysfunction"))
+  filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
 
 # mean per image
 dat_rna <- dat_rna %>%
@@ -436,7 +546,7 @@ dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "dysf
 
 # filter
 dat_prot <- dat_prot %>%
-  filter(dysfunction_score %in% c("high dysfunction", "low dysfunction"))
+  filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
 
 # mean per image
 dat_prot <- dat_prot %>%
@@ -510,7 +620,7 @@ dat_rna <- dat_rna %>%
 cur_dat <- left_join(dysfunction, dat_rna)
 
 # high density images
-cur_dat <- cur_dat[cur_dat$ImageNumber %in% unique(sce_rna[,colData(sce_rna)$dysfunction_score %in% c("high dysfunction", "low dysfunction")]$ImageNumber),]
+cur_dat <- cur_dat[cur_dat$ImageNumber %in% unique(sce_rna[,colData(sce_rna)$dysfunction_score %in% c("High Dysfunction", "Low Dysfunction")]$ImageNumber),]
 
 ggplot(cur_dat, aes(x=asinh, y=log10(fraction))) + 
   geom_point(size=3) + 

@@ -7,10 +7,17 @@ editor_options:
   chunk_output_type: console
 ---
 
+# Preparations
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
 ## Introduction
 
 ```{r}
-devtools::install_github("https://github.com/BodenmillerGroup/cytomapper")
+#devtools::install_github("https://github.com/BodenmillerGroup/cytomapper")
 library(SingleCellExperiment)
 library(cytomapper)
 library(stringr)
@@ -19,21 +26,21 @@ library(stringr)
 # Read the data
 
 ```{r load data}
-sce = readRDS(file = "data/sce_protein.rds")
+sce = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 ```
 
 ## load the segmentation masks and the pixel-level information (IMC images)
 
 ```{r}
-all_mask <- loadImages(x = "/Volumes/server_homes/daniels/Data/Melanoma/12plex/protein/cpout/",pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
-all_pixel <- loadImages(x = "/Volumes/server_homes/daniels/Data/Melanoma/12plex/protein/tiffs/",pattern = "_full.tiff")
+all_mask <- loadImages(x = "data/full_data/protein/cpout/",pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
+all_pixel <- loadImages(x = "data/full_data/protein/tiffs/",pattern = "_full.tiff")
 ```
 
 ## add the respective ImageNumber as in the sce object to the all_mask object
 
 ```{r match image numbers}
 # we load the metadata for the images.
-image_mat <- as.data.frame(read.csv(file = "data/protein/Image.csv",stringsAsFactors = FALSE))
+image_mat <- as.data.frame(read.csv(file = "data/data_for_analysis/protein/Image.csv",stringsAsFactors = FALSE))
 
 # we extract only the FileNames of the masks as they are in the all_masks object
 cur_df <- data.frame(cellmask = image_mat$FileName_cellmask,
@@ -51,7 +58,7 @@ mcols(all_mask) <- cur_df[names(all_mask),]
 
 ```{r match image numbers}
 # we load the metadata for the images.
-image_mat <- as.data.frame(read.csv(file = "data/protein/Image.csv",stringsAsFactors = FALSE))
+image_mat <- as.data.frame(read.csv(file = "data/data_for_analysis/protein/Image.csv",stringsAsFactors = FALSE))
 
 # we extract only the FileNames of the stacks as they are in the all_pixel object
 cur_df <- data.frame(cellmask = image_mat$FileName_FullStack,
@@ -74,7 +81,7 @@ all_pixel <- scaleImages(all_pixel,2^16-1)
 ## add the channel names
 
 ```{r add channel names}
-panel_meta <- read.csv(file = "data/protein/melanoma_1.06_protein.csv", sep= ",",  stringsAsFactors = FALSE )
+panel_meta <- read.csv(file = "data/data_for_analysis/protein/melanoma_1.06_protein.csv", sep= ",",  stringsAsFactors = FALSE )
 
 # sort the channel names accordingly to the stack
 # extract metal masshttp://127.0.0.1:5322/#

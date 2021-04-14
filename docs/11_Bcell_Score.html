@@ -559,7 +559,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-18
+<strong>Last updated:</strong> 2021-04-13
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
@@ -650,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree32038914d8c7a9d59102c5e037cad3afae9ac319targetblank3203891a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/32038914d8c7a9d59102c5e037cad3afae9ac319" target="_blank">3203891</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree32038914d8c7a9d59102c5e037cad3afae9ac319targetblank3203891a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/32038914d8c7a9d59102c5e037cad3afae9ac319" target="_blank">3203891</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -686,25 +686,18 @@ Ignored files:
 
 Unstaged changes:
     Modified:   .gitignore
-    Modified:   analysis/04_1_Protein_celltype_classification.rmd
-    Modified:   analysis/04_1_RNA_celltype_classification.rmd
-    Modified:   analysis/04_2_RNA_classification_subclustering.rmd
-    Modified:   analysis/04_2_protein_classification_subclustering.rmd
-    Modified:   analysis/07_TCF7_PD1_gating.rmd
-    Modified:   analysis/08_color_vectors.rmd
-    Modified:   analysis/09_Tcell_Score.Rmd
     Modified:   analysis/10_Dysfunction_Score.rmd
     Modified:   analysis/11_Bcell_Score.Rmd
     Modified:   analysis/Figure_1.rmd
     Modified:   analysis/Figure_2.rmd
-    Modified:   analysis/Figure_3.rmd
     Modified:   analysis/Figure_4.rmd
     Modified:   analysis/Figure_5.rmd
+    Modified:   analysis/Summary_Statistics.rmd
     Modified:   analysis/Supp-Figure_1.rmd
     Modified:   analysis/Supp-Figure_2.rmd
-    Modified:   analysis/Supp-Figure_3.rmd
     Modified:   analysis/Supp-Figure_4.rmd
     Modified:   analysis/Supp-Figure_5.rmd
+    Modified:   analysis/XX_hazard_ratio.rmd
 
 </code></pre>
 <p>
@@ -743,6 +736,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/32038914d8c7a9d59102c5e037cad3afae9ac319/analysis/11_Bcell_Score.Rmd" target="_blank">3203891</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-19
+</td>
+<td>
+change celltype names
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/32038914d8c7a9d59102c5e037cad3afae9ac319/docs/11_Bcell_Score.html" target="_blank">3203891</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-19
+</td>
+<td>
+change celltype names
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -892,7 +919,7 @@ quantile(sqrt(sce_prot[,sce_prot$celltype %in% c(&quot;B cell&quot;)]$Area/pi))<
 sce_prot &lt;- findPatch(sce_prot, sce_prot[,colData(sce_prot)$celltype %in% c(&quot;B cell&quot;, &quot;BnT cell&quot;)]$cellID, 
                     &#39;cellID&#39;, &#39;Center_X&#39;, &#39;Center_Y&#39;, &#39;ImageNumber&#39;, 
                     distance = 15, min_clust_size = 20, output_colname = &quot;bcell_patch&quot;)</code></pre>
-<pre><code>Time difference of 9.517878 mins
+<pre><code>Time difference of 9.650667 mins
 [1] &quot;patches successfully added to sce object&quot;</code></pre>
 <pre class="r"><code># number of B cell clusters
 length(unique(sce_prot$bcell_patch))</code></pre>
@@ -901,14 +928,14 @@ length(unique(sce_prot$bcell_patch))</code></pre>
 sce_prot &lt;- findMilieu(sce_prot, 
                      &#39;cellID&#39;, &#39;Center_X&#39;, &#39;Center_Y&#39;, &#39;ImageNumber&#39;, &#39;bcell_patch&#39;, 
                      distance = 50, output_colname = &quot;bcell_milieu&quot;)</code></pre>
-<pre><code>Time difference of 1.704343 mins
+<pre><code>Time difference of 1.704651 mins
 [1] &quot;milieus successfully added to sce object&quot;</code></pre>
 <pre class="r"><code># number of chemokine communities
 length(unique(sce_prot$bcell_milieu))</code></pre>
 <pre><code>[1] 205</code></pre>
 <pre class="r"><code>end = Sys.time()
 print(end-start)</code></pre>
-<pre><code>Time difference of 11.23121 mins</code></pre>
+<pre><code>Time difference of 11.36425 mins</code></pre>
 </div>
 <div id="define-grouping-for-b-cell-patch-densities" class="section level1">
 <h1>Define grouping for B cell / patch densities</h1>
@@ -964,7 +991,7 @@ ggplot(max_patch, aes(x=Description, y=max_patch_size)) +
                     distance = 15, 
                     min_clust_size = 20,
                     output_colname = &quot;example_patch&quot;)</code></pre>
-<pre><code>Time difference of 0.319253 secs
+<pre><code>Time difference of 0.3245077 secs
 [1] &quot;patches successfully added to sce object&quot;</code></pre>
 <pre class="r"><code>example &lt;- findMilieu(example, 
               &#39;cellID&#39;, 
@@ -975,12 +1002,12 @@ ggplot(max_patch, aes(x=Description, y=max_patch_size)) +
               output_colname = &quot;example_milieu&quot;,
               plot = TRUE)</code></pre>
 <embed src="figure/11_Bcell_Score.Rmd/example_patch-1.pdf" width="960" style="display: block; margin: auto;" type="application/pdf" />
-<pre><code>Time difference of 0.8273582 secs
+<pre><code>Time difference of 0.9367313 secs
 [1] &quot;milieus successfully added to sce object&quot;</code></pre>
 </div>
 <div id="make-grouping" class="section level2">
 <h2>Make grouping</h2>
-<p>1 no B cells (B cell density &lt; 10 Bcells/mm2 and no patches) 2 no B cell patches (B cell density &gt; 10 Bcells/mm2 and no patches) 3 small B cell patches (max patch size &lt; 250 B cells) 4 TLS (max patch size &gt; 250 B cells)</p>
+<p>1 No B cells (B cell density &lt; 10 Bcells/mm2 and no patches) 2 No B cell Patches (B cell density &gt; 10 Bcells/mm2 and no patches) 3 Small B cell Patches (max patch size &lt; 250 B cells) 4 B cell Follicles (max patch size &gt; 250 B cells)</p>
 <pre class="r"><code>Bcell &lt;- data.frame(colData(sce_prot)) %&gt;%
   group_by(Description,celltype) %&gt;%
   summarise(n=n()) %&gt;%
@@ -998,10 +1025,10 @@ ggplot(Bcell) + geom_col(aes(x=Description, y=density))</code></pre>
   summarise(n=n()) %&gt;%
   arrange(-n)</code></pre>
 <pre class="r"><code>Bcell$Bcell_patch_score &lt;- &quot;&quot;
-Bcell$Bcell_patch_score &lt;- ifelse(Bcell$density &lt; 10,&quot;no B cells&quot;, Bcell$Bcell_patch_score)
-Bcell$Bcell_patch_score &lt;- ifelse(Bcell$density &gt; 10,&quot;no B cell patches&quot;, Bcell$Bcell_patch_score)
-Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size&lt;250,]$Description,]$Bcell_patch_score &lt;- &quot;small B cell patches&quot;
-Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size&gt;=250,]$Description,]$Bcell_patch_score &lt;- &quot;TLS&quot;
+Bcell$Bcell_patch_score &lt;- ifelse(Bcell$density &lt; 10,&quot;No B cells&quot;, Bcell$Bcell_patch_score)
+Bcell$Bcell_patch_score &lt;- ifelse(Bcell$density &gt; 10,&quot;No B cell Patches&quot;, Bcell$Bcell_patch_score)
+Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size&lt;250,]$Description,]$Bcell_patch_score &lt;- &quot;Small B cell Patches&quot;
+Bcell[Bcell$Description %in% max_patch[max_patch$max_patch_size&gt;=250,]$Description,]$Bcell_patch_score &lt;- &quot;B cell Follicles&quot;
 
 Bcell %&gt;%
   group_by(Bcell_patch_score) %&gt;%
@@ -1009,11 +1036,11 @@ Bcell %&gt;%
 <pre><code># A tibble: 4 x 2
   Bcell_patch_score        n
   &lt;chr&gt;                &lt;int&gt;
-1 no B cell patches       36
-2 no B cells              87
-3 small B cell patches    17
-4 TLS                     26</code></pre>
-<pre class="r"><code>Bcell$Bcell_patch_score &lt;- factor(Bcell$Bcell_patch_score, levels = c(&quot;no B cells&quot;, &quot;no B cell patches&quot;, &quot;small B cell patches&quot;, &quot;TLS&quot;))
+1 B cell Follicles        26
+2 No B cell Patches       36
+3 No B cells              87
+4 Small B cell Patches    17</code></pre>
+<pre class="r"><code>Bcell$Bcell_patch_score &lt;- factor(Bcell$Bcell_patch_score, levels = c(&quot;No B cells&quot;, &quot;No B cell Patches&quot;, &quot;Small B cell Patches&quot;, &quot;B cell Follicles&quot;))
 
 # add to sce
 cur_df &lt;- data.frame(colData(sce_prot))
@@ -1046,10 +1073,10 @@ sce_rna$bcell_patch_score &lt;- cur_df$Bcell_patch_score</code></pre>
 <pre><code># A tibble: 4 x 2
   bcell_patch_score    patients
   &lt;fct&gt;                   &lt;int&gt;
-1 no B cells                 30
-2 no B cell patches          16
-3 small B cell patches       12
-4 TLS                        11</code></pre>
+1 No B cells                 30
+2 No B cell Patches          16
+3 Small B cell Patches       12
+4 B cell Follicles           11</code></pre>
 </div>
 <div id="save-sce-object" class="section level2">
 <h2>Save SCE object</h2>

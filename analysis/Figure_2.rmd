@@ -267,9 +267,9 @@ ha <- HeatmapAnnotation("Chemokine" = dat_aggr$expressor,
 
 # row_split for markers
 rowData(sce_rna)$heatmap_relevance <- ""
-rowData(sce_rna[rowData(sce_rna)$good_marker,])$heatmap_relevance <- "lineage"
-rowData(sce_rna[grepl("CXCL|CCL|DapB", rownames(sce_rna)),])$heatmap_relevance <- "chemokine"
-rowData(sce_rna[grepl("B2M|GLUT1|CD134|Lag3|CD163|cleavedPARP|pRB", rownames(sce_rna)),])$heatmap_relevance <- "other"
+rowData(sce_rna[rowData(sce_rna)$good_marker,])$heatmap_relevance <- "Lineage"
+rowData(sce_rna[grepl("CXCL|CCL|DapB", rownames(sce_rna)),])$heatmap_relevance <- "Chemokine"
+rowData(sce_rna[grepl("B2M|GLUT1|CD134|Lag3|CD163|cleavedPARP|pRB", rownames(sce_rna)),])$heatmap_relevance <- "Other"
              
 # create heatmap
 h <- Heatmap(m, name = "Scaled\nExpression",

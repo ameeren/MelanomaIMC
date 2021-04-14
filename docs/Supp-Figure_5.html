@@ -559,7 +559,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-02-19
+<strong>Last updated:</strong> 2021-04-13
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
@@ -650,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree32038914d8c7a9d59102c5e037cad3afae9ac319targetblank3203891a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/32038914d8c7a9d59102c5e037cad3afae9ac319" target="_blank">3203891</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtreeee1595de9ec17ee414a5beafb9ed08d174e12139targetblankee1595da" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree32038914d8c7a9d59102c5e037cad3afae9ac319targetblank3203891a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/ee1595de9ec17ee414a5beafb9ed08d174e12139" target="_blank">ee1595d</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/32038914d8c7a9d59102c5e037cad3afae9ac319" target="_blank">3203891</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -686,25 +686,18 @@ Ignored files:
 
 Unstaged changes:
     Modified:   .gitignore
-    Modified:   analysis/04_1_Protein_celltype_classification.rmd
-    Modified:   analysis/04_1_RNA_celltype_classification.rmd
-    Modified:   analysis/04_2_RNA_classification_subclustering.rmd
-    Modified:   analysis/04_2_protein_classification_subclustering.rmd
-    Modified:   analysis/07_TCF7_PD1_gating.rmd
-    Modified:   analysis/08_color_vectors.rmd
-    Modified:   analysis/09_Tcell_Score.Rmd
     Modified:   analysis/10_Dysfunction_Score.rmd
     Modified:   analysis/11_Bcell_Score.Rmd
     Modified:   analysis/Figure_1.rmd
     Modified:   analysis/Figure_2.rmd
-    Modified:   analysis/Figure_3.rmd
     Modified:   analysis/Figure_4.rmd
     Modified:   analysis/Figure_5.rmd
+    Modified:   analysis/Summary_Statistics.rmd
     Modified:   analysis/Supp-Figure_1.rmd
     Modified:   analysis/Supp-Figure_2.rmd
-    Modified:   analysis/Supp-Figure_3.rmd
     Modified:   analysis/Supp-Figure_4.rmd
     Modified:   analysis/Supp-Figure_5.rmd
+    Modified:   analysis/XX_hazard_ratio.rmd
 
 </code></pre>
 <p>
@@ -743,6 +736,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/32038914d8c7a9d59102c5e037cad3afae9ac319/analysis/Supp-Figure_5.rmd" target="_blank">3203891</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-19
+</td>
+<td>
+change celltype names
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/32038914d8c7a9d59102c5e037cad3afae9ac319/docs/Supp-Figure_5.html" target="_blank">3203891</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-19
+</td>
+<td>
+change celltype names
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -1366,7 +1393,7 @@ prot_sum &lt;- cur_prot %&gt;%
   summarise(n = n()) %&gt;%
   group_by(Description) %&gt;%
   mutate(fraction = n/sum(n)) %&gt;%
-  filter(!celltype2 %in% c(&quot;CD4+ T cell_TCF7+_PD1+&quot;, &quot;CD4+ T cell_TCF7-_PD1+&quot;, &quot;CD8+ T cell_TCF7+_PD1+&quot;)) %&gt;%
+  #filter(!celltype2 %in% c(&quot;CD4+ T cell_TCF7+_PD1+&quot;, &quot;CD4+ T cell_TCF7-_PD1+&quot;, &quot;CD8+ T cell_TCF7+_PD1+&quot;)) %&gt;%
   reshape2::dcast(Description ~ celltype2, value.var = &quot;fraction&quot;, fill = 0) %&gt;%
   select(Description,contains(c(&quot;CD8+ T cell&quot;, &quot;CD4+ T cell&quot;)))
 
@@ -1378,8 +1405,25 @@ cor &lt;- cor(rna_sum[,-1], prot_sum[,-1], method = &quot;pearson&quot;)
 
 ha &lt;- t(str_split_fixed(colnames(cor), &quot;_&quot;, n=3))
 
+dat_sum &lt;- cur_prot %&gt;%
+  filter(celltype %in% c(&quot;CD4+ T cell&quot;, &quot;CD8+ T cell&quot;)) %&gt;%
+  mutate(celltype2 = ifelse(celltype %in% c(&quot;CD4+ T cell&quot;, &quot;CD8+ T cell&quot;), 
+                            paste(paste(celltype, TCF7, sep=&quot;_&quot;), PD1, sep = &quot;_&quot;), celltype)) %&gt;%
+  group_by(celltype2) %&gt;%
+  summarise(n = n())
+
+
 ha1 &lt;- HeatmapAnnotation(&quot;TCF7_PD1&quot; = anno_text(paste(ha[2,], ha[3,], sep = &quot; &quot;)),
                          &quot;Cell Type&quot; = ha[1,],
+                         &quot;Number of Cells&quot; = anno_barplot(dat_sum$n,
+                                                         height = unit(2,&quot;cm&quot;),
+                                                         axis_param = list(gp = gpar(fontsize=14))),
+                        &quot;Numbers&quot; = anno_text(dat_sum$n, 
+                                              which = &quot;column&quot;, 
+                                              rot = 0,
+                                              height = unit(0.5,&quot;cm&quot;),
+                                              just = &quot;center&quot;, 
+                                              location = 0.5),
                          col = list(&quot;Cell Type&quot; = metadata(sce_prot)$colour_vectors$celltype[c(&quot;CD4+ T cell&quot;, &quot;CD8+ T cell&quot;)]),
                          show_legend = FALSE)
 
@@ -1402,7 +1446,7 @@ h &lt;- Heatmap(cor,
 
 # draw heatmap
 draw(h)</code></pre>
-<embed src="figure/Supp-Figure_5.rmd/Supp_Fig_5E_chemokines_tcfpd1_correlation-1.pdf" width="940.8" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="figure/Supp-Figure_5.rmd/Supp_Fig_5E_chemokines_tcfpd1_correlation-1.pdf" width="969.6" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 <div id="legend-heatmap" class="section level2">
 <h2>Legend heatmap</h2>
