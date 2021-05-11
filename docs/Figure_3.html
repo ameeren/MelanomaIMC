@@ -541,7 +541,7 @@ div.tocify {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -550,7 +550,7 @@ div.tocify {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -559,10 +559,10 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-04-13
+<strong>Last updated:</strong> 2021-05-10
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>melanoma_publication_old_data/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -578,12 +578,12 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -650,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree32038914d8c7a9d59102c5e037cad3afae9ac319targetblank3203891a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/32038914d8c7a9d59102c5e037cad3afae9ac319" target="_blank">3203891</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree4affda4895cc0b25d4336d4649dce69baf935b77targetblank4affda4a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/4affda4895cc0b25d4336d4649dce69baf935b77" target="_blank">4affda4</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree32038914d8c7a9d59102c5e037cad3afae9ac319targetblank3203891a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree4affda4895cc0b25d4336d4649dce69baf935b77targetblank4affda4a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/32038914d8c7a9d59102c5e037cad3afae9ac319" target="_blank">3203891</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/4affda4895cc0b25d4336d4649dce69baf935b77" target="_blank">4affda4</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -686,18 +686,12 @@ Ignored files:
 
 Unstaged changes:
     Modified:   .gitignore
-    Modified:   analysis/10_Dysfunction_Score.rmd
-    Modified:   analysis/11_Bcell_Score.Rmd
     Modified:   analysis/Figure_1.rmd
-    Modified:   analysis/Figure_2.rmd
+    Modified:   analysis/Figure_3.rmd
     Modified:   analysis/Figure_4.rmd
-    Modified:   analysis/Figure_5.rmd
-    Modified:   analysis/Summary_Statistics.rmd
     Modified:   analysis/Supp-Figure_1.rmd
-    Modified:   analysis/Supp-Figure_2.rmd
     Modified:   analysis/Supp-Figure_4.rmd
     Modified:   analysis/Supp-Figure_5.rmd
-    Modified:   analysis/XX_hazard_ratio.rmd
 
 </code></pre>
 <p>
@@ -736,6 +730,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/4affda4895cc0b25d4336d4649dce69baf935b77/docs/Figure_3.html" target="_blank">4affda4</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-04-14
+</td>
+<td>
+figure adaptations
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -1206,7 +1217,7 @@ for(size in c(2,3,4,5,6)) {
 end = Sys.time()
 
 print(end-start)</code></pre>
-<pre><code>Time difference of 23.48571 mins</code></pre>
+<pre><code>Time difference of 22.54574 mins</code></pre>
 </div>
 <div id="visualize" class="section level2">
 <h2>Visualize</h2>
@@ -1297,7 +1308,7 @@ for(size in c(2,3,4,5,6,7,8,9,10)) {
 
 end = Sys.time()
 print(end-start)</code></pre>
-<pre><code>Time difference of 1.236454 mins</code></pre>
+<pre><code>Time difference of 1.349772 mins</code></pre>
 <pre class="r"><code># Significant Self-Interatcions
 image_df[image_df$interaction == &quot;1_1&quot;,]</code></pre>
 <pre><code>   group FirstLabel SecondLabel       p_gt p_lt direction          p   sig
@@ -1333,7 +1344,7 @@ image_df[image_df$interaction == &quot;1_1&quot;,]</code></pre>
                     distance = 20, 
                     min_clust_size = 10,
                     output_colname = &quot;example_cluster&quot;)</code></pre>
-<pre><code>Time difference of 1.191686 secs
+<pre><code>Time difference of 1.195208 secs
 [1] &quot;patches successfully added to sce object&quot;</code></pre>
 <pre class="r"><code>example &lt;- findMilieu(example, 
               &#39;cellID&#39;, 
@@ -1344,7 +1355,7 @@ image_df[image_df$interaction == &quot;1_1&quot;,]</code></pre>
               output_colname = &quot;chemokine_community_i&quot;,
               plot = TRUE)</code></pre>
 <embed src="figure/Figure_3.rmd/Fig_3C_clusters_and_communities-1.pdf" width="960" style="display: block; margin: auto;" type="application/pdf" />
-<pre><code>Time difference of 3.529992 secs
+<pre><code>Time difference of 3.719666 secs
 [1] &quot;milieus successfully added to sce object&quot;</code></pre>
 </div>
 <div id="zoom-in-plot-for-patchmilieu" class="section level2">
@@ -1356,7 +1367,7 @@ image_df[image_df$interaction == &quot;1_1&quot;,]</code></pre>
                     distance = 20, 
                     min_clust_size = 10,
                     output_colname = &quot;example_cluster&quot;)</code></pre>
-<pre><code>Time difference of 0.8591537 secs
+<pre><code>Time difference of 0.9016867 secs
 [1] &quot;patches successfully added to sce object&quot;</code></pre>
 <pre class="r"><code>example &lt;- findMilieu(example, 
               &#39;cellID&#39;, 
@@ -1371,7 +1382,7 @@ image_df[image_df$interaction == &quot;1_1&quot;,]</code></pre>
               point_size = 14)</code></pre>
 <pre><code>Warning: Removed 533 rows containing missing values (geom_point).</code></pre>
 <embed src="figure/Figure_3.rmd/Fig_3B_clusters_and_communities_zoom-1.pdf" width="960" style="display: block; margin: auto;" type="application/pdf" />
-<pre><code>Time difference of 3.343175 secs
+<pre><code>Time difference of 3.58147 secs
 [1] &quot;milieus successfully added to sce object&quot;</code></pre>
 </div>
 </div>
@@ -1639,6 +1650,33 @@ grid.arrange(plot_list[[1]] + theme(legend.position = &quot;none&quot;),
 <h2>Legend</h2>
 <pre class="r"><code>grid.arrange(leg_c)</code></pre>
 <embed src="figure/Figure_3.rmd/Fig_3E_legend-1.pdf" width="192" style="display: block; margin: auto;" type="application/pdf" />
+</div>
+<div id="fraction-of-milieu-cells-that-are-in_tumor" class="section level2">
+<h2>Fraction of milieu cells that are in_tumor</h2>
+<pre class="r"><code>cur_dat &lt;- data.frame(colData(sce_rna)) %&gt;%
+  filter(cellID %in% milieus$cellID) %&gt;%
+  select(cellID, in_tumor)
+
+milieus_tumor &lt;- left_join(milieus, cur_dat) %&gt;%
+  group_by(milieu, in_tumor) %&gt;%
+  summarise(n=n()) %&gt;%
+  reshape2::dcast(milieu ~ in_tumor, fill = 0, value.var = &quot;n&quot;) %&gt;%
+  reshape2::melt(id.vars = c(&quot;milieu&quot;), variable.name = &quot;in_tumor&quot;, value.name = &quot;n&quot;) %&gt;%
+  group_by(milieu) %&gt;%
+  mutate(frac = n / sum(n)) %&gt;%
+  mutate(milieu_short = toupper(str_split(milieu, &quot;_&quot;,  n = 2, simplify = TRUE)[,1]))
+
+milieus_tumor$in_tumor_name &lt;- ifelse(milieus_tumor$in_tumor == TRUE, &quot;Tumor&quot;, &quot;Non-Tumor&quot;)
+
+ggplot(milieus_tumor, aes(x = milieu_short, y = frac, fill=in_tumor_name)) +
+  geom_bar(stat=&quot;identity&quot;, width = 0.7) +
+  ylab(&quot;Fraction of Milieu&quot;) +
+  xlab(&quot;Chemokine Milieus&quot;) +
+  theme_bw() +
+  theme(text = element_text(size=16),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  guides(fill=guide_legend(title=&quot;Location&quot;))</code></pre>
+<embed src="figure/Figure_3.rmd/Fig_3F_milieu_tumor-1.pdf" width="556.8" style="display: block; margin: auto;" type="application/pdf" />
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -1734,7 +1772,7 @@ loaded via a namespace (and not attached):
  [77] mclust_5.4.7              readxl_1.3.1             
  [79] shape_1.4.5               compiler_4.0.3           
  [81] V8_3.4.0                  KernSmooth_2.23-18       
- [83] crayon_1.3.4              htmltools_0.5.0          
+ [83] crayon_1.3.4              htmltools_0.5.1.1        
  [85] later_1.1.0.1             lubridate_1.7.9.2        
  [87] DBI_1.1.0                 dbplyr_2.0.0             
  [89] MASS_7.3-53               boot_1.3-25              

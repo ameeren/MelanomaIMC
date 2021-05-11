@@ -582,3 +582,33 @@ grid.arrange(plot_list[[1]] + theme(legend.position = "none"),
 ```{r Fig_3E_legend, fig.height=3, fig.width=2, dev=c('pdf')}
 grid.arrange(leg_c)
 ```
+
+## Fraction of milieu cells that are in_tumor
+
+```{r Fig_3F_milieu_tumor, fig.width=5.8, fig.height=3.8, dev=("pdf")}
+cur_dat <- data.frame(colData(sce_rna)) %>%
+  filter(cellID %in% milieus$cellID) %>%
+  select(cellID, in_tumor)
+
+milieus_tumor <- left_join(milieus, cur_dat) %>%
+  group_by(milieu, in_tumor) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(milieu ~ in_tumor, fill = 0, value.var = "n") %>%
+  reshape2::melt(id.vars = c("milieu"), variable.name = "in_tumor", value.name = "n") %>%
+  group_by(milieu) %>%
+  mutate(frac = n / sum(n)) %>%
+  mutate(milieu_short = toupper(str_split(milieu, "_",  n = 2, simplify = TRUE)[,1]))
+
+milieus_tumor$in_tumor_name <- ifelse(milieus_tumor$in_tumor == TRUE, "Tumor", "Non-Tumor")
+
+ggplot(milieus_tumor, aes(x = milieu_short, y = frac, fill=in_tumor_name)) +
+  geom_bar(stat="identity", width = 0.7) +
+  ylab("Fraction of Milieu") +
+  xlab("Chemokine Milieus") +
+  theme_bw() +
+  theme(text = element_text(size=16),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
+  guides(fill=guide_legend(title="Location"))
+  
+```
+

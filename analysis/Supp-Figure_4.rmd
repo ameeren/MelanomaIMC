@@ -227,6 +227,8 @@ s100 <- data.frame(colData(sce_rna)) %>%
   group_by(ImageNumber, dysfunction_score, S100) %>%
   summarise(n=n()) %>%
   mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(ImageNumber + dysfunction_score ~ S100, fill = 0, value.var = "fraction") %>%
+  reshape2::melt(id.vars = c("ImageNumber", "dysfunction_score"), variable.name = "S100", value.name = "fraction") %>%
   filter(is.na(dysfunction_score) == F & S100 == "positive")
 
 s100$dysfunction_score <- factor(s100$dysfunction_score)
@@ -248,6 +250,112 @@ ggplot(s100, aes(x=dysfunction_score, y=fraction)) +
   theme(text = element_text(size=16),
         legend.position = "none") +
   ylim(0,1.05)
+```
+
+## Response / Survival Analysis
+
+```{r}
+# surv_dat
+dat_survival_rna <- fread(file = "data/data_for_analysis/rna/clinical_data_rna.csv")
+
+# select blocks in ICI subgroup that are treatment-naive and non-adjuvant
+blocks <- unique(sce_rna[,sce_rna$treatment_status_before_surgery == "naive" & 
+                            sce_rna$treatment_group_after_surgery == "ICI" &
+                            sce_rna$Adjuvant == "n"]$BlockID)
+
+# subset survival data (only data points that contain info for 3m response)
+dat_survival_rna_sub <- dat_survival_rna[dat_survival_rna$BlockID %in% blocks & 
+                                             is.na(dat_survival_rna$Status_at_3m) == FALSE, ]
+
+# remove LN margin samples
+dat_survival_rna_sub <- dat_survival_rna_sub %>%
+  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
+  filter(mmLocationPunch != "LN_M")
+```
+
+## Responder vs. Non-Responder S100 
+
+```{r Supp_Fig_4C_S100_manual_response, fig.height=6, fig.width=9, dev=c('pdf'), eval=F}
+cur_dat <- data.frame(colData(sce_rna[,sce_rna$BlockID %in% unique(dat_survival_rna_sub$BlockID)])) 
+
+# fraction of S100 tumor cells per image
+s100 <- cur_dat %>%
+  filter(celltype == "Tumor") %>%
+  group_by(ImageNumber, Status_at_3m, S100) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(ImageNumber + Status_at_3m ~ S100, fill = 0, value.var = "fraction") %>%
+  reshape2::melt(id.vars = c("ImageNumber", "Status_at_3m"), variable.name = "S100", value.name = "fraction") %>%
+  filter(is.na(Status_at_3m) == F & S100 == "positive")
+
+s100$Status_at_3m <- factor(s100$Status_at_3m)
+
+stat.test <- s100 %>%
+  group_by(S100) %>%
+  wilcox_test(data = ., fraction ~ Status_at_3m) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_x_position(dodge = 0.8)
+
+a <- ggplot(s100, aes(x=Status_at_3m, y=fraction)) + 
+  geom_boxplot(alpha=0.2, lwd=1.5, aes(fill = Status_at_3m)) + 
+  geom_quasirandom(aes(col=Status_at_3m), size=3) +
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7, y.position = 1) + 
+  xlab("") + 
+  ylab("Fraction of S100+ Tumor Cells") +
+  theme_bw() +
+  theme(text = element_text(size=16),
+        legend.position = "none") +
+  ylim(0,1.05)
+
+tumor_marker_rna <- c("S100")
+
+# rna data 
+dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tumor"], "asinh")))
+dat_rna$cellID <- rownames(dat_rna)
+dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "Status_at_3m", "Description", "BlockID")])
+
+# filter
+dat_rna <- dat_rna %>%
+  filter(BlockID %in% unique(dat_survival_rna_sub$BlockID))
+
+# mean per image
+dat_rna <- dat_rna %>%
+  select(-cellID) %>%
+  group_by(Description, Status_at_3m) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_rna <- dat_rna %>%
+  reshape2::melt(id.vars = c("Description", "Status_at_3m"), variable.name = "channel", value.name = "asinh")
+
+stat.test <- dat_rna %>%
+  group_by(channel) %>%
+  wilcox_test(data = ., asinh ~ Status_at_3m) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_xy_position(x = "celltype", dodge = 0.8)
+
+
+# plot 
+p <- ggplot(dat_rna, aes(x=Status_at_3m, y=asinh)) + 
+  geom_boxplot(alpha=0.2, lwd=1, aes(fill=Status_at_3m)) +
+  geom_quasirandom(alpha=0.6, size=2, aes(col=Status_at_3m)) +
+  scale_color_discrete(guide = FALSE) +
+  theme_bw() +
+  theme(text = element_text(size=18)) +
+  facet_wrap(~channel, scales = "free", ncol = 3) + 
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
+  xlab("") + 
+  ylab("Mean Count per Image (asinh)") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
+  guides(fill=guide_legend(title= "Response at 3m", override.aes = c(lwd=0.5, alpha=1)))
+
+leg <- get_legend(p)
+
+b <- grid.arrange(p + theme(legend.position = "none"))
+
+grid.arrange(a,b, nrow=1)
 ```
 
 # Supp Figure 4D 

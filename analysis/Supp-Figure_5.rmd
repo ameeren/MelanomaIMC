@@ -296,7 +296,7 @@ dat_survival_prot_sub %>%
 
 ## TCF7/PD1 fraction in responder vs. non responder
 
-```{r, Supp_Fig_5D_responder_nonresponder_tcf7pd1, fig.height=8, fig.width=10, dev=("pdf")}
+```{r, Supp_Fig_5D_responder_nonresponder_tcf7pd1, fig.height=9.5, fig.width=11.5, dev=("pdf")}
 cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_survival_prot_sub$BlockID)])) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
@@ -304,6 +304,9 @@ cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_surviva
   mutate(TCF7_PD1 = paste(TCF7, PD1, sep = "_")) %>%
   group_by(PatientID,BlockID, Description, bcell_patch_score, celltype, TCF7_PD1) %>%
   summarise(n=n()) %>% 
+  reshape2::dcast(PatientID + BlockID + Description + bcell_patch_score + TCF7_PD1 ~ celltype, value.var = "n", fill=0) %>%
+  reshape2::melt(id.vars = c("PatientID","BlockID", "Description", "bcell_patch_score", "TCF7_PD1"), 
+                 variable.name = "celltype", value.name = "n") %>%
   reshape2::dcast(PatientID + BlockID + Description + bcell_patch_score + celltype ~ TCF7_PD1, value.var = "n", fill=0) %>%
   reshape2::melt(id.vars = c("PatientID","BlockID", "Description", "bcell_patch_score", "celltype"), 
                  variable.name = "TCF7_PD1", value.name = "n") %>%
@@ -343,7 +346,7 @@ stat.test$p_and_p.adj <- paste(paste("p = ", round(stat.test$p,2), sep = ""), pa
 ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Status_at_3m, y=log10(n_per_mm2+1), label=PatientID)) + 
   geom_boxplot(alpha=.4, outlier.shape = NA, aes(fill=Status_at_3m)) +
   geom_beeswarm(size=3) +
-  geom_label_repel(aes(label=PatientID), max.overlaps = 12, size = 5, alpha=.5) + 
+  geom_label_repel(aes(label=PatientID), max.overlaps = 10, size = 5, alpha=.5, force_pull = 2, force = 0.5) + 
   stat_pvalue_manual(stat.test, label = "p_and_p.adj", size=5, label.x.npc = "left", y.position = -0.9, bracket.size = 0) +
   theme_bw() +
   theme(text = element_text(size=18)) +
@@ -352,6 +355,20 @@ ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Stat
   xlab("") +
   guides(fill=guide_legend(title="Response 3m", override.aes = c(lwd=0.5, size=1))) +
   facet_wrap(~celltype2, scales = "free")
+
+# number of patients
+unique(cur_dat$PatientID)
+cur_dat %>%
+  distinct(PatientID, .keep_all = T) %>%
+  group_by(Status_at_3m) %>%
+  summarise(n=n())
+
+# number of images
+unique(cur_dat$Description)
+cur_dat %>%
+  distinct(Description, .keep_all = T) %>%
+  group_by(Status_at_3m) %>%
+  summarise(n=n())
 ```
 
 # Supp Figure 5E
