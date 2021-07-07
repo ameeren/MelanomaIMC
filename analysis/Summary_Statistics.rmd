@@ -341,7 +341,7 @@ cont_table <- data.frame(colData(sce_prot)) %>%
   filter(is.na(dysfunction_score) == FALSE) %>%
   group_by(bcell_patch_score, dysfunction_score) %>%
   summarise(n=n()) %>%
-  filter(bcell_patch_score %in% c("small B cell patches", "B cell follicles")) %>%
+  filter(bcell_patch_score %in% c("Small B cell Patches", "B cell Follicles")) %>%
   reshape2::dcast(bcell_patch_score ~ dysfunction_score, value.var = "n", fill = 0)
 
 fisher.test(cont_table[,-1])

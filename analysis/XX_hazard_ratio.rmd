@@ -75,7 +75,7 @@ cur_dat$Mutation <- factor(cur_dat$Mutation, levels = c("wt", "BRAF", "NRAS"))
 cur_dat$Cancer_Stage <- factor(cur_dat$Cancer_Stage, levels = c("III", "IV"))
 cur_dat$treatment_status_before_surgery <- factor(cur_dat$treatment_status_before_surgery, levels = c("naive", "non-naive"))
 cur_dat$Tcell_density_score_image <- factor(cur_dat$Tcell_density_score_image, levels = c("high", "med", "low", "absent"))
-cur_dat$bcell_patch_score <- factor(cur_dat$bcell_patch_score, levels = c("no B cells", "no B cell patches", "small patches", "B cell follicles"))
+cur_dat$bcell_patch_score <- factor(cur_dat$bcell_patch_score, levels = c("No B cells", "No B cell Patches", "Small Patches", "B cell Follicles"))
 
 # add survival times
 surv <- left_join(cur_dat, dat_survival[,c("BlockID", "censoring_death", "Time_to_death_or_last_PET")])
