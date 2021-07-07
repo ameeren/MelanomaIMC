@@ -559,7 +559,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-05-11
+<strong>Last updated:</strong> 2021-05-18
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
@@ -650,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree4affda4895cc0b25d4336d4649dce69baf935b77targetblank4affda4a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/4affda4895cc0b25d4336d4649dce69baf935b77" target="_blank">4affda4</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree0f72ef1713d652a9e12743133d22a41e2b5eed80targetblank0f72ef1a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/0f72ef1713d652a9e12743133d22a41e2b5eed80" target="_blank">0f72ef1</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree4affda4895cc0b25d4336d4649dce69baf935b77targetblank4affda4a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree0f72ef1713d652a9e12743133d22a41e2b5eed80targetblank0f72ef1a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/4affda4895cc0b25d4336d4649dce69baf935b77" target="_blank">4affda4</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/0f72ef1713d652a9e12743133d22a41e2b5eed80" target="_blank">0f72ef1</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -686,12 +686,7 @@ Ignored files:
 
 Unstaged changes:
     Modified:   .gitignore
-    Modified:   analysis/Figure_1.rmd
-    Modified:   analysis/Figure_3.rmd
     Modified:   analysis/Figure_4.rmd
-    Modified:   analysis/Supp-Figure_1.rmd
-    Modified:   analysis/Supp-Figure_4.rmd
-    Modified:   analysis/Supp-Figure_5.rmd
 
 </code></pre>
 <p>
@@ -730,6 +725,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/0f72ef1713d652a9e12743133d22a41e2b5eed80/analysis/Figure_4.rmd" target="_blank">0f72ef1</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-05-11
+</td>
+<td>
+figure adaptations
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/0f72ef1713d652a9e12743133d22a41e2b5eed80/docs/Figure_4.html" target="_blank">0f72ef1</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-05-11
+</td>
+<td>
+figure adaptations
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -1372,8 +1401,74 @@ grid.arrange(a,b, nrow=1)</code></pre>
 </div>
 <div id="figure-4d" class="section level1">
 <h1>Figure 4D</h1>
-<div id="interaction-between-dysfunctional-cd8-and-tumor-cells" class="section level2">
-<h2>Interaction between Dysfunctional CD8 and Tumor Cells</h2>
+<div id="interaction-between-dysfunctional-cd8-and-tumor-cells-v1" class="section level2">
+<h2>Interaction between Dysfunctional CD8 and Tumor Cells V1</h2>
+<pre class="r"><code># number of interactions CD8+ T cell and tumor per image
+dat_relation_sub &lt;- dat_relation_rna[dat_relation_rna$celltype_first %in% c(&quot;exhausted Tcytotoxic&quot;, &quot;Tcytotoxic&quot;) &amp; 
+                                   dat_relation_rna$celltype_second == &quot;Tumor&quot;]
+
+# count number of interactions
+count &lt;- dat_relation_sub %&gt;%
+  group_by(FirstImageNumber) %&gt;%
+  summarise(n=n())
+names(count)[1] &lt;- &quot;ImageNumber&quot;
+
+# fraction of exhausted cd8 per image
+dysfunction &lt;- data.frame(colData(sce_rna)) %&gt;%
+  filter(celltype == &quot;CD8+ T cell&quot;) %&gt;%
+  mutate(celltype2 = paste(celltype, CXCL13, sep = &quot;_&quot;)) %&gt;%
+  group_by(ImageNumber, celltype2) %&gt;%
+  summarise(n=n()) %&gt;%
+  reshape2::dcast(ImageNumber ~ celltype2, value.var = &quot;n&quot;, fill = 0)
+
+dysfunction$fraction &lt;- dysfunction$`CD8+ T cell_1` / (dysfunction$`CD8+ T cell_0` + dysfunction$`CD8+ T cell_1`)
+
+# correlation plot
+cur_dat &lt;- left_join(count, dysfunction)
+
+p1 &lt;- ggplot(cur_dat, aes(x=log10(fraction), y=log10(n))) + 
+  geom_point(size=3) + 
+  geom_smooth(method=&quot;lm&quot;) +
+  stat_cor(method = &quot;pearson&quot;,
+           aes(label = paste0(&quot;atop(&quot;, ..r.label..,  &quot;,&quot;, ..rr.label.. ,&quot;)&quot;)),
+           size = 8, cor.coef.name = &quot;R&quot;, label.sep=&quot;\n&quot;, label.y = 0.5, label.x = -1) + 
+  theme_bw() +
+  theme(text = element_text(size=15.5)) +
+  xlab(&quot;Fraction of CXCL13+CD8+ from Total CD8+\n(log10)&quot;) +
+  ylab(&quot;Number of CD8-Tumor Cell Interactions\n(log10)&quot;)
+
+p2 &lt;- ggplot(dysfunction, aes(x=log10(fraction), y=log10(`CD8+ T cell_0`))) +
+  geom_point(size=3) + 
+  xlab(&quot;Fraction of CXCL13+CD8+ from Total CD8+\n(log10)&quot;) +
+  ylab(&quot;CD8+ T cells (log10)&quot;) +
+  theme_bw() +
+  theme(text = element_text(size=15.5))
+
+fraction_cd8 &lt;- data.frame(colData(sce_rna)) %&gt;%
+  group_by(ImageNumber, celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(fraction = n / sum(n)) %&gt;%
+  reshape2::dcast(ImageNumber ~ celltype, value.var = &quot;fraction&quot;, fill = 0) %&gt;%
+  select(ImageNumber, `CD8+ T cell`)
+
+dysfunction &lt;- left_join(dysfunction, fraction_cd8)
+
+#p3 &lt;- ggplot(dysfunction, aes(x=log10(fraction), y=log10(`CD8+ T cell`))) +
+  #geom_point(size=3) + 
+  #xlab(&quot;Fraction of CXCL13+CD8+ from Total CD8+\n(log10)&quot;) +
+  #ylab(&quot;Fraction of CD8+ T cells (log10)&quot;) +
+  #theme_bw() +
+  #theme(text = element_text(size=15.5))
+
+grid.arrange(p1,p2,
+             #p3,
+             nrow=1)</code></pre>
+<pre><code>Warning: Removed 59 rows containing non-finite values (stat_smooth).</code></pre>
+<pre><code>Warning: Removed 59 rows containing non-finite values (stat_cor).</code></pre>
+<embed src="figure/Figure_4.rmd/Fig_4D_corr_interaction_and_dysfunction-1.pdf" width="1027.2" style="display: block; margin: auto;" type="application/pdf" />
+</div>
+<div id="interaction-between-dysfunctional-cd8-and-tumor-cells-v2" class="section level2">
+<h2>Interaction between Dysfunctional CD8 and Tumor Cells V2</h2>
 <pre class="r"><code># number of interactions CD8+ T cell and tumor per image
 dat_relation_sub &lt;- dat_relation_rna[dat_relation_rna$celltype_first %in% c(&quot;exhausted Tcytotoxic&quot;, &quot;Tcytotoxic&quot;) &amp; 
                                    dat_relation_rna$celltype_second == &quot;Tumor&quot;]
@@ -1399,6 +1494,12 @@ dysfunction &lt;- data.frame(colData(sce_rna)) %&gt;%
 
 # correlation plot
 cur_dat &lt;- left_join(count, dysfunction)
+#cur_dat &lt;- left_join(cur_dat, total_CD8)
+
+#ggplot(cur_dat, aes(x=log10(n), y=log10(`CD8+ T cell`))) + 
+  #geom_point() +
+  #xlab(&quot;Total CD8 (log10)&quot;) +
+  #ylab(&quot;Number of CD8-Tumor Cell Interactions\n(log10)&quot;)
 
 p1 &lt;- ggplot(cur_dat, aes(x=log10(fraction), y=log10(n))) + 
   geom_point(size=3) + 
@@ -1413,25 +1514,33 @@ p1 &lt;- ggplot(cur_dat, aes(x=log10(fraction), y=log10(n))) +
 
 # fraction of exhausted cd8 per image
 dysfunction &lt;- data.frame(colData(sce_rna)) %&gt;%
-  filter(celltype == &quot;CD8+ T cell&quot;) %&gt;%
   mutate(celltype2 = paste(celltype, CXCL13, sep = &quot;_&quot;)) %&gt;%
   group_by(ImageNumber, celltype2) %&gt;%
   summarise(n=n()) %&gt;%
-  reshape2::dcast(ImageNumber ~ celltype2, value.var = &quot;n&quot;, fill = 0)
+  reshape2::dcast(ImageNumber ~ celltype2, value.var = &quot;n&quot;, fill = 0) %&gt;%
+  reshape2::melt(id.vars = c(&quot;ImageNumber&quot;), variable.name = &quot;celltype2&quot;, value.name = &quot;n&quot;) %&gt;%
+  group_by(ImageNumber) %&gt;%
+  mutate(fraction = n / sum(n)) %&gt;%
+  ungroup() %&gt;%
+  filter(celltype2 %in% c(&quot;CD8+ T cell_1&quot;)) %&gt;%
+  select(ImageNumber, fraction)
 
-dysfunction$fraction &lt;- dysfunction$`CD8+ T cell_1` / dysfunction$`CD8+ T cell_0`
+total_CD8 &lt;- data.frame(colData(sce_rna)) %&gt;%
+  group_by(ImageNumber, celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  reshape2::dcast(ImageNumber ~ celltype, value.var = &quot;n&quot;, fill = 0) %&gt;%
+  select(ImageNumber, `CD8+ T cell`)
 
-p2 &lt;- ggplot(dysfunction, aes(x=fraction, y=log10(`CD8+ T cell_0`))) +
+cur_dat &lt;- left_join(total_CD8, dysfunction)
+
+p2 &lt;- ggplot(cur_dat, aes(x=log10(fraction), y=log10(`CD8+ T cell`))) +
   geom_point(size=3) + 
-  xlab(&quot;Fraction of CXCL13+CD8+ from Total CD8+&quot;) +
+  xlab(&quot;Fraction of Dysfunctional Cytotoxic T Cells (log10)&quot;) +
   ylab(&quot;CD8+ T cells (log10)&quot;) +
   theme_bw() +
   theme(text = element_text(size=15.5))
 
 grid.arrange(p1,p2,nrow=1)</code></pre>
-<pre><code>Warning: Removed 59 rows containing non-finite values (stat_smooth).</code></pre>
-<pre><code>Warning: Removed 59 rows containing non-finite values (stat_cor).</code></pre>
-<embed src="figure/Figure_4.rmd/Fig_4D_corr_interaction_and_dysfunction-1.pdf" width="1027.2" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 <div id="number-of-cd8-per-tumor-cell" class="section level2">
 <h2>Number of CD8 per Tumor Cell</h2>
@@ -1575,16 +1684,17 @@ stat.test &lt;- sum2 %&gt;%
   add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %&gt;%
   add_x_position(x = &quot;celltype&quot;, dodge = 0.8)
 
-ggplot(sum2, aes(x=celltype, y=fraction)) +
+sum2$cluster_number &lt;- sapply(strsplit(as.character(sum2$celltype), &quot;_&quot;), &quot;[&quot;, 2 )
+
+ggplot(sum2, aes(x=cluster_number, y=fraction)) +
   geom_boxplot(alpha=.2, lwd=1, aes(fill = dysfunction_score)) +
   geom_quasirandom(alpha=.6, dodge.width=.75, size=2, aes(group = dysfunction_score, col=dysfunction_score)) +
   stat_pvalue_manual(stat.test, label = &quot;p.adj.signif&quot;, size = 7, y.position = 0.9) + 
   scale_color_discrete(guide = FALSE) +
   theme_bw() +
-  theme(text = element_text(size = 16),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  theme(text = element_text(size = 16)) + 
   guides(fill=guide_legend(title=&quot;Dysfunction Score&quot;, override.aes = aes(lwd=0.5))) +
-  xlab(&quot;&quot;) + 
+  xlab(&quot;Tumor Cluster&quot;) + 
   ylab(&quot;Fraction of Interactions&quot;) +
   ylim(0,1)</code></pre>
 <embed src="figure/Figure_4.rmd/Fig_4E_interaction_cytotoxic_tumor_boxplots-1.pdf" width="844.8" style="display: block; margin: auto;" type="application/pdf" />
@@ -1761,25 +1871,27 @@ cur_dat &lt;- left_join(cur_dat, dat_survival_prot_sub[,c(&quot;BlockID&quot;, &
 cur_dat &lt;- left_join(cur_dat, im_size[im_size$Description %in% unique(cur_dat$Description),])
 cur_dat$n_per_mm2 &lt;- cur_dat$n / cur_dat$mm2
 
+cur_dat$cluster_number &lt;- sapply(strsplit(as.character(cur_dat$celltype), &quot;_&quot;), &quot;[&quot;, 2 )
+
 stat.test &lt;- cur_dat %&gt;%
-  group_by(celltype) %&gt;%
+  group_by(cluster_number) %&gt;%
   mutate(y_log10 = log10(n_per_mm2+1)) %&gt;%
   wilcox_test(data = ., y_log10 ~ Status_at_3m) %&gt;%
   adjust_pvalue(method = &quot;BH&quot;) %&gt;%
   add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %&gt;%
-  add_x_position(x = &quot;celltype&quot;, dodge = 0.8)
+  add_x_position(x = &quot;cluster_number&quot;, dodge = 0.8)
 
 #stat.test$p.adj.format &lt;- ifelse(stat.test$p.adj &lt; 0.05, paste(&quot;p = &quot;, round(stat.test$p.adj,2), sep = &quot;&quot;), &quot;n.s.&quot;)
 
-ggplot(cur_dat, aes(x=celltype, y=log10(n_per_mm2+1))) + 
+
+ggplot(cur_dat, aes(x=cluster_number, y=log10(n_per_mm2+1))) + 
   geom_boxplot(alpha=.5, outlier.shape = NA, aes(fill=Status_at_3m)) +
   geom_quasirandom(size=1, dodge.width = 0.75, aes(group = Status_at_3m, col=Status_at_3m)) +
-  stat_pvalue_manual(stat.test, x = &quot;celltype&quot;, label = &quot;p.adj.signif&quot;, size = 7, y.position = 4) + 
+  stat_pvalue_manual(stat.test, x = &quot;cluster_number&quot;, label = &quot;p.adj.signif&quot;, size = 7, y.position = 4) + 
   theme_bw() +
-  theme(text = element_text(size = 16),
-        axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + 
+  theme(text = element_text(size = 16)) + 
   ylab(&quot;Cells per mm2 (log10)&quot;) +
-  xlab(&quot;&quot;) +
+  xlab(&quot;Tumor Cluster&quot;) +
   scale_color_manual(guide = FALSE, values=c(&quot;blue&quot;, &quot;orange&quot;)) +
   scale_fill_manual(values=c(&quot;blue&quot;, &quot;orange&quot;)) + 
   guides(fill=guide_legend(title=&quot;Response 3m&quot;, override.aes = c(lwd=0.5, size=1))) +

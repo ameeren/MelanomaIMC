@@ -296,7 +296,7 @@ dat_survival_prot_sub %>%
 
 ## TCF7/PD1 fraction in responder vs. non responder
 
-```{r, Supp_Fig_5D_responder_nonresponder_tcf7pd1, fig.height=9.5, fig.width=11.5, dev=("pdf")}
+```{r, Supp_Fig_5D_responder_nonresponder_tcf7pd1, fig.height=5.3, fig.width=13.2, dev=("pdf")}
 cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_survival_prot_sub$BlockID)])) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 

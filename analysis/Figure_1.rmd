@@ -50,7 +50,7 @@ sce_prot <- readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 ## Heatmap showing marker expression of celltypes
 
-```{r Fig_1C_Scaled_Heatmap_RNA, fig.width=10, fig.height=11.2, dev=c('pdf')}
+```{r Fig_1C_Scaled_Heatmap_RNA, fig.width=19, fig.height=12, dev=c('pdf')}
 # add marker expression to cells
 marker_expression <- data.frame(t(assay(sce_rna[rowData(sce_rna)$good_marker,], "asinh")))
 marker_expression$cellID <- rownames(marker_expression)
@@ -99,7 +99,7 @@ ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,
                                                    just = "center",
                                               height = unit(1,"cm"),
                                                    location = 0.5,
-                                                   gp = gpar(fontsize=12,col = "black", border = "black")))
+                                                   gp = gpar(fontsize=16,col = "black", border = "black")))
 
 # row_split for markers
 rowData(sce_rna)$heatmap_relevance <- ""
@@ -124,15 +124,15 @@ h <- Heatmap(m, name = "Scaled Expression",
                                          direction="horizontal", title_gp = gpar(fontsize=16),
                                          labels_gp = gpar(fontsize=12), title_position = "topcenter"),
              column_names_side = "top",
-             height = unit(20, "cm"),
-             width = unit(17,"cm"))
+             height = unit(23, "cm"),
+             width = unit(35,"cm"))
 
 draw(h, heatmap_legend_side = "bottom")
 ```
 
 ## Heatmap showing marker expression of celltypes
 
-```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=10, fig.height=11.4, dev=c('pdf')}
+```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=19, fig.height=12, dev=c('pdf')}
 # add marker expression to cells
 marker_expression <- data.frame(t(assay(sce_prot[rowData(sce_prot)$good_marker,], "asinh")))
 marker_expression$cellID <- rownames(marker_expression)
@@ -181,7 +181,7 @@ ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,
                                                    just = "center",
                                               height = unit(1,"cm"),
                                                    location = 0.5,
-                                                   gp = gpar(fontsize=12,col = "black", border = "black")))
+                                                   gp = gpar(fontsize=16,col = "black", border = "black")))
 
 # row_split for markers
 rowData(sce_prot)$heatmap_relevance <- ""
@@ -205,8 +205,8 @@ h <- Heatmap(m, name = "Scaled Expression",
                                          direction="horizontal", title_gp = gpar(fontsize=16),title_position = "topcenter",
                                          labels_gp = gpar(fontsize=12)),
              column_names_side = "top",
-             height = unit(20, "cm"),
-             width = unit(17,"cm"))
+             height = unit(23, "cm"),
+             width = unit(35,"cm"))
 
 draw(h, heatmap_legend_side = "bottom")
 ```
@@ -309,7 +309,7 @@ plotCells(mask = mask_sub,
 
 ## Barplot containing Cell Types per Image
 
-```{r Fig_1F_Protein_Barplot, fig.width=13, fig.height=8, dev=c('pdf')}
+```{r Fig_1F_Protein_Barplot, fig.width=19.2, fig.height=8.3, dev=c('pdf')}
 # Create table with celltype fractions
 cur_df <- data.frame(celltype = sce_prot$celltype,
                      Description = sce_prot$Description,
@@ -386,7 +386,7 @@ h1 = Heatmap(patient_meta[,c("MM_location_simplified")],
              width = unit(0.5, "cm"), 
              cluster_rows = dend,
              row_dend_width = unit(3, "cm"),
-             height = unit(30, "cm"),
+             height = unit(45, "cm"),
              show_heatmap_legend = FALSE, 
              heatmap_legend_param = list(title = "Met Location"),
              row_names_gp = gpar(cex=0.5),

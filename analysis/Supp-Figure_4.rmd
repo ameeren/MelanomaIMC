@@ -336,7 +336,6 @@ stat.test <- dat_rna %>%
   add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
   add_xy_position(x = "celltype", dodge = 0.8)
 
-
 # plot 
 p <- ggplot(dat_rna, aes(x=Status_at_3m, y=asinh)) + 
   geom_boxplot(alpha=0.2, lwd=1, aes(fill=Status_at_3m)) +
@@ -352,10 +351,39 @@ p <- ggplot(dat_rna, aes(x=Status_at_3m, y=asinh)) +
   guides(fill=guide_legend(title= "Response at 3m", override.aes = c(lwd=0.5, alpha=1)))
 
 leg <- get_legend(p)
-
 b <- grid.arrange(p + theme(legend.position = "none"))
 
-grid.arrange(a,b, nrow=1)
+# per patient
+
+dat_rna_patient <- data.frame(colData(sce_rna[,sce_rna$BlockID %in% unique(dat_survival_rna_sub$BlockID)])) %>%
+  distinct(PatientID, Description)
+
+dat_rna_patient <- left_join(dat_rna_patient, dat_rna) %>%
+  group_by(PatientID) %>%
+  mutate(asinh_mean = mean(asinh)) %>%
+  distinct(PatientID, .keep_all = T)
+
+stat.test <- dat_rna_patient %>%
+  group_by(channel) %>%
+  wilcox_test(data = ., asinh_mean ~ Status_at_3m) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_xy_position(x = "celltype", dodge = 0.8)
+
+c <- ggplot(dat_rna_patient, aes(x=Status_at_3m, y=asinh_mean)) + 
+  geom_boxplot(alpha=0.2, lwd=1, aes(fill=Status_at_3m)) +
+  geom_quasirandom(alpha=0.6, size=2, aes(col=Status_at_3m)) +
+  scale_color_discrete(guide = FALSE) +
+  theme_bw() +
+  theme(text = element_text(size=18)) +
+  facet_wrap(~channel, scales = "free", ncol = 3) + 
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
+  xlab("") + 
+  ylab("Mean Count per Patient (asinh)") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
+  guides(fill=guide_legend(title= "Response at 3m", override.aes = c(lwd=0.5, alpha=1)))
+
+grid.arrange(a,b,c, nrow=1)
 ```
 
 # Supp Figure 4D 

@@ -559,7 +559,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2021-04-19
+<strong>Last updated:</strong> 2021-06-22
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
@@ -650,16 +650,16 @@ This reproducible <a href="http://rmarkdown.rstudio.com">R Markdown</a> analysis
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree4affda4895cc0b25d4336d4649dce69baf935b77targetblank4affda4a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/4affda4895cc0b25d4336d4649dce69baf935b77" target="_blank">4affda4</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree0f72ef1713d652a9e12743133d22a41e2b5eed80targetblank0f72ef1a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/0f72ef1713d652a9e12743133d22a41e2b5eed80" target="_blank">0f72ef1</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree4affda4895cc0b25d4336d4649dce69baf935b77targetblank4affda4a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupmelanomapublicationtree0f72ef1713d652a9e12743133d22a41e2b5eed80targetblank0f72ef1a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/4affda4895cc0b25d4336d4649dce69baf935b77" target="_blank">4affda4</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/melanoma_publication/tree/0f72ef1713d652a9e12743133d22a41e2b5eed80" target="_blank">0f72ef1</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -687,6 +687,7 @@ Ignored files:
 Unstaged changes:
     Modified:   .gitignore
     Modified:   analysis/Figure_4.rmd
+    Modified:   analysis/Supp-Figure_4.rmd
     Modified:   analysis/Supp-Figure_5.rmd
 
 </code></pre>
@@ -726,6 +727,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/melanoma_publication/blob/0f72ef1713d652a9e12743133d22a41e2b5eed80/analysis/Supp-Figure_5.rmd" target="_blank">0f72ef1</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-05-11
+</td>
+<td>
+figure adaptations
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/melanoma_publication/0f72ef1713d652a9e12743133d22a41e2b5eed80/docs/Supp-Figure_5.html" target="_blank">0f72ef1</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-05-11
+</td>
+<td>
+figure adaptations
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -1377,14 +1412,15 @@ ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c(&quot;TCF7+_PD1+&quot;, &quot;TCF7+_PD1-&
   guides(fill=guide_legend(title=&quot;Response 3m&quot;, override.aes = c(lwd=0.5, size=1))) +
   facet_wrap(~celltype2, scales = &quot;free&quot;)</code></pre>
 <pre><code>Warning: Duplicated aesthetics after name standardisation: size</code></pre>
+<pre><code>Warning: ggrepel: 15 unlabeled data points (too many overlaps). Consider
+increasing max.overlaps</code></pre>
+<pre><code>Warning: ggrepel: 14 unlabeled data points (too many overlaps). Consider
+increasing max.overlaps</code></pre>
 <pre><code>Warning: ggrepel: 12 unlabeled data points (too many overlaps). Consider
 increasing max.overlaps</code></pre>
-<pre><code>Warning: ggrepel: 9 unlabeled data points (too many overlaps). Consider
-increasing max.overlaps
-
-Warning: ggrepel: 9 unlabeled data points (too many overlaps). Consider
+<pre><code>Warning: ggrepel: 14 unlabeled data points (too many overlaps). Consider
 increasing max.overlaps</code></pre>
-<embed src="figure/Supp-Figure_5.rmd/Supp_Fig_5D_responder_nonresponder_tcf7pd1-1.pdf" width="1104" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="figure/Supp-Figure_5.rmd/Supp_Fig_5D_responder_nonresponder_tcf7pd1-1.pdf" width="1267.2" style="display: block; margin: auto;" type="application/pdf" />
 <pre class="r"><code># number of patients
 unique(cur_dat$PatientID)</code></pre>
 <pre><code> [1] &quot;29&quot;  &quot;33&quot;  &quot;38&quot;  &quot;4&quot;   &quot;40&quot;  &quot;84&quot;  &quot;86&quot;  &quot;87&quot;  &quot;91&quot;  &quot;94&quot;  &quot;III&quot;</code></pre>
