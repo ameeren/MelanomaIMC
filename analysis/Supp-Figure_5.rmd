@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates plots for Figure 3.
+This script generates plots for Supplementary Figure 5.
 
 # Preparations
 
@@ -18,8 +18,6 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 ## Load libraries
-
-First, we will load the libraries needed for this part of the analysis.
 
 ```{r load-libraries, message=FALSE}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
@@ -228,48 +226,6 @@ grid.arrange(leg_b)
 
 # Supp Figure 5C
 
-## Tcf7+ correlation with Tcf7+PD1+ in Tcells
-
-```{r, Supp_Fig_5C_tcf7_pd1_tcell_corr, fig.width=8.3, fig.height=5.3, dev=("pdf")}
-cur_dat <- data.frame(colData(sce_prot)) %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
-  filter(Location != "CTRL") %>%
-  mutate(TCF7_PD1 = paste(TCF7, PD1, sep = "_")) %>%
-  group_by(Description, bcell_patch_score, celltype, TCF7_PD1) %>%
-  summarise(n=n()) %>% 
-  reshape2::dcast(Description + bcell_patch_score + celltype ~ TCF7_PD1, value.var = "n", fill=0) %>%
-  reshape2::melt(id.vars = c("Description", "bcell_patch_score", "celltype"), 
-                 variable.name = "TCF7_PD1", value.name = "n") %>%
-  group_by(Description, celltype) %>%
-  mutate(fraction = n/sum(n)) %>%
-  mutate(total_cells = sum(n)) %>%
-  ungroup() %>%
-  filter(celltype %in% c("CD8+ T cell", "CD4+ T cell")) 
-
-cur_dat <- left_join(cur_dat, im_size)
-
-cur_dat$density <- cur_dat$n / cur_dat$mm2
-
-cur_dat <- cur_dat %>%
-  filter(TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-")) %>%
-  reshape2::dcast(Description + bcell_patch_score + celltype ~ TCF7_PD1, value.var = "density", fill=0)
-
-ggplot(cur_dat, aes(x=log10(`TCF7+_PD1+`+1), y=log10(`TCF7+_PD1-`+1))) + 
-  geom_point(size=3) + 
-  geom_smooth(method="lm") +
-  stat_cor(method = "pearson",
-           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
-           size = 7, cor.coef.name = "R", label.sep="\n", label.y.npc = "top") +
-  theme_bw() +
-  theme(text = element_text(size=16)) +
-  xlab("TCF7+PD1+ Cells per mm2 (log10+1)") +
-  ylab("TCF7+PD1- Cells per mm2 (log10+1)") +
-  facet_wrap(~celltype)
-```
-
-# Supp Figure 5D
-
 ## Response / Survival Analysis
 
 ```{r}
@@ -296,7 +252,7 @@ dat_survival_prot_sub %>%
 
 ## TCF7/PD1 fraction in responder vs. non responder
 
-```{r, Supp_Fig_5D_responder_nonresponder_tcf7pd1, fig.height=5.3, fig.width=13.2, dev=("pdf")}
+```{r, Supp_Fig_5C_responder_nonresponder_tcf7pd1, fig.height=5.3, fig.width=13.2, dev=("pdf")}
 cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_survival_prot_sub$BlockID)])) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
@@ -371,11 +327,11 @@ cur_dat %>%
   summarise(n=n())
 ```
 
-# Supp Figure 5E
+# Supp Figure 5D
 
 ## Chemokine Correlation with Tcf7+CD8+
 
-```{r Supp_Fig_5E_chemokines_tcfpd1_correlation, fig.height=6.2, fig.width=10.1, dev=("pdf")}
+```{r Supp_Fig_5D_chemokines_tcfpd1_correlation, fig.height=6.2, fig.width=10.1, dev=("pdf")}
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 
 # top abundant chemokines
@@ -463,7 +419,7 @@ draw(h)
 
 ## Legend heatmap
 
-```{r Supp_Fig_5E_legend_heatmap, dev="pdf", fig.height=3, fig.width=2}
+```{r Supp_Fig_5D_legend_heatmap, dev="pdf", fig.height=3, fig.width=2}
 lgd1 = color_mapping_legend(h@matrix_color_mapping, plot = FALSE, legend_direction = "vertical", legend_width=unit(3,"cm"), at = c(-1:1))
 lgd2 = color_mapping_legend(ha1@anno_list$`Cell Type`@color_mapping, plot = FALSE, legend_direction = "vertical", nrow = 4)
 

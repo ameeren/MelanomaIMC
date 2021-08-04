@@ -77,8 +77,6 @@ navbar:
     menu:
     - text: Summary Statistics
       href: Summary_Statistics.html
-    - text: Hazard Ratio Analysis
-      href: XX_hazard_ratio.html
     - text: License
       href: license.html
 output:

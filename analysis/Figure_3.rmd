@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates plots for Figure 3.
+This script generates plots for Figure 3. Panel A and B were created manually. 
 
 # Preparations
 
@@ -18,8 +18,6 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 ## Load libraries
-
-First, we will load the libraries needed for this part of the analysis.
 
 ```{r load-libraries, message=FALSE}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
@@ -62,217 +60,11 @@ sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 dat_relation = fread(file = "data/data_for_analysis/rna/Object relationships.csv",stringsAsFactors = FALSE)
 ```
 
-## Prepare Relation Table
-
-```{r}
-# prepare data 
-dat_relation$cellID_first <- paste("RNA", paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = "_"), sep = "_")
-dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
-```
-
 # Figure 3B
-
-## CP output
-
-```{r}
-# Load and prepare
-dat_cells = fread(file = "data/data_for_analysis/rna/cell.csv",stringsAsFactors = FALSE)
-dat_relation = fread(file = "data/data_for_analysis/rna/Object relationships.csv",stringsAsFactors = FALSE)
-
-# Number of cores used for multicore:
-if(detectCores() >= 12){
-  ncores = round(detectCores()/1.25,0)
-}
-if(detectCores() > 1 & detectCores() < 12){
-  ncores = round(detectCores()/2,0)
-}
-if(detectCores() == 1){
-  ncores = 1
-}
-
-n_perm = 100 
-```
-
-## Start the analysis
-
-```{r milieu_analysis}
-start = Sys.time()
-cur_sce <- as.data.frame(colData(sce_rna))
-
-# add same cellID to dat_cells as in sce object
-dat_cells$cellID <- paste("RNA_", paste(dat_cells$ImageNumber, dat_cells$ObjectNumber, sep = "_"), sep = "")
-
-image_df <- data.frame()
-for(size in c(2,3,4,5,6)) {
-  images <- data.frame()
-  for(i in colnames(cur_sce[,grepl("CCL|CXCL",colnames(cur_sce))])){
-    # add chemokine info to celltype
-    sce_info <- cur_sce[,c("cellID", i , "Description")]
-    
-    # add celltype information
-    dat_cells_tmp <- left_join(as.data.frame(dat_cells), sce_info, by = "cellID")
-    
-    #assign labels and groups
-    dat_cells_tmp$label <- dat_cells_tmp[,i]
-    dat_cells_tmp$group <- dat_cells_tmp$Description
-    dat_cells_tmp <- as.data.table(dat_cells_tmp)
-    
-    # subset dat_relation and dat_cells
-    dat_cells_sub <- dat_cells_tmp#[dat_cells$Description == "P3",]
-    dat_relation_sub <- dat_relation#[dat_relation$`First Image Number` == unique(sce_rna[,sce_rna$Description == "P3"]$ImageNumber),]
-    
-    # Prepare the data
-    d = neighbouRhood::prepare_tables(dat_cells_sub, dat_relation_sub)
-    
-    # Calculate the baseline statistics
-    dat_baseline = neighbouRhood::apply_labels(d[[1]], d[[2]]) %>%
-      neighbouRhood::aggregate_classic_patch(., patch_size = size)
-    
-    # Calculate the permutation statistics
-    # This will run the test using parallel computing. The name of the idcol does actually not matter.
-    
-    set.seed(12312)
-    dat_perm = rbindlist(mclapply(1:n_perm, function(x){
-      dat_labels = neighbouRhood::shuffle_labels(d[[1]])
-      neighbouRhood::apply_labels(dat_labels, d[[2]]) %>%
-        neighbouRhood::aggregate_classic_patch(., patch_size = size)
-    },mc.cores = ncores
-    ), idcol = 'run')
-    
-    # calc p values
-    dat_p <- neighbouRhood::calc_p_vals(dat_baseline, dat_perm, n_perm = n_perm, p_tresh = 0.01) 
-    
-    # select interactions between chemokine+ cells
-    dat_p$interaction <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "_")
-    
-    dat_p_wide <- dat_p %>%
-      reshape2::dcast(group ~ interaction, value.var = "sigval", fill = 0) %>%
-      select(group, `1_1`)
-    
-    summary <- as.data.frame(dat_p_wide) %>%
-      group_by(`1_1`) %>%
-      summarise(n=n(),.groups = 'drop') %>%
-      ungroup() %>%
-      mutate(percentage_sig = (n/sum(n)) * 100)
-    
-    images <- rbind(images, cbind(summary[1,], i))
-  }
-  
-  # calculate percentage of images with significant patches
-  images$percentage_sig <- 100 - images$percentage_sig
-  images$patch_size <- size
-  images <- select(images, percentage_sig, i, patch_size)
-  colnames(images) <- c("significant_images", "chemokine", "patch_size")
-  
-  # add to data.frame
-  image_df <- rbind(image_df, images)
-}
-end = Sys.time()
-
-print(end-start)
-```
-
-## Visualize 
-
-```{r Fig_3B_patch_analysis, dev=("pdf"), fig.height=5, fig.width=8}
-dat <- image_df %>%
-  reshape2::dcast(chemokine ~ patch_size, value.var = "significant_images", fill = 0)
-
-rownames(dat) <- dat$chemokine
-dat$chemokine <- NULL
-
-m <- t(as.matrix(dat))
-
-col_fun = viridis::inferno(100)
-
-Heatmap(m,
-        cluster_rows = FALSE,
-        col = col_fun,
-        column_title = "Self-Interaction",
-        column_title_side = "bottom",
-        show_row_names = TRUE,
-        cell_fun = function(j, i, x, y, width, height, fill) {
-          grid.text(sprintf("%.1f", m[i, j]), x, y, gp = gpar(fontsize = 15, col = "grey"))
-          },
-        heatmap_legend_param = list(
-          title = "% Significant\nImages", at = c(0, 10, 20, 30, 40, 50),
-          labels = c("0%", "10%", "20%", "30%","40%", "50%")),
-        row_title = "Motif Size",
-        row_names_side = "left",
-        width = unit(15, "cm"),
-        height = unit(8, "cm"))
-```
-
-## Calculate p-value for Figure 3B
-
-```{r milieu_analysis_image58}
-start = Sys.time()
-cur_sce <- as.data.frame(colData(sce_rna))
-
-image_df <- data.frame()
-for(size in c(2,3,4,5,6,7,8,9,10)) {
-  images <- data.frame()
-  for(i in c("CXCL10")){
-    # add chemokine info to celltype
-    sce_info <- cur_sce[,c("cellID", i , "Description")]
-    
-    # add celltype information
-    dat_cells_tmp <- left_join(as.data.frame(dat_cells), sce_info, by = "cellID")
-    
-    #assign labels and groups
-    dat_cells_tmp$label <- dat_cells_tmp[,i]
-    dat_cells_tmp$group <- dat_cells_tmp$Description
-    dat_cells_tmp <- as.data.table(dat_cells_tmp)
-    
-    # subset dat_relation and dat_cells
-    dat_cells_sub <- dat_cells_tmp[Description == "P3",]
-    dat_relation_sub <- dat_relation[dat_relation$`First Image Number` == unique(sce_rna[,sce_rna$Description == "P3"]$ImageNumber),]
-    
-    # Prepare the data
-    d = neighbouRhood::prepare_tables(dat_cells_sub, dat_relation_sub)
-    
-    # Calculate the baseline statistics
-    dat_baseline = neighbouRhood::apply_labels(d[[1]], d[[2]]) %>%
-      neighbouRhood::aggregate_classic_patch(., patch_size = size)
-    
-    # Calculate the permutation statistics
-    # This will run the test using parallel computing. The name of the idcol does actually not matter.
-    
-    set.seed(12312)
-    dat_perm = rbindlist(mclapply(1:n_perm, function(x){
-      dat_labels = neighbouRhood::shuffle_labels(d[[1]])
-      neighbouRhood::apply_labels(dat_labels, d[[2]]) %>%
-        neighbouRhood::aggregate_classic_patch(., patch_size = size)
-    },mc.cores = ncores
-    ), idcol = 'run')
-    
-    # calc p values
-    dat_p <- neighbouRhood::calc_p_vals(dat_baseline, dat_perm, n_perm = n_perm, p_tresh = 0.01) 
-    
-    # select interactions between chemokine+ cells
-    dat_p$interaction <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "_")
-    images <- rbind(images,dat_p)
-  }
-  
-  # calculate percentage of images with significant patches
-  images$patch_size <- size
-  
-  # add to data.frame
-  image_df <- rbind(image_df, images)
-}
-
-end = Sys.time()
-print(end-start)
-
-# Significant Self-Interatcions
-image_df[image_df$interaction == "1_1",]
-```
-
-# Figure 3C
 
 ## Example of CXCL10 Cluster and corresponding Community
 
-```{r Fig_3C_clusters_and_communities, fig.width=10, fig.height=10, dev=c('pdf')}
+```{r Fig_3B_clusters_and_communities, fig.width=10, fig.height=10, dev=c('pdf')}
 example <- findPatch(sce_rna[,sce_rna$ImageNumber == 58], sce_rna[,sce_rna$CXCL10 == 1]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
@@ -315,11 +107,11 @@ example <- findMilieu(example,
               point_size = 14)
 ```
 
-# Figure 3D
+# Figure 3C
 
 ## Chemokine-producing cells in Patches
 
-```{r Fig_3D_sunburst_plot, fig.height=15, fig.width=10, dev=c('pdf')}
+```{r Fig_3C_sunburst_plot, fig.height=15, fig.width=10, dev=c('pdf')}
 # define fractions of chemokines present in community
 cur_dt <- data.frame(colData(sce_rna))
 
@@ -467,7 +259,7 @@ lgd2 = Legend(labels = names(col_vector_cells), title = "Inner Circle\nCell Type
 draw(packLegend(lgd2, lgd1, direction = "horizontal"))
 ```
 
-# Figure 3E
+# Figure 3D
 
 ## Expression levels in CD8 cells in milieus
 
@@ -490,7 +282,7 @@ milieus <- milieus %>%
 
 ## Marker Profile for different Milieus (for CD8+)
 
-```{r Fig_3E_cd8_profile_milieus, fig.height=6, fig.width=8, dev=c('pdf')}
+```{r Fig_3D_cd8_profile_milieus, fig.height=6, fig.width=8, dev=c('pdf')}
 marker_rna <- c("Lag3", "T8_CXCL13", "T5_CCL4")
 
 # rna data 
@@ -579,36 +371,6 @@ grid.arrange(plot_list[[1]] + theme(legend.position = "none"),
 
 ## Legend
 
-```{r Fig_3E_legend, fig.height=3, fig.width=2, dev=c('pdf')}
+```{r Fig_3D_legend, fig.height=3, fig.width=2, dev=c('pdf')}
 grid.arrange(leg_c)
 ```
-
-## Fraction of milieu cells that are in_tumor
-
-```{r Fig_3F_milieu_tumor, fig.width=5.8, fig.height=3.8, dev=("pdf")}
-cur_dat <- data.frame(colData(sce_rna)) %>%
-  filter(cellID %in% milieus$cellID) %>%
-  select(cellID, in_tumor)
-
-milieus_tumor <- left_join(milieus, cur_dat) %>%
-  group_by(milieu, in_tumor) %>%
-  summarise(n=n()) %>%
-  reshape2::dcast(milieu ~ in_tumor, fill = 0, value.var = "n") %>%
-  reshape2::melt(id.vars = c("milieu"), variable.name = "in_tumor", value.name = "n") %>%
-  group_by(milieu) %>%
-  mutate(frac = n / sum(n)) %>%
-  mutate(milieu_short = toupper(str_split(milieu, "_",  n = 2, simplify = TRUE)[,1]))
-
-milieus_tumor$in_tumor_name <- ifelse(milieus_tumor$in_tumor == TRUE, "Tumor", "Non-Tumor")
-
-ggplot(milieus_tumor, aes(x = milieu_short, y = frac, fill=in_tumor_name)) +
-  geom_bar(stat="identity", width = 0.7) +
-  ylab("Fraction of Milieu") +
-  xlab("Chemokine Milieus") +
-  theme_bw() +
-  theme(text = element_text(size=16),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust = 1)) +
-  guides(fill=guide_legend(title="Location"))
-  
-```
-

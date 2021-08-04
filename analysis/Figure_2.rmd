@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates plots for Figure 2.
+This script generates plots for Figure 2. Panel A was created manually.
 
 # Preparation
 
@@ -18,6 +18,7 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
 ## Load libraries
+
 ```{r, message=F}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
 library(SingleCellExperiment)
@@ -49,7 +50,7 @@ sce_prot <- readRDS(file= "data/data_for_analysis/sce_protein.rds")
 
 # Figure 2B
 
-## UpSet plot with ComplexHeatmap - including CellType Annotation and Met Location (with controls)
+## UpSet plot with ComplexHeatmap - including CellType Annotation and Met Location
 
 ```{r Fig_2B_upset_plot, message=F, fig.width=10, fig.height=12, dev=c('pdf')}
 cur_dt <- as.data.table(colData(sce_rna))
@@ -304,37 +305,9 @@ draw(lgd_list)
 
 # Figure 2D
 
-## Correlation of Chemokines with Celltypes
-
-```{r Fig_2D_correlation_chemokines, fig.width=9, fig.height=9, dev=c('pdf')}
-# top abundant chemokines
-cur_rna <- data.frame(colData(sce_rna))
-
-# sum
-rna_sum <- cur_rna %>%
-  group_by(Description, expressor) %>%
-  summarise(n = n()) %>%
-  reshape2::dcast(Description ~ expressor, value.var = "n", fill = 0) 
-
-# only keep highly abundant chemokines
-rna_sum <- rna_sum[,colnames(rna_sum) %in% targets]
-
-# correlation
-cor <- cor(rna_sum, rna_sum, method = "pearson")
-
-corrplot(cor, 
-         order = "FPC",
-         addCoef.col = "white",
-         method = "circle",
-         tl.col="black",
-         tl.cex = 1.5)
-```
-
-# Figure 2E
-
 ## Correlation of Chemokines with Celltypes (based on fractions)
 
-```{r Fig_2E_pearson_correlation_chemokines_prot_data, fig.width=9, fig.height=9, dev=c('pdf')}
+```{r Fig_2D_pearson_correlation_chemokines_prot_data, fig.width=9, fig.height=9, dev=c('pdf')}
 # top abundant chemokines
 cur_rna <- data.frame(colData(sce_rna))
 
@@ -368,56 +341,8 @@ all(rna_sum$Description == prot_sum$Description)
 cor <- cor(rna_sum[,-1], prot_sum[,-1], method = "pearson")
 
 corrplot(cor, 
-         addCoef.col = "white",
+         addCoef.col = "black",
          method = "circle",
          tl.col="black",
          tl.cex = 1.5)
-```
-
-## Scatter Plot for CD8+ and Chemokine Selection
-
-```{r Fig_2F_cd8_chemokine_correlation, fig.width=13, fig.height=5.7, dev=("pdf")}
-# sum
-chemokines <- data.frame(colData(sce_rna)) %>%
-  group_by(Description) %>%
-  mutate(total_cells=n()) %>%
-  ungroup() %>%
-  group_by(Description, total_cells, expressor) %>%
-  summarise(n=n()) %>%
-  mutate(fraction=n/total_cells) %>%
-  reshape2::dcast(Description ~ expressor, value.var = "fraction", fill = 0) %>%
-  select(Description, CXCL12, CXCL9, CCL22)
-
-celltypes <- data.frame(colData(sce_prot)) %>%
-  group_by(Description, celltype) %>%
-  summarise(n=n()) %>%
-  mutate(fraction=n/sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0) %>%
-  select(Description, `CD8+ T cell`, pDC, `FOXP3+ T cell`) %>%
-  reshape2::melt(id.vars = "Description", variable.name = "celltype", value.name = "cell_fraction")
-
-sum <- left_join(celltypes, chemokines, by = "Description") %>%
-  reshape2::melt(id.vars = c("Description", "celltype", "cell_fraction"), variable.name = "expressor", value.name = "chemo_fraction")
-
-sum <- sum %>%
-  mutate(celltype_chemo = paste(celltype, expressor, sep = " ~ ")) %>%
-  filter(celltype_chemo %in% c("`CD8+ T cell` ~ CXCL9", "pDC ~ CXCL12", "`FOXP3+ T cell` ~ CCL22"))
-
-sum$celltype_chemo <- factor(sum$celltype_chemo, levels = c("pDC ~ CXCL12", "`FOXP3+ T cell` ~ CCL22","`CD8+ T cell` ~ CXCL9"))
-
-ggplot(sum, aes(x=log10(chemo_fraction), y=log10(cell_fraction))) + 
-  geom_point() + 
-  geom_smooth(method="lm") +
-  ylab("Celltype Fraction (log10)\n") +
-  xlab("Chemokine Fraction (log10)") +
-  scale_y_continuous(position = "right") +
-  theme_bw() + 
-  theme(text=element_text(size=16),
-        plot.margin = margin(0.5,0.5,0.5,0.5, "cm"),
-        axis.title.y = element_text(hjust=1)) +
-  guides(col=guide_legend(title="Chemokines")) +
-  stat_poly_eq(formula = y ~ x, size=7,
-               aes(label = ..rr.label..), 
-               parse = TRUE) + 
-  facet_wrap(~celltype_chemo, ncol = 2, scales = "free", as.table = FALSE)
 ```

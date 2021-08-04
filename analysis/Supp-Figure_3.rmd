@@ -33,6 +33,7 @@ library(cowplot)
 library(data.table)
 library(ggpmisc)
 library(ggpubr)
+library(ComplexHeatmap)
 library(rstatix)
 ```
 
@@ -48,6 +49,14 @@ dat_relation = fread(file = "data/data_for_analysis/protein/Object relationships
 dat_relation_rna = fread(file = "data/data_for_analysis/RNA/Object relationships.csv",stringsAsFactors = FALSE)
 
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+```
+
+## Prepare Relation Table
+
+```{r}
+# prepare data 
+dat_relation$cellID_first <- paste("RNA", paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = "_"), sep = "_")
+dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
 ```
 
 # Supp Figure 3A
@@ -92,9 +101,142 @@ ggplot(frac, aes(x=expressor, y = fraction)) +
 
 # Supp Figure 3B
 
+## CP output
+
+```{r}
+# Load and prepare
+dat_cells = fread(file = "data/data_for_analysis/rna/cell.csv",stringsAsFactors = FALSE)
+dat_relation = fread(file = "data/data_for_analysis/rna/Object relationships.csv",stringsAsFactors = FALSE)
+
+# Number of cores used for multicore:
+if(detectCores() >= 12){
+  ncores = round(detectCores()/1.25,0)
+}
+if(detectCores() > 1 & detectCores() < 12){
+  ncores = round(detectCores()/2,0)
+}
+if(detectCores() == 1){
+  ncores = 1
+}
+
+n_perm = 100 
+```
+
+## Start the analysis
+
+```{r milieu_analysis}
+start = Sys.time()
+cur_sce <- as.data.frame(colData(sce_rna))
+
+# add same cellID to dat_cells as in sce object
+dat_cells$cellID <- paste("RNA_", paste(dat_cells$ImageNumber, dat_cells$ObjectNumber, sep = "_"), sep = "")
+
+image_df <- data.frame()
+for(size in c(2,3,4,5,6)) {
+  images <- data.frame()
+  for(i in colnames(cur_sce[,grepl("CCL|CXCL",colnames(cur_sce))])){
+    # add chemokine info to celltype
+    sce_info <- cur_sce[,c("cellID", i , "Description")]
+    
+    # add celltype information
+    dat_cells_tmp <- left_join(as.data.frame(dat_cells), sce_info, by = "cellID")
+    
+    #assign labels and groups
+    dat_cells_tmp$label <- dat_cells_tmp[,i]
+    dat_cells_tmp$group <- dat_cells_tmp$Description
+    dat_cells_tmp <- as.data.table(dat_cells_tmp)
+    
+    # subset dat_relation and dat_cells
+    dat_cells_sub <- dat_cells_tmp
+    dat_relation_sub <- dat_relation
+    
+    # Prepare the data
+    d = neighbouRhood::prepare_tables(dat_cells_sub, dat_relation_sub)
+    
+    # Calculate the baseline statistics
+    dat_baseline = neighbouRhood::apply_labels(d[[1]], d[[2]]) %>%
+      neighbouRhood::aggregate_classic_patch(., patch_size = size)
+    
+    # Calculate the permutation statistics
+    # This will run the test using parallel computing. The name of the idcol does actually not matter.
+    
+    set.seed(12312)
+    dat_perm = rbindlist(mclapply(1:n_perm, function(x){
+      dat_labels = neighbouRhood::shuffle_labels(d[[1]])
+      neighbouRhood::apply_labels(dat_labels, d[[2]]) %>%
+        neighbouRhood::aggregate_classic_patch(., patch_size = size)
+    },mc.cores = ncores
+    ), idcol = 'run')
+    
+    # calc p values
+    dat_p <- neighbouRhood::calc_p_vals(dat_baseline, dat_perm, n_perm = n_perm, p_tresh = 0.01) 
+    
+    # select interactions between chemokine+ cells
+    dat_p$interaction <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "_")
+    
+    dat_p_wide <- dat_p %>%
+      reshape2::dcast(group ~ interaction, value.var = "sigval", fill = 0) %>%
+      select(group, `1_1`)
+    
+    summary <- as.data.frame(dat_p_wide) %>%
+      group_by(`1_1`) %>%
+      summarise(n=n(),.groups = 'drop') %>%
+      ungroup() %>%
+      mutate(percentage_sig = (n/sum(n)) * 100)
+    
+    images <- rbind(images, cbind(summary[1,], i))
+  }
+  
+  # calculate percentage of images with significant patches
+  images$percentage_sig <- 100 - images$percentage_sig
+  images$patch_size <- size
+  images <- select(images, percentage_sig, i, patch_size)
+  colnames(images) <- c("significant_images", "chemokine", "patch_size")
+  
+  # add to data.frame
+  image_df <- rbind(image_df, images)
+}
+end = Sys.time()
+
+print(end-start)
+```
+
+## Visualize 
+
+```{r Supp_Fig_3B_patch_analysis, dev=("pdf"), fig.height=5, fig.width=8}
+dat <- image_df %>%
+  reshape2::dcast(chemokine ~ patch_size, value.var = "significant_images", fill = 0)
+
+rownames(dat) <- dat$chemokine
+dat$chemokine <- NULL
+
+m <- t(as.matrix(dat))
+
+col_fun = viridis::inferno(100)
+
+Heatmap(m,
+        cluster_rows = FALSE,
+        col = col_fun,
+        column_title = "Self-Interaction",
+        column_title_side = "bottom",
+        show_row_names = TRUE,
+        cell_fun = function(j, i, x, y, width, height, fill) {
+          grid.text(sprintf("%.1f", m[i, j]), x, y, gp = gpar(fontsize = 15, col = "grey"))
+          },
+        heatmap_legend_param = list(
+          title = "% Significant\nImages", at = c(0, 10, 20, 30, 40, 50),
+          labels = c("0%", "10%", "20%", "30%","40%", "50%")),
+        row_title = "Motif Size",
+        row_names_side = "left",
+        width = unit(15, "cm"),
+        height = unit(8, "cm"))
+```
+
+# Supp Figure 3C
+
 ## Tumor Marker Profile for different T cell Scoring Groups
 
-```{r Supp_Fig_3B_tumor_profile_tcell, fig.height=8, fig.width=10, dev=c('pdf')}
+```{r Supp_Fig_3C_tumor_profile_tcell, fig.height=8, fig.width=10, dev=c('pdf')}
 tumor_marker_protein <- c("bCatenin", "Sox9", "pERK", "p75", "Ki67", "SOX10", "PARP", "S100", "MiTF")
 tumor_marker_rna <- c("Mart1", "pRB")
 
@@ -172,66 +314,6 @@ leg <- get_legend(p)
 grid.arrange(p + theme(legend.position = "none"))
 ```
 
-```{r Supp_Fig_3B_tumor_profile_tcell_legend, fig.height=2, fig.width=2, dev=c('pdf')}
+```{r Supp_Fig_3C_tumor_profile_tcell_legend, fig.height=2, fig.width=2, dev=c('pdf')}
 grid.arrange(leg)
-```
-
-# Supp Figure 3C
-
-## Prepare Relation Data RNA
-
-```{r}
-# prepare data and add cellID
-dat_relation_rna$cellID_first <- paste("RNA", paste(dat_relation_rna$`First Image Number`, dat_relation_rna$`First Object Number`, sep = "_"), sep = "_")
-dat_relation_rna$cellID_second <- paste("RNA", paste(dat_relation_rna$`Second Image Number`, dat_relation_rna$`Second Object Number`, sep = "_"), sep = "_")
-
-# add celltype status to first and second label
-celltype_first <- data.frame(colData(sce_rna))[,c("cellID", "celltype", "celltype_clustered")]
-colnames(celltype_first) <- c("cellID_first", "celltype_first", "celltype_clust_first")
-celltype_second <- data.frame(colData(sce_rna))[,c("cellID", "celltype", "celltype_clustered")]
-colnames(celltype_second) <- c("cellID_second", "celltype_second", "celltype_clust_second")
-
-dat_relation_rna <- left_join(dat_relation_rna, celltype_first, by = "cellID_first")
-dat_relation_rna <- left_join(dat_relation_rna, celltype_second, by = "cellID_second")
-
-colnames(dat_relation_rna)[5] <- "FirstImageNumber"
-```
-
-## CD8/Tumor Interactions and Chemokine Freqs
-
-```{r Supp_Fig_3C_chemokines_tumor_interaction, dev=("pdf"), fig.width=9, fig.height=8}
-# number of interactions CD8+ T cell and tumor per image
-dat_relation_sub <- dat_relation_rna[dat_relation_rna$celltype_first %in% c("CD8+ T cell") & 
-                                   dat_relation_rna$celltype_second == "Tumor"]
-
-# count number of interactions
-count <- dat_relation_sub %>%
-  group_by(FirstImageNumber) %>%
-  summarise(n=n())
-names(count)[1] <- "ImageNumber"
-
-# fraction of exhausted cd8 per image
-expressor_frac <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber, expressor) %>%
-  summarise(n=n()) %>%
-  mutate(fraction=n/sum(n)) %>%
-  filter(expressor %in% targets) %>%
-  reshape2::dcast(ImageNumber ~ expressor, value.var = "fraction", fill = 0) %>%
-  reshape2::melt(id.vars = c("ImageNumber"), variable.name = "expressor", value.name = "fraction")
-
-# correlation plot
-cur_dat <- left_join(expressor_frac, count)
-cur_dat[is.na(cur_dat$n),]$n <- 0
-
-ggplot(cur_dat, aes(x=log10(fraction), y=log10(n))) + 
-  geom_point(size=2) + 
-  geom_smooth(method="lm") +
-  stat_cor(method = "pearson",
-           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
-           size = 3, cor.coef.name = "R", label.sep="\n", label.x = -1.875, label.y = 0.3) + 
-  theme_bw() +
-  theme(text = element_text(size=15)) +
-  xlab("Chemokine Fraction (log10)") +
-  ylab("Number of CD8/Tumor Interactions (log10)") +
-  facet_wrap(~expressor)
 ```

@@ -19,8 +19,6 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 
 ## Load libraries
 
-First, we will load the libraries needed for this part of the analysis.
-
 ```{r, message=FALSE}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
 library(SingleCellExperiment)
@@ -163,28 +161,11 @@ for (i in c("high - High Dysfunction", "high - Low Dysfunction")){
                             reduce = 0.05, 
                             transparency = ifelse(cur_dat_relation[[1]] %in% c("CD8+ T cell"),0,0.6),
                             annotationTrack = c("grid"))
-  
-  # add percentages
-#   circos.track(track.index = 1, panel.fun = function(x, y) {
-#     xlim = get.cell.meta.data("xlim")
-#     ylim = get.cell.meta.data("ylim")
-#     sector.name = get.cell.meta.data("sector.index")
-#     xplot = get.cell.meta.data("xplot")
-#     
-#     circos.lines(xlim, c(mean(ylim), mean(ylim)), lty = 3) # dotted line
-#     by = ifelse(abs(xplot[2] - xplot[1]) > 30, 0.2, 0.5)
-#     for(p in seq(by, 1, by = by)) {
-#         circos.text(p*(xlim[2] - xlim[1]) + xlim[1], mean(ylim) + 0.1, 
-#             paste0(p*100, "%"), cex = 0.5, adj = c(0.5, 0), niceFacing = TRUE)
-#     }
-# }, bg.border = NA)
-  
 }
 ```
 
 ```{r Fig_5A_legend, dev=c('pdf'), fig.height=5, fig.width=1.5}
 # create legend for tumor subclusters
-#lgd1 = Legend(labels = names(col_vec[grep("Tumor", names(col_vec))]), title = "Tumor\nSubclusters", legend_gp = gpar(fill = unname(col_vec[grep("Tumor", names(col_vec))])))
 lgd2 = Legend(labels = names(metadata(sce_prot)$colour_vector$celltype), title = "Cell Type", legend_gp = gpar(fill = unname(metadata(sce_prot)$colour_vector$celltype)))
 draw(packLegend(lgd2, 
                 #lgd1, 
@@ -237,25 +218,6 @@ celltypes %>%
   filter(fraction > median_frac)
 ```
 
-## Composition of Dysfunction Groups (Met Location and Punch Location)
-
-```{r alluvial_dysfunction_score, fig.width=10, fig.height=5, dev=("pdf"), eval=F}
-c <- data.frame(colData(sce_rna)) %>%
-  distinct(Description, .keep_all = T) %>%
-  filter(dysfunction_score %in% c("Low Dysfunction", "High Dysfunction")) %>%
-  dplyr::count(MM_location, Location, dysfunction_score) %>%
-  ggplot(aes(axis1 = MM_location, axis2 = Location, axis3 = dysfunction_score,y=n))+
-  geom_alluvium(aes(fill=as.factor(dysfunction_score)))+
-  geom_stratum()+
-  geom_text(stat = "stratum", aes(label = after_stat(stratum))) +
-  theme_minimal()+
-  scale_x_discrete(limits = c("Met Location", "Punch Location", "Dysfunction Score"), expand = c(.2, .05)) +
-  theme(text = element_text(size=20)) +
-  guides(fill=guide_legend(title="Dysfunction Score")) +
-  ylab("Number of Samples")
-plot(c)
-```
-
 # Figure 5C
 
 ## B cell patch grouping for dysfunction groups
@@ -281,67 +243,7 @@ ggplot(a) +
 
 # Figure 5D
 
-## Analysis
-
-```{r Fig_5D_Bcell_patches_CXCL13, fig.height=6, fig.width=9, dev=c('pdf'), eval=F}
-# im_size
-im_size <- as.data.frame(cbind(image_mat_rna$Metadata_Description, (image_mat_rna$Height_cellmask * image_mat_rna$Width_cellmask)/1000000))
-names(im_size) <- c("Description", "mm2")
-im_size$mm2 <- as.numeric(im_size$mm2)
-
-cxcl13 <- data.frame(colData(sce_rna)) %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M") %>% # remove LN margin samples 
-  filter(CXCL13 == 1) %>%
-  group_by(Description, MM_location, celltype) %>%
-  summarise(n=n()) %>%
-  reshape2::dcast(Description + MM_location ~ celltype, value.var = "n", fill = 0)
-
-all_images <- data.frame(colData(sce_rna)) %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M") %>%
-  distinct(Description, .keep_all = T) %>%
-  select(Description)
-
-# left_join to have all images
-all_images <- left_join(all_images, cxcl13)
-
-# replace NA
-all_images[is.na(all_images)] <- 0
-
-all_images <- all_images %>%
-  reshape2::melt(id.vars=c("Description", "MM_location"), variable.name = "celltype", value.name = "n")
-
-# add mm2 and calculate density
-all_images <- left_join(all_images, im_size)
-all_images$density <- all_images$n / all_images$mm2
-
-#
-Bcell <- data.frame(colData(sce_rna)) %>%
-  distinct(Description, .keep_all = T) %>%
-  group_by(Description) %>%
-  select(Description, bcell_patch_score)
-
-# add grouping
-all_images <- left_join(all_images, Bcell[,c("Description","bcell_patch_score")]) %>%
-  filter(celltype %in% c("CD8+ T cell", "CD8- T cell", "HLA-DR")) 
-
-#all_images$interaction <- interaction(all_images$celltype, all_images$bcell_patch_score)
-
-ggplot(all_images,aes(x=bcell_patch_score, y = log10(as.numeric(density+1)), fill=celltype)) + 
-  geom_boxplot(alpha=1, lwd=1, outlier.shape = NA) + 
-  geom_quasirandom(dodge.width=0.75, alpha=1, size=2) +
-  ylab("CXCL13 Expressing Cells per mm2\n(log10 + 1)") +
-  xlab("") + 
-  theme_bw() +
-  theme(text = element_text(size=18),
-        axis.text.x = element_text(angle=45, vjust=1, hjust=1)) +
-  scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype[c("CD8+ T cell", "CD8- T cell", "HLA-DR")]),
-                    breaks = names(metadata(sce_rna)$colour_vectors$celltype[c("CD8+ T cell", "CD8- T cell", "HLA-DR")])) +
-  guides(fill=guide_legend(title="Cell Type", override.aes = c(lwd=0.5)))
-```
-
-## Fig 5D with fractions 
+## Analysis and Visualization
 
 ```{r Fig_5D_Bcell_patches_CXCL13_fractions, fig.height=6, fig.width=9, dev=c('pdf')}
 # fraction of all CXCL13 production
@@ -537,6 +439,5 @@ ggplot(sum, aes(x=sum$status, y=log10(metric))) +
     position = position_dodge(0.8), 
     size=6) + 
   ylab("Enrichment in B cell milieus (log10)") +
-  xlab("") #+
-  #coord_cartesian(ylim=c(-1,1.75))
+  xlab("")
 ```

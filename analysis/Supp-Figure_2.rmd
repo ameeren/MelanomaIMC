@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates plots for Supplementary Figure 2.
+This script generates plots for Supplementary Figure 2. Panel B was created manually. 
 
 # Preparations
 
@@ -42,6 +42,7 @@ library(ggrepel)
 library(circlize)
 library(coxme)
 library(rstatix)
+library(corrplot)
 library(ggpubr)
 ```
 
@@ -96,43 +97,6 @@ ggplot(cur_dat,aes(x=fct_reorder(chemokine, fraction, .fun = median, .desc = TRU
   scale_y_log10() +
   annotation_logticks(sides = "l") +
   geom_hline(yintercept = median(cur_dat$fraction+0.001), linetype = 2) 
-```
-
-# Supp Figure 2B
-
-## Clinical features of the cohort 
-
-Note: as the cohort is very diverse, we are using the BlockID as the minimal unit since clinical parameters are described per BlockID. However, sometimes we do have patients of which we have multiple FFPE blocks (BlockIDs). Nonetheless, clinical parameters are not given per patient but per patient FFPE block and are therefore considered the minimial unit.
-
-## Number of Samples
-
-```{r Supp_Fig_2B_number_of_samples, fig.height=6, fig.width=17, dev=c('pdf')}
-dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
-
-# remove control samples
-dat <- dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location != "CTRL"]$BlockID),]
-
-p1 <- unique(dat[,c("BlockID","MM_location")]) %>%
-  ggplot()+
-  geom_bar(aes(y=MM_location),stat ="count") +
-  xlab("Biopsy Blocks per Location") +
-  ylab("Metastasis Location") +
-  theme_bw()+
-  theme(text = element_text(size=16))
-  
-p2 <- dat %>%
-  ggplot()+
-  geom_bar(aes(x=BlockID, fill=(MM_location)),stat="count")+
-  theme_bw()+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x=element_blank(),
-        text = element_text(size=16)) + 
-  ylab("Number of Samples") +
-  xlab("Biopsy Blocks") +
-  scale_y_continuous(limits = c(0,4), expand = c(0, 0)) +
-  guides(fill=guide_legend(title="Metasis Location"))
-
-plot_grid(p1,p2,rel_widths = c(1.25,3))  
 ```
 
 # Supp Figure 2C
@@ -241,41 +205,15 @@ grid.arrange(leg)
 
 # Supp Figure 2D
 
-## Expressor in MM_location
+## Mutation split by Location
 
-```{r Supp_Fig_2D_expressor_per_location, fig.width=10, fig.height=5, dev=("pdf")}
+```{r Supp_Fig_2D_mutation, dev=c('pdf'), fig.width=15, fig.height=9.5}
 # add control location to sce
 sce_rna$MM_location_simplified2 <- sce_rna$MM_location_simplified
 sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "Skin"]$MM_location_simplified2 <- "control skin"
 sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "Lymphnode"]$MM_location_simplified2 <- "control LN"
 sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "PSO"]$MM_location_simplified2 <- "control psoriasis"
 
-frac <- data.frame(colData(sce_rna)) %>%
-  filter(MM_location_simplified2 != "control psoriasis") %>%
-  group_by(Description, MM_location_simplified2, expressor) %>%
-  summarise(n=n()) %>%
-  mutate(fraction = n / sum(n)) %>%
-  filter(expressor %in% targets) %>%
-  reshape2::dcast(Description + MM_location_simplified2 ~ expressor, value.var = "fraction", fill = 0) %>%
-  reshape2::melt(id.vars = c("Description", "MM_location_simplified2"), variable.name = "expressor", value.name = "fraction")
-
-ggplot(frac, aes(x=expressor, y = fraction)) + 
-  geom_boxplot(alpha=1, outlier.size = 0.5, aes(fill = MM_location_simplified2)) +
-  scale_color_discrete(guide=FALSE) +
-  theme_bw() +
-  theme(text = element_text(size = 15),
-        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
-  guides(fill=guide_legend(title="Met Location", override.aes = aes(lwd=0.5))) +
-  xlab("") + 
-  ylab("Fractions") +
-  coord_cartesian(ylim = c(0,0.06))
-```
-
-# Supp Figure 2E
-
-## Mutation split by Location
-
-```{r Supp_Fig_2X_mutation, dev=c('pdf'), fig.width=15, fig.height=9.5}
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 
 # subset sce_rna
@@ -356,196 +294,30 @@ data.frame(colData(sce_rna_sub)) %>%
   mutate(percentage = n / sum(n) * 100)
 ```
 
-## Mutation split by Location
+# Supp Figure 2E
 
-```{r Supp_Fig_2D_mutation, dev=c('pdf'), fig.width=15, fig.height=9.5, eval=F}
-targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+## Chemokines cross-correlation
 
-# subset sce_rna
-group_size <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber, Mutation) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(Mutation) %>%
-  summarise(n=n()) %>%
-  filter(n>10 & Mutation != "")
+```{r Supp_Fig_2E_correlation_chemokines, fig.width=9, fig.height=9, dev=c('pdf')}
+# top abundant chemokines
+cur_rna <- data.frame(colData(sce_rna))
 
-sce_rna_sub <- sce_rna[,sce_rna$Mutation %in% group_size$Mutation]
+# sum
+rna_sum <- cur_rna %>%
+  group_by(Description, expressor) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ expressor, value.var = "n", fill = 0) 
 
-a1 <- plotCellCounts(sce = sce_rna_sub[,sce_rna_sub$MM_location == "LN"], 
-                    sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets & sce_rna_sub$MM_location == "LN")],
-                    cellID = "cellID",
-                    colour_by = "expressor",
-                    split_by = "Mutation",
-                    imageID = "ImageNumber",
-                    normalize = TRUE,
-                    show_n = FALSE,
-                    colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=16)) +
-  ylab("Normalized Cell Fraction")
+# only keep highly abundant chemokines
+rna_sum <- rna_sum[,colnames(rna_sum) %in% targets]
 
-b1 <- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets & sce_rna_sub$MM_location == "LN")],
-                    cellID = "cellID",
-                    colour_by = "celltype",
-                    split_by = "Mutation",
-                    imageID = "ImageNumber",
-                    proportion = TRUE,
-                    show_n = FALSE,
-                    colour_vector = metadata(sce_rna)$colour_vectors$celltype) + 
-  guides(fill=guide_legend("Cell Type")) +
-  theme(text = element_text(size=16))
+# correlation
+cor <- cor(rna_sum, rna_sum, method = "pearson")
 
-a2 <- plotCellCounts(sce = sce_rna_sub[,sce_rna_sub$MM_location == "skin_subcutaneous"], 
-                    sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets & sce_rna_sub$MM_location == "skin_subcutaneous")],
-                    cellID = "cellID",
-                    colour_by = "expressor",
-                    split_by = "Mutation",
-                    imageID = "ImageNumber",
-                    normalize = TRUE,
-                    show_n = FALSE,
-                    colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=16)) +
-  ylab("Normalized Cell Fraction")
-
-b2 <- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets & sce_rna_sub$MM_location == "skin_subcutaneous")],
-                    cellID = "cellID",
-                    colour_by = "celltype",
-                    split_by = "Mutation",
-                    imageID = "ImageNumber",
-                    proportion = TRUE,
-                    show_n = FALSE,
-                    colour_vector = metadata(sce_rna)$colour_vectors$celltype) + 
-  guides(fill=guide_legend("Cell Type")) +
-  theme(text = element_text(size=16))
-
-# fraction of chemokine-expressing cells per image
-chemo <- data.frame(colData(sce_rna_sub)) %>%
-  filter(MM_location %in% c("skin_subcutaneous", "LN")) %>%
-  group_by(ImageNumber, Mutation, chemokine, MM_location) %>%
-  summarise(n=n()) %>%
-  group_by(ImageNumber) %>%
-  mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(ImageNumber + Mutation + MM_location ~ chemokine, value.var = "fraction")
-
-median_expression <- median(chemo$`TRUE`)
-
-stat.test <- chemo %>%
-  group_by(MM_location) %>%
-  wilcox_test(`TRUE` ~ Mutation) %>%
-  adjust_pvalue(method="BH") %>%
-  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  add_xy_position(x = "Mutation")
-
-stat.test$y.position <- stat.test$y.position - 0.025
-
-c <- ggplot(chemo, aes(x=Mutation, y=`TRUE`)) + 
-  geom_boxplot(alpha=0.2, lwd=1.5) + 
-  geom_quasirandom(aes(col=MM_location), size=2, alpha=.8) +
-  #geom_hline(yintercept = median_expression, linetype=2, size=2) + 
-  #stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
-  xlab("") + 
-  ylab("Fraction of Chemokine-Expressing Cells") +
-  theme_bw() +
-  theme(text = element_text(size=16),
-        axis.text.x = element_text(angle=45, hjust=1, vjust=1)) +
-  guides(col=guide_legend("Location")) + 
-  coord_cartesian(ylim=c(0,0.25)) +
-  facet_wrap(~MM_location)
-
-margin_top <- theme(plot.margin = unit(c(1,1,2,1), "cm"))
-margin_bottom <- theme(plot.margin = unit(c(2,1,1,1), "cm"))
-p <- grid.arrange(a1+margin_top,b1+margin_top,a2+margin_bottom,b2+margin_bottom, ncol=2, nrow=2)
-
-grid.arrange(p,c,nrow=1, widths = c(0.65,0.35))
-
-# MM_location for Mutations
-data.frame(colData(sce_rna_sub)) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(Mutation, MM_location_simplified) %>%
-  summarise(n=n()) %>%
-  group_by(Mutation) %>%
-  mutate(percentage = n / sum(n) * 100)
-```
-
-## B2M and S100A1 expression by Mutation Type
-
-```{r Supp_Fig_XX_tumor_profile_mutation, fig.height=8, fig.width=10, dev=c('pdf'), eval=F}
-tumor_marker_protein <- c("bCatenin", "Sox9", "pERK", "p75", "Ki67", "SOX10", "PARP", "S100", "MiTF", "IDO1", "PDL1")
-tumor_marker_rna <- c("Mart1", "pRB", "B2M")
-
-# rna data 
-dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tumor"], "asinh")))
-dat_rna$cellID <- rownames(dat_rna)
-dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "Mutation", "Description", "MM_location", "Location")])
-
-# filter
-dat_rna <- dat_rna %>%
-  filter(Location != "CTRL")
-
-# mean per image
-dat_rna <- dat_rna %>%
-  select(-cellID) %>%
-  group_by(Description, Mutation) %>%
-  summarise_if(is.numeric, mean, na.rm = TRUE)
-
-# melt
-dat_rna <- dat_rna %>%
-  reshape2::melt(id.vars = c("Description", "Mutation"), variable.name = "channel", value.name = "asinh")
-
-# protein data
-dat_prot <- data.frame(t(assay(sce_prot[tumor_marker_protein,, sce_prot$celltype == "Tumor"], "asinh")))
-dat_prot$cellID <- rownames(dat_prot)
-dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "Mutation", "Description", "MM_location", "Location")])
-
-# filter
-dat_prot <- dat_prot %>%
-  filter(Location != "CTRL")
-
-# mean per image
-dat_prot <- dat_prot %>%
-  select(-cellID) %>%
-  group_by(Description, Mutation) %>%
-  summarise_if(is.numeric, mean, na.rm = TRUE)
-
-# melt
-dat_prot <- dat_prot %>%
-  reshape2::melt(id.vars = c("Description", "Mutation"), variable.name = "channel", value.name = "asinh")
-
-# join both data sets
-comb <- rbind(dat_prot, dat_rna) %>%
-  filter(Mutation %in% c("BRAF", "NRAS", "wt"))
-
-stat.test <- comb %>%
-  group_by(channel) %>%
-  wilcox_test(data = ., asinh ~ Mutation) %>%
-  adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  add_xy_position(x = "Mutation", dodge = 0.8) %>%
-  filter(is.na(y.position) == FALSE)
-
-# plot 
-p <- ggplot(comb, aes(x=Mutation, y=asinh)) + 
-  geom_boxplot(alpha=0.2, lwd=1, aes(fill=Mutation)) +
-  geom_quasirandom(alpha=0.6, size=2, aes(col=Mutation)) +
-  scale_color_discrete(guide = FALSE) +
-  theme_bw() +
-  theme(text = element_text(size=18),
-        axis.text.x = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_blank()) +
-  facet_wrap(~channel, scales = "free") + 
-  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
-  xlab("") + 
-  ylab("Mean Count per Image (asinh)") +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
-  guides(fill=guide_legend(title="Mutation", override.aes = c(lwd=0.5, alpha=1)))
-
-leg <- get_legend(p)
-
-grid.arrange(p + theme(legend.position = "none"))
-```
-
-```{r Supp_Fig_XX_legend, fig.height=2, fig.width=2, dev=c('pdf'), eval=F}
-grid.arrange(leg)
+corrplot(cor, 
+         order = "FPC",
+         addCoef.col = "black",
+         method = "circle",
+         tl.col="black",
+         tl.cex = 1.5)
 ```

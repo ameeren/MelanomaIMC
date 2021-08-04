@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates plots for Figure 1. 
+This script generates plots for Figure 1. Panel A and B were created manually. 
 
 # Preparation
 
@@ -27,7 +27,6 @@ library(ggplot2)
 library(dittoSeq)
 library(cba)
 library(ComplexHeatmap)
-library(corrplot)
 library(dplyr)
 library(reshape2)
 library(tidyverse)
@@ -48,7 +47,7 @@ sce_prot <- readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 # Figure 1C
 
-## Heatmap showing marker expression of celltypes
+## Heatmap showing marker expression of celltypes - RNA data 
 
 ```{r Fig_1C_Scaled_Heatmap_RNA, fig.width=19, fig.height=12, dev=c('pdf')}
 # add marker expression to cells
@@ -77,22 +76,7 @@ dat_aggr[,-c(1)] <- scale(dat_aggr[,-c(1)])
 m <- as.matrix(t(dat_aggr[,-c(1)]))
 colnames(m) <- dat_aggr$celltype
 
-# top annotation with number of cells
-# ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>100000, 101000, as.numeric(dat_sum[2,])),
-#                                                          height = unit(3,"cm"),
-#                                                          ylim = range(0,100000),
-#                                                          gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 100000, "white", "black"),
-#                                                                    col="white"),
-#                                                          axis_param = list(gp = gpar(fontsize=14))),
-#                         "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
-#                                               which = "column", 
-#                                               rot = 0, 
-#                                               height = unit(0.5,"cm"),
-#                                               just = "center", 
-#                                               location = 0.5,
-#                                               gp = gpar(fontsize=10,col = ifelse(as.numeric(dat_sum[2,]) > 100000, "red", "black"))),
-#                         annotation_name_gp = gpar(fontsize = 16))
-
+# number annotation
 ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,])), nsmall = 0, big.mark = "'"), 
                                                    which = "column", 
                                                    rot = 0, 
@@ -130,7 +114,7 @@ h <- Heatmap(m, name = "Scaled Expression",
 draw(h, heatmap_legend_side = "bottom")
 ```
 
-## Heatmap showing marker expression of celltypes
+## Heatmap showing marker expression of celltypes - Protein data
 
 ```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=19, fig.height=12, dev=c('pdf')}
 # add marker expression to cells
@@ -159,22 +143,7 @@ dat_aggr[,-c(1)] <- scale(dat_aggr[,-c(1)])
 m <- as.matrix(t(dat_aggr[,-c(1)]))
 colnames(m) <- dat_aggr$celltype
 
-# top annotation with number of cells
-# ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>70000, 70000, as.numeric(dat_sum[2,])),
-#                                                          height = unit(3,"cm"),
-#                                                          ylim = range(0,70000),
-#                                                          gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 70000, "white", "black"),
-#                                                                    col = "white"),
-#                                                          axis_param = list(gp = gpar(fontsize=14))),
-#                         "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
-#                                               which = "column", 
-#                                               rot = 0, 
-#                                               just = "center",
-#                                               height = unit(0.5,"cm"),
-#                                               location = 0.5,
-#                                               gp = gpar(fontsize=10,col = ifelse(as.numeric(dat_sum[2,]) > 70000, "red", "black"))),
-#                         annotation_name_gp = gpar(fontsize = 16))
-
+# number annotation
 ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,])), nsmall = 0, big.mark = "'"), 
                                                    which = "column", 
                                                    rot = 0, 
@@ -213,45 +182,7 @@ draw(h, heatmap_legend_side = "bottom")
 
 # Figure 1D
 
-## Cell Type Correlation between the two data sets
-
-```{r Fig_1D_Celltype_Correlation, dev=c('pdf'), fig.height=8, fig.width=9}
-cur_rna <- data.frame(colData(sce_rna))
-cur_prot <- data.frame(colData(sce_prot))
-
-rna_sum <- cur_rna %>%
-  group_by(Description, celltype) %>%
-  summarise(n = n()) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
-
-prot_sum <- cur_prot %>%
-  group_by(Description, celltype) %>%
-  summarise(n = n()) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
-
-# Correlation Plot - shared celltypes
-shared <- c("CD8+ T cell", "Macrophage", "Neutrophil", "Tumor")
-order_prot <- c("B cell", "BnT cell", "pDC", "Stroma", "unknown", "FOXP3+ T cell", "CD4+ T cell", shared)
-order_rna <- c("CD38", "HLA-DR", "Stroma", "Vasculature", "unknown", "CD8- T cell", shared)
-
-corrplot(cor(rna_sum[,order_rna], prot_sum[,order_prot], method = "pearson"), 
-         addCoef.col = "white",
-         method = "circle",
-         tl.col="black",
-         tl.cex = 1.5)
-
-# Mean Correlation between shared celltypes
-mean(c(cor(rna_sum$Macrophage, prot_sum$Macrophage, method = "pearson"), 
-       cor(rna_sum$Neutrophil, prot_sum$Neutrophil, method = "pearson"), 
-       cor(rna_sum$`CD8+ T cell`, prot_sum$`CD8+ T cell`, method = "pearson"), 
-       cor(rna_sum$Tumor, prot_sum$Tumor, method = "pearson")))
-```
-
-# Figure 1E
-
-## Load masks
+## Load segmentation masks
 
 ```{r}
 all_mask <- loadImages(x = "data/full_data/protein/cpout/",
@@ -284,7 +215,7 @@ all_mask <- scaleImages(all_mask,2^16-1)
 
 ## Plot two example Images
 
-```{r Fig_1E_example_images_immune_cells, dev=("pdf")}
+```{r Fig_1D_example_images_immune_cells, dev=("pdf")}
 # subset masks
 mask_sub <- all_mask[mcols(all_mask)$Description %in% c("H9", "L7", "H2")]
 sce_prot_sub <- sce_prot[,sce_prot$Description %in% c("H9", "L7", "H2")]
@@ -305,11 +236,11 @@ plotCells(mask = mask_sub,
           display = "single")
 ```
 
-# Figure 1F
+# Figure 1E
 
 ## Barplot containing Cell Types per Image
 
-```{r Fig_1F_Protein_Barplot, fig.width=19.2, fig.height=8.3, dev=c('pdf')}
+```{r Fig_1E_Protein_Barplot, fig.width=19.2, fig.height=8.3, dev=c('pdf')}
 # Create table with celltype fractions
 cur_df <- data.frame(celltype = sce_prot$celltype,
                      Description = sce_prot$Description,
@@ -403,7 +334,7 @@ grid.draw(ht)
 
 ## Legend for Barplot
 
-```{r Fig_1F_Protein_Barplot_Legend, fig.width=2, fig.height=4, dev=c('pdf')}
+```{r Fig_1E_Protein_Barplot_Legend, fig.width=2, fig.height=4, dev=c('pdf')}
 lgd1 <- Legend(labels = names(col_vector), 
              title = "Cell Type", 
              legend_gp = gpar(fill = col_vector),

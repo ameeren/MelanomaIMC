@@ -8,9 +8,9 @@ editor_options:
 ---
 
 # Introduction
-This script generates plots for Supplementary Figure 1.
+This script generates plots for Supplementary Figure 1. It contains data that is not stored in the SCE format. 
 
-# Preparations
+# Preparations 1
 
 ## Load libraries
 
@@ -29,6 +29,9 @@ library(ggbeeswarm)
 library(ggrepel)
 library(ggpmisc)
 library(ggrastr)
+library(readr)
+library(cowplot)
+library(corrplot)
 ```
 
 ## Load and process the data
@@ -169,6 +172,8 @@ ggplot(cells_panel2[cells_panel2$Metadata_Target == "T9",], aes(x=`Metal Tag`, y
   facet_wrap(~Metadata_Target,labeller = as_labeller(c(T9 = "mRNA Probe for Channel 9 (Er168)")))
 ```
 
+# Preparations 2
+
 ## Remove previous data 
 
 ```{r}
@@ -204,8 +209,6 @@ meta4[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = get
 # rename positive stain 
 meta1[meta1$stain=="positive" & meta1$secondary_stain == "noAb",]$stain = "positive without Ab"
 meta1[meta1$stain=="positive" & meta1$secondary_stain == "withAb",]$stain = "positive with Ab"
-#meta2[meta2$stain=="positive" & meta2$secondary_stain == "noAb",]$stain = "positive without Ab"
-#meta2[meta2$stain=="positive" & meta2$secondary_stain == "withAb",]$stain = "positive with Ab"
 meta3[meta3$stain=="positive" & meta3$secondary_stain == "noAb",]$stain = "positive without Ab"
 meta3[meta3$stain=="positive" & meta3$secondary_stain == "withAb",]$stain = "positive with Ab"
 meta3[meta3$stain=="negative" & meta3$secondary_stain == "s0",]$stain = "negative 1st"
@@ -447,13 +450,100 @@ ggplot(sum, aes(x=log2(expression_RNAseq), y=expression_RNAScope, label=gene)) +
 cor(sum$expression_RNAScope, sum$expression_RNAseq, method = c("spearman"))
 ```
 
-# Supp Figure 1F
+# Preparations 3
 
 ## Load Data
 
 ```{r}
 sce_rna <- readRDS("data/data_for_analysis/sce_RNA.rds")
+sce_prot <- readRDS("data/data_for_analysis/sce_protein.rds")
+
+# clinical data
+dat <- read_csv("data/data_for_analysis/protein/clinical_data_protein.csv")
 ```
+
+# Supp Figure 1F 
+
+## Clinical features of the cohort 
+
+Note: as the cohort is very diverse, we are using the BlockID as the minimal unit since clinical parameters are described per BlockID. However, sometimes we do have patients of which we have multiple FFPE blocks (BlockIDs). Nonetheless, clinical parameters are not given per patient but per patient FFPE block and are therefore considered the minimial unit.
+
+## Number of Samples
+
+```{r Supp_Fig_1F_number_of_samples, fig.height=6, fig.width=17, dev=c('pdf')}
+dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
+
+# remove control samples
+dat <- dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location != "CTRL"]$BlockID),]
+
+p1 <- unique(dat[,c("BlockID","MM_location")]) %>%
+  ggplot()+
+  geom_bar(aes(y=MM_location),stat ="count") +
+  xlab("Biopsy Blocks per Location") +
+  ylab("Metastasis Location") +
+  theme_bw()+
+  theme(text = element_text(size=16))
+  
+p2 <- dat %>%
+  ggplot()+
+  geom_bar(aes(x=BlockID, fill=(MM_location)),stat="count")+
+  theme_bw()+
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        text = element_text(size=16)) + 
+  ylab("Number of Samples") +
+  xlab("Biopsy Blocks") +
+  scale_y_continuous(limits = c(0,4), expand = c(0, 0)) +
+  guides(fill=guide_legend(title="Metasis Location"))
+
+plot_grid(p1,p2,rel_widths = c(1.25,3))  
+```
+
+# Supp Figure 1G
+
+## Correlation across the two data sets
+
+```{r Supp_Fig_1G_pearson_correlation__prot_data, fig.width=9, fig.height=9, dev=c('pdf')}
+# top abundant chemokines
+cur_rna <- data.frame(colData(sce_rna))
+
+# protein data
+cur_prot <- data.frame(colData(sce_prot))
+
+# rna data set - cell type fractions
+rna_sum <- cur_rna %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  group_by(Description) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
+
+# protein data set - cell type fractions
+prot_sum <- cur_prot %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  group_by(Description) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
+
+# equal images
+all(rna_sum$Description == prot_sum$Description)
+
+# correlation
+cor <- cor(rna_sum[,-1], prot_sum[,-1], method = "pearson")
+
+# reorder cor matrix
+cor <- cor[c("CD38", "HLA-DR", "Stroma", "Vasculature", "unknown", "CD8- T cell", "CD8+ T cell", "Macrophage", "Neutrophil", "Tumor"),
+           c("B cell", "BnT cell", "pDC", "Stroma", "unknown", "FOXP3+ T cell", "CD4+ T cell", "CD8+ T cell", "Macrophage", "Neutrophil", "Tumor") ]
+
+corrplot(cor, 
+         addCoef.col = "black",
+         method = "circle",
+         tl.col="black",
+         tl.cex = 1.5)
+```
+
+# Supp Figure 1H
 
 ## Detection of chemokine expressing cells
 

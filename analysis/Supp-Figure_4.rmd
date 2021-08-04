@@ -44,350 +44,6 @@ sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 # Supp Figure 4A
 
-## Heatmap showing marker expression of celltypes subclusters
-
-```{r Supp_Fig_4A_Scaled_Heatmap_Protein, fig.width=11, fig.height=11, dev=c('pdf')}
-# add marker expression to cells
-marker_expression <- data.frame(t(assay(sce_prot[rowData(sce_prot)$good_marker,], "asinh")))
-marker_expression$cellID <- rownames(marker_expression)
-dat <- data.frame(colData(sce_prot))[,c("cellID", "celltype_clustered")]
-dat <- left_join(dat, marker_expression)
-dat$cellID <- NULL
-
-# aggregate the groups
-dat_aggr <- dat %>%
-  group_by(celltype_clustered) %>%
-  summarise_all(funs(mean))
-
-# number of cells per group
-dat_sum <- dat %>%
-  group_by(celltype_clustered) %>%
-  summarise(n=n())
-
-dat_sum <- data.frame(t(dat_sum))
-
-# scale and center expression
-dat_aggr[,-c(1)] <- scale(dat_aggr[,-c(1)])
-
-# create matrix
-m <- as.matrix(t(dat_aggr[,-c(1)]))
-colnames(m) <- dat_aggr$celltype_clustered
-
-# top annotation with number of cells
-# ha <- HeatmapAnnotation("Number of Cells" = anno_barplot(ifelse(as.numeric(dat_sum[2,])>25000, 25100, as.numeric(dat_sum[2,])),
-#                                                          height = unit(2,"cm"),
-#                                                          ylim = range(0,25000),
-#                                                          gp = gpar(fill = ifelse(as.numeric(dat_sum[2,]) > 25000, "white", "black"),
-#                                                                    col = "white")),
-#                         "Numbers" = anno_text(round(as.numeric(dat_sum[2,])), 
-#                                                    which = "column", 
-#                                                    rot = 90, 
-#                                                    just = "center", 
-#                                                    location = 0.5,
-#                                                    gp = gpar(fontsize=8,col = ifelse(as.numeric(dat_sum[2,]) > 25000, "red", "black"))))
-
-ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,])), nsmall = 0, big.mark = "'"), 
-                                                   which = "column", 
-                                                   rot = 90, 
-                                                   just = "center",
-                                                   location = 0.5,
-                                                   gp = gpar(fontsize=10,col = "black", border = "black")))
-
-# row_split for markers
-rowData(sce_prot)$heatmap_relevance <- ""
-rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance <- "lineage"
-rowData(sce_prot[grepl("PDL1|CD11b|CD206|PARP|CXCR2|CD11c|pS6|GrzB|IDO1|CD45RA|H3K27me3|TCF7|CD45RO|PD1|pERK|ICOS|Ki67", rownames(sce_prot)),])$heatmap_relevance <- "other"
-
-# plot heatmap
-h <- Heatmap(m, name = "Scaled Expression",
-             row_split = rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance,
-             cluster_columns = FALSE,
-             show_column_dend = FALSE,
-             column_names_gp = gpar(fontsize=12),
-             column_names_rot = 90,
-             column_names_centered = FALSE,
-             show_column_names = TRUE,
-             top_annotation = ha,
-             col = colorRamp2(c(-3, 0, 3), c("blue", "white", "red")),
-             heatmap_legend_param = list(at = c(-3:3),legend_width = unit(6,"cm"), direction="horizontal",title_position = "topcenter"),
-             column_names_side = "top",
-             height = unit(20, "cm"),
-             width = unit(20,"cm"))
-
-draw(h, heatmap_legend_side = "bottom")
-```
-
-# Supp Figure 4B
-
-## Tumor Marker Profile for different Dysfunction Scoring Groups per Image
-
-```{r Supp_Fig_4B_tumor_profile_per_image, fig.height=8, fig.width=7, dev=c('pdf')}
-tumor_marker_protein <- c("pS6", "bCatenin", "H3K27me3", "HLADR", "Sox9", "pERK", "p75", "PDL1", "Ki67", "SOX10", "PARP")
-tumor_marker_rna <- c("B2M")
-
-# rna data 
-dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tumor"], "asinh")))
-dat_rna$cellID <- rownames(dat_rna)
-dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "dysfunction_score", "Description", "MM_location")])
-
-# filter
-dat_rna <- dat_rna %>%
-  filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
-
-# mean per image
-dat_rna <- dat_rna %>%
-  select(-cellID) %>%
-  group_by(Description, dysfunction_score) %>%
-  summarise_if(is.numeric, mean, na.rm = TRUE)
-
-# melt
-dat_rna <- dat_rna %>%
-  reshape2::melt(id.vars = c("Description", "dysfunction_score"), variable.name = "channel", value.name = "asinh")
-
-# protein data
-dat_prot <- data.frame(t(assay(sce_prot[tumor_marker_protein,, sce_prot$celltype == "Tumor"], "asinh")))
-dat_prot$cellID <- rownames(dat_prot)
-dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "dysfunction_score", "Description", "MM_location")])
-
-# filter
-dat_prot <- dat_prot %>%
-  filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
-
-# mean per image
-dat_prot <- dat_prot %>%
-  select(-cellID) %>%
-  group_by(Description, dysfunction_score) %>%
-  summarise_if(is.numeric, mean, na.rm = TRUE)
-
-# melt
-dat_prot <- dat_prot %>%
-  reshape2::melt(id.vars = c("Description", "dysfunction_score"), variable.name = "channel", value.name = "asinh")
-
-# join both data sets
-comb <- rbind(dat_prot, dat_rna)
-
-stat.test <- comb %>%
-  group_by(channel) %>%
-  wilcox_test(data = ., asinh ~ dysfunction_score) %>%
-  adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  add_xy_position(x = "celltype", dodge = 0.8)
-
-
-# plot 
-p <- ggplot(comb, aes(x=dysfunction_score, y=asinh)) + 
-  geom_boxplot(alpha=0.2, lwd=1, aes(fill=dysfunction_score)) +
-  geom_quasirandom(alpha=0.6, size=2, aes(col=dysfunction_score)) +
-  scale_color_discrete(guide = FALSE) +
-  theme_bw() +
-  theme(text = element_text(size=18),
-        axis.text.x = element_blank(),
-        axis.ticks = element_blank(),
-        axis.title.x = element_blank()) +
-  facet_wrap(~channel, scales = "free", ncol = 3) + 
-  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
-  xlab("") + 
-  ylab("Mean Count per Image (asinh)") +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
-  guides(fill=guide_legend(title="Dysfunction Score", override.aes = c(lwd=0.5, alpha=1)))
-
-leg <- get_legend(p)
-
-grid.arrange(p + theme(legend.position = "none"))
-```
-
-```{r Supp_Fig_4B_tumor_profile_per_image_legend, fig.height=2, fig.width=2, dev=c('pdf')}
-grid.arrange(leg)
-```
-
-# Supp Figure 4C
-
-## Define S100+ cells
-
-```{r signal_strength_distrubution_S100, eval = F}
-y <- c(rep(1:10,16),rep(11,7))
-
-# add the group information to the sce object
-sce_rna$groups <- y[colData(sce_rna)$ImageNumber]
-
-# now we use the function written by Nils
-plotDist(sce_rna["S100", sce_rna$celltype == "Tumor"], plot_type = "ridges", 
-         colour_by = "groups", split_by = "rows", 
-         exprs_values = "asinh") +
-  geom_vline(xintercept = 3)
-```
-
-```{r Supp_Fig_4C_S100_manual, fig.height=5, fig.width=5, dev=c('pdf')}
-# manual gating 
-sce_rna$S100 <- ifelse(assay(sce_rna["S100",], "asinh") > 3, "positive", "negative")
-
-# fraction of S100 tumor cells per image
-s100 <- data.frame(colData(sce_rna)) %>%
-  filter(celltype == "Tumor") %>%
-  group_by(ImageNumber, dysfunction_score, S100) %>%
-  summarise(n=n()) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(ImageNumber + dysfunction_score ~ S100, fill = 0, value.var = "fraction") %>%
-  reshape2::melt(id.vars = c("ImageNumber", "dysfunction_score"), variable.name = "S100", value.name = "fraction") %>%
-  filter(is.na(dysfunction_score) == F & S100 == "positive")
-
-s100$dysfunction_score <- factor(s100$dysfunction_score)
-
-stat.test <- s100 %>%
-  group_by(S100) %>%
-  wilcox_test(data = ., fraction ~ dysfunction_score) %>%
-  adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  add_x_position(dodge = 0.8)
-
-ggplot(s100, aes(x=dysfunction_score, y=fraction)) + 
-  geom_boxplot(alpha=0.2, lwd=1.5, aes(fill = dysfunction_score)) + 
-  geom_quasirandom(aes(col=dysfunction_score), size=3) +
-  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7, y.position = 1) + 
-  xlab("") + 
-  ylab("Fraction of S100+ Tumor Cells") +
-  theme_bw() +
-  theme(text = element_text(size=16),
-        legend.position = "none") +
-  ylim(0,1.05)
-```
-
-## Response / Survival Analysis
-
-```{r}
-# surv_dat
-dat_survival_rna <- fread(file = "data/data_for_analysis/rna/clinical_data_rna.csv")
-
-# select blocks in ICI subgroup that are treatment-naive and non-adjuvant
-blocks <- unique(sce_rna[,sce_rna$treatment_status_before_surgery == "naive" & 
-                            sce_rna$treatment_group_after_surgery == "ICI" &
-                            sce_rna$Adjuvant == "n"]$BlockID)
-
-# subset survival data (only data points that contain info for 3m response)
-dat_survival_rna_sub <- dat_survival_rna[dat_survival_rna$BlockID %in% blocks & 
-                                             is.na(dat_survival_rna$Status_at_3m) == FALSE, ]
-
-# remove LN margin samples
-dat_survival_rna_sub <- dat_survival_rna_sub %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M")
-```
-
-## Responder vs. Non-Responder S100 
-
-```{r Supp_Fig_4C_S100_manual_response, fig.height=6, fig.width=9, dev=c('pdf'), eval=F}
-cur_dat <- data.frame(colData(sce_rna[,sce_rna$BlockID %in% unique(dat_survival_rna_sub$BlockID)])) 
-
-# fraction of S100 tumor cells per image
-s100 <- cur_dat %>%
-  filter(celltype == "Tumor") %>%
-  group_by(ImageNumber, Status_at_3m, S100) %>%
-  summarise(n=n()) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(ImageNumber + Status_at_3m ~ S100, fill = 0, value.var = "fraction") %>%
-  reshape2::melt(id.vars = c("ImageNumber", "Status_at_3m"), variable.name = "S100", value.name = "fraction") %>%
-  filter(is.na(Status_at_3m) == F & S100 == "positive")
-
-s100$Status_at_3m <- factor(s100$Status_at_3m)
-
-stat.test <- s100 %>%
-  group_by(S100) %>%
-  wilcox_test(data = ., fraction ~ Status_at_3m) %>%
-  adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  add_x_position(dodge = 0.8)
-
-a <- ggplot(s100, aes(x=Status_at_3m, y=fraction)) + 
-  geom_boxplot(alpha=0.2, lwd=1.5, aes(fill = Status_at_3m)) + 
-  geom_quasirandom(aes(col=Status_at_3m), size=3) +
-  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7, y.position = 1) + 
-  xlab("") + 
-  ylab("Fraction of S100+ Tumor Cells") +
-  theme_bw() +
-  theme(text = element_text(size=16),
-        legend.position = "none") +
-  ylim(0,1.05)
-
-tumor_marker_rna <- c("S100")
-
-# rna data 
-dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tumor"], "asinh")))
-dat_rna$cellID <- rownames(dat_rna)
-dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "Status_at_3m", "Description", "BlockID")])
-
-# filter
-dat_rna <- dat_rna %>%
-  filter(BlockID %in% unique(dat_survival_rna_sub$BlockID))
-
-# mean per image
-dat_rna <- dat_rna %>%
-  select(-cellID) %>%
-  group_by(Description, Status_at_3m) %>%
-  summarise_if(is.numeric, mean, na.rm = TRUE)
-
-# melt
-dat_rna <- dat_rna %>%
-  reshape2::melt(id.vars = c("Description", "Status_at_3m"), variable.name = "channel", value.name = "asinh")
-
-stat.test <- dat_rna %>%
-  group_by(channel) %>%
-  wilcox_test(data = ., asinh ~ Status_at_3m) %>%
-  adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  add_xy_position(x = "celltype", dodge = 0.8)
-
-# plot 
-p <- ggplot(dat_rna, aes(x=Status_at_3m, y=asinh)) + 
-  geom_boxplot(alpha=0.2, lwd=1, aes(fill=Status_at_3m)) +
-  geom_quasirandom(alpha=0.6, size=2, aes(col=Status_at_3m)) +
-  scale_color_discrete(guide = FALSE) +
-  theme_bw() +
-  theme(text = element_text(size=18)) +
-  facet_wrap(~channel, scales = "free", ncol = 3) + 
-  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
-  xlab("") + 
-  ylab("Mean Count per Image (asinh)") +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
-  guides(fill=guide_legend(title= "Response at 3m", override.aes = c(lwd=0.5, alpha=1)))
-
-leg <- get_legend(p)
-b <- grid.arrange(p + theme(legend.position = "none"))
-
-# per patient
-
-dat_rna_patient <- data.frame(colData(sce_rna[,sce_rna$BlockID %in% unique(dat_survival_rna_sub$BlockID)])) %>%
-  distinct(PatientID, Description)
-
-dat_rna_patient <- left_join(dat_rna_patient, dat_rna) %>%
-  group_by(PatientID) %>%
-  mutate(asinh_mean = mean(asinh)) %>%
-  distinct(PatientID, .keep_all = T)
-
-stat.test <- dat_rna_patient %>%
-  group_by(channel) %>%
-  wilcox_test(data = ., asinh_mean ~ Status_at_3m) %>%
-  adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  add_xy_position(x = "celltype", dodge = 0.8)
-
-c <- ggplot(dat_rna_patient, aes(x=Status_at_3m, y=asinh_mean)) + 
-  geom_boxplot(alpha=0.2, lwd=1, aes(fill=Status_at_3m)) +
-  geom_quasirandom(alpha=0.6, size=2, aes(col=Status_at_3m)) +
-  scale_color_discrete(guide = FALSE) +
-  theme_bw() +
-  theme(text = element_text(size=18)) +
-  facet_wrap(~channel, scales = "free", ncol = 3) + 
-  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
-  xlab("") + 
-  ylab("Mean Count per Patient (asinh)") +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
-  guides(fill=guide_legend(title= "Response at 3m", override.aes = c(lwd=0.5, alpha=1)))
-
-grid.arrange(a,b,c, nrow=1)
-```
-
-# Supp Figure 4D 
-
 ## Heatmap with Community Modules
 
 ```{r prepare_heatmap_data}
@@ -476,7 +132,7 @@ cur_dt_wide <- left_join(cur_dt_wide, total_chemokines)
 
 ## Plot Heatmap
 
-```{r Supp_Fig_4D_heatmap_modules_infiltration, fig.height=8, fig.width=14, dev=c('pdf')}
+```{r Supp_Fig_4A_heatmap_modules_infiltration, fig.height=8, fig.width=14, dev=c('pdf')}
 # remove controls and only keep images with dysfunction score
 cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$Description %in% unique(sce_rna[,sce_rna$Location != "CTRL"]$Description),]
 cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"),]
@@ -553,7 +209,7 @@ ht1 = Heatmap(m,
 draw(ht1)
 ```
 
-```{r Supp_Fig_4D_legend, dev=c('pdf'), fig.width=3, fig.height=1}
+```{r Supp_Fig_4A_legend, dev=c('pdf'), fig.width=3, fig.height=1}
 # manual legends
 lgd1 = Legend(labels = c("Stand-alone", "Milieu"), title = "Production Mode", legend_gp = gpar(fill = c("#F8766D", "#00BFC4")))
 lgd2 = Legend(col_fun = colorRamp2(c(0:max(m)), colors = col_fun), 
@@ -561,4 +217,203 @@ lgd2 = Legend(col_fun = colorRamp2(c(0:max(m)), colors = col_fun),
 
 # Draw Legend
 draw(packLegend(lgd2, lgd1, direction = "horizontal"))
+```
+
+# Supp Figure 4B
+
+## Heatmap showing marker expression of celltypes subclusters
+
+```{r Supp_Fig_4B_Scaled_Heatmap_Protein, fig.width=11, fig.height=11, dev=c('pdf')}
+# add marker expression to cells
+marker_expression <- data.frame(t(assay(sce_prot[rowData(sce_prot)$good_marker,], "asinh")))
+marker_expression$cellID <- rownames(marker_expression)
+dat <- data.frame(colData(sce_prot))[,c("cellID", "celltype_clustered")]
+dat <- left_join(dat, marker_expression)
+dat$cellID <- NULL
+
+# aggregate the groups
+dat_aggr <- dat %>%
+  group_by(celltype_clustered) %>%
+  summarise_all(funs(mean))
+
+# number of cells per group
+dat_sum <- dat %>%
+  group_by(celltype_clustered) %>%
+  summarise(n=n())
+
+dat_sum <- data.frame(t(dat_sum))
+
+# scale and center expression
+dat_aggr[,-c(1)] <- scale(dat_aggr[,-c(1)])
+
+# create matrix
+m <- as.matrix(t(dat_aggr[,-c(1)]))
+colnames(m) <- dat_aggr$celltype_clustered
+
+ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,])), nsmall = 0, big.mark = "'"), 
+                                                   which = "column", 
+                                                   rot = 90, 
+                                                   just = "center",
+                                                   location = 0.5,
+                                                   gp = gpar(fontsize=10,col = "black", border = "black")))
+
+# row_split for markers
+rowData(sce_prot)$heatmap_relevance <- ""
+rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance <- "lineage"
+rowData(sce_prot[grepl("PDL1|CD11b|CD206|PARP|CXCR2|CD11c|pS6|GrzB|IDO1|CD45RA|H3K27me3|TCF7|CD45RO|PD1|pERK|ICOS|Ki67", rownames(sce_prot)),])$heatmap_relevance <- "other"
+
+# plot heatmap
+h <- Heatmap(m, name = "Scaled Expression",
+             row_split = rowData(sce_prot[rowData(sce_prot)$good_marker,])$heatmap_relevance,
+             cluster_columns = FALSE,
+             show_column_dend = FALSE,
+             column_names_gp = gpar(fontsize=12),
+             column_names_rot = 90,
+             column_names_centered = FALSE,
+             show_column_names = TRUE,
+             top_annotation = ha,
+             col = colorRamp2(c(-3, 0, 3), c("blue", "white", "red")),
+             heatmap_legend_param = list(at = c(-3:3),legend_width = unit(6,"cm"), direction="horizontal",title_position = "topcenter"),
+             column_names_side = "top",
+             height = unit(20, "cm"),
+             width = unit(20,"cm"))
+
+draw(h, heatmap_legend_side = "bottom")
+```
+
+# Supp Figure 4C
+
+## Tumor Marker Profile for different Dysfunction Scoring Groups per Image
+
+```{r Supp_Fig_4C_tumor_profile_per_image, fig.height=8, fig.width=7, dev=c('pdf')}
+tumor_marker_protein <- c("pS6", "bCatenin", "H3K27me3", "HLADR", "Sox9", "pERK", "p75", "PDL1", "Ki67", "SOX10", "PARP")
+tumor_marker_rna <- c("B2M")
+
+# rna data 
+dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tumor"], "asinh")))
+dat_rna$cellID <- rownames(dat_rna)
+dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "dysfunction_score", "Description", "MM_location")])
+
+# filter
+dat_rna <- dat_rna %>%
+  filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
+
+# mean per image
+dat_rna <- dat_rna %>%
+  select(-cellID) %>%
+  group_by(Description, dysfunction_score) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_rna <- dat_rna %>%
+  reshape2::melt(id.vars = c("Description", "dysfunction_score"), variable.name = "channel", value.name = "asinh")
+
+# protein data
+dat_prot <- data.frame(t(assay(sce_prot[tumor_marker_protein,, sce_prot$celltype == "Tumor"], "asinh")))
+dat_prot$cellID <- rownames(dat_prot)
+dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "dysfunction_score", "Description", "MM_location")])
+
+# filter
+dat_prot <- dat_prot %>%
+  filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
+
+# mean per image
+dat_prot <- dat_prot %>%
+  select(-cellID) %>%
+  group_by(Description, dysfunction_score) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_prot <- dat_prot %>%
+  reshape2::melt(id.vars = c("Description", "dysfunction_score"), variable.name = "channel", value.name = "asinh")
+
+# join both data sets
+comb <- rbind(dat_prot, dat_rna)
+
+stat.test <- comb %>%
+  group_by(channel) %>%
+  wilcox_test(data = ., asinh ~ dysfunction_score) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_xy_position(x = "celltype", dodge = 0.8)
+
+
+# plot 
+p <- ggplot(comb, aes(x=dysfunction_score, y=asinh)) + 
+  geom_boxplot(alpha=0.2, lwd=1, aes(fill=dysfunction_score)) +
+  geom_quasirandom(alpha=0.6, size=2, aes(col=dysfunction_score)) +
+  scale_color_discrete(guide = FALSE) +
+  theme_bw() +
+  theme(text = element_text(size=18),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank()) +
+  facet_wrap(~channel, scales = "free", ncol = 3) + 
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
+  xlab("") + 
+  ylab("Mean Count per Image (asinh)") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
+  guides(fill=guide_legend(title="Dysfunction Score", override.aes = c(lwd=0.5, alpha=1)))
+
+leg <- get_legend(p)
+
+grid.arrange(p + theme(legend.position = "none"))
+```
+
+```{r Supp_Fig_4B_tumor_profile_per_image_legend, fig.height=2, fig.width=2, dev=c('pdf')}
+grid.arrange(leg)
+```
+
+# Supp Figure 4D
+
+## Define S100+ cells
+
+```{r signal_strength_distrubution_S100, eval = F}
+y <- c(rep(1:10,16),rep(11,7))
+
+# add the group information to the sce object
+sce_rna$groups <- y[colData(sce_rna)$ImageNumber]
+
+# now we use the function written by Nils
+plotDist(sce_rna["S100", sce_rna$celltype == "Tumor"], plot_type = "ridges", 
+         colour_by = "groups", split_by = "rows", 
+         exprs_values = "asinh") +
+  geom_vline(xintercept = 3)
+```
+
+## Plot
+
+```{r Supp_Fig_4D_S100_manual, fig.height=5, fig.width=5, dev=c('pdf')}
+# manual gating 
+sce_rna$S100 <- ifelse(assay(sce_rna["S100",], "asinh") > 3, "positive", "negative")
+
+# fraction of S100 tumor cells per image
+s100 <- data.frame(colData(sce_rna)) %>%
+  filter(celltype == "Tumor") %>%
+  group_by(ImageNumber, dysfunction_score, S100) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(ImageNumber + dysfunction_score ~ S100, fill = 0, value.var = "fraction") %>%
+  reshape2::melt(id.vars = c("ImageNumber", "dysfunction_score"), variable.name = "S100", value.name = "fraction") %>%
+  filter(is.na(dysfunction_score) == F & S100 == "positive")
+
+s100$dysfunction_score <- factor(s100$dysfunction_score)
+
+stat.test <- s100 %>%
+  group_by(S100) %>%
+  wilcox_test(data = ., fraction ~ dysfunction_score) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_x_position(dodge = 0.8)
+
+ggplot(s100, aes(x=dysfunction_score, y=fraction)) + 
+  geom_boxplot(alpha=0.2, lwd=1.5, aes(fill = dysfunction_score)) + 
+  geom_quasirandom(aes(col=dysfunction_score), size=3) +
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7, y.position = 1) + 
+  xlab("") + 
+  ylab("Fraction of S100+ Tumor Cells") +
+  theme_bw() +
+  theme(text = element_text(size=16),
+        legend.position = "none") +
+  ylim(0,1.05)
 ```
