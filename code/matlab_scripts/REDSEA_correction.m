@@ -1,27 +1,22 @@
 % Main path for the all the data
-mainPath = '/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/protein/'; 
+mainPath = '/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/'; 
 
 % This is a csv file for your channel labels within
-massDS = dataset('File',[mainPath,'/config/melanoma_1.06_protein.csv'],'Delimiter',',');
-
-% This assumes the path points to a folder containing all the Points from 
-% the run. Your segmentationParams.mat from each point should be in the 
-% each Point's folder
-pathTiff = [mainPath,'/originalTiff']; 
+massDS = dataset('File',[mainPath,'/config/melanoma_1.06_rna.csv'],'Delimiter',',');
 
 % This is where the FCS file output will go to
-pathResults = [mainPath,'/FCS_output'];
+pathResults = "~/Desktop/REDSEA_test/";
 
 % Select the channels that are expected to be expressed. Cells with minimal
 % expression of at least one of these channels will be removed
-clusterChannels = massDS.Label; % exclude elemental channels (here the 
+clusterChannels = massDS.Target; % exclude elemental channels (here the 
 % sample dataset does not contain 
-[~, clusterChannelsInds] = ismember(clusterChannels,massDS.Label);
+[~, clusterChannelsInds] = ismember(clusterChannels,massDS.Target);
 
 % boundaryMod determines the type of compensation done.
 % 1:whole cell compensation
 % 2:boundary compensation (default)
-boundaryMod = 2;
+boundaryMod = 1;
 % REDSEAChecker determines the type of compensation done.
 % 0:only subtraction; 
 % 1:subtraction and reinforcement (default)
@@ -38,10 +33,9 @@ elementSize = 2;
 % Select channels for REDSEA compensation. Surface markers are recommended
 % boundary compensation codes
 % selected channels to do the boundary compensation
-normChannels = {'CD4';'CD56';'CD21 (CR2)';'CD163';'CD68';'CD3';'CD20';'CD8a'}; %for MIBI
-%normChannels = {'x7500y3500_1700_DAPI';'x7500y3500_1700_CD3';'x7500y3500_1700_CD4';'x7500y3500_1700_CD8a';'x7500y3500_1700_CD11b';'x7500y3500_1700_CD20';'x7500y3500_1700_CD45';'x7500y3500_1700_CD68'}; %for CyCIF
-[~, normChannelsInds] = ismember(normChannels,massDS.Label);
-channelNormIdentity = zeros(length(massDS.Label),1);
+normChannels = {'CD3';'T8_CXCL13';'T1_CXCL8';'T2_CCL22';'T3_CXCL12';'T4_CXCL10';'T5_CCL4';'T7_CCL18'}; 
+[~, normChannelsInds] = ismember(normChannels,massDS.Target);
+channelNormIdentity = zeros(length(massDS.Target),1);
 % Getting an array of flags for whether to compensate or not
 for i = 1:length(normChannelsInds)
     channelNormIdentity(normChannelsInds(i)) = 1;
@@ -51,11 +45,42 @@ end
 % default=0 for not, 1 for plotting.
 % Note that if multiple channels selected (in normChannels), to plot out all
 % the sanity plots need long time.
-plotSanityPlots = 0;
+plotSanityPlots = 1;
 
 %%
 mkdir(pathResults);
 
+for i = 1:length(massDS.full)
+    cur_img = imread([mainPath, '/cpout/20190731_ZTMA256.1_slide2_TH_s1_p14_r1_a1_ac_full_spillcor.tiff'], i);
+    cur_img = double(cur_img);
+    countsNoNoise(:,:,i) = cur_img;
+end
+
+cur_mask = imread([mainPath, '/cpout/20190731_ZTMA256.1_slide2_TH_s1_p14_r1_a1_ac_ilastik_s2_Probabilities_equalized_cellmask.tiff']);
+labelNum = max(max(cur_mask));
+channelNum = length(massDS);
+stats = regionprops(cur_mask,'Area','PixelIdxList');
+countsReshape = reshape(countsNoNoise,size(countsNoNoise,1)*size(countsNoNoise,2),channelNum);
+
+data = zeros(labelNum,channelNum);
+dataScaleSize = zeros(labelNum,channelNum);
+cellSizes = zeros(labelNum,1);
+    
+for i=1:labelNum
+    currData = countsReshape(stats(i).PixelIdxList,:);
+    data(i,1:channelNum) = sum(currData,1);
+    dataScaleSize(i,1:channelNum) = sum(currData,1) / stats(i).Area;
+    cellSizes(i) = stats(i).Area;
+end
+
+if boundaryMod == 1
+    dataCompen = MIBIboundary_compensation_wholeCellSA(newLmod,data,channelNormIdentity,REDSEAChecker);
+elseif boundaryMod == 2
+    dataCompen = MIBIboundary_compensation_boundarySA(newLmod,data,countsNoNoise,channelNormIdentity,elementShape,elementSize,REDSEAChecker);
+end
+dataCompenScaleSize = dataCompen./repmat(cellSizes,[1 channelNum]);
+
+    
 for p=1:1
     disp(['point',num2str(p)]);
     pointNumber = p;
