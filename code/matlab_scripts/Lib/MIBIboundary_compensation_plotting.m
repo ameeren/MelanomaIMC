@@ -25,7 +25,7 @@ for channelSele1 = 1:length(normChannelsInds)
         xlabel(char(normChannels(channelSele1)));
         ylabel(char(normChannels(channelSele2)));
         title([char(normChannels(channelSele1)),' to ',char(normChannels(channelSele2)),', scaled by cell area']);
-        saveas(f1,[pathSanityPlots,'Sanity_check_',char(normChannels(channelSele1)),'_',char(normChannels(channelSele2)),'.png']);
+        saveas(f1,strcat(pathSanityPlots,'Sanity_check_',char(normChannels(channelSele1)),'_',char(normChannels(channelSele2)),'.png'));
     end
 end
 end
