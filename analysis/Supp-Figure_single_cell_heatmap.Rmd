@@ -82,3 +82,59 @@ dittoHeatmap(cur_sce
             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             breaks = seq(-3,3, length.out = 101))
 ```
+
+## RNA dataset
+
+```{r  RNA data all cells heatmap, fig.width=10, fig.height=8}
+sce <- readRDS("/media/dan/Data/data_for_analysis/sce_RNA.rds")
+
+
+set.seed(2345)
+good_markers <- rownames(sce)[rowData(sce)$good_marker]
+
+
+cur_sce <- sce[,sce$celltype == "Tumor"]
+cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 2000,replace =FALSE)]
+
+for (i in unique(sce$celltype)[2:length(unique(sce$celltype))]) {
+  x <- sce[,sce$celltype == i]
+  x <- x[,sample(colnames(x),size= 500, replace=FALSE)]
+  cur_sce <- cbind(cur_sce,x)
+}
+
+dittoHeatmap(cur_sce
+,genes = good_markers, assay = "asinh",
+            annot.by = c("celltype"),
+            show_colnames = FALSE,
+            cluster_rows = TRUE,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101))
+```
+
+
+
+```{r RNA data labelled cells heatmap, fig.width=10, fig.height=8}
+set.seed(2345)
+
+cur_sce <- sce[,sce$layer_1_gated != "unlabelled"]
+cur_sce <- sce[,sce$layer_1_gated == "Tumor"]
+
+cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 2000,replace =FALSE)]
+
+celltypes <- unique(sce$layer_1_gated)
+celltypes <- celltypes[c(2,4:(length(unique(sce$layer_1_gated))-2),length(unique(sce$layer_1_gated)))]
+
+for (i in celltypes) {
+  x <- sce[,sce$layer_1_gated == i]
+  x <- x[,sample(colnames(x),size= 300, replace=FALSE)]
+  cur_sce <- cbind(cur_sce,x)
+}
+
+dittoHeatmap(cur_sce
+,genes = good_markers, assay = "asinh",
+            annot.by = c("layer_1_gated"),
+            show_colnames = FALSE,
+            cluster_rows = TRUE,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101))
+```
