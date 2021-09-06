@@ -47,7 +47,7 @@ end
 % default=0 for not, 1 for plotting.
 % Note that if multiple channels selected (in normChannels), to plot out all
 % the sanity plots need long time.
-plotSanityPlots = 1;
+plotSanityPlots = 0;
 
 %%
 mkdir(pathResults);
