@@ -1,0 +1,58 @@
+---
+title: "S100A1 analysis"
+author: "Nils Eling"
+date: "9/6/2021"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This script explores the 112 RNA-seq data of [A Cancer Cell Program Promotes T Cell Exclusion and Resistance to Checkpoint Blockade](https://www.sciencedirect.com/science/article/pii/S0092867418311784?via%3Dihub#app2) to
+potentially find an association of S100A1 to ICI response. They did detect 
+S100A1 among the genes where high expression means non-response (?). 
+
+Here, I will first visualize the expression of S100A1 across the 112 patients
+split by RECIST scores and progression/non-progression.
+
+```{r read-data}
+library(rio)
+
+exprs <- rio::import(file = "https://ars.els-cdn.com/content/image/1-s2.0-S0092867418311784-mmc6.xlsx", 
+                     which = 2, skip = 1)
+
+rownames(exprs) <- exprs[,1]
+exprs <- exprs[,-1]
+
+meta <- rio::import(file = "https://ars.els-cdn.com/content/image/1-s2.0-S0092867418311784-mmc1.xlsx", 
+                     which = 3, skip = 1)
+rownames(meta) <- meta$Sample
+meta$RECIST[meta$RECIST == "na"] <- NA
+meta$RECIST[meta$RECIST == "NA"] <- NA
+meta$`PFS (status, 1 = progression, 0 = no progression)`[meta$`PFS (status, 1 = progression, 0 = no progression)` == "NA"] <- NA 
+```
+
+Now, we can generate a `SummarizedExperiment` object.
+
+```{r clean-data}
+library(SummarizedExperiment)
+
+se <- SummarizedExperiment(assays = list(logcounts = exprs))
+colData(se) <- DataFrame(meta[colnames(se),])
+```
+
+We can now visualize S100A1 expression between patient groups.
+
+```{r viz-S100A1}
+library(ggplot2)
+cur_df <- cbind.data.frame(colData(se), t(assay(se, "logcounts")))
+
+ggplot(cur_df) + geom_boxplot(aes(PFS..status..1...progression..0...no.progression.,
+                                  S100A1, fill = PFS..status..1...progression..0...no.progression.))
+
+ggplot(cur_df) + geom_boxplot(aes(RECIST,
+                                  S100A1, fill = RECIST))
+```
