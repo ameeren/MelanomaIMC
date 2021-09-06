@@ -1,0 +1,84 @@
+---
+title: "heatmap_of_labelled_cells"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r read-libraries-and-data, message=FALSE, results="hide"}
+# Load libraries
+library(ggplot2)
+library(ggridges)
+library(ggsci)
+library(SingleCellExperiment)
+library(scater)
+library(scuttle)
+library(viridis)
+library(RColorBrewer)
+library(cowplot)
+library(dittoSeq)
+library(scales)
+library(tidyverse)
+#library(Rphenoannoy)
+
+# Read SingleCellExperiment object
+sce <- readRDS("/media/dan/Data/data_for_analysis/sce_protein.rds")
+```
+
+```{r all cells heatmap, fig.width=10, fig.height=8}
+set.seed(2345)
+good_markers <- rownames(sce)[rowData(sce)$good_marker]
+
+es <- assay(sce, "counts")
+
+# here we define the clipping percentage. all values above the fraction are then put to 1
+for (i in c(0.99)){
+  qs <- rowQuantiles(es, probs = c(0.0, i))
+  x <- (es - qs[, 1]) / (qs[, 2] - qs[, 1])
+  x[x < 0] <- 0; x[x > 1] <- 1
+  assay(sce, paste0("scaled_",i)) <- x
+}
+cur_sce <- sce[,sce$celltype == "Tumor"]
+cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 2000,replace =FALSE)]
+
+for (i in unique(sce$celltype)[2:length(unique(sce$celltype))]) {
+  x <- sce[,sce$celltype == i]
+  x <- x[,sample(colnames(x),size= 500, replace=FALSE)]
+  cur_sce <- cbind(cur_sce,x)
+}
+
+dittoHeatmap(cur_sce
+,genes = good_markers, assay = "asinh",
+            annot.by = c("celltype"),
+            show_colnames = FALSE,
+            cluster_rows = TRUE,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101))
+```
+
+
+
+```{r labelled cells heatmap, fig.width=10, fig.height=8}
+set.seed(2345)
+
+cur_sce <- sce[,sce$layer_1_gated != "unlabelled"]
+cur_sce <- sce[,sce$layer_1_gated == "Tumor"]
+
+cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 2000,replace =FALSE)]
+
+for (i in unique(sce$layer_1_gated)[c(2,4:length(unique(sce$layer_1_gated)))]) {
+  x <- sce[,sce$layer_1_gated == i]
+  x <- x[,sample(colnames(x),size= 300, replace=FALSE)]
+  cur_sce <- cbind(cur_sce,x)
+}
+
+dittoHeatmap(cur_sce
+,genes = good_markers, assay = "asinh",
+            annot.by = c("layer_1_gated"),
+            show_colnames = FALSE,
+            cluster_rows = TRUE,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101))
+```
