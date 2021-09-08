@@ -1,0 +1,122 @@
+---
+title: "FDR heatmap Fig 2D"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+
+```{r load_libraries, message=FALSE, warning=FALSE}
+library(SingleCellExperiment)
+library(data.table)
+library(scater)
+library(ggplot2)
+library(dplyr)
+library(reshape2)
+library(dplyr)
+library(circlize)
+library(imcRtools)
+library(viridis)
+library(corrplot)
+library(psych)
+```
+
+## Load data
+
+```{r load_data}
+sce_rna <- readRDS(file = "/media/dan/Data/data_for_analysis/sce_RNA.rds")
+sce_prot <- readRDS(file = "/media/dan/Data/data_for_analysis/sce_protein.rds")
+```
+
+# Figure 2D
+
+## Correlation of Chemokines with Celltypes (based on fractions)
+
+```{r Fig_2D_pearson_correlation_chemokines_prot_data, fig.width=12, fig.height=12, }
+# define chemokines
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
+# top abundant chemokines
+cur_rna <- data.frame(colData(sce_rna))
+
+# protein data
+cur_prot <- data.frame(colData(sce_prot))
+
+# sum
+rna_sum <- cur_rna %>%
+  group_by(Description) %>%
+  mutate(total_cells=n()) %>%
+  ungroup() %>%
+  group_by(Description, total_cells, expressor) %>%
+  summarise(n=n()) %>%
+  mutate(fraction=n/total_cells) %>%
+  reshape2::dcast(Description ~ expressor, value.var = "fraction", fill = 0) 
+
+# only keep highly abundant chemokines
+rna_sum <- rna_sum[,c("Description", targets)]
+
+prot_sum <- cur_prot %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  group_by(Description) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
+
+# equal images
+all(rna_sum$Description == prot_sum$Description)
+
+# correlation
+cor <-corr.test(rna_sum[,-1], prot_sum[,-1], method = "pearson",adjust = "BH")
+
+corrplot(cor$r, 
+         addCoef.col = "black",
+         method = "circle",
+         tl.col="black",
+         tl.cex = 1.5,
+         p.mat = cor$p.adj,)
+
+corrplot(cor$p.adj, 
+         addCoef.col = "black",
+         method = "circle",
+         tl.col="black",
+         tl.cex = 1.5)
+```
+
+```{r, fig.height=7, fig.width=10}
+cur_dat <- as.data.frame(cor$r)
+cur_dat$variable <- rownames(cur_dat)
+dat_long <- reshape2::melt(cur_dat,id.vars="variable")
+colnames(dat_long) <- c("chemokines","celltypes","correlation")
+
+p_dat <- as_tibble(cor$p.adj)
+p_dat$variable <- rownames(cur_dat)
+pdat_long <- reshape2::melt(p_dat,id.vars="variable")
+colnames(pdat_long) <- c("chemokines","celltypes","p_adj")
+
+dat_long$p_adj <- pdat_long$p_adj
+dat_long <- dat_long %>%
+  mutate(sig = ifelse(p_adj <= 0.001 & p_adj > 0.0001,0.001,p_adj))
+dat_long <- dat_long %>%
+  mutate(sig = case_when(p_adj <= 0.0001 ~ "< 0.0001",
+                         p_adj <= 0.001 & p_adj > 0.0001 ~ "< 0.001",
+                         p_adj <= 0.01 & p_adj > 0.001 ~ "< 0.01",
+                         p_adj <= 0.1 & p_adj > 0.01 ~ "< 0.1",
+                         p_adj >0.1 ~ "ns"))
+
+
+
+p <- ggplot()+
+  geom_tile(data = dat_long, aes(x = chemokines,y = celltypes,fill=sig),color = "gray",size = 0.1, alpha = 0.5)+
+  scale_fill_manual(values = c("< 0.0001" = "darkgreen", "< 0.001" = "green3", "< 0.01"="green", "< 0.1" = "lightgray","ns" = "white"), name = "adj p-value" )+
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 0.5))+
+  geom_point(data = dat_long, aes(x=chemokines,y = celltypes),size=10.5, show.legend = FALSE)+
+  geom_point(data = dat_long, aes(x=chemokines,y = celltypes, color=correlation),size= 10, shape=19)+
+  scale_color_gradient2(low="blue",mid= "white", high="red", name = "Pearson correlation")
+
+p
+
+```
