@@ -2,6 +2,7 @@ addpath('~/Github/MelanomaIMC/code/matlab_scripts/Lib');
 
 % Main path for the all the data
 mainPath = '/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/'; 
+maskPath = '~/Desktop/REDSEA_masks/';
 
 % This is a csv file for your channel labels within
 massDS = dataset('File',[mainPath,'/config/melanoma_1.06_rna.csv'],'Delimiter',',');
@@ -18,7 +19,7 @@ clusterChannels = massDS.Target; % exclude elemental channels (here the
 % boundaryMod determines the type of compensation done.
 % 1:whole cell compensation
 % 2:boundary compensation (default)
-boundaryMod = 1;
+boundaryMod = 2;
 % REDSEAChecker determines the type of compensation done.
 % 0:only subtraction; 
 % 1:subtraction and reinforcement (default)
@@ -74,7 +75,7 @@ for x = 1:length(cur_files)
         countsNoNoise(:,:,i) = cur_img;
     end
 
-    cur_mask = imread(strcat(mainPath, 'cpout/', cur_file_name, '_ilastik_s2_Probabilities_equalized_cellmask.tiff'));
+    cur_mask = imread(strcat(maskPath, cur_file_name, '_ilastik_s2_Probabilities_equalized_cellmask.tiff'));
     labelNum = max(max(cur_mask));
     channelNum = length(massDS);
     stats = regionprops(cur_mask,'Area','PixelIdxList');
