@@ -1,0 +1,103 @@
+---
+title: "chemokine expression in core and margin"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load libraries
+
+```{r load_libraries, message=FALSE, warning=FALSE}
+library(SingleCellExperiment)
+library(dplyr)
+library(ggplot2)
+library(ggbeeswarm)
+library(tidyr)
+library(scater)
+library(dittoSeq)
+library(gridExtra)
+library(cowplot)
+library(data.table)
+library(ggpmisc)
+library(ggpubr)
+library(ComplexHeatmap)
+library(rstatix)
+library(viridis)
+```
+
+## Load data
+
+```{r load_data}
+sce_rna <- readRDS(file = "/media/dan/Data/data_for_analysis/sce_RNA.rds")
+#sce_prot <- readRDS(file = "/media/dan/Data/data_for_analysis/sce_protein.rds")
+```
+
+## chemokine expression in core and margin
+
+are chemokines preferentially expressed in the margin of the tumor?
+
+
+```{r Supp_Fig_3A_expressor_cd8_grouping, fig.width=14, fig.height=5, dev=("pdf")}
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
+frac <- data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(Location, Description, Tcell_density_score_image, expressor) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(expressor %in% targets) %>%
+  reshape2::dcast(Location + Description + Tcell_density_score_image ~ expressor, value.var = "fraction", fill = 0) %>%
+  reshape2::melt(id.vars = c("Location","Description", "Tcell_density_score_image"), variable.name = "expressor", value.name = "fraction")
+
+ggplot(frac, aes(x=Tcell_density_score_image, y = fraction)) + 
+  facet_wrap(~expressor)+
+  geom_boxplot(alpha=.75, outlier.size = 0.5, aes(fill = Location)) +
+  theme_bw()+
+  coord_cartesian(ylim = c(0,0.06))
+
+
+
+```
+
+__there do not seem to be systematic differences in the expression of chemokines between core and margin images split by the T cell infiltration groups.__
+
+```{r}
+frac <- data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(Location, Description, expressor) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(expressor %in% targets) %>%
+  reshape2::dcast(Location+ Description  ~ expressor, value.var = "fraction", fill = 0) %>%
+  reshape2::melt(id.vars = c("Location","Description"), variable.name = "expressor", value.name = "fraction")
+
+ggplot(frac, aes(x=expressor, y = fraction, fill = Location)) + 
+  geom_boxplot(alpha=.75, outlier.size = 0.5, aes(fill = Location)) +
+  theme_bw()+
+  coord_cartesian(ylim = c(0,0.06))
+
+stat.test <- frac %>%
+  group_by(expressor) %>%
+  kruskal_test(data = ., fraction ~ Location) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  arrange(p.adj) %>%
+  mutate(group1 = expressor, group2 = expressor) %>%
+  add_x_position()
+
+frac$expressor <- factor(frac$expressor, levels = stat.test$expressor)
+
+ggplot(frac, aes(x=expressor, y = fraction)) + 
+  geom_boxplot(alpha=.75, outlier.size = 0.5, aes(fill = Location)) +
+  stat_pvalue_manual(x = "group1", y.position = 0.055, stat.test, size = 4) +
+  scale_color_discrete(guide = FALSE) +
+  theme_bw() +
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+  guides(fill=guide_legend(title="T cell Score")) +
+  xlab("") + 
+  ylab("Fractions")  +
+  coord_cartesian(ylim = c(0,0.06))
+```
