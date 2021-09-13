@@ -24,6 +24,9 @@ cur_out <- lapply(cur_folders,
                   function(x){
                       cur_counts <- read.csv(paste0("~/Desktop/REDSEA_test/", x, 
                                                     "/BM=2_RC=1_Shape=2_Size=2/dataRedSeaScaled.csv"))
+                      
+                      print(paste("NA:", sum(is.na(cur_counts))))
+                      
                       cur_counts <- cur_counts[1:cur_numbers[x,2],]
                       
                       cur_sce <- SingleCellExperiment(assays = list(counts = t(cur_counts)))
@@ -32,7 +35,73 @@ cur_out <- lapply(cur_folders,
                       cur_sce
                   })
 
-
 sce <- do.call("cbind", cur_out)
+
+# Non-corrected counts
+cur_out <- lapply(cur_folders,
+                  function(x){
+                      cur_counts <- read.csv(paste0("~/Desktop/REDSEA_test/", x, 
+                                                    "/BM=2_RC=1_Shape=2_Size=2/dataScaled.csv"))
+                      
+                      print(paste("NA:", sum(is.na(cur_counts))))
+                      
+                      cur_counts <- cur_counts[1:cur_numbers[x,2],]
+                      
+                      cur_sce <- SingleCellExperiment(assays = list(counts = t(cur_counts)))
+                      colData(cur_sce) <- DataFrame(ObjectNumber = 1:ncol(cur_sce),
+                                                    ImageId = x)
+                      cur_sce
+                  })
+
+sce_noncorrected <- do.call("cbind", cur_out)
+```
+
+Read in non-corrected data.
+
+```{r non-correcte-data}
+final_sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
+
+all.equal(dim(sce), dim(final_sce))
+
+# Match cells between datasets
+cur_image_meta <- read.csv("/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/cpout/Image.csv")
+cur_image_meta <- cur_image_meta[,c("ImageNumber", "FileName_CellImage")]
+cur_image_meta$ImageId <- gsub("_ilastik_s2_Probabilities_equalized_cellmask.tiff", "", 
+                               cur_image_meta$FileName_CellImage)
+
+colData(final_sce)$ImageId <-  cur_image_meta$ImageId[final_sce$ImageNumber]
+
+cur_id_final <- paste(final_sce$ImageId, final_sce$CellNumber)
+cur_id <- paste(sce$ImageId, sce$ObjectNumber)
+
+sce <- sce[,match(cur_id_final, cur_id)]
+sce_noncorrected <- sce_noncorrected[,match(cur_id_final, cur_id)]
+
 saveRDS(sce, "~/Desktop/REDSEA_test/sce.rds")
+saveRDS(sce_noncorrected, "~/Desktop/REDSEA_test/sce_noncorrected.rds")
+```
+
+## Compare corrected vs non-corrected expression
+
+We will first check that the expression of markers that were not corrected 
+are the same.
+
+```{r non-corrected-markers}
+final_sce <- final_sce[,!is.na(colMins(counts(sce)))]
+sce_noncorrected <- sce_noncorrected[,!is.na(colMins(counts(sce)))]
+sce <- sce[,!is.na(colMins(counts(sce)))]
+
+library(ggplot2)
+ggplot(data.frame(GLUT1_corrected = counts(sce)["Glucose.Transporter.GLUT1",],
+                  GLUT1_noncorrected = counts(final_sce)["GLUT1",])) +
+    geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) + xlim(c(-10,150)) + 
+    ylim(c(-10,150))
+
+ggplot(data.frame(GLUT1_corrected = counts(sce)["Myeloperoxidase.MPO",],
+                  GLUT1_noncorrected = counts(final_sce)["MPO",])) +
+    geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) 
+
+ggplot(data.frame(GLUT1_corrected = counts(sce)["DNA1",],
+                  GLUT1_noncorrected = counts(final_sce)["DNA1",])) +
+    geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) 
 ```
