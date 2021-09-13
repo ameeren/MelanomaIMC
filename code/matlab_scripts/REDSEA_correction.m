@@ -10,12 +10,6 @@ massDS = dataset('File',[mainPath,'/config/melanoma_1.06_rna.csv'],'Delimiter','
 % This is where the FCS file output will go to
 pathResults = '~/Desktop/REDSEA_test/';
 
-% Select the channels that are expected to be expressed. Cells with minimal
-% expression of at least one of these channels will be removed
-clusterChannels = massDS.Target; % exclude elemental channels (here the 
-% sample dataset does not contain 
-[~, clusterChannelsInds] = ismember(clusterChannels,massDS.Target);
-
 % boundaryMod determines the type of compensation done.
 % 1:whole cell compensation
 % 2:boundary compensation (default)
@@ -80,16 +74,20 @@ for x = 1:length(cur_files)
     channelNum = length(massDS);
     stats = regionprops(cur_mask,'Area','PixelIdxList');
     countsReshape = reshape(countsNoNoise,size(countsNoNoise,1)*size(countsNoNoise,2),channelNum);
-
+    maskReshape = reshape(cur_mask, size(countsNoNoise,1)*size(countsNoNoise,2), 1);
+    
     data = zeros(labelNum,channelNum);
     dataScaleSize = zeros(labelNum,channelNum);
     cellSizes = zeros(labelNum,1);
+    cellId = zeros(labelNum,1);
 
     for i=1:labelNum
         currData = countsReshape(stats(i).PixelIdxList,:);
         data(i,1:channelNum) = sum(currData,1);
         dataScaleSize(i,1:channelNum) = sum(currData,1) / stats(i).Area;
         cellSizes(i) = stats(i).Area;
+        curId = maskReshape(stats(i).PixelIdxList,:);
+        cellId(i) = mean(curId,1);
     end
 
     if boundaryMod == 1
