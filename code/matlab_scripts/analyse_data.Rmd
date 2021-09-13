@@ -1,0 +1,38 @@
+---
+title: "Analyse REDSEA data"
+author: "Nils Eling"
+date: "9/13/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+This script reads in the REDSEA corrected data and compares the corrected 
+expression to the non-corrected data.
+
+```{r read-in-data}
+library(SingleCellExperiment)
+
+cur_folders <- list.files("~/Desktop/REDSEA_test/", pattern = "ZTMA256")
+cur_numbers <- read.csv("~/Desktop/REDSEA_masks/max_ids.csv")
+rownames(cur_numbers) <- gsub("_ilastik_s2_Probabilities_equalized_cellmask", 
+                              "", cur_numbers$X)
+
+cur_out <- lapply(cur_folders,
+                  function(x){
+                      cur_counts <- read.csv(paste0("~/Desktop/REDSEA_test/", x, 
+                                                    "/BM=2_RC=1_Shape=2_Size=2/dataRedSeaScaled.csv"))
+                      cur_counts <- cur_counts[1:cur_numbers[x,2],]
+                      
+                      cur_sce <- SingleCellExperiment(assays = list(counts = t(cur_counts)))
+                      colData(cur_sce) <- DataFrame(ObjectNumber = 1:ncol(cur_sce),
+                                                    ImageId = x)
+                      cur_sce
+                  })
+
+
+sce <- do.call("cbind", cur_out)
+saveRDS(sce, "~/Desktop/REDSEA_test/sce.rds")
+```
