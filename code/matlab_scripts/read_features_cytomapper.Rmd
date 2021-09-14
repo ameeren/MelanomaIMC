@@ -1,0 +1,27 @@
+---
+title: "Read features from masks"
+author: "Nils Eling"
+date: "9/14/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Here, I will read in features from masks using cytomapper and compare this 
+against the results of REDSEA.
+
+```{r read-data, eval = FALSE}
+library(cytomapper)
+
+all_images <- loadImages("/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/cpout/",
+                         pattern = "spillcor.tiff", on_disk = TRUE, h5FilesPath = "~/Desktop/cytomapper_h5/images/")
+all_masks <- loadImages("/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/cpout/",
+                         pattern = "cellmask.tiff", on_disk = TRUE, h5FilesPath = "~/Desktop/cytomapper_h5/masks/")
+
+mcols(all_images) <- mcols(all_masks) <- DataFrame(ImageId = sub("_full_spillcor", "", names(all_images)))
+
+cur_metals <- read.csv("/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/tiffs/20190731_ZTMA256.1_slide2_TH_s1_p14_r1_a1_ac_full.csv", header = FALSE)
+
+```

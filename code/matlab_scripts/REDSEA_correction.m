@@ -6,6 +6,9 @@ maskPath = '~/Desktop/REDSEA_masks/';
 
 % This is a csv file for your channel labels within
 massDS = dataset('File',[mainPath,'/config/melanoma_1.06_rna.csv'],'Delimiter',',');
+massDS.Properties.ObsNames = massDS.MetalTag;
+channel_order = readtable('/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/tiffs/20190731_ZTMA256.1_slide2_TH_s1_p14_r1_a1_ac_full.csv','ReadVariableNames',0);
+massDS = massDS(channel_order.Var1,:);
 
 % This is where the FCS file output will go to
 pathResults = '~/Desktop/REDSEA_test/';
@@ -13,7 +16,7 @@ pathResults = '~/Desktop/REDSEA_test/';
 % boundaryMod determines the type of compensation done.
 % 1:whole cell compensation
 % 2:boundary compensation (default)
-boundaryMod = 2;
+boundaryMod = 1;
 % REDSEAChecker determines the type of compensation done.
 % 0:only subtraction; 
 % 1:subtraction and reinforcement (default)

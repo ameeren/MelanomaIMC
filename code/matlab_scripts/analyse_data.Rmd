@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 This script reads in the REDSEA corrected data and compares the corrected 
 expression to the non-corrected data.
 
-```{r read-in-data}
+```{r read-in-data, message=FALSE}
 library(SingleCellExperiment)
 
 cur_folders <- list.files("~/Desktop/REDSEA_test/", pattern = "ZTMA256")
@@ -35,7 +35,7 @@ cur_out <- lapply(cur_folders,
                       cur_sce
                   })
 
-sce <- do.call("cbind", cur_out)
+sce_borders <- do.call("cbind", cur_out)
 
 # Non-corrected counts
 cur_out <- lapply(cur_folders,
@@ -53,7 +53,42 @@ cur_out <- lapply(cur_folders,
                       cur_sce
                   })
 
-sce_noncorrected <- do.call("cbind", cur_out)
+sce_noncorrected_borders <- do.call("cbind", cur_out)
+
+cur_out <- lapply(cur_folders,
+                  function(x){
+                      cur_counts <- read.csv(paste0("~/Desktop/REDSEA_test/", x, 
+                                                    "/BM=1_RC=1_Shape=2_Size=2/dataRedSeaScaled.csv"))
+                      
+                      print(paste("NA:", sum(is.na(cur_counts))))
+                      
+                      cur_counts <- cur_counts[1:cur_numbers[x,2],]
+                      
+                      cur_sce <- SingleCellExperiment(assays = list(counts = t(cur_counts)))
+                      colData(cur_sce) <- DataFrame(ObjectNumber = 1:ncol(cur_sce),
+                                                    ImageId = x)
+                      cur_sce
+                  })
+
+sce_wholeCell <- do.call("cbind", cur_out)
+
+# Non-corrected counts
+cur_out <- lapply(cur_folders,
+                  function(x){
+                      cur_counts <- read.csv(paste0("~/Desktop/REDSEA_test/", x, 
+                                                    "/BM=1_RC=1_Shape=2_Size=2/dataScaled.csv"))
+                      
+                      print(paste("NA:", sum(is.na(cur_counts))))
+                      
+                      cur_counts <- cur_counts[1:cur_numbers[x,2],]
+                      
+                      cur_sce <- SingleCellExperiment(assays = list(counts = t(cur_counts)))
+                      colData(cur_sce) <- DataFrame(ObjectNumber = 1:ncol(cur_sce),
+                                                    ImageId = x)
+                      cur_sce
+                  })
+
+sce_noncorrected_wholeCell <- do.call("cbind", cur_out)
 ```
 
 Read in non-corrected data.
@@ -61,7 +96,7 @@ Read in non-corrected data.
 ```{r non-correcte-data}
 final_sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
 
-all.equal(dim(sce), dim(final_sce))
+all.equal(dim(sce_borders), dim(final_sce))
 
 # Match cells between datasets
 cur_image_meta <- read.csv("/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/cpout/Image.csv")
@@ -72,14 +107,20 @@ cur_image_meta$ImageId <- gsub("_ilastik_s2_Probabilities_equalized_cellmask.tif
 colData(final_sce)$ImageId <-  cur_image_meta$ImageId[final_sce$ImageNumber]
 
 cur_id_final <- paste(final_sce$ImageId, final_sce$CellNumber)
-cur_id <- paste(sce$ImageId, sce$ObjectNumber)
+cur_id <- paste(sce_borders$ImageId, sce_borders$ObjectNumber)
 
-sce <- sce[,match(cur_id_final, cur_id)]
-sce_noncorrected <- sce_noncorrected[,match(cur_id_final, cur_id)]
+sce_borders <- sce_borders[,match(cur_id_final, cur_id)]
+sce_noncorrected_borders <- sce_noncorrected_borders[,match(cur_id_final, cur_id)]
+sce_wholeCell <- sce_wholeCell[,match(cur_id_final, cur_id)]
+sce_noncorrected_wholeCell <- sce_noncorrected_wholeCell[,match(cur_id_final, cur_id)]
 
-saveRDS(sce, "~/Desktop/REDSEA_test/sce.rds")
-saveRDS(sce_noncorrected, "~/Desktop/REDSEA_test/sce_noncorrected.rds")
+saveRDS(sce_borders, "~/Desktop/REDSEA_test/sce_borders.rds")
+saveRDS(sce_noncorrected_borders, "~/Desktop/REDSEA_test/sce_noncorrected_borders.rds")
+saveRDS(sce_wholeCell, "~/Desktop/REDSEA_test/sce_wholeCell.rds")
+saveRDS(sce_noncorrected_wholeCell, "~/Desktop/REDSEA_test/sce_noncorrected_wholeCell.rds")
 ```
+
+# Border correction
 
 ## Compare corrected vs non-corrected expression
 
@@ -87,21 +128,98 @@ We will first check that the expression of markers that were not corrected
 are the same.
 
 ```{r non-corrected-markers}
-final_sce <- final_sce[,!is.na(colMins(counts(sce)))]
-sce_noncorrected <- sce_noncorrected[,!is.na(colMins(counts(sce)))]
-sce <- sce[,!is.na(colMins(counts(sce)))]
+final_sce <- final_sce[,!is.na(colMins(counts(sce_borders)))]
+sce_noncorrected_borders <- sce_noncorrected_borders[,!is.na(colMins(counts(sce_borders)))]
+sce_borders <- sce_borders[,!is.na(colMins(counts(sce_borders)))]
 
 library(ggplot2)
-ggplot(data.frame(GLUT1_corrected = counts(sce)["Glucose.Transporter.GLUT1",],
+ggplot(data.frame(GLUT1_corrected = counts(sce_borders)["Glucose.Transporter.GLUT1",],
                   GLUT1_noncorrected = counts(final_sce)["GLUT1",])) +
     geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) + xlim(c(-10,150)) + 
     ylim(c(-10,150))
 
-ggplot(data.frame(GLUT1_corrected = counts(sce)["Myeloperoxidase.MPO",],
-                  GLUT1_noncorrected = counts(final_sce)["MPO",])) +
-    geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) 
+ggplot(data.frame(MPO_corrected = counts(sce_borders)["Myeloperoxidase.MPO",],
+                  MPO_noncorrected = counts(final_sce)["MPO",])) +
+    geom_hex(aes(MPO_corrected, MPO_noncorrected))
 
-ggplot(data.frame(GLUT1_corrected = counts(sce)["DNA1",],
-                  GLUT1_noncorrected = counts(final_sce)["DNA1",])) +
-    geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) 
+ggplot(data.frame(Vim_corrected = counts(sce_borders)["Vimentin",],
+                  Vim_noncorrected = counts(final_sce)["Vimentin",])) +
+    geom_hex(aes(Vim_corrected, Vim_noncorrected))
+```
+
+Now look at some of the markers that were affected by spillover.
+
+```{r CD3-CCL9}
+cur_tcells <- final_sce[,final_sce$celltype_rf == "Tcytotoxic"]
+cur_df <- data.frame(CD3 = counts(cur_tcells)["CD3",],
+                     CCL19 = counts(cur_tcells)["T10_CCL19",],
+                     meta = cur_tcells$CCL19)
+
+ggplot(cur_df) + geom_point(aes(asinh(CD3), asinh(CCL19), color = meta)) + 
+    xlim(c(0,7)) + ylim(c(0,7)) + ggtitle("CCL19/CD3 non-corrected")
+
+cur_tcells_cor <- sce_borders[,final_sce$celltype_rf == "Tcytotoxic"]
+cur_df <- data.frame(CD3 = counts(cur_tcells_cor)["CD3",],
+                     CCL19 = counts(cur_tcells_cor)["T10_CCL19",],
+                     meta = cur_tcells$CCL19)
+
+ggplot(cur_df) + geom_point(aes(asinh(CD3), asinh(CCL19), color = meta)) + 
+    xlim(c(0,7)) + ylim(c(0,7)) + ggtitle("CCL19/CD3 REDSEA border")
+```
+
+# Whole cell correction
+
+## Compare corrected vs non-corrected expression
+
+We will first check that the expression of markers that were not corrected 
+are the same.
+
+```{r non-corrected-markers}
+final_sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
+
+final_sce <- final_sce[,!is.na(colMins(counts(sce_wholeCell)))]
+sce_noncorrected_wholeCell <- sce_noncorrected_wholeCell[,!is.na(colMins(counts(sce_wholeCell)))]
+sce_wholeCell <- sce_wholeCell[,!is.na(colMins(counts(sce_wholeCell)))]
+
+ggplot(data.frame(GLUT1_corrected = counts(sce_wholeCell)["Glucose.Transporter.GLUT1",],
+                  GLUT1_noncorrected = counts(final_sce)["GLUT1",])) +
+    geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) + xlim(c(-10,150)) + 
+    ylim(c(-10,150))
+
+ggplot(data.frame(MPO_corrected = counts(sce_wholeCell)["Myeloperoxidase.MPO",],
+                  MPO_noncorrected = counts(final_sce)["MPO",])) +
+    geom_hex(aes(MPO_corrected, MPO_noncorrected))
+
+ggplot(data.frame(Vim_corrected = counts(sce_wholeCell)["Vimentin",],
+                  Vim_noncorrected = counts(final_sce)["Vimentin",])) +
+    geom_hex(aes(Vim_corrected, Vim_noncorrected))
+```
+
+Now let's look at the markers that were corrected.
+
+```{r corrected-markers}
+ggplot(data.frame(CD3_corrected = counts(sce_wholeCell)["CD3",],
+                  CD3_noncorrected = counts(final_sce)["CD3",])) +
+    geom_point(aes(CD3_corrected, CD3_noncorrected)) + xlim(c(-10,150)) + 
+    ylim(c(-10,150))
+```
+
+Now look at some of the markers that were affected by spillover.
+
+```{r CD3-CCL9}
+cur_tcells <- final_sce[,final_sce$celltype_rf == "Tcytotoxic"]
+cur_df <- data.frame(CD3 = counts(cur_tcells)["CD3",],
+                     CCL19 = counts(cur_tcells)["T10_CCL19",],
+                     meta = cur_tcells$CCL19)
+
+ggplot(cur_df) + geom_point(aes(asinh(CD3), asinh(CCL19), color = meta)) + 
+    xlim(c(0,7)) + ylim(c(0,7)) + ggtitle("CCL19/CD3 non-corrected")
+
+cur_tcells_cor <- sce_wholeCell[,final_sce$celltype_rf == "Tcytotoxic"]
+cur_df <- data.frame(CD3 = counts(cur_tcells_cor)["CD3",],
+                     CCL19 = counts(cur_tcells_cor)["T10_CCL19",],
+                     meta = cur_tcells$CCL19)
+
+ggplot(cur_df) + geom_point(aes(asinh(CD3), asinh(CCL19), color = meta)) + 
+    xlim(c(0,7)) + ylim(c(0,7)) + ggtitle("CCL19/CD3 REDSEA border")
 ```
