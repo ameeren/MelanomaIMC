@@ -21,7 +21,7 @@ $APPBIN/clustal-omega-1.2.4/bin/clustalo --infile clustalo-E20210914-122047-0397
 We will first look at the identity matrix, inidcating the percentage of
 sequence similarity.
 
-```{r read-in-data, message=FALSE}
+```{r read-in-data, message=FALSE, warning=FALSE}
 library(tidyverse)
 library(SingleCellExperiment)
 
@@ -33,6 +33,10 @@ seq_similarity <- seq_similarity[,-c(1,2)]
 seq_similarity <- seq_similarity[!grepl("XR_|NR_", rownames(seq_similarity)),
                                  !grepl("XR_|NR_", rownames(seq_similarity))]
 rownames(seq_similarity) <- sub("\\.[0-9]*", "", rownames(seq_similarity))
+
+library(ape)
+phylogenetic_tree <- read.tree("~/switchdrive/Institution/MelanomaMC/ClustalW_results/phylogenetic_tree.txt")
+plot(phylogenetic_tree)
 ```
 
 Now, we will map between RefSeq transcript ids, ensemble transcript ids and
@@ -54,26 +58,31 @@ We now visualize the similarity as heatmap.
 
 ```{r viz-similarity-heatmap, fig.height=7, fig.width=7}
 library(pheatmap)
+library(viridis)
 pheatmap(seq_similarity, cluster_cols = FALSE,
-         cluster_rows = FALSE)
+         cluster_rows = FALSE, color = inferno(100), breaks = 0:100)
 ```
 
 And we compare it to correlation in expression across all cells.
 
-```{r cor-expression, fig.height=7, fig.width=7}
+```{r cor-expression, fig.height=5, fig.width=5}
 final_sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
+# select only the cells that express chemokines
+for_analysis <- final_sce[,final_sce$expressor != "NA"]
 
-# TODO select only the cells that express chemokines
-cur_cor <- cor(t(assay(final_sce, "asinh")[c("T5_CCL4", "T7_CCL18", "T1_CXCL8",
+cur_cor <- cor(t(assay(for_analysis, "asinh")[c("T5_CCL4", "T7_CCL18", "T1_CXCL8",
                                              "T4_CXCL10", "T3_CXCL12", "T8_CXCL13",
                                              "T12_CCL2", "T2_CCL22",
                                              "T9_CXCL9", "T11_CCL8", "T10_CCL19"),]), 
                                            method = "spearman")
 
-pheatmap(cur_cor)
+pheatmap(cur_cor, color = colorRampPalette(c("dark blue", "white", "dark red"))(100), 
+         breaks = seq(-1, 1, length.out = 100))
+```
 
+```{r viz-correlation}
 cor_tibbble <- cur_cor %>%
-    as.tibble() %>% 
+    as_tibble() %>% 
     mutate(probe = rownames(cur_cor)) %>% 
     pivot_longer(cols = 1:ncol(cur_cor)) %>%
     mutate(probe = str_split(probe, pattern = "_", simplify = TRUE)[,2],
@@ -82,13 +91,13 @@ cor_tibbble <- cur_cor %>%
     filter(probe != name)
 
 sim_tibble <- seq_similarity %>%
-    as.tibble() %>% 
+    as_tibble() %>% 
     mutate(probe = rownames(seq_similarity)) %>% 
     pivot_longer(cols = 1:ncol(seq_similarity)) %>%
     mutate(from_chemo = str_split(probe, pattern = "_", simplify = TRUE)[,3],
            to_chemo = str_split(name, pattern = "_", simplify = TRUE)[,3]) %>%
     group_by(from_chemo, to_chemo) %>%
-    summarize(mean_similarity = mean(value)) %>%
+    summarize(mean_similarity = mean(value, na.rm=TRUE)) %>%
     arrange(from_chemo, to_chemo) %>%
     filter(from_chemo != to_chemo)
 
