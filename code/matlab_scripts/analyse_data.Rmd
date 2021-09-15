@@ -135,21 +135,20 @@ sce_borders <- sce_borders[,!is.na(colMins(counts(sce_borders)))]
 library(ggplot2)
 ggplot(data.frame(GLUT1_corrected = counts(sce_borders)["Glucose.Transporter.GLUT1",],
                   GLUT1_noncorrected = counts(final_sce)["GLUT1",])) +
-    geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) + xlim(c(-10,150)) + 
-    ylim(c(-10,150))
+    geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) + coord_fixed()
 
 ggplot(data.frame(MPO_corrected = counts(sce_borders)["Myeloperoxidase.MPO",],
                   MPO_noncorrected = counts(final_sce)["MPO",])) +
-    geom_hex(aes(MPO_corrected, MPO_noncorrected))
+    geom_hex(aes(MPO_corrected, MPO_noncorrected)) + coord_fixed()
 
 ggplot(data.frame(Vim_corrected = counts(sce_borders)["Vimentin",],
                   Vim_noncorrected = counts(final_sce)["Vimentin",])) +
-    geom_hex(aes(Vim_corrected, Vim_noncorrected))
+    geom_hex(aes(Vim_corrected, Vim_noncorrected)) + coord_fixed()
 ```
 
 Now look at some of the markers that were affected by spillover.
 
-```{r CD3-CCL9}
+```{r CD3-CCL9-2}
 cur_tcells <- final_sce[,final_sce$celltype_rf == "Tcytotoxic"]
 cur_df <- data.frame(CD3 = counts(cur_tcells)["CD3",],
                      CCL19 = counts(cur_tcells)["T10_CCL19",],
@@ -167,6 +166,33 @@ ggplot(cur_df) + geom_point(aes(asinh(CD3), asinh(CCL19), color = meta)) +
     xlim(c(0,7)) + ylim(c(0,7)) + ggtitle("CCL19/CD3 REDSEA border")
 ```
 
+## Final plot
+
+Fianlly, we will visualize the corrected vs non-corrected expression in
+CD3+ T cells that were previously detected to express the individual cytokines.
+
+```{r final-plot-borderCorrection, fig.width=12, fig.height=12}
+cur_tcells <- final_sce[,final_sce$celltype_rf %in% c("Tcytotoxic", "CD134- Tcell", "CD134+ Tcell", "exhausted Tcytotoxic")]
+cur_tcells_borders <- sce_borders[,final_sce$celltype_rf %in% c("Tcytotoxic", "CD134- Tcell", "CD134+ Tcell", "exhausted Tcytotoxic")] 
+all_plots <- list()
+
+for (i in c("CCL4", "CCL18", "CXCL8", "CXCL10", "CXCL12", "CXCL13", 
+            "CCL2", "CCL22", "CXCL9", "CCL8", "CCL19")) {
+    cur_cells <-  cur_tcells[,colData(cur_tcells)[[i]] == 1] 
+    cur_cells_borders <- cur_tcells_borders[,colData(cur_tcells)[[i]] == 1]
+    cur_plot <- ggplot(data.frame(corrected = counts(cur_cells_borders)[grepl(paste0(i, "$"), rownames(cur_cells_borders)),],
+                       non_corrected = counts(cur_cells)[grepl(paste0(i, "$"), rownames(cur_cells)),])) + 
+        geom_point(aes(asinh(corrected), asinh(non_corrected))) + coord_fixed() + 
+        theme_minimal(base_size = 13) + geom_abline(slope = 1, intercept = 0, color = "dark red") +
+        ggtitle(i)
+    all_plots[[i]] <- cur_plot
+}
+
+library(cowplot)
+
+plot_grid(plotlist = all_plots)
+```
+
 # Whole cell correction
 
 ## Compare corrected vs non-corrected expression
@@ -174,7 +200,7 @@ ggplot(cur_df) + geom_point(aes(asinh(CD3), asinh(CCL19), color = meta)) +
 We will first check that the expression of markers that were not corrected 
 are the same.
 
-```{r non-corrected-markers}
+```{r non-corrected-markers-2}
 final_sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
 
 final_sce <- final_sce[,!is.na(colMins(counts(sce_wholeCell)))]
@@ -183,16 +209,15 @@ sce_wholeCell <- sce_wholeCell[,!is.na(colMins(counts(sce_wholeCell)))]
 
 ggplot(data.frame(GLUT1_corrected = counts(sce_wholeCell)["Glucose.Transporter.GLUT1",],
                   GLUT1_noncorrected = counts(final_sce)["GLUT1",])) +
-    geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) + xlim(c(-10,150)) + 
-    ylim(c(-10,150))
+    geom_hex(aes(GLUT1_corrected, GLUT1_noncorrected)) + coord_fixed()
 
 ggplot(data.frame(MPO_corrected = counts(sce_wholeCell)["Myeloperoxidase.MPO",],
                   MPO_noncorrected = counts(final_sce)["MPO",])) +
-    geom_hex(aes(MPO_corrected, MPO_noncorrected))
+    geom_hex(aes(MPO_corrected, MPO_noncorrected)) + coord_fixed()
 
 ggplot(data.frame(Vim_corrected = counts(sce_wholeCell)["Vimentin",],
                   Vim_noncorrected = counts(final_sce)["Vimentin",])) +
-    geom_hex(aes(Vim_corrected, Vim_noncorrected))
+    geom_hex(aes(Vim_corrected, Vim_noncorrected)) + coord_fixed()
 ```
 
 Now let's look at the markers that were corrected.
@@ -200,8 +225,7 @@ Now let's look at the markers that were corrected.
 ```{r corrected-markers}
 ggplot(data.frame(CD3_corrected = counts(sce_wholeCell)["CD3",],
                   CD3_noncorrected = counts(final_sce)["CD3",])) +
-    geom_point(aes(CD3_corrected, CD3_noncorrected)) + xlim(c(-10,150)) + 
-    ylim(c(-10,150))
+    geom_point(aes(CD3_corrected, CD3_noncorrected)) + coord_fixed()
 ```
 
 Now look at some of the markers that were affected by spillover.
@@ -222,4 +246,29 @@ cur_df <- data.frame(CD3 = counts(cur_tcells_cor)["CD3",],
 
 ggplot(cur_df) + geom_point(aes(asinh(CD3), asinh(CCL19), color = meta)) + 
     xlim(c(0,7)) + ylim(c(0,7)) + ggtitle("CCL19/CD3 REDSEA border")
+```
+
+## Final plot
+
+Fianlly, we will visualize the corrected vs non-corrected expression in
+CD3+ T cells that were previously detected to express the individual cytokines.
+
+```{r final-plot-wholeCell, fig.width=12, fig.height=12}
+cur_tcells <- final_sce[,final_sce$celltype_rf %in% c("Tcytotoxic", "CD134- Tcell", "CD134+ Tcell", "exhausted Tcytotoxic")]
+cur_tcells_wholeCell <- sce_wholeCell[,final_sce$celltype_rf %in% c("Tcytotoxic", "CD134- Tcell", "CD134+ Tcell", "exhausted Tcytotoxic")] 
+all_plots <- list()
+
+for (i in c("CCL4", "CCL18", "CXCL8", "CXCL10", "CXCL12", "CXCL13", 
+            "CCL2", "CCL22", "CXCL9", "CCL8", "CCL19")) {
+    cur_cells <-  cur_tcells[,colData(cur_tcells)[[i]] == 1] 
+    cur_cells_wholeCell <- cur_tcells_wholeCell[,colData(cur_tcells)[[i]] == 1]
+    cur_plot <- ggplot(data.frame(corrected = counts(cur_cells_wholeCell)[grepl(paste0(i, "$"), rownames(cur_cells_wholeCell)),],
+                       non_corrected = counts(cur_cells)[grepl(paste0(i, "$"), rownames(cur_cells)),])) + 
+        geom_point(aes(asinh(corrected), asinh(non_corrected))) + coord_fixed() + 
+        theme_minimal(base_size = 13) + geom_abline(slope = 1, intercept = 0, color = "dark red") +
+        ggtitle(i)
+    all_plots[[i]] <- cur_plot
+}
+
+plot_grid(plotlist = all_plots)
 ```
