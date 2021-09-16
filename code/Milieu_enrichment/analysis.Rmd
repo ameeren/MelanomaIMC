@@ -1,0 +1,100 @@
+---
+title: "Milieu enrichment analysis"
+author: "Nils Eling"
+date: "9/16/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Here, we will perform an enrichment analysis checking if certain cell types
+are enriched or avoid in chemokine milieus.
+
+```{r read-data, message=FALSE, warning=FALSE}
+sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
+library(imcRtools)
+library(tidyverse)
+
+plotSpatial(sce[,sce$ImageNumber == 4], node_color_by = "ccl4only_comm", 
+            img_id = "ImageNumber", coords = c("Center_X", "Center_Y"))
+```
+
+In the next step, per chemokine community, we will select the images where
+5% of the cells are part of this community type. We will then test the enrichment
+of each cell type within this community type using a Fisher's exact test.
+
+We will also exclude cells that already express the cytokine.
+
+```{r testing}
+cur_res_list <- list()
+
+cur_df <- colData(sce)
+
+# Set thresholds
+perc_cells <- 0.05
+
+for (i in c("ccl4only_comm", "ccl18only_comm", "cxcl8only_comm", "cxcl10only_comm",
+            "cxcl12only_comm", "cxcl13only_comm", "ccl2only_comm", "ccl22only_comm",
+            "cxcl9only_comm", "ccl8only_comm", "ccl19only_comm")) {
+    
+    cur_perc <- cur_df %>% 
+        as.data.frame() %>% 
+        group_by(ImageNumber) %>%
+        summarize(perc_cells = sum(!!sym(i) != 0)/n())
+    
+    cur_chemo <- toupper(sub("only_comm", "", i))
+
+    for (j in unique(cur_df$celltype_rf)) {
+        cur_res <- cur_df %>% 
+            as.data.frame() %>%
+            filter(!ImageNumber %in% cur_perc$ImageNumber[cur_perc$perc_cells < perc_cells]) %>%
+            filter(!(!!sym(cur_chemo) == 1 & celltype_rf == j)) %>%
+            group_by(ImageNumber) %>%
+            summarize(celltype_inside = sum(celltype_rf == j & !!sym(i) != 0),
+                      other_inside = sum(celltype_rf != j & !!sym(i) != 0),
+                      celltype_outside = sum(celltype_rf == j & !!sym(i) == 0),
+                      other_outside = sum(celltype_rf != j & !!sym(i) == 0))
+        
+        cur_tests <- as.data.frame(t(apply(as.matrix(cur_res), 1, function(x){
+            cur_mat <- matrix(x[2:5], ncol = 2, nrow = 2, byrow = FALSE)
+            rownames(cur_mat) <- c("celltype", "other")
+            colnames(cur_mat) <- c("inside", "outside")
+            
+            cur_test <- fisher.test(cur_mat)
+            
+            c(cur_test$p.value, cur_test$estimate)
+        })))
+        
+        colnames(cur_tests)[1] <- "p.value"
+        cur_tests$adj.p <- p.adjust(cur_tests$p.value, method = "BH")
+        
+        cur_tests$community <- i 
+        cur_tests$celltype <- j
+        cur_tests$ImageNumber <- cur_res$ImageNumber
+        
+        cur_res_list[[paste0(i, "_", j)]] <- cur_tests
+    }
+}
+
+out <- do.call("rbind", cur_res_list)
+out$adj.p.all <- p.adjust(out$p.value, method = "BH")
+
+final <- out %>% mutate(sigval = ifelse(`odds ratio` > 1 & adj.p.all < 0.1, 1, 
+                                        ifelse(`odds ratio` < 1 & adj.p.all < 0.1, -1, 0))) %>%
+    group_by(community, celltype) %>%
+    summarize(mean = mean(sigval))
+
+# Number of tested images
+out %>% group_by(community, celltype) %>% summarize(count = n()) %>% as.data.frame()
+
+for_plot <- final %>% pivot_wider(names_from = community, values_from = mean) %>%
+    as.data.frame()
+rownames(for_plot) <- for_plot$celltype
+for_plot <- for_plot[,-1]
+
+library(pheatmap)
+pheatmap(as.matrix(for_plot), color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+         breaks = seq(-1, 1, length.out = 100))
+```
