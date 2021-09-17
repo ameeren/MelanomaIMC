@@ -73,9 +73,9 @@ for x = 1:length(cur_files)
     end
 
     cur_mask = imread(strcat(maskPath, cur_file_name, '_ilastik_s2_Probabilities_equalized_cellmask.tiff'));
-    labelNum = max(max(cur_mask));
-    channelNum = length(massDS);
     stats = regionprops(cur_mask,'Area','PixelIdxList');
+    labelNum = length(stats);
+    channelNum = length(massDS);
     countsReshape = reshape(countsNoNoise,size(countsNoNoise,1)*size(countsNoNoise,2),channelNum);
     maskReshape = reshape(cur_mask, size(countsNoNoise,1)*size(countsNoNoise,2), 1);
     
@@ -92,9 +92,15 @@ for x = 1:length(cur_files)
         curId = maskReshape(stats(i).PixelIdxList,:);
         cellId(i) = mean(curId,1);
     end
+    
+    max_id = length(cellId);
+    data = data(~isnan(cellId),:);
+    dataScaleSize = dataScaleSize(~isnan(cellId),:);
+    cellId_subset = cellId(~isnan(cellId));
+    cellSizes = cellSizes(~isnan(cellId),:);
 
     if boundaryMod == 1
-        dataCompen = MIBIboundary_compensation_wholeCellSA(cur_mask,data,channelNormIdentity,REDSEAChecker);
+        dataCompen = MIBIboundary_compensation_wholeCellSA(cur_mask,data,cellId,channelNormIdentity,REDSEAChecker);
     elseif boundaryMod == 2
         dataCompen = MIBIboundary_compensation_boundarySA(cur_mask,data,countsNoNoise,channelNormIdentity,elementShape,elementSize,REDSEAChecker);
     end
@@ -110,8 +116,8 @@ for x = 1:length(cur_files)
         MIBIboundary_compensation_plotting(dataScaleSize,dataCompenScaleSize,normChannels,normChannelsInds,pathSanityPlots);
     end   
 
-    dataCompenScaleSize = array2table(dataCompenScaleSize, 'RowNames', string(1:labelNum), 'VariableNames', massDS.Target);
-    dataScaleSize = array2table(dataScaleSize, 'RowNames', string(1:labelNum), 'VariableNames', massDS.Target);
+    dataCompenScaleSize = array2table(dataCompenScaleSize, 'RowNames', string(cellId_subset), 'VariableNames', massDS.Target);
+    dataScaleSize = array2table(dataScaleSize, 'RowNames', string(cellId_subset), 'VariableNames', massDS.Target);
 
     writetable(dataCompenScaleSize, strcat(outputPath,'/dataRedSeaScaled.csv'));
     writetable(dataScaleSize, strcat(outputPath,'/dataScaled.csv'));

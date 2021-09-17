@@ -13,7 +13,8 @@ function MIBIdataNorm2 = MIBIboundary_compensation_boundarySA(newLmod,data,count
 %channels need to be normalized as 1, while others are 0.
 
 [rowNum, colNum] = size(newLmod);
-cellNum = max(max(newLmod));
+stats = regionprops(newLmod,'Area','PixelIdxList');
+cellNum = height(data);
 channelNum = size(data,2);
 
 %this code use a pad to avoid boundary issues padarray(Image,[niche niche],0,'both')

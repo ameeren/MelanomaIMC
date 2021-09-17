@@ -8,7 +8,7 @@
 %2. at corner of 3/4 different cells boundary, this code will triple/quadruple count that pixel.
 
 %% 
-function MIBIdataNorm = MIBIboundary_compensation_wholeCellSA(newLmod, MIBIdata, channelNormIdentity,REDSEAChecker)
+function MIBIdataNorm = MIBIboundary_compensation_wholeCellSA(newLmod, MIBIdata, cellId, channelNormIdentity,REDSEAChecker)
 %newLmod: the cell label image, boundary pixels are 0 while each cell has
 %different label from 1 to cell number.
 %MIBIdata: matrix of cellNum by channelNum, contains all signal counts of
@@ -18,7 +18,7 @@ function MIBIdataNorm = MIBIboundary_compensation_wholeCellSA(newLmod, MIBIdata,
 %channels need to be normalized as 1, while others are 0.
 
 [rowNum, colNum] = size(newLmod);
-cellNum = max(max(newLmod));
+cellNum = length(cellId);
 cellPairMap = zeros(cellNum,cellNum);
 
 %factors = -1;
@@ -45,6 +45,8 @@ for x = 1+niche:rowNum+niche
     end
 end
 
+cellPairMap = cellPairMap(~isnan(cellId),~isnan(cellId));
+
 %flip the matrix to make it double-direction
 cellPairMap = cellPairMap+cellPairMap';
 
@@ -52,8 +54,8 @@ cellPairMap = cellPairMap+cellPairMap';
 cellBoundaryTotal = sum(cellPairMap,1);
 
 %divide by the total number of cell boundary to get the fractions
-cellBoundaryTotalMatrix = repmat(cellBoundaryTotal',[1 cellNum]);
-cellPairNorm = (REDSEAChecker+1)*eye(cellNum) - cellPairMap./cellBoundaryTotalMatrix;
+cellBoundaryTotalMatrix = repmat(cellBoundaryTotal',[1 length(cellBoundaryTotal)]);
+cellPairNorm = (REDSEAChecker+1)*eye(length(cellBoundaryTotal)) - cellPairMap./cellBoundaryTotalMatrix;
 cellPairNorm(isnan(cellPairNorm)) = 0;
 
 %flip the channelNormIdentity for calculation
@@ -65,15 +67,5 @@ MIBIdataNorm = (MIBIdata'*cellPairNorm)';
 MIBIdataNorm(MIBIdataNorm<0) = 0;
 
 %composite the normalized channels with non-normalized channels
-MIBIdataNorm = MIBIdata.*repmat(rev_channelNormIdentity,[1 cellNum])' + MIBIdataNorm.*repmat(channelNormIdentity,[1 cellNum])';
-end
-
-%% auxiliary function
-function cellPairMap = cellPairMapUpdater(cellPairMap,tempFactors)
-%functionalize the cellPair map updating process
-    cellPairs = nchoosek(tempFactors(2:end),2);
-    %the function will order the pairs with elements consequentially
-    for i = 1:size(cellPairs,1)
-        cellPairMap(cellPairs(i,1),cellPairs(i,2)) = cellPairMap(cellPairs(i,1),cellPairs(i,2)) + 1;
-    end
+MIBIdataNorm = MIBIdata.*repmat(rev_channelNormIdentity,[1 length(cellBoundaryTotal)])' + MIBIdataNorm.*repmat(channelNormIdentity,[1 length(cellBoundaryTotal)])';
 end
