@@ -46,16 +46,16 @@ for (i in c("ccl4only_comm", "ccl18only_comm", "cxcl8only_comm", "cxcl10only_com
     
     cur_chemo <- toupper(sub("only_comm", "", i))
 
-    for (j in unique(cur_df$celltype_rf)) {
+    for (j in unique(cur_df$celltype)) {
         cur_res <- cur_df %>% 
             as.data.frame() %>%
             filter(!ImageNumber %in% cur_perc$ImageNumber[cur_perc$perc_cells < perc_cells]) %>%
-            filter(!(!!sym(cur_chemo) == 1 & celltype_rf == j)) %>%
+            filter(!(!!sym(cur_chemo) == 1 & celltype == j)) %>%
             group_by(ImageNumber) %>%
-            summarize(celltype_inside = sum(celltype_rf == j & !!sym(i) != 0),
-                      other_inside = sum(celltype_rf != j & !!sym(i) != 0),
-                      celltype_outside = sum(celltype_rf == j & !!sym(i) == 0),
-                      other_outside = sum(celltype_rf != j & !!sym(i) == 0))
+            summarize(celltype_inside = sum(celltype == j & !!sym(i) != 0),
+                      other_inside = sum(celltype != j & !!sym(i) != 0),
+                      celltype_outside = sum(celltype == j & !!sym(i) == 0),
+                      other_outside = sum(celltype != j & !!sym(i) == 0))
         
         cur_tests <- as.data.frame(t(apply(as.matrix(cur_res), 1, function(x){
             cur_mat <- matrix(x[2:5], ncol = 2, nrow = 2, byrow = FALSE)

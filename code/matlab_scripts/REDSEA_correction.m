@@ -102,7 +102,7 @@ for x = 1:length(cur_files)
     if boundaryMod == 1
         dataCompen = MIBIboundary_compensation_wholeCellSA(cur_mask,data,cellId,channelNormIdentity,REDSEAChecker);
     elseif boundaryMod == 2
-        dataCompen = MIBIboundary_compensation_boundarySA(cur_mask,data,countsNoNoise,channelNormIdentity,elementShape,elementSize,REDSEAChecker);
+        dataCompen = MIBIboundary_compensation_boundarySA(cur_mask,data,cellId,countsNoNoise,channelNormIdentity,elementShape,elementSize,REDSEAChecker);
     end
     dataCompenScaleSize = dataCompen./repmat(cellSizes,[1 channelNum]);
 

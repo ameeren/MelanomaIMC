@@ -14,7 +14,7 @@ function MIBIdataNorm2 = MIBIboundary_compensation_boundarySA(newLmod,data,count
 
 [rowNum, colNum] = size(newLmod);
 stats = regionprops(newLmod,'Area','PixelIdxList');
-cellNum = height(data);
+cellNum = length(cellId);
 channelNum = size(data,2);
 
 %this code use a pad to avoid boundary issues padarray(Image,[niche niche],0,'both')
@@ -41,6 +41,8 @@ for x = 1+niche:rowNum+niche
         end
     end
 end
+
+cellPairMap = cellPairMap(~isnan(cellId),~isnan(cellId));
 
 %flip the matrix to make it double-direction
 cellPairMap = cellPairMap+cellPairMap';

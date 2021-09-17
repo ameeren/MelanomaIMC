@@ -112,3 +112,33 @@ cor.test(sim_tibble$mean_similarity,
          cor_tibbble$value)
 ```
 
+## Number of co-expressors
+
+Finally, we will compare the sequence similarity to the jaccard index 
+of chemokine expressors.
+
+```{r}
+# Define the jaccard similarity
+jaccard <- function(x,y){
+    intersection <- length(intersect(x,y))
+    union = length(x) + length(y) - intersection
+    return (intersection/union)
+}
+
+# We will pass the unique cell ids into this function
+cur_out <- lapply(seq_len(nrow(sim_tibble)),
+       function(x){
+           from_chemo_cells <- colnames(final_sce)[colData(final_sce)[[sim_tibble$from_chemo[x]]] != 0]
+           to_chemo_cells <- colnames(final_sce)[colData(final_sce)[[sim_tibble$to_chemo[x]]] != 0]
+           return(jaccard(from_chemo_cells, to_chemo_cells))
+       })
+sim_tibble$jaccard_sim <- unlist(cur_out)
+
+ggplot(data.frame(similarity = sim_tibble$mean_similarity,
+                  jaccard_sim = sim_tibble$jaccard_sim)) +
+    geom_point(aes(similarity, jaccard_sim))
+
+cor.test(sim_tibble$mean_similarity,
+         sim_tibble$jaccard_sim)
+```
+
