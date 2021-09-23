@@ -124,6 +124,27 @@ location[is.na(location)] <- 0
 ss = set_size(m)
 cs = comb_size(m)
 
+# expressor fractions image
+fraction <- cur_dt %>%
+  select(ImageNumber, expressor) %>%
+  filter(expressor != "NA") %>%
+  group_by(ImageNumber, expressor) %>%
+  summarise(n=n()) %>%
+  group_by(expressor) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(expressor ~ ImageNumber, value.var = "fraction", fill = 0) %>%
+  filter(expressor %in% targets)
+
+# change row-order to match targets and remove expressor column (only keep fractions)
+fraction <- fraction[match(targets,fraction$expressor),-1]
+
+# sort row-wise
+#fraction <- apply(fraction,1,sort, decreasing=TRUE)
+
+# max fraction coming from one image per expressor
+max_fraction <- paste0(round(apply(fraction,1,max),3)*100, "%")
+median_fraction <- paste0(round(apply(fraction,1,median),3)*100, "%")
+
 # create plot
 ht = UpSet(m, 
     set_order = order(ss),
@@ -134,7 +155,7 @@ ht = UpSet(m,
             border = FALSE, 
             gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])]), 
             axis_param = list(gp = gpar(fontsize=20)),
-            height = unit(12, "cm")), 
+            height = unit(10, "cm")), 
         annotation_name_side = "left", 
         annotation_name_rot = 0,
         annotation_name_gp = gpar(fontsize=20)),
@@ -156,12 +177,22 @@ ht = UpSet(m,
             just = "center",
             width = max_text_width(set_name(m)) + unit(4, "mm")),
         annotation_name_gp = gpar(fontsize=20)),
+    bottom_annotation = HeatmapAnnotation(foo = anno_barplot(fraction, gp = gpar(fill = 2:161),
+                                                             bar_width = 1, height = unit(2, "cm")),
+                                          Max = anno_text(max_fraction,
+                                                          just = "center", location = 0.5,
+                                                           rot = 0,
+                                                           gp = gpar(fontsize=8)),
+                                          Median = anno_text(median_fraction,
+                                                             just = "center", location = 0.5,
+                                                             rot = 0,
+                                                             gp = gpar(fontsize=8))),
     right_annotation = NULL,
     show_row_names = FALSE,
-    pt_size = unit(5, "mm"),
+    pt_size = unit(4, "mm"),
     lwd = 2,
-    width = unit(14, "cm"),
-    height = unit(14, "cm")
+    width = unit(9, "cm"),
+    height = unit(7, "cm")
     )
 
 # draw heatmap

@@ -250,6 +250,7 @@ ggplot(a) +
 cxcl13_fraction <- data.frame(colData(sce_rna)) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>% # remove LN margin samples 
+  filter(MM_location_simplified != "LN") %>%
   filter(CXCL13 == 1) %>% 
   group_by(Description, celltype, .drop = FALSE) %>%
   summarise(n=n()) %>%
@@ -262,6 +263,7 @@ cxcl13_fraction <- data.frame(colData(sce_rna)) %>%
 all_images <- data.frame(colData(sce_rna)) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>%
+  filter(MM_location_simplified != "LN") %>%
   distinct(Description, .keep_all = T) %>%
   select(Description)
 
@@ -282,6 +284,14 @@ Bcell <- data.frame(colData(sce_rna)) %>%
 
 # add Bcell score
 all_images <- left_join(all_images, Bcell[,c("Description","bcell_patch_score")])
+
+# stats (TO BE FINISHED)
+stat.test <- all_images %>%
+  group_by(bcell_patch_score) %>%
+  kruskal_test(data = ., fraction ~ celltype) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_xy_position()
 
 ggplot(all_images,aes(x=bcell_patch_score, y = as.numeric(fraction), fill=celltype)) + 
   geom_boxplot(alpha=1, lwd=1, outlier.shape = NA) + 
@@ -327,7 +337,7 @@ example <- findMilieu(example,
 celltypes <- data.frame(colData(sce_prot)) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
-  #filter(celltype != "Tumor") %>%
+  filter(MM_location_simplified != "LN") %>%
   mutate(TCF7_PD1 = paste(PD1, TCF7, sep = "_")) %>%
   group_by(PatientID,BlockID, Description, bcell_patch_score, celltype, TCF7_PD1) %>%
   summarise(n=n()) %>% 
@@ -389,6 +399,7 @@ ggplot(celltypes[celltypes$TCF7_PD1 == "PD1+_TCF7+",], aes(x=TCF7_PD1, y=fractio
 cur_dat <- data.frame(colData(sce_prot)) %>%
   mutate(MMLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(MMLocationPunch != "LN_M") %>%
+  filter(MM_location_simplified != "LN") %>%
   filter(Location != "CTRL") %>%
   filter(celltype %in% c("CD8+ T cell", "CD4+ T cell")) %>%
   mutate(status = paste(TCF7, PD1, sep = "_")) %>%
@@ -404,6 +415,7 @@ cur_dat <- data.frame(colData(sce_prot)) %>%
 milieu_area <- data.frame(colData(sce_prot)) %>%
   mutate(MMLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(MMLocationPunch != "LN_M") %>%
+  filter(MM_location_simplified != "LN") %>%
   filter(Location != "CTRL") %>%
   mutate(milieu_binary = ifelse(bcell_milieu > 0, 1, 0)) %>%
   group_by(Description, milieu_binary) %>%

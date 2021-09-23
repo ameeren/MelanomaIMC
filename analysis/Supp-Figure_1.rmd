@@ -32,6 +32,7 @@ library(ggrastr)
 library(readr)
 library(cowplot)
 library(corrplot)
+library(rstatix)
 ```
 
 ## Load and process the data
@@ -389,6 +390,33 @@ ggplot(data=dd, aes(x=Target, y=counts_asinh, fill = stain)) +
   ylab("Mean Intensity Count per Cell [asinh]") +
   xlab("Target Channels") + 
   scale_fill_discrete(name = "Protocol Type") 
+```
+
+# Supp Figure 1X
+
+## Compare PPIB strenght in single-stains and multiple stains
+
+```{r Supp_Fig_1X_single_vs_multi_stain, fig.width=8, fig.height=7, dev=c('pdf')}
+singleStain <- cells_panel_12plex_sub[cells_panel_12plex_sub$Target == "T2",]
+singleStain$info <- "Single Target"
+multipleStain <- dd[dd$Target == "T2" & dd$stain == "- Antibodies", ]
+multipleStain$info <- "Multiple Targets"
+
+combined <- rbind(singleStain[,c("counts_asinh", "replicate", "info")], 
+                  multipleStain[,c("counts_asinh", "replicate", "info")])
+
+stats <- combined %>%
+  anova_test(counts_asinh ~ info) %>%
+  adjust_pvalue() %>%
+  add_significance()
+
+ggplot(data=combined, aes(x=info, y=counts_asinh, col=replicate)) + 
+  geom_boxplot(outlier.shape = NA) +
+  geom_quasirandom(size=.5, alpha=.1, dodge.width = 0.75) +
+  ylab("PPIB Expression Channel 2 (asinh)") +
+  xlab("Staining ") + 
+  theme_bw() +
+  theme(text = element_text(size=16))
 ```
 
 # Supp Figure 1B
