@@ -5,7 +5,7 @@
 % + ((cell B channel X counts, only around the boundary)*BoundaryAB/perimeterB + (cell B channel X counts, only around the boundary)*BoundaryBC/perimterB +...
 
 %% main function
-function MIBIdataNorm2 = MIBIboundary_compensation_boundarySA(newLmod,data,countsNoNoiseRec,channelNormIdentity,elementShape,elementSize,REDSEAChecker)
+function MIBIdataNorm2 = MIBIboundary_compensation_boundarySA(newLmod,data,cellId,countsNoNoiseRec,channelNormIdentity,elementShape,elementSize,REDSEAChecker)
 %newLmod: the cell label image, boundary pixels are 0 while each cell has different label from 1 to cell number.
 %MIBIdata: matrix of cellNum by channelNum, contains all signal counts of each cells.
 %countsNoNoiseRec: imageWidth X imageLength X channelNum, signal with background removed and denoised, can be read from denoised Tiff
@@ -49,8 +49,8 @@ cellPairMap = cellPairMap+cellPairMap';
 %sum the matrix to get the total boundary length of each cells
 cellBoundaryTotal = sum(cellPairMap,1);
 %divide by the total number of cell boundary to get the fractions
-cellBoundaryTotalMatrix = repmat(cellBoundaryTotal',[1 cellNum]);
-cellPairNorm = REDSEAChecker*eye(cellNum) - cellPairMap./cellBoundaryTotalMatrix;
+cellBoundaryTotalMatrix = repmat(cellBoundaryTotal',[1 length(cellBoundaryTotal)]);
+cellPairNorm = REDSEAChecker*eye(length(cellBoundaryTotal)) - cellPairMap./cellBoundaryTotalMatrix;
 
 
 %% calculate the signals from pixels along the boundary of the cells
@@ -79,6 +79,9 @@ for i = 1:cellNum
         end
     end
 end
+
+MIBIdataNearEdge1 = MIBIdataNearEdge1(~isnan(cellId),:);
+
 %% combine that two matrix with data to give final compensated data
 %original data matrix is a cellNum by channelNum matrix, so 
 MIBIdataNorm2 = (MIBIdataNearEdge1'*cellPairNorm)';
@@ -88,7 +91,7 @@ MIBIdataNorm2(MIBIdataNorm2<0) = 0;
 %flip the channelNormIdentity for calculation
 rev_channelNormIdentity = ones(length(channelNormIdentity),1) - channelNormIdentity;
 %composite the normalized channels with non-normalized channels
-MIBIdataNorm2 = data.*repmat(rev_channelNormIdentity,[1 cellNum])' + MIBIdataNorm2.*repmat(channelNormIdentity,[1 cellNum])';
+MIBIdataNorm2 = data.*repmat(rev_channelNormIdentity,[1 length(cellBoundaryTotal)])' + MIBIdataNorm2.*repmat(channelNormIdentity,[1 length(cellBoundaryTotal)])';
 end
 
 %% auxiliary function 

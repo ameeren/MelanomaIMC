@@ -119,7 +119,7 @@ for x = 1:length(cur_files)
     dataCompenScaleSize = array2table(dataCompenScaleSize, 'RowNames', string(cellId_subset), 'VariableNames', massDS.Target);
     dataScaleSize = array2table(dataScaleSize, 'RowNames', string(cellId_subset), 'VariableNames', massDS.Target);
 
-    writetable(dataCompenScaleSize, strcat(outputPath,'/dataRedSeaScaled.csv'));
-    writetable(dataScaleSize, strcat(outputPath,'/dataScaled.csv'));
+    writetable(dataCompenScaleSize, strcat(outputPath,'/dataRedSeaScaled.csv'),'WriteRowNames',true);
+    writetable(dataScaleSize, strcat(outputPath,'/dataScaled.csv'),'WriteRowNames',true);
     
 end
