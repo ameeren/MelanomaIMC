@@ -1,0 +1,119 @@
+---
+title: "Distance analysis"
+author: "Nils Eling"
+date: "10/6/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Here, we will observe the distance of each celltype to chemokine expressing cells.
+
+## Read data
+
+First, we will read in the data.
+
+```{r read-data, message = FALSE}
+library(BiocParallel)
+library(tidyverse)
+library(SingleCellExperiment)
+sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
+```
+
+## Define distance function
+
+Next, we will build a helper function to compute the minimum distance of each cell
+to a pattern of interest. Here, the diagonal will be ignored.
+
+```{r min-distance-function}
+min_dist <- function(x, pattern, img_id, coords){
+    
+    cur_out <- bplapply(unique(x[[img_id]]), function(y){
+        cur_sce <- x[,x[[img_id]] == y]
+        cur_pattern <- pattern[x[[img_id]] == y]
+        
+        if (sum(cur_pattern) == 0) {
+            cur_vec <- rep(NA, length(cur_pattern))
+        } else {
+            cur_dist <- as.matrix(dist(colData(cur_sce)[,coords]))
+            diag(cur_dist) <- NA
+            
+            cur_vec <- apply(cur_dist[,cur_pattern,drop=FALSE], 1, min, na.rm = TRUE)
+        }
+        names(cur_vec) <- colnames(cur_sce)
+        
+        return(cur_vec)
+    }, BPPARAM = MulticoreParam())
+    
+    cur_out <- do.call(c, cur_out)
+    cur_out[is.infinite(cur_out)] <- NA
+    
+    return(cur_out[colnames(x)])
+}
+
+```
+
+## Apply function
+
+```{r apply-function}
+chemokine_list <- c("CCL4", "CCL18", "CXCL8", "CXCL10", "CXCL12", "CXCL13", "CCL2", 
+                    "CCL22", "CXCL9", "CCL8", "CCL19")
+
+cur_dist <- list()
+for (i in chemokine_list) {
+        cur_dist[[i]] <- min_dist(sce, sce[[i]] == 1, "ImageNumber", 
+                                  coords = c("Center_X", "Center_Y")) 
+}
+```
+
+## Visualize results
+
+Now, we will visualize the distance distributions for each celltype and each
+chemokine.
+
+### By chemokine
+
+```{r viz, message=FALSE, fig.height=25, fig.width=7}
+library(ggridges)
+library(cowplot)
+library(ggplot2)
+p_list <- list()
+
+for (i in names(cur_dist)) {
+    cur_df <- data.frame(celltype = sce$celltype,
+                         dist = cur_dist[[i]])
+    
+    p_list[[i]] <- ggplot(cur_df) + geom_density_ridges(aes(x = dist, y = celltype, 
+                                                    fill = celltype)) + ggtitle(i)
+}
+
+p <- plot_grid(plotlist = p_list, ncol = 2)
+p
+ggsave(filename = "~/Desktop/distance.pdf", p, width = 15, height = 20)
+```
+
+### By celltype
+
+```{r viz-celltype}
+cur_dist_celltype <- vector(mode = "list", length = length(unique(sce$celltype)))
+names(cur_dist_celltype) <- unique(sce$celltype)
+
+for (i in names(cur_dist)) {
+    for (j in names(cur_dist_celltype)) {
+        cur_dist_celltype[[j]] <- rbind(cur_dist_celltype[[j]], 
+                                        data.frame(dist = cur_dist[[i]][sce$celltype == j],
+                                                   chemokine = i))
+    }
+}
+
+p_list <- lapply(names(cur_dist_celltype), function(x){
+    ggplot(cur_dist_celltype[[x]]) + geom_density_ridges(aes(x = dist, y = chemokine, 
+                                                    fill = chemokine)) + ggtitle(x)
+})
+
+p <- plot_grid(plotlist = p_list, ncol = 2)
+p
+ggsave(filename = "~/Desktop/distance_celltype.pdf", p, width = 15, height = 20)
+```
