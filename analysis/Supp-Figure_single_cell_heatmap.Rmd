@@ -41,7 +41,7 @@ for (i in c(0.99)){
   assay(sce, paste0("scaled_",i)) <- x
 }
 cur_sce <- sce[,sce$celltype == "Tumor"]
-cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 2000,replace =FALSE)]
+cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 500,replace =FALSE)]
 
 for (i in unique(sce$celltype)[2:length(unique(sce$celltype))]) {
   x <- sce[,sce$celltype == i]
@@ -66,7 +66,7 @@ set.seed(2345)
 cur_sce <- sce[,sce$layer_1_gated != "unlabelled"]
 cur_sce <- sce[,sce$layer_1_gated == "Tumor"]
 
-cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 2000,replace =FALSE)]
+cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 300,replace =FALSE)]
 
 for (i in unique(sce$layer_1_gated)[c(2,4:length(unique(sce$layer_1_gated)))]) {
   x <- sce[,sce$layer_1_gated == i]
@@ -94,7 +94,7 @@ good_markers <- rownames(sce)[rowData(sce)$good_marker]
 
 
 cur_sce <- sce[,sce$celltype == "Tumor"]
-cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 2000,replace =FALSE)]
+cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 500,replace =FALSE)]
 
 for (i in unique(sce$celltype)[2:length(unique(sce$celltype))]) {
   x <- sce[,sce$celltype == i]
@@ -119,7 +119,7 @@ set.seed(2345)
 cur_sce <- sce[,sce$layer_1_gated != "unlabelled"]
 cur_sce <- sce[,sce$layer_1_gated == "Tumor"]
 
-cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 2000,replace =FALSE)]
+cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 300,replace =FALSE)]
 
 celltypes <- unique(sce$layer_1_gated)
 celltypes <- celltypes[c(2,4:(length(unique(sce$layer_1_gated))-2),length(unique(sce$layer_1_gated)))]
