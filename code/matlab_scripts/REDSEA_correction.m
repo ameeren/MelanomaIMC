@@ -1,13 +1,13 @@
 addpath('~/Github/MelanomaIMC/code/matlab_scripts/Lib');
 
 % Main path for the all the data
-mainPath = '/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/'; 
+mainPath = '/Volumes/sh_thoch/Git/MelanomaIMC/data/full_data/rna/'; 
 maskPath = '~/Desktop/REDSEA_masks/';
 
 % This is a csv file for your channel labels within
 massDS = dataset('File',[mainPath,'/config/melanoma_1.06_rna.csv'],'Delimiter',',');
 massDS.Properties.ObsNames = massDS.MetalTag;
-channel_order = readtable('/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/tiffs/20190731_ZTMA256.1_slide2_TH_s1_p14_r1_a1_ac_full.csv','ReadVariableNames',0);
+channel_order = readtable('/Volumes/sh_thoch/Git/MelanomaIMC/data/full_data/rna/tiffs/20190731_ZTMA256.1_slide2_TH_s1_p14_r1_a1_ac_full.csv','ReadVariableNames',0);
 massDS = massDS(channel_order.Var1,:);
 
 % This is where the FCS file output will go to
