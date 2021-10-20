@@ -1,7 +1,7 @@
 library(cytomapper)
 
 # Read in melanoma masks
-all_masks <- loadImages("/Volumes/bbvolume/server_homes/thoch/Git/MelanomaIMC/data/full_data/rna/cpout/",
+all_masks <- loadImages("/Volumes/sh_thoch/Git/MelanomaIMC/data/full_data/rna/cpout/",
                         pattern = "cellmask.tiff", as.is = TRUE)
 
 max_id <- list()

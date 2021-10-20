@@ -28,7 +28,7 @@ Next, we will build a helper function to compute the minimum distance of each ce
 to a pattern of interest. Here, the diagonal will be ignored.
 
 ```{r min-distance-function}
-min_dist <- function(x, pattern, img_id, coords){
+min_dist <- function(x, pattern, img_id, coords, BPPARAM = MulticoreParam()){
     
     cur_out <- bplapply(unique(x[[img_id]]), function(y){
         cur_sce <- x[,x[[img_id]] == y]
@@ -45,7 +45,7 @@ min_dist <- function(x, pattern, img_id, coords){
         names(cur_vec) <- colnames(cur_sce)
         
         return(cur_vec)
-    }, BPPARAM = MulticoreParam())
+    }, BPPARAM = BPPARAM)
     
     cur_out <- do.call(c, cur_out)
     cur_out[is.infinite(cur_out)] <- NA
@@ -117,3 +117,88 @@ p <- plot_grid(plotlist = p_list, ncol = 2)
 p
 ggsave(filename = "~/Desktop/distance_celltype.pdf", p, width = 15, height = 20)
 ```
+
+## Normalized by number of cells
+
+Here, we will plot the mean cell-type to chemokine distance per image against 
+the fractyion of cell-type A and the chemokine expressing cells out of all cells.
+
+```{r calculate-density-per-image}
+cur_frac_cells <- list()
+
+for (i in chemokine_list) {
+    for (j in unique(sce$celltype)) {
+        cur_df <- colData(sce) %>% as_tibble() %>%
+            group_by(ImageNumber) %>%
+            summarize(count = n(),
+                      frac_total = sum(!!sym(i) == 1 | celltype == j)/count,
+                      frac_chemokine = sum(!!sym(i) == 1)/count,
+                      frac_celltype = sum(celltype == j)/count)
+        
+        cur_frac_cells[[paste0(i, "_", j)]] <- cur_df
+    }
+}
+```
+
+Now we add the mean minimum distance per image and cell-type/chemokine combination.
+
+```{r add-mean-distance}
+cur_frac_cells <- lapply(names(cur_frac_cells),
+                         function(x){
+                             cur_out <- cur_frac_cells[[x]]
+                             cur_d <- cur_dist[[strsplit(x, "_")[[1]][1]]]
+                             cur_df <- cbind(colData(sce), cur_d)
+                             cur_df <- cur_df %>% as_tibble() %>%
+                                 filter(celltype == strsplit(x, "_")[[1]][2]) %>%
+                                 group_by(ImageNumber) %>%
+                                 summarize(mean_dist = mean(cur_d)) %>%
+                                 as.data.frame()
+                             rownames(cur_df) <- as.character(cur_df$ImageNumber)
+                             cur_out$mean_dist <- cur_df[as.character(cur_out$ImageNumber),"mean_dist"]
+                             
+                             cur_out$chemokine <- strsplit(x, "_")[[1]][1]
+                             cur_out$celltype <- strsplit(x, "_")[[1]][2]
+                             
+                             return(cur_out)
+                         })
+
+cur_frac_cells <- do.call("rbind", cur_frac_cells)
+```
+
+Visualize data and fit loess regression per chemokine.
+
+```{r visualize-data}
+library(rgl)
+library(broom)
+
+loess_list <- list()
+
+for (i in chemokine_list) {
+    cur_dat <- cur_frac_cells[cur_frac_cells$chemokine == i,]
+    cur_loess <- loess(mean_dist ~ frac_celltype + frac_chemokine, 
+                       data = cur_dat)
+    cur_out <- augment(cur_loess)
+    cur_out$scaled_residuals <- scale(cur_out$.resid, scale = FALSE)
+    
+    cur_out$ImageNumber <- cur_dat$ImageNumber[as.numeric(cur_out$.rownames)]
+    cur_out$chemokine <- cur_dat$chemokine[as.numeric(cur_out$.rownames)]
+    cur_out$celltype <- cur_dat$celltype[as.numeric(cur_out$.rownames)]
+    
+    loess_list[[i]] <- cur_out
+}
+
+plot3d(loess_list$CCL4$frac_celltype, loess_list$CCL4$frac_chemokine, 
+       loess_list$CCL4$.fitted)
+```
+
+Compute mean residual across all images per celltype/chemokine combination.
+
+```{r mean-residuals}
+cur_dat <- do.call("rbind", loess_list)
+
+cur_dat %>% group_by(celltype, chemokine) %>%
+    summarize(mean_residual = mean(scaled_residuals)) %>%
+    ggplot() + geom_tile(aes(celltype, chemokine, fill = mean_residual)) +
+    scale_fill_gradient2(low = "dark blue", mid = "white", high = "dark red")
+```
+
