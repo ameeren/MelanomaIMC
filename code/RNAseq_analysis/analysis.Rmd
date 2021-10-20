@@ -51,8 +51,11 @@ library(ggplot2)
 cur_df <- cbind.data.frame(colData(se), t(assay(se, "logcounts")))
 
 ggplot(cur_df) + geom_boxplot(aes(PFS..status..1...progression..0...no.progression.,
-                                  S100A1, fill = PFS..status..1...progression..0...no.progression.))
+                                  S100A1, fill = PFS..status..1...progression..0...no.progression.)) +
+    scale_fill_manual(name = "Progression", values = c("1" = "coral", "0" = "steelblue")) +
+    theme(axis.title.x = element_blank(), text = element_text(size=20))
 
 ggplot(cur_df) + geom_boxplot(aes(RECIST,
-                                  S100A1, fill = RECIST))
+                                  S100A1, fill = RECIST)) + 
+    theme(text = element_text(size=20))
 ```
