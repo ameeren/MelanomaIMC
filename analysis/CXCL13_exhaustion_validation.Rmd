@@ -16,6 +16,7 @@ library(dittoSeq)
 library(scater)
 library(scales)
 library(cowplot)
+library(Hmisc)
 set.seed(12345)
 ```
 
@@ -247,6 +248,8 @@ for (i in unique(sce$Description)) {
   x <- x[good_markers[which(good_markers != "CXCL13")],"CXCL13"]
   cor_dat[,i] <- x
 }
+
+
 
 cor_dat <- reshape2::melt(cor_dat,id.vars = good_markers,value.name = "correlation",)
 

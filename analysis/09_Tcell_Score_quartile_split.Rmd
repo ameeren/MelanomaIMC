@@ -1,0 +1,177 @@
+---
+title: "05 cytotoxic T cell quantification"
+author: "Daniel"
+date: "July 2020"
+output: html_document
+---
+
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+
+```
+
+## Load libraries
+
+```{r load packages}
+sapply(list.files("code/helper_functions/", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(ggplot2)
+library(scater)
+library(viridis)
+library(igraph)
+library(CATALYST)
+library(reshape2)
+library(cowplot)
+library(ggridges)
+library(pheatmap)
+library(tidyverse)
+```
+
+## Load Data
+
+```{r load data, echo=FALSE}
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+
+image_mat <- read.csv("data/data_for_analysis/protein/Image.csv")
+image_mat_rna <- read.csv("data/data_for_analysis/rna/Image.csv")
+```
+
+
+# Cytotoxic T cell Scoring
+
+## T Cell Density
+We want to calculate the T cell density.
+we calculate this per mm2. We use the count for cytotxic T cells as defined under “03_cell_type_definition” script
+
+adaptation to use the quantiles
+
+```{r, fig.height=10,fig.width=15}
+cur_df <- data.frame(celltype = sce_prot$celltype,
+                             ImageNumber = sce_prot$ImageNumber)
+
+# count cell types per images
+cellcount <- (t(table(cur_df)))
+
+# here we get the imagesize from the image metadata
+im_size <- (image_mat$Height_cellmask * image_mat$Width_cellmask)/1000000
+
+# data frame
+cellcount <- data.frame(cellcount)
+
+# we calculate the density for each celltype for 1 mm2
+cellcount$density <- cellcount$Freq/im_size[cellcount$ImageNumber]
+cellcount <- cellcount[cellcount$celltype == "CD8+ T cell",]
+
+# there are roughly 60 images with 50 or less cytotoxic T cells
+hist(cellcount$density,breaks = 300)
+
+# plot the ranked densities
+im_order <- cellcount %>%
+  arrange(density) %>%
+  pull(ImageNumber)
+
+cellcount %>%
+  ggplot(aes(x = factor(ImageNumber,levels = im_order),y = density))+
+  geom_bar(stat="identity")
+
+cellcount$Tcell_density_score_quantile <- ""
+cellcount <- cellcount %>%
+  mutate(Tcell_density_score_quantile = ifelse(density <= quantile(cellcount$density)[[2]], yes = "absent",no = Tcell_density_score_quantile)) %>%
+  mutate(Tcell_density_score_quantile = ifelse(density > quantile(cellcount$density)[[2]] & density <= quantile(cellcount$density)[[3]], yes = "low",Tcell_density_score_quantile)) %>%
+  mutate(Tcell_density_score_quantile = ifelse(density > quantile(cellcount$density)[[3]] & density <= quantile(cellcount$density)[[4]], yes = "med",Tcell_density_score_quantile)) %>%
+  mutate(Tcell_density_score_quantile = ifelse(density >= quantile(cellcount$density)[[4]], yes = "high",Tcell_density_score_quantile))
+
+cellcount %>%
+  ggplot(aes(x = factor(ImageNumber,levels = im_order),y = density,color = Tcell_density_score_quantile))+
+  geom_bar(stat="identity")+
+  theme(axis.text.x = element_text(angle = 90))
+
+```
+
+
+## comparison of cut-offs to quantile split
+
+```{r}
+cur_dat <- data.frame(quantilesplit = sce_prot$cyotoxic_density_image_quantile,
+                      score = sce_prot$Tcell_density_score_image,
+                      ImageNumber = sce_prot$ImageNumber)
+cur_dat <- unique(cur_dat)
+
+print("fraction of images that are assigned to a different group when using quantile split for T cell score")
+overlap <- cur_dat$quantilesplit == cur_dat$score
+length(which(overlap == FALSE))/length(overlap)
+
+print("max T cell density in the absent group as defined by cut-off and in the lowest quantile")
+max(unique(sce_prot[,sce_prot$Tcell_density_score_image == "absent"]$cyotoxic_density_image))
+max(unique(sce_prot[,sce_prot$cyotoxic_density_image_quantile == "absent"]$cyotoxic_density_image))
+print("max T cell density in the low group as defined by cut-off and in the second quantile")
+max(unique(sce_prot[,sce_prot$Tcell_density_score_image == "low"]$cyotoxic_density_image))
+max(unique(sce_prot[,sce_prot$cyotoxic_density_image_quantile == "low"]$cyotoxic_density_image))
+print("max T cell density in the medium group as defined by cut-off and in the third quantile")
+max(unique(sce_prot[,sce_prot$Tcell_density_score_image == "med"]$cyotoxic_density_image))
+max(unique(sce_prot[,sce_prot$cyotoxic_density_image_quantile == "med"]$cyotoxic_density_image))
+print("max T cell density in the high group as defined by cut-off and in the highest quantile")
+max(unique(sce_prot[,sce_prot$Tcell_density_score_image == "high"]$cyotoxic_density_image))
+max(unique(sce_prot[,sce_prot$cyotoxic_density_image_quantile == "high"]$cyotoxic_density_image))
+```
+## old split based on cut-offs
+
+```{r, fig.height=10, fig.width=15}
+cur_df <- data.frame(density = sce_prot$cyotoxic_density_image,
+                     ImageNumber = sce_prot$ImageNumber,
+                     score = sce_prot$Tcell_density_score_image)
+
+cur_df <- distinct(cur_df)
+
+im_order <- cur_df %>%
+  arrange(density) %>%
+  pull(ImageNumber)
+
+cur_df %>%
+  ggplot(aes(x = factor(ImageNumber,levels = im_order),y = density, fill=score))+
+  geom_bar(stat="identity")+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+## add score to protein sce object
+
+```{r}
+# add cyotoxic T cell density to sce object
+cellcount$ImageNumber <- as.integer(cellcount$ImageNumber)
+cur_sce <- data.frame(colData(sce_prot))
+cur_sce <- left_join(cur_sce, cellcount[,c("ImageNumber", "Tcell_density_score_quantile","density")])
+
+sce_prot$Tcell_density_score_image <- cur_sce$Tcell_density_score_quantile
+sce_prot$cyotoxic_density_image <- cur_sce$density
+```
+
+## Add Scores to RNA data set
+
+```{r export scores for RNA dataset}
+sce_rna$infiltration <- NULL
+sce_rna$T_frac_score_per_BlockID <- NULL
+sce_rna$T_frac_score_per_ImageNumber <- NULL
+sce_rna$T_frac_score_per_PatientID <- NULL
+sce_rna$cyotoxic_density_image <- NULL
+
+description_data <- data.frame(colData(sce_prot)) %>%
+  distinct(Description, .keep_all = TRUE)
+
+col_rna <- data.frame(colData(sce_rna))
+
+# left_join
+col_rna <- left_join(col_rna, description_data[,c("Description", "Tcell_density_score_image", "cyotoxic_density_image")])
+
+# add to sce (attention: cytotoxic density is calculated on protein data set!)
+sce_rna$Tcell_density_score_image <- col_rna$Tcell_density_score_image
+sce_rna$cyotoxic_density_image <- col_rna$density
+```
+
+
+## Save updated SCE
+
+```{r save sce}
+saveRDS(sce_prot,file = "data/data_for_analysis/sce_protein.rds")
+saveRDS(sce_rna,file = "data/data_for_analysis/sce_RNA.rds")
+```
