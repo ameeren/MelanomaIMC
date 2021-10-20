@@ -1,0 +1,55 @@
+---
+title: "histocat analysis"
+author: "Nils Eling"
+date: "10/20/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+Here, will will perform an interaction analysis using the `testInteractions`
+function from the `imcRtools` package. 
+
+```{r load-data}
+library(imcRtools)
+library(S4Vectors)
+
+cur_graph <- read.csv("/Volumes/sh_thoch/Git/MelanomaIMC/data/full_data/rna/cpout/Object relationships.csv")
+sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
+
+cur_id <- paste0(sce$ImageNumber, "_", sce$CellNumber)
+cur_from <- paste0(cur_graph$First.Image.Number, "_", cur_graph$First.Object.Number)
+cur_to <- paste0(cur_graph$Second.Image.Number, "_", cur_graph$Second.Object.Number)
+
+cur_sh <- SelfHits(from = match(cur_from, cur_id),
+                   to = match(cur_to, cur_id), 
+                   nnode = ncol(sce))
+colPair(sce, "neighborhood") <- cur_sh
+```
+
+Now we loop through the chemokines, rename the cell-types and perform interaction
+testing.
+
+```{r interaction-testing}
+library(BiocParallel)
+chemokine_list <- c("CCL4", "CCL18", "CXCL8", "CXCL10", "CXCL12", "CXCL13", "CCL2", 
+                    "CCL22", "CXCL9", "CCL8", "CCL19")
+
+interaction_list <- bplapply(chemokine_list,
+                             function(x){
+                                 cur_sce <- sce
+                                 colData(cur_sce) <- NULL
+                                 cur_celltype <- sce$celltype
+                                 cur_celltype[sce[[x]] == 1] <- x
+                                 cur_sce$celltype <- cur_celltype
+                                 cur_sce$ImageNumber <- sce$ImageNumber
+                                 
+                                 cur_interaction <- testInteractions(cur_sce,
+                                                        group_by = "ImageNumber",
+                                                        label = "celltype",
+                                                        colPairName = "neighborhood")
+                                 return(cur_interaction)
+                             }, BPPARAM = MulticoreParam())
+```
