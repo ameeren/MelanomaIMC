@@ -37,7 +37,7 @@ meta$`PFS (status, 1 = progression, 0 = no progression)`[meta$`PFS (status, 1 = 
 
 Now, we can generate a `SummarizedExperiment` object.
 
-```{r clean-data}
+```{r clean-data, message = FALSE}
 library(SummarizedExperiment)
 
 se <- SummarizedExperiment(assays = list(logcounts = exprs))
