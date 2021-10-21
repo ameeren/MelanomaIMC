@@ -83,3 +83,36 @@ cur_plots <- mapply(function(x, name){
 
 plot_grid(plotlist = cur_plots)
 ```
+
+Finally, we visualize only the chemokines.
+
+```{r viz-chemokine-specific}
+cur_list <- mapply(function(x, name){
+    cur_out <- x %>% as_tibble() %>%
+        group_by(from_label, to_label) %>%
+        summarize(mean_sig = mean(sigval, na.rm = TRUE))
+    return(cur_out %>% filter(from_label == sym(name)))
+}, interaction_list, chemokine_list, SIMPLIFY = FALSE)
+
+cur_df <- do.call("rbind", cur_list)
+
+cur_df %>% 
+    filter(!to_label %in% chemokine_list) %>%
+    ggplot() + 
+        geom_tile(aes(from_label, as.character(to_label), fill = mean_sig)) +
+        scale_fill_gradient2(low = "dark blue", mid = "white", high = "dark red",
+                             limits = c(-1, 1)) +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                text = element_text(size=20)) + ggtitle("Celltype")
+
+cur_df %>% 
+    filter(to_label %in% chemokine_list) %>%
+    ggplot() + 
+        geom_tile(aes(from_label, as.character(to_label), fill = mean_sig)) +
+        scale_fill_gradient2(low = "dark blue", mid = "white", high = "dark red",
+                             limits = c(-1, 1)) +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1),
+                text = element_text(size=20)) + ggtitle("Chemokines")
+```
+
+
