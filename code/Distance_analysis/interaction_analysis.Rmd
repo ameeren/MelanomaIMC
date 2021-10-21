@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Here, will will perform an interaction analysis using the `testInteractions`
 function from the `imcRtools` package. 
 
-```{r load-data}
+```{r load-data, eval = FALSE}
 library(imcRtools)
 library(S4Vectors)
 
@@ -32,7 +32,7 @@ colPair(sce, "neighborhood") <- cur_sh
 Now we loop through the chemokines, rename the cell-types and perform interaction
 testing.
 
-```{r interaction-testing}
+```{r interaction-testing, eval=FALSE}
 library(BiocParallel)
 chemokine_list <- c("CCL4", "CCL18", "CXCL8", "CXCL10", "CXCL12", "CXCL13", "CCL2", 
                     "CCL22", "CXCL9", "CCL8", "CCL19")
@@ -52,4 +52,34 @@ interaction_list <- bplapply(chemokine_list,
                                                         colPairName = "neighborhood")
                                  return(cur_interaction)
                              }, BPPARAM = MulticoreParam())
+
+saveRDS(interaction_list, "~/Desktop/interaction_list.rds")
+```
+
+## Visualize results
+
+Now, we will average the significance value across all images.
+
+```{r generate-plots, fig.width=30, fig.height=20, message=FALSE}
+library(tidyverse)
+interaction_list <- readRDS("~/Desktop/interaction_list.rds")
+chemokine_list <- c("CCL4", "CCL18", "CXCL8", "CXCL10", "CXCL12", "CXCL13", "CCL2", 
+                    "CCL22", "CXCL9", "CCL8", "CCL19")
+
+library(cowplot)
+cur_plots <- mapply(function(x, name){
+    cur_out <- x %>% as_tibble() %>%
+        group_by(from_label, to_label) %>%
+        summarize(mean_sig = mean(sigval, na.rm = TRUE))
+    
+    cur_plot <- ggplot(cur_out) + 
+        geom_tile(aes(from_label, to_label, fill = mean_sig)) +
+        scale_fill_gradient2(low = "dark blue", mid = "white", high = "dark red") +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1),
+              text = element_text(size=20)) + ggtitle(name)
+    
+    return(cur_plot)
+}, interaction_list, chemokine_list, SIMPLIFY = FALSE)
+
+plot_grid(plotlist = cur_plots)
 ```
