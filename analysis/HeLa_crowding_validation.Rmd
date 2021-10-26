@@ -1,0 +1,226 @@
+---
+title: "CXCL13_exhaustion_validation"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(SingleCellExperiment)
+library(imcRtools)
+library(BiocParallel)
+library(BiocNeighbors)
+library(dittoSeq)
+library(scater)
+library(scales)
+library(cowplot)
+library(Hmisc)
+library(CATALYST)
+set.seed(12345)
+```
+
+## read preprocessed data
+We used the dockerized steinbock version 0.9.1 on ubuntu 20.04 (https://bodenmillergroup.github.io/steinbock/latest/) for preprocessing.
+Briefly, a panel.csv file was generated with a column for DeepCell based segmentation. Therein Iridium was used as a nuclear marker and all RNA channels as cytoplasmic markers.
+
+We then ran the following commands for pre-processing:
+steinbock preprocess imc images --hpf 50
+steinbock segment deepcell --minmax
+steinbock measure intensities
+steinbock export csv intensities
+
+the preprocessed data can then be loaded via the `read_steinbock` function from imcRtools
+
+```{r}
+sce <- read_steinbock(path = "/media/dan/Data/HeLa_validation_ScienceImmunology/",return_as = "sce",graphs_folder = NULL, regionprops_folder = NULL)
+# for spillover compensation CATALYST needs an entry in the rowData of the sce object which contains the name of the metal followed by "Di"
+mat <- rowData(sce)
+mat$channel_name <- paste0(mat$channel,"Di")
+rowData(sce) <- mat
+```
+
+## get spill matrix
+spill over compensation was performed for the RNA channels.
+```{r}
+path <- system.file("/media/dan/Data/HeLa_validation_ScienceImmunology/spillover/20211019_HeLa_spillover_DS/",package = "imcRtools")
+
+spill_sce <- readSCEfromTXT("/media/dan/Data/HeLa_validation_ScienceImmunology/spillover/20211019_HeLa_spillover_DS/")
+plotSpotHeatmap(spill_sce)
+
+bc_key <- as.numeric(unique(spill_sce$sample_mass))
+assay(spill_sce, "exprs") <- asinh(counts(spill_sce)/1)
+spill_sce <- assignPrelim(spill_sce, bc_key = bc_key)
+spill_sce <- estCutoffs(spill_sce)
+spill_sce <- applyCutoffs(spill_sce)
+
+# Filter out mislabeled pixels
+spill_sce <- filterPixels(spill_sce)
+
+table(spill_sce$bc_id, spill_sce$sample_mass)
+
+spill_sce <- computeSpillmat(spill_sce)
+metadata(spill_sce)$spillover_matrix
+
+```
+
+## compensate the single cell data wit the spill over matrix
+```{r}
+plotSpillmat(spill_sce)
+
+sce <- compCytof(sce,sm = metadata(spill_sce)$spillover_matrix,method = "nnls",overwrite = FALSE, cofactor = 1)
+assay(sce,"asinh") <- asinh(counts(sce))
+```
+
+## add metadata to sce object
+
+```{r}
+colnames(sce) <- paste0(sce$sample_id,"_",sce$ObjectNumber)
+rownames(sce) <- rowData(sce)$target
+mat <- colData(sce)
+mat$sample <- sapply(X = mat$sample_id,FUN = function(X){strsplit(X,"_")[[1]][2]})
+mat$replicate <- sapply(X = mat$sample_id,FUN = function(X){strsplit(X,"_")[[1]][3]})
+mat[mat$sample == "allpos",]$sample <- "all"
+colData(sce) <- mat
+
+
+dittoScatterPlot(sce,x.var = "PPIB",y.var = "TUB",assay.x = "asinh",assay.y = "asinh",color.var = "sample")
+dittoScatterPlot(sce,x.var = "UBC",y.var = "TUB",assay.x = "compexprs",assay.y = "compexprs",color.var = "sample")
+```
+## intensity of PPIB and 
+
+```{r, fig.height=10,fig.width=10}
+dittoBoxPlot(sce,var = c("PPIB"),group.by= "sample",assay ="compexprs")
+
+dittoBoxPlot(sce,var = "UBC",group.by= "sample",assay ="compexprs")
+
+```
+## boxplots
+
+```{r}
+library(tidyverse)
+dat <- as_tibble(t(assay(sce,"compexprs")))
+dat <- dat[,1:12]
+dat$cellid <- colnames(sce)
+
+
+dat <- dat %>%
+  pivot_longer(cols = colnames(dat[,1:12]))
+
+dat <- dat %>%
+  separate(col = cellid,sep = "_", into = c("type","sample","replicate","x","ObjectNumber")) %>%
+  select(!x)
+
+dat[dat$sample == "allpos",]$sample <- "all"
+
+```
+
+## single cell expression across replicates
+```{r}
+#single cell expression across all three replicates
+dat %>%
+  ggplot(aes(x = name,y = value, fill=sample))+
+  geom_boxplot()
+```
+
+## mean expression across cells per replicate
+```{r}
+dat %>%
+  group_by(sample,replicate,name,.drop= FALSE) %>%
+  summarise(mean_exp = mean(value)) %>%
+  ggplot(aes(x = name,y = mean_exp, fill=sample))+
+  geom_boxplot()
+```
+## percent increase in PPIB in multi-stain
+
+```{r}
+dat %>%
+  group_by(sample,replicate,name,.drop= FALSE) %>%
+  summarise(mean_exp = mean(value)) %>%
+  filter(name == "PPIB",sample %in% c("all","PPIB")) %>%
+  mutate(counts = cosh(mean_exp)) %>%
+  group_by(sample, name) %>%
+  mutate(mean_overall = mean(counts))
+
+multi_stain <- dat %>%
+  group_by(sample,replicate,name,.drop= FALSE) %>%
+  summarise(mean_exp = mean(value)) %>%
+  filter(name == "PPIB",sample %in% c("all","PPIB")) %>%
+  mutate(counts = cosh(mean_exp)) %>%
+  group_by(sample, name) %>%
+  mutate(mean_overall = mean(counts)) %>%
+  filter(sample == "all") %>%
+  pull(counts)
+
+single_stain <- dat %>%
+  group_by(sample,replicate,name,.drop= FALSE) %>%
+  summarise(mean_exp = mean(value)) %>%
+  filter(name == "PPIB",sample %in% c("all","PPIB")) %>%
+  mutate(counts = cosh(mean_exp)) %>%
+  group_by(sample, name) %>%
+  mutate(mean_overall = mean(counts)) %>%
+  filter(sample == "PPIB") %>%
+  pull(counts)
+
+t.test(multi_stain,single_stain)
+```
+
+__we do see 13.5% high signal for PPIB and 1.4% high signal on average for UBC. We are not sure why we observed this slight, but not significant increase in signal.__
+
+## cross hybridization compensation
+we take the cross-hybridization data from supplemental figure 1E
+```{r}
+dat <- as_tibble(t(assay(sce,"compcounts")))
+dat <- dat[,1:12]
+dat$cellid <- colnames(sce)
+
+
+dat <- dat %>%
+  pivot_longer(cols = colnames(dat[,1:12]))
+
+dat <- dat %>%
+  separate(col = cellid,sep = "_", into = c("type","sample","replicate","x","ObjectNumber")) %>%
+  select(!x)
+
+dat[dat$sample == "allpos",]$sample <- "all"
+
+```
+
+```{r}
+target_vec <- rowData(sce)$target
+names(target_vec) <- rowData(sce)$name
+target_vec <- target_vec[1:12]
+comp_dat  <- dat %>%
+  filter(sample == "all") %>%
+  group_by(name) %>%
+  summarise(mean_signal = mean(value))
+
+target_vec <- target_vec[order((target_vec),decreasing = FALSE)]
+
+comp_dat$channel <- names(target_vec)
+
+comp_dat$cross_hyb <- c(1.1,0.2,0.2,0.2,0.2,0.2,0,0.1,0.5,0.3,0.3,0.2)/100
+cross_hyb_signal <- comp_dat %>%
+  mutate(spill_signal = cross_hyb*mean_signal) %>%
+  pull(spill_signal) %>%
+  sum()
+
+cosh(cross_hyb_signal)
+
+PPIB_dat <- dat %>%
+  filter(sample == "PPIB",name== "PPIB") %>%
+  pull(value) %>%
+  mean()
+
+all_dat_PPIB <- dat %>%
+  filter(sample == "all",name== "PPIB") %>%
+  pull(value) %>%
+  mean()
+
+(PPIB_dat+cross_hyb_signal)/(all_dat_PPIB)
+
+
+```
+
+__after cross hybridization normalization there are still 7% more signal in the multi-stain experiment for PPIB compared to the single stain. This may come from any of the other housekeeping genes cross-hybridizing to PPIB __
