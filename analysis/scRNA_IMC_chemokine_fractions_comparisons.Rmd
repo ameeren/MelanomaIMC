@@ -1,0 +1,547 @@
+---
+title: "scRNA chemokine validation"
+output: html_document
+---
+
+In this script we will sequentially load all melanoma datasets from http://tisch.comp-genomics.org/
+
+we will then calculate the proportions of each cell type expressing individual chemokines. under the hypothesis that the scRNAseq data is the ground truth. We will then compare these proportions to the observed proportions in IMC and thereby estimate whether we likely observe spatial spill over in IMC.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+set.seed(12345)
+
+library(Seurat)
+library(hdf5r)
+library(SingleCellExperiment)
+library(scater)
+library(dittoSeq)
+library(scran)
+library(ComplexHeatmap)
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(cowplot)
+```
+
+#  helper function to read in data
+
+the data from tisch cannot be access via API. therefore we downloaded a number of datasets and then wrote a little helper function to extract:
+1) the proportion of chemokine expressing cells (per celltype and chemokine) of the total number of chemokine expressing cells (per chemokine)
+2) the proportion of cells expressing a certain chemokine (by celltype) of a the total number of each celltype
+
+```{r}
+read_Data <- function(data,
+                      metadata,
+                      name,
+                      sorting){
+  
+  dat <- Seurat::Read10X_h5(data)
+
+  seurat<-CreateSeuratObject(counts = dat, project = name)
+  sce <- as.SingleCellExperiment(seurat)
+  
+  metadata <- read.delim(metadata)
+  # add the metadata to the sce object
+  colData(sce) <- cbind(colData(sce),metadata)
+  
+  sce$UMAP_1 <- NULL
+  sce$UMAP_2 <- NULL
+  
+  UMAP_dat <- metadata[,c("UMAP_1","UMAP_2")]
+  rownames(UMAP_dat) <- metadata$Cell
+  
+  reducedDim(sce, "UMAP",) <- UMAP_dat
+  
+  targets <- rownames(sce)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",rownames(sce))]
+
+  for (i in targets) {
+    colData(sce)[i] <- ifelse(t(counts(sce))[,i]>1,yes = 1,no = 0)
+  }
+  
+  chem_dat <- as.data.table(colData(sce))
+  chem_dat$CellID <- sapply(chem_dat$Cell,FUN = function(x){strsplit(x,"_")[[1]][1]})
+  
+  out_dat <- chem_dat[,c("Celltype..major.lineage.", "CellID",..targets)]
+  out_dat$celltype <- out_dat$Celltype..major.lineage.
+  out_dat$Celltype..major.lineage. <- NULL
+  # in some of the dataset there are cell types which we will merge: 
+  # CD8Tex and CD8T cells will be named CD8+ T cell
+  out_dat[which(out_dat$celltype == "CD8T"),]$celltype <- "CD8+ T cell"
+  out_dat[which(out_dat$celltype == "CD8Tex"),]$celltype <- "CD8+ T cell"
+  # CD4Tconv and Treg will be named CD8- T cell
+  out_dat[which(out_dat$celltype == "CD4Tconv"),]$celltype <- "CD8- T cell"
+  out_dat[which(out_dat$celltype == "Treg"),]$celltype <- "CD8- T cell"
+  
+  out_dat$sorting = sorting
+  out_dat$dataset = name
+
+  
+  out_dat <- out_dat %>%  
+  group_by(celltype,dataset,.drop = FALSE) %>%
+  add_count(name = "total_celltype_count") %>%
+  ungroup() %>%
+  pivot_longer(cols = targets,names_to = "chemokine") %>%
+  group_by(chemokine,.drop = FALSE) %>%
+  mutate(total_chem_count = sum(value)) %>%
+  ungroup() %>%
+  group_by(celltype,chemokine,dataset,.drop = FALSE) %>%
+  mutate(celltype_chemokine_sum = sum(value)) %>%
+  select(celltype,chemokine,celltype_chemokine_sum,total_chem_count,total_celltype_count,dataset,sorting) %>%
+  distinct() %>%
+  mutate(frac_of_chemokine_pos = celltype_chemokine_sum/total_chem_count,
+         frac_of_celltype = celltype_chemokine_sum/total_celltype_count) %>%
+  ungroup()
+
+  return(out_dat)
+  
+}
+```
+
+
+```{r load datasets}
+
+SKCM_GSE123139 <- read_Data(data = "../Downloads/SKCM_GSE123139_expression.h5",
+                      metadata = "../Downloads/SKCM_GSE123139_CellMetainfo_table.tsv",
+                      name = "SKCM_GSE123139",
+                      sorting = "immune")
+
+SKCM_GSE72056 <- read_Data(data = "../Downloads/SKCM_GSE72056_expression.h5",
+                      metadata = "../Downloads/SKCM_GSE72056_CellMetainfo_table.tsv",
+                      name = "SKCM_GSE72056",
+                      sorting = "all")
+
+SKCM_GSE115978 <- read_Data(data = "../Downloads/SKCM_GSE115978_aPD1_expression.h5",
+                      metadata = "../Downloads/SKCM_GSE115978_aPD1_CellMetainfo_table.tsv",
+                      name = "SKCM_GSE115978",
+                      sorting = "all")
+
+SKCM_GSE120575 <- read_Data(data = "../Downloads/SKCM_GSE120575_aPD1aCTLA4_expression.h5",
+                      metadata = "../Downloads/SKCM_GSE120575_aPD1aCTLA4_CellMetainfo_table.tsv",
+                      name = "SKCM_GSE120575",
+                      sorting = "immune")
+
+SKCM_GSE139249 <- read_Data(data = "../Downloads/SKCM_GSE139249_expression.h5",
+                      metadata = "../Downloads/SKCM_GSE139249_CellMetainfo_table.tsv",
+                      name = "SKCM_GSE139249",
+                      sorting = "NKcells")
+
+HNSC_GSE139324 <- read_Data(data = "../Downloads/HNSC_GSE139324_expression.h5",
+                      metadata = "../Downloads/HNSC_GSE139324_CellMetainfo_table.tsv",
+                      name = "HNSC_GSE139324",
+                      sorting = "all")
+
+NSCLC_GSE131907 <- read_Data(data = "../Downloads/NSCLC_GSE131907_expression.h5",
+                      metadata = "../Downloads/NSCLC_GSE131907_CellMetainfo_table.tsv",
+                      name = "NSCLC_GSE131907",
+                      sorting = "all")
+
+PAAD_CRA001160 <- read_Data(data = "../Downloads/PAAD_CRA001160_expression.h5",
+                      metadata = "../Downloads/PAAD_CRA001160_CellMetainfo_table.tsv",
+                      name = "PAAD_CRA001160",
+                      sorting = "all")
+
+UVM_GSE139829 <- read_Data(data = "../Downloads/UVM_GSE139829_expression.h5",
+                      metadata = "../Downloads/UVM_GSE139829_CellMetainfo_table.tsv",
+                      name = "UVM_GSE139829",
+                      sorting = "all")
+
+# merge the datasets
+sc_dat <- rbind(SKCM_GSE115978,SKCM_GSE120575,SKCM_GSE123139,SKCM_GSE139249,SKCM_GSE72056,HNSC_GSE139324,NSCLC_GSE131907,PAAD_CRA001160,UVM_GSE139829)
+
+```
+## plot the fractions per chemokine positive type
+
+```{r, fig.height=10, fig.width=10}
+sc_dat %>%
+  filter(sorting == "all") %>%
+  ggplot(aes(x=celltype,y=frac_of_chemokine_pos))+
+  geom_boxplot()+
+  geom_jitter(aes(col= dataset), position = position_jitter(width = 0))+
+  facet_wrap(.~chemokine)+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+## plot the fractions of chemokine expressing cells of all cells per celltype
+
+```{r, fig.height=10, fig.width=10}
+sc_dat %>%
+  filter(sorting == "all") %>%
+  ggplot(aes(x=celltype,y=frac_of_celltype))+
+  geom_boxplot(outlier.colour = NA)+
+  geom_jitter(aes(col= dataset),position= position_jitter(width = 0))+
+  facet_wrap(.~chemokine, scales = "free")+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+## IMC data
+
+```{r}
+sce_rna <- readRDS(file = "/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_RNA.rds")
+
+cur_dat <- as_tibble(colData(sce_rna))
+
+cur_dat <- cur_dat %>%
+  group_by(celltype,.drop = FALSE) %>%
+  mutate(total_celltype_count = n()) %>%
+  select(celltype,total_celltype_count,cellID, CCL2,CCL4,CCL8,CCL18,CCL19,CCL22,CXCL8,CXCL9,CXCL10,CXCL12,CXCL13)
+
+imc_long <- cur_dat %>%
+  pivot_longer(cols = c(CCL2,CCL4,CCL8,CCL18,CCL19,CCL22,CXCL8,CXCL9,CXCL10,CXCL12,CXCL13),names_to = "chemokine")
+
+imc_long <- imc_long %>%
+  group_by(chemokine,.drop = FALSE) %>%
+  mutate(total_chem_count = sum(value)) %>%
+  ungroup() %>%
+  group_by(celltype,chemokine,.drop = FALSE) %>%
+  mutate(celltype_chemokine_sum=sum(value)) %>%
+  ungroup() %>%
+  select(celltype,celltype_chemokine_sum,chemokine,total_celltype_count,total_chem_count) %>%
+  distinct() %>%
+  mutate(frac_of_chemokine_pos = celltype_chemokine_sum/total_chem_count,
+         frac_of_celltype = celltype_chemokine_sum/total_celltype_count) %>%
+  ungroup()
+
+imc_long$sorting <- "all"
+imc_long$dataset <- "imc"
+```
+
+## plot the fractions per chemokine positive type
+
+```{r, fig.height=10, fig.width=10}
+imc_long %>%
+  ggplot(aes(x=celltype,y=frac_of_chemokine_pos))+
+  geom_boxplot()+
+  facet_wrap(.~chemokine)+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+## plot the fractions of chemokine expressing cells of all cells per celltype
+
+```{r, fig.height=10, fig.width=10}
+imc_long %>%
+  ggplot(aes(x=celltype,y=frac_of_celltype))+
+  geom_boxplot(outlier.colour = NA)+
+  facet_wrap(.~chemokine, scales = "free")+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+## only celltypes available in IMC as well
+
+here we will unify the naming of cell types that are available in both datasets.
+
+```{r}
+unique(sc_dat$celltype)
+
+#sc_dat[which(sc_dat$celltype == "B"),]$celltype <- "HLA-DR"
+#sc_dat[which(sc_dat$celltype == "CD4Tconv"),]$celltype <- "CD8- T cell"
+#sc_dat[which(sc_dat$celltype == "CD8Tex"),]$celltype <- "CD8+ T cell"
+#sc_dat[which(sc_dat$celltype == "CD8T"),]$celltype <- "CD8+ T cell"
+sc_dat[which(sc_dat$celltype == "Endothelial"),]$celltype <- "Vasculature"
+sc_dat[which(sc_dat$celltype == "Fibroblasts"),]$celltype <- "Stroma"
+sc_dat[which(sc_dat$celltype == "Malignant"),]$celltype <- "Tumor"
+sc_dat[which(sc_dat$celltype == "Mono/Macro"),]$celltype <- "Macrophage"
+
+#sc_dat[which(sc_dat$celltype == "Treg"),]$celltype <- "CD8- T cell"
+#sc_dat[which(sc_dat$celltype == "Plasma"),]$celltype <- "CD38"
+
+unique(sc_dat$celltype)
+
+
+celltypes <- c("CD8- T cell","CD8+ T cell","Vasculature", "Stroma","Macrophage","Tumor")
+```
+
+## merge scRNA-seq and IMC data
+
+we will also unify the cell type names wherever possible
+
+```{r, fig.height=10,fig.width=10}
+plot_dat <- sc_dat %>%
+  filter(celltype %in% celltypes, sorting == "all")
+
+# order IMC data correct for merging 
+imc_long <- imc_long[,colnames(plot_dat)]
+
+all_dat <- rbind(plot_dat,imc_long)
+all_dat$datatype <- "scRNAseq"
+all_dat[which(all_dat$dataset == "IMC"),]$datatype <- "IMC"
+```
+
+```{r}
+sc_dat %>%
+  filter(dataset %in% "UVM_GSE139829", chemokine == "CCL18")
+```
+
+
+## plot the proportion of chemokine expressing cell types as a fraction of the sum of chemokine expressing cells (for merged data)
+we will then below also add a statistical test (Grubbs test) to test whether IMC data is significantly different from scRNAseq data
+
+```{r fig.height=10, fig.width=10}
+ggplot()+
+  geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
+  geom_point(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
+  geom_point(data = imc_long,aes(x=celltype,y=frac_of_chemokine_pos),color="red")+
+  facet_wrap(.~chemokine, scales = "free")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
+  labs()
+```
+
+```{r grubbs statistical test}
+library(outliers)
+library(purrr)
+
+test_dat <- all_dat %>%
+  group_by(chemokine, celltype) %>%
+  nest() %>%         
+  mutate(n = map_dbl(data, ~ nrow(.x)), # number of entries
+         G = map(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$statistic[[1]]), # G statistic
+         U = map(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$statistic[[2]]), # U statistic
+         grubbs = map(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$alternative), # Alternative hypotesis
+         p_grubbs = map_dbl(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$p.value)) %>% # p-value
+  mutate(G = signif(unlist(G), 3),
+         U = signif(unlist(U), 3),
+         grubbs = unlist(grubbs),
+         p_grubbs = signif(p_grubbs, 3)) %>%
+  select(-data) %>%
+  arrange(p_grubbs)
+
+# merge the test_dat data with the IMC data
+test_dat <- left_join(test_dat,imc_long[,c("celltype","chemokine","frac_of_chemokine_pos")],by=c("celltype","chemokine"))
+
+# define whether a detected outlier is an IMC datapoint and apply 0.05 significant value cut-off
+sig_dat <- test_dat %>%
+  mutate(value = gsub("[^0-9.]", "",  grubbs),
+         is_IMC = value == frac_of_chemokine_pos,
+         sig = p_grubbs <= 0.05) %>%
+  filter(sig == TRUE,is_IMC == TRUE)
+
+
+```
+
+```{r add significance to plot, fig.height=15,fig.width=15}
+library(ggpubr)
+
+ggplot()+
+  geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
+  geom_point(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
+  geom_point(data = imc_long,aes(x=celltype,y=frac_of_chemokine_pos),color="red",shape=18, size=5)+
+  geom_text(data = sig_dat,aes(x=celltype,y=0.85,label = p_grubbs), color= "red", angle=90) +
+  facet_wrap(.~chemokine)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
+  labs(title = "proportion of chemokine expressing cells as a fraction of chemokine expressing cells")
+```
+
+## plot the proportion of chemokine expressing cell types as a fraction of the cell types (for merged data)
+we will then below also add a statistical test (Grubbs test) to test whether IMC data is significantly different from scRNAseq data
+
+```{r fig.height=10, fig.width=10}
+ggplot()+
+  geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_celltype))+
+  geom_point(data = plot_dat,aes(x=celltype,y=frac_of_celltype),color="black")+
+  geom_point(data = imc_long,aes(x=celltype,y=frac_of_celltype),color="red")+
+  facet_wrap(.~chemokine, scales = "free")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
+  labs()
+```
+
+```{r grubbs statistical test}
+test_dat <- all_dat %>%
+  filter(! celltype %in% c("CD38","HLA-DR","Neutrophil", "unknown"), chemokine %in% c("CCL2","CXCL8","CXCL9","CXCL10","CXCL12","CCL19")) %>%
+  group_by(chemokine, celltype) %>%
+  nest() %>%         
+  mutate(n = map_dbl(data, ~ nrow(.x)), # number of entries
+         G = map(data, ~ grubbs.test(.x$frac_of_celltype,two.sided = TRUE)$statistic[[1]],), # G statistic
+         U = map(data, ~ grubbs.test(.x$frac_of_celltype,two.sided = TRUE)$statistic[[2]]), # U statistic
+         grubbs = map(data, ~ grubbs.test(.x$frac_of_celltype,two.sided = TRUE)$alternative), # Alternative hypothesis
+         p_grubbs = map_dbl(data, ~ grubbs.test(.x$frac_of_celltype,two.sided = TRUE)$p.value)) %>% # p-value
+  mutate(G = signif(unlist(G), 3),
+         U = signif(unlist(U), 3),
+         grubbs = unlist(grubbs),
+         p_grubbs = signif(p_grubbs, 3)) %>%
+  select(-data) %>%
+  arrange(p_grubbs)
+
+# merge the test_dat data with the IMC data
+test_dat <- left_join(test_dat,imc_long[,c("celltype","chemokine","frac_of_celltype")],by=c("celltype","chemokine"))
+
+# define whether a detected outlier is an IMC datapoint and apply 0.05 significant value cut-off
+sig_dat <- test_dat %>%
+  mutate(value = gsub("[^0-9.]", "",  grubbs),
+         is_IMC = value == frac_of_celltype,
+         sig = p_grubbs <= 0.05) %>%
+  filter(sig == TRUE,is_IMC == TRUE)
+
+test_dat %>%
+  filter(chemokine == "CXCL8")
+```
+
+```{r add significance to plot, fig.height=15,fig.width=15}
+ggplot()+
+  geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_celltype))+
+  geom_point(data = plot_dat,aes(x=celltype,y=frac_of_celltype,col=as.factor(dataset)))+
+  geom_point(data = imc_long,aes(x=celltype,y=frac_of_celltype),color="red",shape=18, size=5)+
+  geom_text(data = sig_dat,aes(x=celltype,y=0.85,label = p_grubbs), color= "red", angle=90) +
+  facet_wrap(.~chemokine, scales ="free")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
+  labs(title = "proportion of chemokine expressing cells as a fraction of the cell types")
+```
+
+
+## select only highly inflamed images from IMC
+
+```{r}
+cur_dat <- as_tibble(colData(sce_rna))
+
+cur_dat <- cur_dat %>%
+  filter(Tcell_density_score_image == "high") %>%
+  group_by(celltype,.drop = FALSE) %>%
+  mutate(total_celltype_count = n()) %>%
+  select(celltype,total_celltype_count,cellID, CCL2,CCL4,CCL8,CCL18,CCL19,CCL22,CXCL8,CXCL9,CXCL10,CXCL12,CXCL13)
+
+imc_long <- cur_dat %>%
+  pivot_longer(cols = c(CCL2,CCL4,CCL8,CCL18,CCL19,CCL22,CXCL8,CXCL9,CXCL10,CXCL12,CXCL13),names_to = "chemokine")
+
+imc_long <- imc_long %>%
+  group_by(chemokine,.drop = FALSE) %>%
+  mutate(total_chem_count = sum(value)) %>%
+  ungroup() %>%
+  group_by(celltype,chemokine,.drop = FALSE) %>%
+  mutate(celltype_chemokine_sum=sum(value)) %>%
+  ungroup() %>%
+  select(celltype,celltype_chemokine_sum,chemokine,total_celltype_count,total_chem_count) %>%
+  distinct() %>%
+  mutate(frac_of_chemokine_pos = celltype_chemokine_sum/total_chem_count,
+         frac_of_celltype = celltype_chemokine_sum/total_celltype_count) %>%
+  ungroup()
+
+imc_long$sorting <- "all"
+imc_long$dataset <- "imc"
+```
+
+```{r, fig.height=10,fig.width=10}
+plot_dat <- sc_dat %>%
+  filter(celltype %in% celltypes, sorting == "all")
+
+# order IMC data correct for merging 
+imc_long <- imc_long[,colnames(plot_dat)]
+
+all_dat <- rbind(plot_dat,imc_long)
+all_dat$datatype <- "scRNAseq"
+all_dat[which(all_dat$dataset == "IMC"),]$datatype <- "IMC"
+```
+
+```{r,fig.height=10, fig.width=10}
+ggplot()+
+  geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_celltype))+
+  geom_point(data = plot_dat,aes(x=celltype,y=frac_of_celltype),color="black")+
+  geom_point(data = imc_long,aes(x=celltype,y=frac_of_celltype),color="red")+
+  facet_wrap(.~chemokine, scales = "free")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
+  labs()
+
+
+```
+
+
+```{r}
+read_Data_unprocessed <- function(data,
+                      metadata,
+                      name,
+                      sorting){
+  
+  dat <- Seurat::Read10X_h5(data)
+
+  seurat<-CreateSeuratObject(counts = dat, project = name)
+  sce <- as.SingleCellExperiment(seurat)
+  
+  metadata <- read.delim(metadata)
+  # add the metadata to the sce object
+  colData(sce) <- cbind(colData(sce),metadata)
+  
+  sce$UMAP_1 <- NULL
+  sce$UMAP_2 <- NULL
+  
+  UMAP_dat <- metadata[,c("UMAP_1","UMAP_2")]
+  rownames(UMAP_dat) <- metadata$Cell
+  
+  reducedDim(sce, "UMAP",) <- UMAP_dat
+  
+  targets <- rownames(sce)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",rownames(sce))]
+
+  for (i in targets) {
+    colData(sce)[i] <- ifelse(t(counts(sce))[,i]>1,yes = 1,no = 0)
+  }
+  
+    chem_dat <- as.data.table(colData(sce))
+  chem_dat$CellID <- sapply(chem_dat$Cell,FUN = function(x){strsplit(x,"_")[[1]][1]})
+  
+  return(chem_dat)
+}
+```
+
+```{r}
+HNSC <- read_Data_unprocessed(data = "../Downloads/HNSC_GSE139324_expression.h5",
+                      metadata = "../Downloads/HNSC_GSE139324_CellMetainfo_table.tsv",
+                      name = "HNSC_GSE139324",
+                      sorting = "all")
+
+doubl_vec <- HNSC %>%
+  select(colnames(HNSC)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",colnames(HNSC))]) %>%
+  rowSums()
+
+length(doubl_vec[which(doubl_vec %in% c(2:9))])/length(doubl_vec[doubl_vec == 1])
+```
+
+
+
+
+```{r}
+NSCLC <- read_Data_unprocessed(data = "../Downloads/NSCLC_GSE131907_expression.h5",
+                      metadata = "../Downloads/NSCLC_GSE131907_CellMetainfo_table.tsv",
+                      name = "NSCLC_GSE131907",
+                      sorting = "all")
+
+doubl_vec <- NSCLC %>%
+  select(colnames(NSCLC)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",colnames(NSCLC))]) %>%
+  rowSums()
+
+NSCLC[which(doubl_vec %in% c(2:9)),]
+
+length(doubl_vec[which(doubl_vec %in% c(2:9))])/length(doubl_vec[doubl_vec == 1])
+```
+
+```{r}
+UVM <- read_Data_unprocessed(data = "../Downloads/UVM_GSE139829_expression.h5",
+                      metadata = "../Downloads/UVM_GSE139829_CellMetainfo_table.tsv",
+                      name = "UVM_GSE139829",
+                      sorting = "all")
+
+doubl_vec <- UVM %>%
+  select(colnames(UVM)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",colnames(UVM))]) %>%
+  rowSums()
+
+length(doubl_vec[which(doubl_vec %in% c(2:9))])/length(doubl_vec[doubl_vec == 1])
+```
+
+
+```{r}
+MEL <- read_Data_unprocessed(data = "../Downloads/SKCM_GSE72056_expression.h5",
+                      metadata = "../Downloads/SKCM_GSE72056_CellMetainfo_table.tsv",
+                      name = "SKCM_GSE72056",
+                      sorting = "all")
+
+doubl_vec <- MEL %>%
+  select(colnames(MEL)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",colnames(MEL))]) %>%
+  rowSums()
+
+length(doubl_vec[which(doubl_vec %in% c(2:9))])/length(doubl_vec[doubl_vec == 1])
+```
+
