@@ -24,10 +24,10 @@ library(tidyverse)
 #library(Rphenoannoy)
 
 # Read SingleCellExperiment object
-sce <- readRDS("/media/dan/Data/data_for_analysis/sce_protein.rds")
+sce <- readRDS("/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_protein.rds")
 ```
 
-```{r all cells heatmap, fig.width=10, fig.height=8}
+```{r all cells heatmap, fig.width=15, fig.height=10}
 set.seed(2345)
 good_markers <- rownames(sce)[rowData(sce)$good_marker]
 
@@ -60,7 +60,7 @@ dittoHeatmap(cur_sce
 
 
 
-```{r labelled cells heatmap, fig.width=10, fig.height=8}
+```{r labelled cells heatmap, fig.width=15, fig.height=10}
 set.seed(2345)
 
 cur_sce <- sce[,sce$layer_1_gated != "unlabelled"]
@@ -85,8 +85,8 @@ dittoHeatmap(cur_sce
 
 ## RNA dataset
 
-```{r  RNA data all cells heatmap, fig.width=10, fig.height=8}
-sce <- readRDS("/media/dan/Data/data_for_analysis/sce_RNA.rds")
+```{r  RNA data all cells heatmap, fig.width=15, fig.height=10}
+sce <- readRDS("/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_RNA.rds")
 
 
 set.seed(2345)
@@ -113,7 +113,7 @@ dittoHeatmap(cur_sce
 
 
 
-```{r RNA data labelled cells heatmap, fig.width=10, fig.height=8}
+```{r RNA data labelled cells heatmap, fig.width=15, fig.height=10}
 set.seed(2345)
 
 cur_sce <- sce[,sce$layer_1_gated != "unlabelled"]

@@ -27,8 +27,8 @@ library(psych)
 ## Load data
 
 ```{r load_data}
-sce_rna <- readRDS(file = "/media/dan/Data/data_for_analysis/sce_RNA.rds")
-sce_prot <- readRDS(file = "/media/dan/Data/data_for_analysis/sce_protein.rds")
+sce_rna <- readRDS(file = "/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_RNA.rds")
+sce_prot <- readRDS(file = "/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_protein.rds")
 ```
 
 # Figure 2D

@@ -1,0 +1,76 @@
+---
+title: "get_info_from_protein_data"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r,message=FALSE}
+library(SingleCellExperiment)
+library(data.table)
+library(scater)
+library(ggplot2)
+library(dittoSeq)
+library(dplyr)
+library(reshape2)
+library(tidyverse)
+library(imcRtools)
+library(viridis)
+library(cowplot)
+```
+
+```{r}
+sce <- readRDS(file = "/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_protein.rds")
+```
+
+## get Descriptions for B cell patch scores
+
+```{r}
+cur_dat <- as_tibble(colData(sce))
+
+DT::datatable(cur_dat %>%
+  select(bcell_patch_score,Description) %>%
+  distinct())
+```
+
+```{r}
+DT::datatable(cur_dat %>%
+  filter(Location == "CTRL") %>%
+  select(Description, TissueType) %>%
+  distinct())
+```
+## scatterplots for myleoid markers
+
+```{r, fig.height=7, fig.width=10}
+set.seed(1235)
+cur_dat <- data.frame(t(assay(sce,"asinh")))
+cur_meta <- data.frame(colData(sce))
+cur_dat$celltype <- cur_meta$celltype
+cur_dat$cellID <- cur_meta$cellID
+
+cur_dat <- cur_dat[sample(cur_dat$cellID,size = 25000,replace = FALSE),]
+
+p1 <- cur_dat %>%
+  ggplot(aes(x=HLADR,y=CD11c,col=celltype))+
+  geom_point(size=1)
+
+p2 <- cur_dat %>%
+  ggplot(aes(x=CD68,y=CD11c,col=celltype))+
+  geom_point(size=1)
+
+p3 <- cur_dat %>%
+  ggplot(aes(x=CD20,y=CD11c,col=celltype))+
+  geom_point(size=1)
+
+p4 <- cur_dat %>%
+  ggplot(aes(x=CD20,y=CD68,col=celltype))+
+  geom_point(size=1)
+
+plot_grid(p1,p2,p3,p4,ncol = 2)
+
+
+```
+
+
