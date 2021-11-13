@@ -17,11 +17,13 @@ library(scater)
 library(scales)
 library(cowplot)
 library(Hmisc)
+library(tidyverse)
 set.seed(12345)
 ```
 
 ```{r}
-sce <- read_steinbock(path = "/media/dan/Data/20210915_YTMA256_exhaustion_stain_DS/",return_as = "sce",graphs_folder = NULL, regionprops_folder = NULL)
+sce <- read_steinbock(path = "/media/dan/Data/Data/Melanoma_HotCold_paper/20210915_YTMA256_exhaustion_stain_DS/",return_as = "sce",graphs_folder = NULL, regionprops_folder = NULL)
+sce_RNA <- readRDS(file = "/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_RNA.rds")
 ```
 ## add metadata
 
@@ -207,20 +209,10 @@ plot_grid(plotlist = p.list, ncol = 5)
 ```{r}
 cur_sce <- sce[,sce$celltype %in% c("CD8_Tcell")]
 dittoHeatmap(cur_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
-             assay = "asinh",show_colnames = FALSE,scale= "none",
-            cluster_rows = TRUE,cluster_cols = FALSE,order.by = "CXCL13",
-            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(0,3, length.out = 101))
-dittoHeatmap(cur_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
              assay = "asinh",show_colnames = FALSE,
             cluster_rows = TRUE,cluster_cols = FALSE,order.by = "CXCL13",
             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(-2,2, length.out = 101))
-dittoHeatmap(cur_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
-             assay = "asinh",show_colnames = FALSE,scale= "none",
-            cluster_rows = TRUE,cluster_cols = FALSE,
-            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(0,3, length.out = 101))
+            breaks = seq(-3,3, length.out = 101))
 
 dittoHeatmap(cur_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
              assay = "scaled_0.99",show_colnames = FALSE,scale= "none",
@@ -277,3 +269,91 @@ ggplot(data = cor_dat,aes(x = factor(Var1,levels=order_vec),y=correlation))+
   geom_boxplot()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
 ```
+
+```{r}
+for (i  in unique(sce$Description)) {
+  p <-dittoScatterPlot(sce[,which(sce$celltype == "CD8_Tcell" & sce$Description == i )],x.var = "CXCL13",y.var = "GITR",assay.x = "asinh",assay.y = "asinh")
+  print(p)
+}
+
+```
+## fraction of PD-1+ CD8 T cells that are also CXCL13 positive
+
+```{r}
+dittoScatterPlot(sce[,which(sce$celltype == "CD8_Tcell")],x.var = "CXCL13",y.var = "PD-1",assay.x = "asinh",assay.y = "asinh")
+
+cur_sce <- sce[,sce$celltype == "CD8_Tcell"]
+cur_sce[,which(t(assay(cur_sce,"asinh"))[,"PD-1"] > 1.3 & t(assay(cur_sce,"asinh"))[,"CXCL13"]< 2)]$celltype <- "PD-1+_CXCl13-_Tcell"
+cur_sce[,which(t(assay(cur_sce,"asinh"))[,"PD-1"] > 1.3 & t(assay(cur_sce,"asinh"))[,"CXCL13"]> 2)]$celltype <- "PD-1+_CXCl13+_Tcell"
+cur_sce[,which(t(assay(cur_sce,"asinh"))[,"PD-1"] < 1.3 & t(assay(cur_sce,"asinh"))[,"CXCL13"]> 2)]$celltype <- "PD-1-_CXCl13+_Tcell"
+
+dittoScatterPlot(cur_sce,x.var = "CXCL13",y.var = "PD-1",assay.x = "asinh",assay.y = "asinh",color.var = "celltype")
+
+cur_dat <- as_tibble(colData(cur_sce))
+cur_dat %>%
+  group_by(Description,.drop = FALSE) %>%
+  count(celltype) %>%
+  mutate(total_cellcount = sum(n),frac = n/total_cellcount) %>%
+  ggplot()+
+  geom_bar(aes(x=Description,y=frac, fill=celltype),stat = "identity")
+
+cur_sce <- sce[,sce$celltype == "Tcell"]
+cur_sce[,which(t(assay(cur_sce,"asinh"))[,"PD-1"] > 1.3 & t(assay(cur_sce,"asinh"))[,"CXCL13"]< 2)]$celltype <- "PD-1+_CXCl13-_Tcell"
+cur_sce[,which(t(assay(cur_sce,"asinh"))[,"PD-1"] > 1.3 & t(assay(cur_sce,"asinh"))[,"CXCL13"]> 2)]$celltype <- "PD-1+_CXCl13+_Tcell"
+cur_sce[,which(t(assay(cur_sce,"asinh"))[,"PD-1"] < 1.3 & t(assay(cur_sce,"asinh"))[,"CXCL13"]> 2)]$celltype <- "PD-1-_CXCl13+_Tcell"
+
+dittoScatterPlot(cur_sce,x.var = "CXCL13",y.var = "PD-1",assay.x = "asinh",assay.y = "asinh",color.var = "celltype")
+
+```
+## compare RNA and protein CXCL13 T cell fractions
+
+```{r}
+
+
+RNA_dat <- as_tibble(colData(sce_RNA))
+
+rna_dat <- RNA_dat %>%
+  filter(Location != "CTRL", Tcell_density_score_image == "high") %>%
+  select(celltype,Description,dysfunction_score,CXCL13) %>%
+  mutate(celltype = paste0(celltype,"_",CXCL13)) %>%
+  filter(celltype %in% c("CD8+ T cell_0","CD8+ T cell_1")) %>%
+  group_by(Description,celltype) %>%
+  count(celltype) %>%
+  ungroup() %>%
+  group_by(Description) %>%
+  mutate(total_cellcount = sum(n),frac=n/total_cellcount) %>%
+  filter(celltype == "CD8+ T cell_1") %>%
+  pull(frac,Description)
+
+# now we calculate the fractions for the protein dataset
+prot_dat <- cur_dat %>%
+  select(Description,celltype) %>%
+  group_by(Description,celltype) %>%
+  count(celltype) %>%
+  ungroup() %>%
+  group_by(Description) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  filter(celltype %in% c("PD-1+_CXCl13+_Tcell","PD-1-_CXCl13+_Tcell")) %>%
+  mutate(CD8_CXCL13 = sum(n),frac = CD8_CXCL13/total_cellcount) %>%
+  select(Description,frac) %>%
+  distinct() %>%
+  pull(frac,Description)
+  
+rna_dat <- rna_dat[names(rna_dat) %in% names(prot_dat)]
+all_dat <- data.frame(Description = names(rna_dat),
+                      rna_frac = as.vector(rna_dat),
+                      prot_frac = as.vector(prot_dat))
+
+all_dat <- pivot_longer(all_dat,cols = c("rna_frac","prot_frac"))
+
+library(ggpubr)
+ggplot(all_dat, aes(x=prot_frac, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "pearson") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8+ CXCL13+ T cells (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+```
+
