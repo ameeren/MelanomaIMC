@@ -17,7 +17,7 @@ sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
 library(imcRtools)
 library(tidyverse)
 
-plotSpatial(sce[,sce$ImageNumber == 4], node_color_by = "ccl4only_comm", 
+plotSpatial(sce[,sce$ImageNumber == 4], node_color_by = "cxcl13_pure", 
             img_id = "ImageNumber", coords = c("Center_X", "Center_Y"))
 ```
 
@@ -35,16 +35,16 @@ cur_df <- colData(sce)
 # Set thresholds
 perc_cells <- 0.05
 
-for (i in c("ccl4only_comm", "ccl18only_comm", "cxcl8only_comm", "cxcl10only_comm",
-            "cxcl12only_comm", "cxcl13only_comm", "ccl2only_comm", "ccl22only_comm",
-            "cxcl9only_comm", "ccl8only_comm", "ccl19only_comm")) {
+for (i in c("ccl4_pure", "ccl18_pure", "cxcl8_pure", "cxcl10_pure",
+            "cxcl12_pure", "cxcl13_pure", "ccl2_pure", "ccl22_pure",
+            "cxcl9_pure", "ccl8_pure", "ccl19_pure")) {
     
     cur_perc <- cur_df %>% 
         as.data.frame() %>% 
         group_by(ImageNumber) %>%
         summarize(perc_cells = sum(!!sym(i) != 0)/n())
     
-    cur_chemo <- toupper(sub("only_comm", "", i))
+    cur_chemo <- toupper(sub("_pure", "", i))
 
     for (j in unique(cur_df$celltype)) {
         cur_res <- cur_df %>% 
@@ -56,6 +56,10 @@ for (i in c("ccl4only_comm", "ccl18only_comm", "cxcl8only_comm", "cxcl10only_com
                       other_inside = sum(celltype != j & !!sym(i) != 0),
                       celltype_outside = sum(celltype == j & !!sym(i) == 0),
                       other_outside = sum(celltype != j & !!sym(i) == 0))
+        
+        if (nrow(cur_res) == 0) {
+            next
+        }
         
         cur_tests <- as.data.frame(t(apply(as.matrix(cur_res), 1, function(x){
             cur_mat <- matrix(x[2:5], ncol = 2, nrow = 2, byrow = FALSE)
