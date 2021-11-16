@@ -1,0 +1,495 @@
+---
+title: "CXCL13_exhaustion_validation"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+library(SingleCellExperiment)
+library(imcRtools)
+library(BiocParallel)
+library(BiocNeighbors)
+library(dittoSeq)
+library(scater)
+library(scales)
+library(cowplot)
+library(Hmisc)
+library(tidyverse)
+library(ggpubr)
+library(scran)
+set.seed(12345)
+```
+
+```{r}
+sce_1 <- read_steinbock(path = "/media/dan/Data/Data/Melanoma_HotCold_paper/20210915_YTMA256_exhaustion_stain_DS/",return_as = "sce",graphs_folder = NULL, regionprops_folder = NULL)
+sce_2 <- read_steinbock(path = "/media/dan/Data/Data/Melanoma_HotCold_paper/revision_stain_ScienceImmu/",return_as = "sce",graphs_folder = NULL, regionprops_folder = NULL)
+
+sce_RNA <- readRDS(file = "/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_RNA.rds")
+
+```
+
+## add metadata to sce_1
+
+```{r}
+assay(sce_1,"asinh") <- asinh(counts(sce_1))
+colnames(sce_1) <- paste0(sce_1$sample_id,"_",sce_1$ObjectNumber)
+
+# add information from dysfunction score and Description
+imnames <- c("E5","H9","F9","L8","N10","F2","D8","E4","J4","G11","L4","O9")
+names(imnames) <- unique(sce_1$sample_id)
+
+sce_1$Description <- imnames[sce_1$sample_id]
+
+sce_1$dysfunction_score <- "low_dysfunction"
+sce_1[,sce_1$Description %in% c("E5","H9","F2","D8","J4","E4","G11","L4")]$dysfunction_score <- "high_dysfunction"
+```
+
+## add metadata to sce_2
+
+```{r}
+assay(sce_2,"asinh") <- asinh(counts(sce_2))
+colnames(sce_2) <- paste0(sce_2$sample_id,"_",sce_2$ObjectNumber)
+
+# add information from dysfunction score and Description
+imnames <- c("E2","D4","D3","G9","B6","O2","M10","B3","N8","A4","I11","K2","I5","M9")
+names(imnames) <- unique(sce_2$sample_id)[c(1,7:14,2:6)]
+
+sce_2$Description <- imnames[sce_2$sample_id]
+
+sce_2$dysfunction_score <- ""
+sce_2[,sce_2$Description %in% c("E2","D4","K2","G9","I5","O2","M10")]$dysfunction_score <- "high_dysfunction"
+sce_2[,sce_2$Description %in% c("D3","B6","B3","A4","I11","M9","N8")]$dysfunction_score <- "low_dysfunction"
+```
+
+## merge sce objects
+
+```{r}
+sce <- cbind(sce_1,sce_2)
+rm(sce_1,sce_2)
+```
+
+
+## UMAP
+
+```{r}
+# define normalized scaled counts
+es <- assay(sce, "counts")
+
+# here we define the clipping percentage. all values above the fraction are then put to 1
+for (i in c(0.99)){
+  qs <- rowQuantiles(es, probs = c(0.0, i))
+  x <- (es - qs[, 1]) / (qs[, 2] - qs[, 1])
+  x[x < 0] <- 0; x[x > 1] <- 1
+  assay(sce, paste0("scaled_",i)) <- x
+}
+
+good_markers <- rownames(sce)[grep("DNA|Histone|Ecad",rownames(sce), invert = TRUE)]
+Tcell_markers <- rownames(sce)[grep("CD3|CD4|CD7|CD8|TCF|Granzym|CD38|CD39|PD-1|Ki-67|CXCL13|ICOS|EOMES|Tim-3|GITR|LAG|CD57|FOXP3",rownames(sce))]
+Tcell_markers <- Tcell_markers[which(Tcell_markers != "CD31-vWF")]
+
+sce <- runUMAP(sce, exprs_values = "scaled_0.99", 
+                     subset_row = good_markers, name = "UMAP_scaled",
+               external_neighbors = TRUE, BNPARAM = AnnoyParam(),
+               BPPARAM = MulticoreParam())
+
+sce <- runUMAP(sce, exprs_values = "asinh", 
+                     subset_row = good_markers, name = "UMAP_asinh",
+               external_neighbors = TRUE, BNPARAM = AnnoyParam(),
+               BPPARAM = MulticoreParam())
+
+
+
+plotReducedDim(sce,dimred = "UMAP_scaled",colour_by = "Description")
+plotReducedDim(sce,dimred = "UMAP_asinh",colour_by = "Description")
+```
+## Marker expression on UMAP_scaled
+
+```{r, fig.height=18, fig.width=35}
+p.list <- list()
+for(i in good_markers){
+  p.list[[i]] <- plotReducedDim(sce,dimred = "UMAP_scaled",colour_by = i, by_exprs_values = "scaled_0.99", 
+                          point_size = 0.25, point_alpha = 1, shape_by = "dysfunction_score") +
+    scale_colour_gradient2(name = i, low = "#2166ac", mid = "white", high = "#b2182b",
+                           limits = c(0, 1), oob = squish,midpoint = 0.5)
+}
+
+plot_grid(plotlist = p.list, ncol = 6)
+```
+## Marker expression on UMAP_asinh
+
+```{r, fig.height=18, fig.width=35}
+p.list <- list()
+for(i in good_markers){
+  p.list[[i]] <- plotReducedDim(sce,dimred = "UMAP_asinh",colour_by = i, by_exprs_values = "asinh", 
+                          point_size = 0.25, point_alpha = 1, shape_by = "dysfunction_score")
+}
+
+plot_grid(plotlist = p.list, ncol = 6)
+```
+## define cut offs for the definition of CD8 T cells per sample
+here we check if there are any global intensity biases for CD8
+
+```{r, fig.height=8, fig.width=8}
+dittoRidgePlot(sce,var="CD8a", group.by= "Description",assay = "asinh")
+```
+__samples E2, F2 L8, D4 and B3 should be inspected further since they have higher CD8 background. However, we will more generally chose a conservative cut off for T cell definition__
+
+```{r}
+for (i  in unique(sce$Description)) {
+  p <-dittoScatterPlot(sce[,which(sce$Description == i )],x.var = "CD8a",y.var = "CXCL13",assay.x = "asinh",assay.y = "asinh", main=i,)
+  plot(p)
+}
+
+```
+cut off generally at: 2 asinh counts
+for E2, F2, D4: 2.5
+
+CXCL13 the cut off can generally be 2 but again:
+for E2, F2 and D4 should be: 2.75
+
+```{r, fig.height=5, fig.width=5}
+for (i  in unique(sce$Description)) {
+  p <-dittoScatterPlot(sce[,which(sce$Description == i )],x.var = "CXCL13",y.var = "PD-1",assay.x = "asinh",assay.y = "asinh", main=i,)
+  plot(p)
+}
+```
+
+general cut off for CD3: 1
+for samples E2 and F2: 1.75
+
+## CD8 expression per sample
+
+```{r}
+sce$celltype <- "other"
+sce$CXCL13 <- "negative"
+# define CD8 T cells for outlier samples
+out_sce <- sce[,(sce$Description %in% c("E2","F2","D4"))]
+out_sce[,which(t(assay(out_sce,"asinh"))[,"CD8a"] > 2.5 & t(assay(out_sce,"asinh"))[,"CD3"] > 1.75 ) ]$celltype <- "CD8_Tcell"
+out_sce[,which(t(assay(out_sce,"asinh"))[,"CXCL13"] > 2.75 ) ]$CXCL13 <- "positive"
+
+# define CD8 T cells for outlier samples
+cur_sce <- sce[,!(sce$Description %in% c("E2","F2","D4"))]
+cur_sce[,which(t(assay(cur_sce,"asinh"))[,"CD8a"] > 2 & t(assay(out_sce,"asinh"))[,"CD3"] > 1) ]$celltype <- "CD8_Tcell"
+cur_sce[,which(t(assay(cur_sce,"asinh"))[,"CXCL13"] > 2 ) ]$CXCL13 <- "positive"
+#merge samples back together
+sce <- cbind(cur_sce,out_sce)
+rm(cur_sce,out_sce)
+
+sce[,which(sce$celltype == "CD8_Tcell" & sce$CXCL13 == "positive")]$celltype <- "CD8_CXCL13+_Tcell"
+sce[,which(sce$celltype == "other" & sce$CXCL13 == "positive")]$celltype <- "other_CXCL13+"
+
+sce$CXCL13 <- NULL
+plotReducedDim(sce,dimred = "UMAP_asinh",colour_by = "celltype",point_size =0.5)
+plotReducedDim(sce,dimred = "UMAP_asinh",colour_by = "CD8a", by_exprs_values = "asinh", 
+                          point_size = 0.25, point_alpha = 1, shape_by = "dysfunction_score")
+```
+
+
+## UMAP of CD8 T cells asinh
+
+```{r}
+ex_markers <- c("CXCL13","PD-1","EOMES","CD39","GITR","Tim-3","LAG-3","CD38","Ki-67","GranzymeB")
+CD8_sce <- sce[,sce$celltype %in% c("CD8_Tcell","CD8_CXCL13+_Tcell")]
+CD8_sce <- runUMAP(CD8_sce, exprs_values = "asinh", 
+                     subset_row = ex_markers, name = "UMAP_Tcells_asinh",
+               external_neighbors = TRUE, BNPARAM = AnnoyParam(),
+               BPPARAM = MulticoreParam())
+plotReducedDim(CD8_sce,dimred = "UMAP_Tcells_asinh",colour_by = "Description",point_size =0.5)
+```
+
+```{r}
+plotReducedDim(CD8_sce,dimred = "UMAP_Tcells_asinh",colour_by = "dysfunction_score",point_size =0.5)
+```
+
+
+## UMAP of T cells asinh for exhaustion markers
+
+```{r, fig.height=7, fig.width=18}
+ex_markers <- c("CXCL13","PD-1","EOMES","CD39","GITR","Tim-3","LAG-3","CD38","Ki-67","GranzymeB")
+col_list <- list()
+for(i in ex_markers){
+  col_list[[i]][1] <- 0
+  col_list[[i]][2] <- 3
+}
+
+col_list[["LAG-3"]][2] <- 1.5
+col_list[["Tim-3"]][2] <- 4.5
+col_list[["GITR"]][2] <- 2
+col_list[["CD39"]][2] <- 3.5
+col_list[["PD-1"]][2] <- 2
+col_list[["EOMES"]][2] <- 2.5
+
+p.list <- list()
+for(i in ex_markers){
+    p <- plotReducedDim(CD8_sce,dimred = "UMAP_Tcells_asinh",colour_by = i, by_exprs_values = "asinh", 
+                          point_size = 0.25, point_alpha = 1, shape_by = "dysfunction_score") +
+    scale_colour_gradient(low="#2166ac", high="orange",name = i, oob=squish)
+  p.list[[i]] <- p
+}
+
+plot_grid(plotlist = p.list, ncol = 5)
+```
+## UMAP of CD8 T cells scaled
+
+```{r}
+CD8_sce <- runUMAP(CD8_sce, exprs_values = "scaled_0.99", 
+                     subset_row = ex_markers, name = "UMAP_Tcells_scaled_0.99",
+               external_neighbors = TRUE, BNPARAM = AnnoyParam(),
+               BPPARAM = MulticoreParam())
+
+plotReducedDim(CD8_sce,dimred = "UMAP_Tcells_scaled_0.99",colour_by = "dysfunction_score",point_size =0.5)
+```
+
+## UMAP of T cells scaled for exhaustion markers
+
+```{r, fig.height=7, fig.width=18}
+p.list <- list()
+for(i in ex_markers){
+  p.list[[i]] <- plotReducedDim(CD8_sce,dimred = "UMAP_Tcells_scaled_0.99",colour_by = i, by_exprs_values = "scaled_0.99", 
+                          point_size = 0.25, point_alpha = 1, shape_by = "dysfunction_score") +
+    scale_colour_gradientn(colours = c("#2166ac","orange"),name = i,
+                           limits = c(0, 1), oob=squish)
+}
+
+plot_grid(plotlist = p.list, ncol = 5)
+```
+
+## Heatmap of CD8+ T cells only
+
+```{r, fig.height=4, fig.width=7}
+dittoHeatmap(CD8_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
+             assay = "asinh",show_colnames = FALSE,
+            cluster_rows = TRUE,cluster_cols = FALSE,order.by = "CXCL13",
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101))
+
+dittoHeatmap(CD8_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
+             assay = "scaled_0.99",show_colnames = FALSE,scale= "none",
+            cluster_rows = TRUE,cluster_cols = FALSE,order.by = "CXCL13",
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(0,1, length.out = 101))
+dittoHeatmap(CD8_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
+             assay = "scaled_0.99",show_colnames = FALSE,scale= "none",
+            cluster_rows = TRUE,cluster_cols = FALSE,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(0,1, length.out = 101))
+```
+
+
+## correlation analysis per image
+
+```{r}
+library(dplyr)
+cor_dat <- matrix(nrow = 32, ncol = 26)
+colnames(cor_dat) <- unique(sce$Description)
+rownames(cor_dat) <- good_markers[which(good_markers != "CXCL13")]
+for (i in unique(CD8_sce$Description)) {
+  plot_dat <- as.matrix(t(assay(sce[,which(CD8_sce$Description == i)],"asinh")))
+  x <- cor(plot_dat)
+  x <- x[good_markers[which(good_markers != "CXCL13")],"CXCL13"]
+  cor_dat[,i] <- x
+}
+
+cor_dat <- reshape2::melt(cor_dat,id.vars = ex_markers,value.name = "correlation",)
+cor_dat <- cor_dat %>%
+  filter(Var1 %in% Tcell_markers)
+
+order_vec <- cor_dat %>%
+  group_by(Var1) %>%
+  mutate(median_cor = median(correlation)) %>%
+  select(Var1,median_cor) %>%
+  distinct() %>%
+  arrange(desc(median_cor)) %>%
+  pull(Var1)
+
+names_ordered <- ex_markers[which(ex_markers != "CXCL13")]
+factor(names_ordered,levels = order_vec)
+
+ggplot(data = cor_dat,aes(x = factor(Var1,levels=order_vec),y=correlation))+
+  geom_boxplot()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+```
+
+## fraction of PD-1+ CD8 T cells that are also CXCL13 positive
+
+```{r}
+dittoScatterPlot(CD8_sce,x.var = "CXCL13",y.var = "PD-1",assay.x = "asinh",assay.y = "asinh")
+
+CD8_sce$celltype_2 <- "CD8_Tcell"
+
+CD8_sce[,which(t(assay(CD8_sce,"asinh"))[,"PD-1"] > 1 & CD8_sce$celltype == "CD8_Tcell")]$celltype_2 <- "PD-1+_CXCl13-_Tcell"
+CD8_sce[,which(t(assay(CD8_sce,"asinh"))[,"PD-1"] > 1 & CD8_sce$celltype == "CD8_CXCL13+_Tcell")]$celltype_2 <- "PD-1+_CXCl13+_Tcell"
+CD8_sce[,which(t(assay(CD8_sce,"asinh"))[,"PD-1"] < 1 & CD8_sce$celltype == "CD8_CXCL13+_Tcell")]$celltype_2 <- "PD-1-_CXCl13+_Tcell"
+
+dittoScatterPlot(CD8_sce,x.var = "CXCL13",y.var = "PD-1",assay.x = "asinh",assay.y = "asinh",color.var = "celltype_2")
+
+cur_dat <- as_tibble(colData(CD8_sce))
+cur_dat %>%
+  group_by(Description,.drop = FALSE) %>%
+  count(celltype_2) %>%
+  mutate(total_cellcount = sum(n),frac = n/total_cellcount) %>%
+  ggplot()+
+  geom_bar(aes(x=Description,y=frac, fill=celltype_2),stat = "identity")
+```
+## correlation of PD-1 and CXCL13 per image
+
+```{r}
+cor_dat <- as_tibble(t(assay(CD8_sce,"asinh")))
+
+cor_dat$Description <- CD8_sce$Description
+cor_dat$dysfunction_score <- CD8_sce$dysfunction_score
+  
+cor_dat %>%
+  select(`PD-1`,CXCL13,Description, dysfunction_score) %>%
+  group_by(Description) %>%
+  mutate(cor = cor(`PD-1`,CXCL13)) %>%
+  select(Description,cor, dysfunction_score) %>%
+  distinct() %>%
+  ggplot(aes(x=Description, y = cor))+
+  geom_segment(aes(x=Description,xend = Description,y=0,yend=cor),
+               col="lightgray")+
+  geom_point(aes(col = dysfunction_score), size=2)+
+  theme_pubclean()
+
+
+```
+
+
+## work with exhaustion markers, not CXCL13
+
+```{r, fig.height=7, fig.width=15}
+ex_markers_noCXCL13 <- ex_markers[c(2,4,5,6,7,8)]
+
+g <- buildSNNGraph(CD8_sce,subset.row = ex_markers_noCXCL13, k=20, type = "jaccard",assay.type = "scaled_0.99")
+
+clust<- igraph::cluster_louvain(g)$membership
+table(clust)
+  
+CD8_sce$clusters <- as_factor(clust)
+
+#identical(colnames(sce[,sce$celltype == "CD8_Tcell"]),names(clust_vec) )
+#sce[,sce$celltype == "CD8_Tcell"]$celltype <- paste0(sce[,sce$celltype == "CD8_Tcell"]$celltype,"_",clust_vec)
+
+
+dittoHeatmap(CD8_sce, genes = ex_markers,annot.by =  c("clusters", "Description"),assay = "scaled_0.99",
+             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101))
+
+
+```
+
+## exhausted cluster fraction correlation with CXCL13+ fraction in protein data only
+
+```{r}
+ex_clusters <- c(2,3,4)
+
+cur_dat <- as_tibble(colData(CD8_sce))
+RNA_dat <- as_tibble(colData(sce_RNA))
+
+prot_dat_ex <- cur_dat %>%
+  select(Description, clusters) %>%
+  group_by(Description,clusters) %>%
+  count(clusters) %>%
+  ungroup() %>%
+  group_by(Description, .drop = FALSE) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  #filter(clusters %in% ex_clusters) %>%
+  mutate(ex_sum = sum(n[clusters %in% ex_clusters]),frac = ex_sum/total_cellcount) %>%
+  select(Description,frac) %>%
+  distinct() %>%
+  pull(frac,Description)
+
+prot_dat_CXCL13 <- cur_dat %>%
+  select(Description,celltype_2) %>%
+  group_by(Description,celltype_2) %>%
+  count(celltype_2) %>%
+  ungroup() %>%
+  group_by(Description) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  #filter(celltype_2 %in% c("PD-1+_CXCl13+_Tcell","PD-1-_CXCl13+_Tcell")) %>%
+  mutate(CD8_CXCL13 = sum(n[celltype_2 %in% c("PD-1+_CXCl13+_Tcell","PD-1-_CXCl13+_Tcell")]),frac = CD8_CXCL13/total_cellcount) %>%
+  select(Description,frac) %>%
+  distinct() %>%
+  pull(frac,Description)
+  
+rna_dat <- RNA_dat %>%
+  select(celltype,Description,dysfunction_score,CXCL13) %>%
+  mutate(celltype = paste0(celltype,"_",CXCL13)) %>%
+  filter(celltype %in% c("CD8+ T cell_0","CD8+ T cell_1")) %>%
+  group_by(Description,celltype, .drop = FALSE) %>%
+  count(celltype) %>%
+  ungroup() %>%
+  group_by(Description, .drop = FALSE) %>%
+  mutate(total_cellcount = sum(n),frac=n/total_cellcount) %>%
+  filter(celltype == "CD8+ T cell_0") %>%
+  mutate(frac_CD8_CXCL13 = 1-frac) %>%
+  pull(frac_CD8_CXCL13,Description)
+
+# check names and only select those names in RNA data that we have in protein data
+identical(names(prot_dat_ex),names(prot_dat_CXCL13))
+rna_dat <- rna_dat[names(prot_dat_CXCL13)]
+
+# merge all data
+all_dat <- data.frame(Description = names(prot_dat_ex),
+                      prot_ex = as.vector(prot_dat_ex),
+                      prot_CXCL13 = as.vector(prot_dat_CXCL13),
+                      rna_frac = as.vector(rna_dat))
+
+# find cores that are Margin and LN
+LN_margin_cores <- RNA_dat %>%
+  select(Description,Location,MM_location) %>%
+  distinct() %>%
+  filter(Location == "M",MM_location == "LN") %>%
+  pull(Description)
+
+all_dat <-all_dat %>%
+  filter(!(Description %in% LN_margin_cores))
+```
+
+
+```{r}
+
+ggplot(all_dat, aes(x=prot_ex, y=prot_CXCL13)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8 exhausted clusters (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (protein data)")
+
+ggplot(all_dat, aes(x=prot_ex, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8 exhausted clusters (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+
+ggplot(all_dat, aes(x=prot_CXCL13, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8+ CXCL13+ T cells (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+```
+
+## mean expresion of exhaustion markers per image
+
+```{r}
+mean_sce <- aggregateAcrossCells(CD8_sce[ex_markers,],
+                                ids = CD8_sce$Description,
+                                statistics = "mean")
+assay(mean_sce,"asinh") <- asinh(counts(mean_sce))
+
+dittoHeatmap(mean_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),assay = "asinh", cluster_cols = TRUE)
+```
+
+
+
