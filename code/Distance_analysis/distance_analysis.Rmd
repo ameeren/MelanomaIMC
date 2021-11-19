@@ -19,7 +19,7 @@ First, we will read in the data.
 library(BiocParallel)
 library(tidyverse)
 library(SingleCellExperiment)
-sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
+sce <- readRDS("/Volumes/sh_thoch/Git/MelanomaIMC/data/data_for_analysis/sce_RNA.rds")
 ```
 
 ## Define distance function

@@ -12,12 +12,12 @@ knitr::opts_chunk$set(echo = TRUE)
 Here, will will perform an interaction analysis using the `testInteractions`
 function from the `imcRtools` package. 
 
-```{r load-data, eval = FALSE}
+```{r load-data, eval = TRUE}
 library(imcRtools)
 library(S4Vectors)
 
 cur_graph <- read.csv("/Volumes/sh_thoch/Git/MelanomaIMC/data/full_data/rna/cpout/Object relationships.csv")
-sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
+sce <- readRDS("/Volumes/sh_thoch/Git/MelanomaIMC/data/data_for_analysis/sce_RNA.rds")
 
 cur_id <- paste0(sce$ImageNumber, "_", sce$CellNumber)
 cur_from <- paste0(cur_graph$First.Image.Number, "_", cur_graph$First.Object.Number)
@@ -32,7 +32,7 @@ colPair(sce, "neighborhood") <- cur_sh
 Now we loop through the chemokines, rename the cell-types and perform interaction
 testing.
 
-```{r interaction-testing, eval=FALSE}
+```{r interaction-testing, eval=TRUE}
 library(BiocParallel)
 chemokine_list <- c("CCL4", "CCL18", "CXCL8", "CXCL10", "CXCL12", "CXCL13", "CCL2", 
                     "CCL22", "CXCL9", "CCL8", "CCL19")

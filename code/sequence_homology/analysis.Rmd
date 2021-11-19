@@ -66,7 +66,7 @@ pheatmap(seq_similarity, cluster_cols = FALSE,
 And we compare it to correlation in expression across all cells.
 
 ```{r cor-expression, fig.height=5, fig.width=5}
-final_sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
+final_sce <- readRDS("/Volumes/sh_thoch/Git/MelanomaIMC/data/data_for_analysis/sce_RNA.rds")
 # select only the cells that express chemokines
 for_analysis <- final_sce[,final_sce$expressor != "NA"]
 
@@ -118,6 +118,8 @@ Finally, we will compare the sequence similarity to the jaccard index
 of chemokine expressors.
 
 ```{r}
+library(ggpubr)
+
 # Define the jaccard similarity
 jaccard <- function(x,y){
     intersection <- length(intersect(x,y))
@@ -134,9 +136,16 @@ cur_out <- lapply(seq_len(nrow(sim_tibble)),
        })
 sim_tibble$jaccard_sim <- unlist(cur_out)
 
-ggplot(data.frame(similarity = sim_tibble$mean_similarity,
+p <- ggplot(data.frame(similarity = sim_tibble$mean_similarity,
                   jaccard_sim = sim_tibble$jaccard_sim)) +
-    geom_point(aes(similarity, jaccard_sim))
+    geom_point(aes(similarity, jaccard_sim)) +
+    geom_smooth(method = "lm", aes(similarity, jaccard_sim)) +  stat_cor(method = "pearson",
+           aes(x = similarity, y = jaccard_sim, label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
+           size = 7, cor.coef.name = "R", label.sep="\n", label.y.npc = "top") + 
+    theme_bw() + theme(text=element_text(size=15)) +
+    xlab("Sequence similarity") + ylab("Chemokine co-expression [Jaccard index]")
+
+ggsave("milieu_sequence_similarity.pdf", p, width = 7, height = 5)
 
 cor.test(sim_tibble$mean_similarity,
          sim_tibble$jaccard_sim)

@@ -13,7 +13,8 @@ Here, we will perform an enrichment analysis checking if certain cell types
 are enriched or avoid in chemokine milieus.
 
 ```{r read-data, message=FALSE, warning=FALSE}
-sce <- readRDS("~/Desktop/REDSEA_test/sce_RNA.rds")
+sce <- readRDS("/Volumes/sh_thoch/Git/MelanomaIMC/data/data_for_analysis/sce_RNA.rds")
+library(SummarizedExperiment)
 library(imcRtools)
 library(tidyverse)
 
@@ -21,9 +22,7 @@ plotSpatial(sce[,sce$ImageNumber == 4], node_color_by = "cxcl13_pure",
             img_id = "ImageNumber", coords = c("Center_X", "Center_Y"))
 ```
 
-In the next step, per chemokine community, we will select the images where
-5% of the cells are part of this community type. We will then test the enrichment
-of each cell type within this community type using a Fisher's exact test.
+We will test the enrichment of each cell type within this community type using a Fisher's exact test.
 
 We will also exclude cells that already express the cytokine.
 
@@ -33,11 +32,12 @@ cur_res_list <- list()
 cur_df <- colData(sce)
 
 # Set thresholds
-perc_cells <- 0.05
+perc_cells <- 0
 
-for (i in c("ccl4_pure", "ccl18_pure", "cxcl8_pure", "cxcl10_pure",
-            "cxcl12_pure", "cxcl13_pure", "ccl2_pure", "ccl22_pure",
-            "cxcl9_pure", "ccl8_pure", "ccl19_pure")) {
+# We remove ccl8, ccl4 and ccl22 due to few images with milieus
+for (i in c("ccl18_pure", "cxcl8_pure", "cxcl10_pure",
+            "cxcl12_pure", "cxcl13_pure", "ccl2_pure",
+            "cxcl9_pure", "ccl19_pure")) {
     
     cur_perc <- cur_df %>% 
         as.data.frame() %>% 
@@ -49,7 +49,7 @@ for (i in c("ccl4_pure", "ccl18_pure", "cxcl8_pure", "cxcl10_pure",
     for (j in unique(cur_df$celltype)) {
         cur_res <- cur_df %>% 
             as.data.frame() %>%
-            filter(!ImageNumber %in% cur_perc$ImageNumber[cur_perc$perc_cells < perc_cells]) %>%
+            filter(ImageNumber %in% cur_perc$ImageNumber[cur_perc$perc_cells > perc_cells]) %>%
             filter(!(!!sym(cur_chemo) == 1 & celltype == j)) %>%
             group_by(ImageNumber) %>%
             summarize(celltype_inside = sum(celltype == j & !!sym(i) != 0),
@@ -100,5 +100,5 @@ for_plot <- for_plot[,-1]
 
 library(pheatmap)
 pheatmap(as.matrix(for_plot), color = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-         breaks = seq(-1, 1, length.out = 100))
+         breaks = seq(-1, 1, length.out = 100), filename = "Milieu_enrichment.pdf")
 ```
