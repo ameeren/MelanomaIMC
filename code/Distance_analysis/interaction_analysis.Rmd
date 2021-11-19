@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 Here, will will perform an interaction analysis using the `testInteractions`
 function from the `imcRtools` package. 
 
-```{r load-data, eval = TRUE}
+```{r load-data, eval = FALSE}
 library(imcRtools)
 library(S4Vectors)
 
@@ -32,7 +32,7 @@ colPair(sce, "neighborhood") <- cur_sh
 Now we loop through the chemokines, rename the cell-types and perform interaction
 testing.
 
-```{r interaction-testing, eval=TRUE}
+```{r interaction-testing, eval=FALSE}
 library(BiocParallel)
 chemokine_list <- c("CCL4", "CCL18", "CXCL8", "CXCL10", "CXCL12", "CXCL13", "CCL2", 
                     "CCL22", "CXCL9", "CCL8", "CCL19")
@@ -91,28 +91,32 @@ cur_list <- mapply(function(x, name){
     cur_out <- x %>% as_tibble() %>%
         group_by(from_label, to_label) %>%
         summarize(mean_sig = mean(sigval, na.rm = TRUE))
-    return(cur_out %>% filter(from_label == sym(name)))
+    return(cur_out %>% filter(from_label == name))
 }, interaction_list, chemokine_list, SIMPLIFY = FALSE)
 
 cur_df <- do.call("rbind", cur_list)
 
-cur_df %>% 
+cur_p <- cur_df %>% 
     filter(!to_label %in% chemokine_list) %>%
     ggplot() + 
-        geom_tile(aes(from_label, as.character(to_label), fill = mean_sig)) +
+        geom_tile(aes(from_label, to_label, fill = mean_sig)) +
         scale_fill_gradient2(low = "dark blue", mid = "white", high = "dark red",
                              limits = c(-1, 1)) +
         theme(axis.text.x = element_text(angle = 45, hjust = 1),
-                text = element_text(size=20)) + ggtitle("Celltype")
+                text = element_text(size=20)) + ggtitle("Celltype") +
+    xlab("") + ylab("")
+
+ggsave("Melanoma_celltype_chemokine_interaction.pdf", cur_p, width = 7, height = 5)
 
 cur_df %>% 
     filter(to_label %in% chemokine_list) %>%
     ggplot() + 
-        geom_tile(aes(from_label, as.character(to_label), fill = mean_sig)) +
+        geom_tile(aes(from_label, to_label, fill = mean_sig)) +
         scale_fill_gradient2(low = "dark blue", mid = "white", high = "dark red",
                              limits = c(-1, 1)) +
         theme(axis.text.x = element_text(angle = 45, hjust = 1),
-                text = element_text(size=20)) + ggtitle("Chemokines")
+                text = element_text(size=20)) + ggtitle("Chemokines") +
+    xlab("") + ylab("")
 ```
 
 
