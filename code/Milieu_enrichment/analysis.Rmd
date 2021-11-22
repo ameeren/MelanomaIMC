@@ -20,6 +20,9 @@ library(tidyverse)
 
 plotSpatial(sce[,sce$ImageNumber == 4], node_color_by = "cxcl13_pure", 
             img_id = "ImageNumber", coords = c("Center_X", "Center_Y"))
+
+# Remove control samples
+sce <- sce[,sce$Location != "CTRL"]
 ```
 
 We will test the enrichment of each cell type within this community type using a Fisher's exact test.
