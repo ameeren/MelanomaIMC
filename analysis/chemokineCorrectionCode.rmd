@@ -1,0 +1,79 @@
+---
+title: "chemokineCorrectionCode"
+author: "toobiwankenobi"
+date: "2021-10-20"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Introduction
+
+```{r}
+
+```
+
+## Remove neighbouring cells of a different cell type with a lower total expression of the chemokine (potential missegmentation)
+
+```{r}
+dat_relation_rna = fread(file = "data/data_for_analysis/RNA/Object relationships.csv",stringsAsFactors = FALSE)
+
+dat_relation <- dat_relation_rna[dat_relation_rna$Relationship == "Neighbors",]
+dat_relation$cellID_first <- paste("RNA", paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = "_"), sep = "_")
+dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
+dat_relation <- as.data.frame(dat_relation)
+
+# variables
+cellID_var <- "cellID"
+cellIDfirst_var <- "cellID_first"
+cellIDsecond_var <- "cellID_second"
+celltype_var <- "celltype"
+assay_name <- "asinh"
+image_var <- "ImageNumber"
+object_var <- "ObjectNumber"
+sce_input <- sce
+
+for(chemokine_name in names(colData(sce_input)[,grepl(glob2rx("C*L*"),names(colData(sce_input)))])){
+  # extract channel name
+  channel_name <- rownames(sce_input)[grepl(chemokine_name,rownames(sce_input))]
+  # initiate time and counter
+  start <- Sys.time()
+  counter <- 0
+  # subset sce_input to only contain cells that express chemokine-of-interest
+  sce_sub <- sce_input[,colData(sce_input)[,chemokine_name] == 1]
+  # loop through all the cells
+  for(i in colData(sce_sub)[,cellID_var]){
+    # subset the current cell-of-interest
+    sc <- sce_sub[,colData(sce_sub)[,cellID_var] == i]
+    # get the cell type and the expression strength of this cell
+    celltype <- unname(colData(sc)[, celltype_var])
+    expression <- assay(sc,assay_name)[channel_name,]
+
+    # get the cellIDs of the neighbouring cells from the relationship table
+    neighbors <- dat_relation[dat_relation[,cellIDfirst_var] == i, ]
+    neighborsIDs <- neighbors[,cellIDsecond_var]
+
+    # subset the sce to contain the neighbouring cell and check if they produce the same chemokine but are assigned a differnt cell type
+    neighbors <- sce_sub[,colData(sce_sub)[,cellID_var] %in% neighborsIDs]
+    neighbors <- neighbors[,colData(neighbors)[,chemokine_name] == 1 & colData(neighbors)[,celltype_var] != celltype]
+
+    # if there are neighbors that fit the criteria, check if one neighbors has a higher expression strenght than the current cell
+    # change the binary chemokine level of the cell if requirement is fulfilled
+    if(ncol(neighbors) > 0) {
+      max_expression <- max(assay(neighbors,assay_name)[channel_name,])
+      if(max_expression > expression) {
+        counter = counter + 1
+        #overwrite input sce
+        colData(sce_input[,colData(sce_input)[,cellID_var] == i])[,chemokine_name] <- 0
+      }
+    }
+  }
+  end <- Sys.time()
+  print(end-start)
+  print(paste0(paste0(chemokine_name, " - Percentage overwritten: "), round(counter/ncol(sce_sub)*100,2)))
+}
+
+sce <- NULL
+sce <- sce_input
+sce_input <- NULL
+```

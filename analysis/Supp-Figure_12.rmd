@@ -1,0 +1,164 @@
+---
+title: "Supp-Figure_12"
+author: "toobiwankenobi"
+date: "2021-11-18"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+
+## Load libraries
+
+```{r}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(ggridges)
+library(SingleCellExperiment)
+library(ggplot2)
+library(dplyr)
+library(tidyr)
+library(ggbeeswarm)
+library(ggrastr)
+library(Hmisc)
+library(data.table)
+library(ggpubr)
+library(corrplot)
+library(gridExtra)
+```
+
+## Load data
+
+```{r load_data}
+sce_rna <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot <- readRDS(file = "data/data_for_analysis/sce_protein.rds")
+
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+
+# image
+image_mat_prot <- read.csv("data/data_for_analysis/protein/Image.csv")
+image_mat_rna <- read.csv("data/data_for_analysis/RNA/Image.csv")
+```
+
+## Prepare image size data
+
+```{r}
+im_size_prot <- as.data.frame(cbind(image_mat_prot$Metadata_Description, (image_mat_prot$Height_cellmask * image_mat_prot$Width_cellmask)/1000000))
+names(im_size_prot) <- c("Description", "mm2_prot")
+im_size_prot$mm2_prot <- as.numeric(im_size_prot$mm2_prot)
+im_size_prot[im_size_prot$Description %in% c("G1", "G1 - split"), ]$mm2_prot <- mean(im_size_prot[im_size_prot$Description %in% c("G1", "G1 - split"), ]$mm2_prot)
+im_size_prot <- im_size_prot[im_size_prot != "G1 - split",]
+im_size_prot <- im_size_prot[1:166,]
+```
+
+## Prepare image size data
+
+```{r}
+im_size_rna <- as.data.frame(cbind(image_mat_rna$Metadata_Description, (image_mat_rna$Height_cellmask * image_mat_rna$Width_cellmask)/1000000))
+names(im_size_rna) <- c("Description", "mm2_rna")
+im_size_rna$mm2_rna <- as.numeric(im_size_rna$mm2_rna)
+im_size_rna <- im_size_rna[1:166,]
+```
+
+## Prepare data 
+
+```{r}
+sce_rna$CD8pos_CXCL13 <- 0
+sce_rna[,sce_rna$celltype %in% c("CD8+ T cell") & sce_rna$CXCL13 == 1]$CD8pos_CXCL13 <- 1
+
+sce_rna$CD8neg_CXCL13 <- 0
+sce_rna[,sce_rna$celltype %in% c("CD8- T cell") & sce_rna$CXCL13 == 1]$CD8neg_CXCL13 <- 1
+```
+
+## Density CD8+CXCL13+ and density B cells per Patch score
+
+```{r}
+perc_cd8_cxcl13 <- as.data.frame(colData(sce_rna)) %>%
+  group_by(Description, CD8pos_CXCL13) %>%
+  summarise(n_cd8pos=n()) %>%
+  ungroup() %>%
+  complete(Description, CD8pos_CXCL13, fill=list(n_cd8pos=0)) %>%
+  filter(CD8pos_CXCL13 == 1)
+
+perc_cd20 <- as.data.frame(colData(sce_prot)) %>%
+  group_by(Description, celltype) %>%
+  summarise(n_cd20=n()) %>%
+  ungroup() %>%
+  complete(Description, celltype, fill=list(n_cd20=0)) %>%
+  filter(celltype == "B cell")
+
+info <- as.data.frame(colData(sce_prot)) %>%
+  distinct(Description, .keep_all = T) %>%
+  select(Description, bcell_patch_score)
+
+perc_cd20 <- left_join(info, perc_cd20)
+data <- left_join(perc_cd20, perc_cd8_cxcl13)
+
+data_cd8pos <- left_join(data, im_size_prot)
+data_cd8pos <- left_join(data_cd8pos, im_size_rna)
+data_cd8pos$n_cd20 <- data_cd8pos$n_cd20 / data_cd8pos$mm2_prot
+data_cd8pos$n_cd8pos <- data_cd8pos$n_cd8pos / data_cd8pos$mm2_rna
+```
+
+## Density CD8-CXCL13+ and density B cells per Patch score
+
+```{r}
+perc_cd4_cxcl13 <- as.data.frame(colData(sce_rna)) %>%
+  group_by(Description, CD8neg_CXCL13) %>%
+  summarise(n_cd8neg=n()) %>%
+  ungroup() %>%
+  complete(Description, CD8neg_CXCL13, fill=list(n_cd8neg=0)) %>%
+  filter(CD8neg_CXCL13 == 1)
+
+perc_cd20 <- as.data.frame(colData(sce_prot)) %>%
+  group_by(Description, celltype) %>%
+  summarise(n_cd20=n()) %>%
+  ungroup() %>%
+  complete(Description, celltype, fill=list(n_cd20=0)) %>%
+  filter(celltype == "B cell")
+
+info <- as.data.frame(colData(sce_prot)) %>%
+  distinct(Description, .keep_all = T) %>%
+  select(Description, bcell_patch_score)
+
+perc_cd20 <- left_join(info, perc_cd20)
+data <- left_join(perc_cd20, perc_cd4_cxcl13)
+
+data_cd8neg <- left_join(data, im_size_prot)
+data_cd8neg <- left_join(data_cd8neg, im_size_rna)
+data_cd8neg$n_cd20 <- data_cd8neg$n_cd20 / data_cd8neg$mm2_prot
+data_cd8neg$n_cd8neg <- data_cd8neg$n_cd8neg / data_cd8neg$mm2_rna
+```
+
+## Density CXCL13+ T cells and density B cells per Patch score
+
+```{r Supp_Figure_12B_, dev=("pdf"), fig.height=3.2, fig.width=9.4}
+data_complete <- left_join(data_cd8neg, data_cd8pos[,c("Description","n_cd8pos")])
+
+# remove images with follicles
+data_complete <- data_complete[data_complete$bcell_patch_score != "B cell Follicles",]
+
+a <- ggplot(data_complete, aes(x=n_cd8neg, y=n_cd20)) +
+  geom_point() +
+  geom_smooth(method="lm") +
+  stat_cor(method = "pearson",
+           aes(label = paste(..r.label.., ..p.label.., sep = "~`,`~")),
+           size = 4, cor.coef.name = "R", label.sep="\n", label.y.npc = "top", label.x.npc = "left") +
+  xlab("CXCL13+CD8- T cell / mm2") +
+  ylab("B cells / mm2") +
+  theme_bw() +
+  theme(text=element_text(size=15))
+
+b <- ggplot(data_complete, aes(x=n_cd8pos, y=n_cd20)) +
+  geom_point() +
+  geom_smooth(method="lm") +
+  stat_cor(method = "pearson",
+           aes(label = paste(..r.label.., ..p.label.., sep = "~`,`~")),
+           size = 4, cor.coef.name = "R", label.sep="\n", label.y.npc = "top", label.x.npc = "left") +
+  xlab("CXCL13+CD8+ T cell / mm2") +
+  ylab("B cells / mm2") +
+  theme_bw() +
+  theme(text=element_text(size=15))
+
+grid.arrange(a,b, ncol=2)
+```

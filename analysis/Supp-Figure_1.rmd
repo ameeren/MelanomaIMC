@@ -465,7 +465,7 @@ ggplot(sum, aes(x=log2(expression_RNAseq), y=expression_RNAScope, label=gene)) +
   xlab("Normalized Expression RNA-Seq [log2]") +
   ylab("Median Expression RNAScope [asinh]") + 
   stat_cor(method = "pearson",
-           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
+           aes(label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
            size = 10, cor.coef.name = "R", label.sep="\n", label.y.npc = "top") + 
   theme_minimal() + 
   theme(text = element_text(size=20)) 

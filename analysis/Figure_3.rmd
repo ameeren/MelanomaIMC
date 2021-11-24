@@ -48,6 +48,7 @@ library(rstatix)
 library(sf)
 library(concaveman)
 library(RANN)
+library(pheatmap)
 ```
 
 ## Read the data
@@ -58,6 +59,9 @@ sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 # meta data
 dat_relation = fread(file = "data/data_for_analysis/rna/Object relationships.csv",stringsAsFactors = FALSE)
+
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
 ```
 
 # Figure 3B
@@ -111,9 +115,9 @@ example <- findMilieu(example,
 
 ## Chemokine-producing cells in Patches
 
-```{r Fig_3C_sunburst_plot, fig.height=15, fig.width=10, dev=c('pdf')}
+```{r Fig_3C_sunburst_plot, fig.height=21, fig.width=9, dev=c('pdf')}
 # define fractions of chemokines present in community
-cur_dt <- data.frame(colData(sce_rna))
+cur_dt <- data.frame(colData(sce_rna[,sce_rna$Location != "CTRL"]))
 
 plot_list <- list()
 
@@ -174,7 +178,7 @@ for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
   
   # chemokines per celltype numbers
   summary_chemokines <- summary %>%
-    group_by(celltype, chemokine) %>%
+    group_by(chemokine) %>%
     summarise(n=sum(n))
   
   # color_vector for cells and chemokines
@@ -204,33 +208,78 @@ for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
     summarise(n=n()) %>%
     mutate(percentage = n / sum(n) * 100) %>%
     filter(in_patch == 1)
-  percentageInPatches <- paste(round(unique(percentageInPatches$percentage)), "%", sep = "")
+  percentageInPatches <- paste(round(unique(percentageInPatches$percentage)), "% in Patch", sep = "")
   
-  label <- paste(paste(numberOfPatches, medianCells, sep = "\n"), percentageInPatches, sep = "\n")
+  # Number of Patients showing this type of patch
+  numberPatients <- cur_dt[cur_dt[,i] > 0,] %>%
+    distinct(PatientID) %>%
+    summarise(n=n()) %>%
+    mutate(fraction = n / length(unique(sce_prot[,sce_prot$Location!="CTRL"]$PatientID))*100)
+  numberPatients <- paste0(round(numberPatients$fraction,0), "% Patients")
+  
+  CMratio <- cur_dt[cur_dt[,i] %in% unique_comms,] %>%
+    distinct_at(i, .keep_all = T) %>%
+    group_by(Location) %>%
+    summarise(n=n()) %>%
+    mutate(percentage = n / sum(n) * 100)
+  percentMargin <- paste(round(CMratio[CMratio$Location == "M",]$percentage), "%", sep = "") 
+  
+  # paste all numbers
+  label <- paste(paste(paste(numberOfPatches, medianCells, sep = "\n"), numberPatients , sep = "\n"), percentageInPatches, sep = "\n")
   
   # sunburst plot
-  plt <- ggplot() + 
-    geom_text(aes(x=0,y=0, label = label, size=1)) +
-    geom_col(aes(x = 2, y = n, fill = celltype), 
+  plt1 <- ggplot() + 
+    geom_col(aes(x = 0, y = percentage, fill = Location), 
+           data = CMratio, col="black") + 
+    theme_void() +
+        scale_fill_manual(values = c("black", "grey"),
+                        breaks = c("C", "M"),
+                        labels = c("C", "M")) +
+        theme(axis.ticks=element_blank(),
+          plot.margin = unit(c(0,0,0,0), "cm"),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
+          legend.position = "none",
+          text = element_text(size = 10),
+          plot.title = element_text(hjust = 0.5))
+  
+  plt2 <- ggplot() + 
+    geom_text(aes(x=0,y=0, label = label), size=5) +
+    geom_col(aes(x = 8, y = n, fill = celltype), 
            data = summary_celltypes, 
            color = "white",
-           lwd = 1) + 
-    geom_col(aes(x = 3, y = n, group = celltype, fill = chemokine), 
-           data = summary_chemokines) +
-    xlim(0, 3.5) + labs(x = NULL, y = NULL) + 
+           width = 3,
+           lwd = 0.5) + 
+    xlim(0, 11) + labs(x = NULL, y = NULL) + 
     scale_fill_manual(values = unname(col_vector),
                         breaks = names(col_vector),
                         labels = names(col_vector)) + 
-    ggtitle(chemokine_name) +
     theme_void() +
     theme(axis.ticks=element_blank(),
           plot.margin = unit(c(0,0,0,0), "cm"),
           axis.text=element_blank(),
           axis.title=element_blank(),
+          legend.position = "none") +
+        coord_polar(theta = "y")
+  
+  plt3 <- ggplot() + 
+    geom_col(aes(x=0,y = n, fill = chemokine), 
+           data = summary_chemokines, col="black") + 
+    theme_void() +
+        scale_fill_manual(values = unname(col_vector),
+                        breaks = names(col_vector),
+                        labels = names(col_vector)) +
+        theme(axis.ticks=element_blank(),
+          plot.margin = unit(c(0,0,0,0), "cm"),
+          axis.text=element_blank(),
+          axis.title=element_blank(),
           legend.position = "none",
           text = element_text(size = 18),
-          plot.title = element_text(hjust = 0.5)) +
-        coord_polar(theta = "y")
+          plot.title = element_text(hjust = 0.5))
+  
+  plt <- grid.arrange(plt1,plt2,plt3, nrow=1, widths=c(0.2,1,0.2),
+                      padding = unit(0,"cm"),
+                      top = textGrob(chemokine_name,gp=gpar(fontsize=15)))
   
   # add to list
   plot_list[[i]] <- plot_grid(plt)
@@ -244,19 +293,22 @@ plot_grid(plot_list$cxcl8_pure, plot_list$ccl2_pure,
           plot_list$cxcl12_pure, plot_list$cxcl13_pure, 
           plot_list$ccl4_pure, plot_list$ccl22_pure,
           plot_list$ccl8_pure, 
-          ncol = 3, aligh = "hv")
+          ncol = 2, aligh = "hv")
 ```
 
 ## Legend for Plot
 
 ```{r Fig_3C_Legend, dev=c('pdf'), fig.width=3, fig.height=5}
-# create legend for chemokines
-lgd1 = Legend(labels = names(col_vector_chemokines), title = "Outer Circle\nChemokine", legend_gp = gpar(fill = unname(col_vector_chemokines)))
+lgd1 = Legend(labels = c("C", "M"), title = "Core/Margin", 
+              legend_gp = gpar(fill = c("black", "grey")))
 
 # create legend for celltypes
-lgd2 = Legend(labels = names(col_vector_cells), title = "Inner Circle\nCell Type ", legend_gp = gpar(fill = unname(col_vector_cells)))
+lgd2 = Legend(labels = names(col_vector_cells), title = "Cell Type ", legend_gp = gpar(fill = unname(col_vector_cells)))
 
-draw(packLegend(lgd2, lgd1, direction = "horizontal"))
+# create legend for chemokines
+lgd3 = Legend(labels = names(col_vector_chemokines), title = "Chemokines", legend_gp = gpar(fill = unname(col_vector_chemokines)))
+
+draw(packLegend(lgd1, lgd2, lgd3, direction = "horizontal"))
 ```
 
 # Figure 3D
@@ -282,7 +334,7 @@ milieus <- milieus %>%
 
 ## Marker Profile for different Milieus (for CD8+)
 
-```{r Fig_3D_cd8_profile_milieus, fig.height=6, fig.width=8, dev=c('pdf')}
+```{r Fig_3D_cd8_profile_milieus, fig.height=3.7, fig.width=5, dev=c('pdf')}
 marker_rna <- c("Lag3", "T8_CXCL13", "T5_CCL4")
 
 # rna data 
@@ -350,10 +402,10 @@ for(i in unique(dat_rna$channel)){
       cur.stat.test, x = "xmin", y.position = ylim_list[[i]][2]-0.05,
       label = "p.adj.signif",
       position = position_dodge(0.8), 
-      size=4) + 
+      size=2.5) + 
     ylab("Mean Expression (asinh)") + 
     xlab("") + 
-    geom_hline(aes(yintercept = channel_median, group = channel), colour = 'black', linetype = 2, size=1) + 
+    geom_hline(aes(yintercept = channel_median, group = channel), colour = 'black', linetype = 2, size=0.5) + 
     scale_fill_manual(values = unname(col_vector_chemokines),
                       breaks = names(col_vector_chemokines),
                       labels = names(col_vector_chemokines)) + 

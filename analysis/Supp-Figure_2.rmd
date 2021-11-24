@@ -56,6 +56,9 @@ dat <- read_csv("data/data_for_analysis/protein/clinical_data_protein.csv")
 sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+
 clincial = read.csv(file = "data/data_for_analysis/protein/clinical_data_protein.csv")
 
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
@@ -203,16 +206,42 @@ for(i in groups$MM_location) {
 grid.arrange(leg)
 ```
 
-# Supp Figure 2D
+# Supp Figure 2E
+
+## Chemokines cross-correlation
+
+```{r Supp_Fig_2E_correlation_chemokines, fig.width=9, fig.height=9, dev=c('pdf')}
+# top abundant chemokines
+cur_rna <- data.frame(colData(sce_rna))
+
+# sum
+rna_sum <- cur_rna %>%
+  group_by(Description, expressor) %>%
+  summarise(n = n()) %>%
+  reshape2::dcast(Description ~ expressor, value.var = "n", fill = 0) 
+
+# only keep highly abundant chemokines
+rna_sum <- rna_sum[,colnames(rna_sum) %in% targets]
+
+# correlation
+cor <- cor(rna_sum, rna_sum, method = "pearson")
+
+corrplot(cor, 
+         order = "FPC",
+         addCoef.col = "black",
+         method = "circle",
+         tl.col="black",
+         tl.cex = 1.5)
+```
 
 ## Mutation split by Location
 
-```{r Supp_Fig_2D_mutation, dev=c('pdf'), fig.width=15, fig.height=9.5}
+```{r Supp_Fig_2D_mutation, dev=c('pdf'), fig.width=15, fig.height=9.5, eval=F}
 # add control location to sce
 sce_rna$MM_location_simplified2 <- sce_rna$MM_location_simplified
-sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "Skin"]$MM_location_simplified2 <- "control skin"
-sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "Lymphnode"]$MM_location_simplified2 <- "control LN"
-sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "PSO"]$MM_location_simplified2 <- "control psoriasis"
+#sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "Skin"]$MM_location_simplified2 <- "control skin"
+#sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "Lymphnode"]$MM_location_simplified2 <- "control LN"
+#sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "PSO"]$MM_location_simplified2 <- "control psoriasis"
 
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 
@@ -283,7 +312,7 @@ c <- ggplot(chemo, aes(x=Mutation, y=`TRUE`)) +
 
 p <- grid.arrange(a,b, ncol=2, nrow=1)
 
-grid.arrange(p,c,nrow=1, widths = c(0.65,0.35))
+grid.arrange(c,p,nrow=1, widths = c(0.35,0.65))
 
 # MM_location for Mutations
 data.frame(colData(sce_rna_sub)) %>%
@@ -292,32 +321,4 @@ data.frame(colData(sce_rna_sub)) %>%
   summarise(n=n()) %>%
   group_by(Mutation) %>%
   mutate(percentage = n / sum(n) * 100)
-```
-
-# Supp Figure 2E
-
-## Chemokines cross-correlation
-
-```{r Supp_Fig_2E_correlation_chemokines, fig.width=9, fig.height=9, dev=c('pdf')}
-# top abundant chemokines
-cur_rna <- data.frame(colData(sce_rna))
-
-# sum
-rna_sum <- cur_rna %>%
-  group_by(Description, expressor) %>%
-  summarise(n = n()) %>%
-  reshape2::dcast(Description ~ expressor, value.var = "n", fill = 0) 
-
-# only keep highly abundant chemokines
-rna_sum <- rna_sum[,colnames(rna_sum) %in% targets]
-
-# correlation
-cor <- cor(rna_sum, rna_sum, method = "pearson")
-
-corrplot(cor, 
-         order = "FPC",
-         addCoef.col = "black",
-         method = "circle",
-         tl.col="black",
-         tl.cex = 1.5)
 ```

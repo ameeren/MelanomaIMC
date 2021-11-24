@@ -38,6 +38,8 @@ library(RColorBrewer)
 library(colorRamps)
 library(circlize)
 library(forcats)
+library(psych)
+library(viridis)
 library(ggpmisc)
 ```
 
@@ -46,13 +48,16 @@ library(ggpmisc)
 ```{r}
 sce_rna <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 sce_prot <- readRDS(file= "data/data_for_analysis/sce_protein.rds")
+
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
 ```
 
 # Figure 2B
 
 ## UpSet plot with ComplexHeatmap - including CellType Annotation and Met Location
 
-```{r Fig_2B_upset_plot, message=F, fig.width=10, fig.height=12, dev=c('pdf')}
+```{r Fig_2B_upset_plot, message=F, fig.width=8, fig.height=8, dev=c('pdf')}
 cur_dt <- as.data.table(colData(sce_rna))
 
 # combinations with more than 600 occurrences
@@ -124,76 +129,73 @@ location[is.na(location)] <- 0
 ss = set_size(m)
 cs = comb_size(m)
 
-# expressor fractions image
-fraction <- cur_dt %>%
-  select(ImageNumber, expressor) %>%
+# calculate fraction of chemokine combinations per patient
+fraction_patient <- cur_dt %>%
+  select(PatientID, expressor) %>%
   filter(expressor != "NA") %>%
-  group_by(ImageNumber, expressor) %>%
+  group_by(PatientID, expressor) %>%
   summarise(n=n()) %>%
   group_by(expressor) %>%
   mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(expressor ~ ImageNumber, value.var = "fraction", fill = 0) %>%
-  filter(expressor %in% targets)
+  reshape2::dcast(expressor ~ PatientID, value.var = "fraction", fill = 0) %>%
+  filter(expressor %in% targets) %>%
+  reshape2::melt(id.vars=c("expressor"), variable.name="PatientID", value.name="fraction")
+
+# how many chemokine combis are found in top10 patients?
+fraction_patient <- fraction_patient %>%
+  group_by(expressor) %>%
+  slice_max(fraction, n=10) %>%
+  summarise(top10=round(sum(fraction)*100,0))
 
 # change row-order to match targets and remove expressor column (only keep fractions)
-fraction <- fraction[match(targets,fraction$expressor),-1]
-
-# sort row-wise
-#fraction <- apply(fraction,1,sort, decreasing=TRUE)
+fraction_patient <- fraction_patient[match(targets,fraction_patient$expressor),-1]
 
 # max fraction coming from one image per expressor
-max_fraction <- paste0(round(apply(fraction,1,max),3)*100, "%")
-median_fraction <- paste0(round(apply(fraction,1,median),3)*100, "%")
+fraction_patient$top10 <- paste0(fraction_patient$top10, "%")
 
 # create plot
 ht = UpSet(m, 
-    set_order = order(ss),
-    comb_order = order(cs, decreasing = T),
-    top_annotation = HeatmapAnnotation(
-        "Number of\nExpressing Cells" = anno_barplot(celltypes[,-1], 
-            ylim = c(0, max(cs)*1.1),
-            border = FALSE, 
-            gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])]), 
-            axis_param = list(gp = gpar(fontsize=20)),
-            height = unit(10, "cm")), 
-        annotation_name_side = "left", 
-        annotation_name_rot = 0,
-        annotation_name_gp = gpar(fontsize=20)),
-    left_annotation = rowAnnotation(
-        "Total Number of\nExpressing Cells" = anno_barplot(-ss, 
-            baseline = 0,
-            axis_param = list(
-                at = c(0, -5000, -10000, -15000),
-                labels = c(0, 5000, 10000, 15000),
-                labels_rot = 0,
-                gp = gpar(fontsize = 15)),
-            border = FALSE, 
-            gp = gpar(fill = "black"), 
-            width = unit(5, "cm"),
-        ),
-        set_name = anno_text(set_name(m), 
-            location = 0.5, 
-            gp = gpar(fontsize=15),
-            just = "center",
-            width = max_text_width(set_name(m)) + unit(4, "mm")),
-        annotation_name_gp = gpar(fontsize=20)),
-    bottom_annotation = HeatmapAnnotation(foo = anno_barplot(fraction, gp = gpar(fill = 2:161),
-                                                             bar_width = 1, height = unit(2, "cm")),
-                                          Max = anno_text(max_fraction,
-                                                          just = "center", location = 0.5,
-                                                           rot = 0,
-                                                           gp = gpar(fontsize=8)),
-                                          Median = anno_text(median_fraction,
-                                                             just = "center", location = 0.5,
-                                                             rot = 0,
-                                                             gp = gpar(fontsize=8))),
-    right_annotation = NULL,
-    show_row_names = FALSE,
-    pt_size = unit(4, "mm"),
-    lwd = 2,
-    width = unit(9, "cm"),
-    height = unit(7, "cm")
-    )
+           set_order = order(ss),
+           comb_order = order(cs, decreasing = T),
+           top_annotation = HeatmapAnnotation(
+             "Number of\nExpressing Cells" = anno_barplot(celltypes[,-1], 
+                                                          ylim = c(0, max(cs)*1.1),
+                                                          border = FALSE, 
+                                                          gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])]), 
+                                                          axis_param = list(gp = gpar(fontsize=14)),
+                                                          height = unit(7.5, "cm")), 
+             annotation_name_side = "left", 
+             annotation_name_rot = 0,
+             annotation_name_gp = gpar(fontsize=14)),
+           left_annotation = rowAnnotation(
+             "Total Number of\nExpressing Cells" = anno_barplot(-ss, 
+                                                                baseline = 0,
+                                                                axis_param = list(
+                                                                  at = c(0, -5000, -10000, -15000),
+                                                                  labels = c(0, 5000, 10000, 15000),
+                                                                  labels_rot = 0,
+                                                                  gp = gpar(fontsize = 12)),
+                                                                border = FALSE, 
+                                                                gp = gpar(fill = "black"), 
+                                                                width = unit(3, "cm"),
+             ),
+             set_name = anno_text(set_name(m), 
+                                  location = 0.5, 
+                                  gp = gpar(fontsize=14),
+                                  just = "center",
+                                  width = max_text_width(set_name(m)) + unit(4, "mm")),
+             annotation_name_gp = gpar(fontsize=20)),
+           right_annotation = NULL,
+           show_row_names = FALSE,
+           pt_size = unit(3, "mm"),
+           lwd = 2,
+           width = unit(8, "cm"),
+           height = unit(8, "cm"),
+           bottom_annotation = HeatmapAnnotation(Top10 = anno_text(t(fraction_patient),
+                                                                 just = "center", location = 0.5,
+                                                                 rot = 90,
+                                                                 gp = gpar(fontsize=13))),
+)
 
 # draw heatmap
 ht = draw(ht)
@@ -204,14 +206,14 @@ row_od = row_order(ht)
 decorate_annotation("Number of\nExpressing Cells", {
   grid.text(cs[od], x = seq_along(cs), y = unit(cs[od], "native") + unit(2, "pt"), 
             default.units = "native", just = c("left", "bottom"), 
-            gp = gpar(fontsize = 15, col = "#404040"), rot = 45)
-  })
+            gp = gpar(fontsize = 13, col = "#404040"), rot = 45)
+})
 decorate_annotation("Total Number of\nExpressing Cells", {
-	grid.text(ss[row_od], 
-		x = unit(-ss[row_od], "native") + unit(-0.75, "cm"), 
-		y = rev(seq_len(length(-ss))), 
-		default.units = "native", rot = 0,
-		gp = gpar(fontsize = 13))
+  grid.text(ss[row_od], 
+            x = unit(-ss[row_od], "native") + unit(-0.75, "cm"), 
+            y = rev(seq_len(length(-ss))), 
+            default.units = "native", rot = 0,
+            gp = gpar(fontsize = 11))
 })
 ```
 
@@ -220,10 +222,10 @@ decorate_annotation("Total Number of\nExpressing Cells", {
 ```{r Fig_2B_legend, dev=c('pdf'), fig.height=1, fig.width=2}
 # legend for celltypes
 lgd1 = Legend(labels = colnames(celltypes[,-1]), 
-             title = "Celltypes", 
-             legend_gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])],
-                              fontsize = 18),
-             nrow = 5)
+              title = "Celltypes", 
+              legend_gp = gpar(fill = metadata(sce_rna)$colour_vectors$celltype[colnames(celltypes[,-1])],
+                               fontsize = 18),
+              nrow = 5)
 
 draw(packLegend(lgd1,column_gap = unit(0.5, "cm"),
                 max_height = unit(7, "cm")))
@@ -268,7 +270,7 @@ dat_aggr <- dat_aggr %>%
 dat_aggr$expressor <- factor(dat_aggr$expressor, levels = c("CCL4", "CCL18", "CCL22", "CXCL8", 
                                                             "CCL8", "CXCL9", "CXCL10", "CXCL13", "CCL2", "CXCL12", "CCL19"))
 stats$expressor <- factor(stats$expressor, levels = c("CCL4", "CCL18", "CCL22", "CXCL8", 
-                                                            "CCL8", "CXCL9", "CXCL10", "CXCL13", "CCL2", "CXCL12", "CCL19"))
+                                                      "CCL8", "CXCL9", "CXCL10", "CXCL13", "CCL2", "CXCL12", "CCL19"))
 
 dat_aggr <- dat_aggr %>%
   arrange(celltype, expressor)
@@ -291,7 +293,7 @@ ha <- HeatmapAnnotation("Chemokine" = dat_aggr$expressor,
                                                    rot = 90, 
                                                    just = "center", 
                                                    location = 0.5,
-                                                   gp = gpar(fontsize=10)),
+                                                   gp = gpar(fontsize=14)),
                         col = list("Chemokine" = metadata(sce_rna)$colour_vectors$chemokine_single),
                         show_legend = FALSE,
                         annotation_name_gp = gpar(fontsize = 16))
@@ -302,7 +304,7 @@ rowData(sce_rna)$heatmap_relevance <- ""
 rowData(sce_rna[rowData(sce_rna)$good_marker,])$heatmap_relevance <- "Lineage"
 rowData(sce_rna[grepl("CXCL|CCL|DapB", rownames(sce_rna)),])$heatmap_relevance <- "Chemokine"
 rowData(sce_rna[grepl("B2M|GLUT1|CD134|Lag3|CD163|cleavedPARP|pRB", rownames(sce_rna)),])$heatmap_relevance <- "Other"
-             
+
 # create heatmap
 h <- Heatmap(m, name = "Scaled\nExpression",
              row_split = rowData(sce_rna[rowData(sce_rna)$good_marker,])$heatmap_relevance,
@@ -313,12 +315,12 @@ h <- Heatmap(m, name = "Scaled\nExpression",
              column_split = colnames(m),
              column_title_rot = 90,
              cluster_column_slices = TRUE,
-             row_names_gp = gpar(fontsize = 16),
-             column_title_gp = gpar(fontsize = 23),
-             row_title_gp = gpar(fontsize = 23),
+             row_names_gp = gpar(fontsize = 13),
+             column_title_gp = gpar(fontsize = 16),
+             row_title_gp = gpar(fontsize = 16),
              col = colorRamp2(c(-3, 0, 3), c("blue", "white", "red")),
-             height = unit(20, "cm"),
-             width = unit(25,"cm"))
+             height = unit(15, "cm"),
+             width = unit(11,"cm"))
 
 # draw heatmap
 draw(h)
@@ -338,7 +340,10 @@ draw(lgd_list)
 
 ## Correlation of Chemokines with Celltypes (based on fractions)
 
-```{r Fig_2D_pearson_correlation_chemokines_prot_data, fig.width=9, fig.height=9, dev=c('pdf')}
+```{r Fig_2D_pearson_correlation_chemokines_prot_data, fig.width=5, fig.height=7, dev=c('pdf')}
+# define chemokines
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
 # top abundant chemokines
 cur_rna <- data.frame(colData(sce_rna))
 
@@ -369,11 +374,49 @@ prot_sum <- cur_prot %>%
 all(rna_sum$Description == prot_sum$Description)
 
 # correlation
-cor <- cor(rna_sum[,-1], prot_sum[,-1], method = "pearson")
+cor <- psych::corr.test(rna_sum[,-1], prot_sum[,-1], method = "pearson",adjust = "BH")
 
-corrplot(cor, 
-         addCoef.col = "black",
-         method = "circle",
-         tl.col="black",
-         tl.cex = 1.5)
+cur_dat <- as.data.frame(cor$r)
+cur_dat$variable <- rownames(cur_dat)
+dat_long <- reshape2::melt(cur_dat,id.vars="variable")
+colnames(dat_long) <- c("chemokines","celltypes","correlation")
+
+p_dat <- as_tibble(cor$p)
+p_dat$variable <- rownames(cur_dat)
+pdat_long <- reshape2::melt(p_dat,id.vars="variable")
+colnames(pdat_long) <- c("chemokines","celltypes","p_adj")
+
+dat_long$p_adj <- pdat_long$p_adj
+
+dat_long <- dat_long %>%
+  mutate(sig = ifelse(p_adj <= 0.001 & p_adj > 0.0001,0.001,p_adj))
+
+dat_long <- dat_long %>%
+  mutate(sig = case_when(p_adj <= 0.0001 ~ "< 0.0001",
+                         p_adj <= 0.001 & p_adj > 0.0001 ~ "< 0.001",
+                         p_adj <= 0.01 & p_adj > 0.001 ~ "< 0.01",
+                         p_adj <= 0.1 & p_adj > 0.01 ~ "< 0.1",
+                         p_adj >0.1 ~ "ns"))
+
+# plot
+a <- ggplot()+
+  geom_tile(data = dat_long, aes(x = chemokines,y = celltypes,fill=sig),color = "gray",size = 0.1, alpha = 0.5)+
+  scale_fill_manual(values = c("< 0.0001" = "darkgreen", "< 0.001" = "green3", "< 0.01"="green", "< 0.1" = "lightgray","ns" = "white"), name = "adj p-value" )+
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 0.5),
+        text = element_text(size=18)) +
+  geom_point(data = dat_long, aes(x=chemokines,y = celltypes),size=5.5, show.legend = FALSE) +
+  geom_point(data = dat_long, aes(x=chemokines,y = celltypes, color=correlation),size= 5, shape=19) +
+  scale_color_gradient2(low="blue",mid= "white", high="red", name = "Pearson correlation") + 
+  xlab("Chemokines") +
+  ylab("Cell Types")
+
+a + theme(legend.position="none")
 ```
+
+## Legend
+```{r Fig_2D_legend, fig.width=3, fig.height=5, dev=c('pdf')}
+legend <- get_legend(a)
+as_ggplot(legend)
+```
+

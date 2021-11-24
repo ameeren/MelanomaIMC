@@ -20,6 +20,19 @@ library(gridExtra)
 library(grid)
 library(ggplot2)
 library(dplyr)
+library(scater)
+library(ggpubr)
+library(rstatix)
+library(ggrastr)
+library(ggridges)
+library(ggsci)
+library(scater)
+library(viridis)
+library(RColorBrewer)
+library(cowplot)
+library(dittoSeq)
+library(scales)
+library(tidyverse)
 ```
 
 # Protein Gates
@@ -27,7 +40,9 @@ library(dplyr)
 ## Load data
 
 ```{r}
-sce_full <- readRDS("data/data_for_analysis/sce_protein.rds")
+sce_prot <- readRDS("data/data_for_analysis/sce_protein.rds")
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+
 # take panel_meta because there are the channel names from the shiny output (and only there, not in the SCE)
 panel_meta <- read.csv(file = "data/data_for_analysis/protein/melanoma_1.06_protein.csv", 
                        sep= ",",  stringsAsFactors = FALSE )
@@ -53,7 +68,7 @@ cur_sces <- lapply(file_names$path, readRDS)
 
 ## Print gating scheme - Protein
 
-```{r Supp_Fig_6A_gating_scheme_protein, fig.height=10, fig.width=5, dev=("pdf")}
+```{r Supp_Fig_6A_gating_scheme_protein, fig.height=8, fig.width=6, dev=("pdf")}
 for(element in cur_sces){
   # current labelled sce object
   sce_label <- element
@@ -62,7 +77,7 @@ for(element in cur_sces){
   gates <- metadata(sce_label)[grepl("cytomapper_gate_", names(metadata(sce_label)))]
   cur_img <- gates[[1]]$img_id
   # subset sce to current image 
-  cur_sce <- sce_full[,sce_full$ImageNumber == cur_img]
+  cur_sce <- sce_prot[,sce_prot$ImageNumber == cur_img]
   plots <- list()
   
   for(i in names(gates)) {
@@ -74,7 +89,7 @@ for(element in cur_sces){
       # names of channels (complicated because shiny has different channel names than SCE)
       x_gate <- rownames(cur_gate)[1]
       y_gate <- rownames(cur_gate)[2]
-      x_metal <- panel_meta[panel_meta$Target == x_gate, "Metal.Tag"]
+      x_metal <- panel_meta[panel_meta$clean_target == x_gate, "Metal.Tag"]
       y_metal <- panel_meta[panel_meta$clean_target == y_gate, "Metal.Tag"]
       x_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == x_metal,])
       y_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == y_metal,])
@@ -92,11 +107,11 @@ for(element in cur_sces){
       cur_cells <- rownames(cur_counts[cur_counts$in_gate == TRUE,])
       
       # update cur_sce
-      cur_sce <- cur_sce[,cur_sce$cellID %in% cur_cells]
+      cur_sce <<- cur_sce[,cur_sce$cellID %in% cur_cells] ####### !!!!
       
       # plot
       p <- ggplot() +
-        geom_point(data=cur_counts, aes(x=cur_counts[,1], y=cur_counts[,2], 
+        geom_point_rast(data=cur_counts, aes(x=cur_counts[,1], y=cur_counts[,2], 
                                         color=ifelse(cur_counts[,"in_gate"] == TRUE, "red", "black")),
                    alpha=ifelse(cur_counts[,"in_gate"] == TRUE, 0.5,0.1)) +
         geom_rect(data = cur_gate, aes(xmin=cur_gate[1,1], xmax=cur_gate[1,2], ymin=cur_gate[2,1],
@@ -106,14 +121,15 @@ for(element in cur_sces){
         ylab(y_gate) +
         scale_color_identity() +
         theme_bw() +
-        theme(legend.position = "none") 
+        theme(legend.position = "none") +
+        coord_cartesian(xlim = c(0,6.5), ylim = c(0,6.5))
       p
     })
   }
   
   n <- length(plots)
   nCol <- floor(sqrt(n))
-  do.call("grid.arrange", c(plots, ncol=nCol, top=cur_celltype))
+  do.call("grid.arrange", c(plots, ncol=3,nrow=4, top=cur_celltype))
 }
 ```
 
@@ -122,9 +138,9 @@ for(element in cur_sces){
 ## Load data
 
 ```{r}
-sce_full <- readRDS("data/data_for_analysis/sce_rna.rds")
+sce_rna <- readRDS("data/data_for_analysis/sce_rna.rds")
 # take panel_meta because there are the channel names from the shiny output (and only there, not in the SCE)
-panel_mat <- read.csv(file = "data/data_for_analysis/rna/panel_mat.csv", stringsAsFactors = FALSE )
+panel_meta <- read.csv(file = "data/data_for_analysis/rna/panel_mat.csv", stringsAsFactors = FALSE )
 ```
 
 ## Select one random file per celltype and load file
@@ -147,7 +163,7 @@ cur_sces <- lapply(file_names$path, readRDS)
 
 ## Print gating scheme
 
-```{r Supp_Fig_6B_gating_scheme_rna, fig.height=10, fig.width=5, dev=("pdf")}
+```{r Supp_Fig_6B_gating_scheme_rna, fig.height=8, fig.width=6, dev=("pdf")}
 for(element in cur_sces){
   # current labelled sce object
   sce_label <- element
@@ -156,11 +172,10 @@ for(element in cur_sces){
   gates <- metadata(sce_label)[grepl("cytomapper_gate_", names(metadata(sce_label)))]
   cur_img <- gates[[1]]$img_id
   # subset sce to current image 
-  cur_sce <- sce_full[,sce_full$ImageNumber == cur_img]
+  cur_sce <- sce_rna[,sce_rna$ImageNumber == cur_img]
   plots <- list()
   
   for(i in names(gates)) {
-    if(nrow(gates[[i]]$gate) == 1) next
     plots[[i]] <- local({
       # select gates and imageID
       cur_gate <- as.data.frame(gates[[i]]$gate)
@@ -168,46 +183,237 @@ for(element in cur_sces){
       
       # names of channels (complicated because shiny has different channel names than SCE)
       x_gate <- rownames(cur_gate)[1]
-      y_gate <- rownames(cur_gate)[2]
-      x_metal <- panel_meta[panel_meta$Target == x_gate, "Metal.Tag"]
-      y_metal <- panel_meta[panel_meta$clean_target == y_gate, "Metal.Tag"]
+      x_metal <- panel_meta[panel_meta$clean_target == x_gate, "Metal.Tag"]
       x_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == x_metal,])
-      y_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == y_metal,])
       
-      # select current channels
-      cur_counts <- as.data.frame(t(assay(cur_sce, "asinh")[c(x_original, y_original),]))
-      
-      # check if cells are in gate
-      cur_counts$in_gate <- ifelse(cur_counts[,1] >= cur_gate[1,1] &
-                                     cur_counts[,1] <= cur_gate[1,2] &
-                                     cur_counts[,2] >= cur_gate[2,1] &
-                                     cur_counts[,2] <= cur_gate[2,2], TRUE, FALSE)
-      
-      # cellIDs of cells in gate (for next gate)
-      cur_cells <- rownames(cur_counts[cur_counts$in_gate == TRUE,])
-      
-      # update cur_sce
-      cur_sce <- cur_sce[,cur_sce$cellID %in% cur_cells]
-      
-      # plot
-      p <- ggplot() +
-        geom_point(data=cur_counts, aes(x=cur_counts[,1], y=cur_counts[,2], 
-                                        color=ifelse(cur_counts[,"in_gate"] == TRUE, "red", "black")),
-                   alpha=ifelse(cur_counts[,"in_gate"] == TRUE, 0.5,0.1)) +
-        geom_rect(data = cur_gate, aes(xmin=cur_gate[1,1], xmax=cur_gate[1,2], ymin=cur_gate[2,1],
-                                       ymax=cur_gate[2,2]),
-                  color="black", alpha=0.2) +
-        xlab(x_gate) +
-        ylab(y_gate) +
-        scale_color_identity() +
-        theme_bw() +
-        theme(legend.position = "none") 
-      p
+      if(nrow(gates[[i]]$gate) == 2) {
+        y_gate <- rownames(cur_gate)[2]
+        y_metal <- panel_meta[panel_meta$clean_target == y_gate, "Metal.Tag"]
+        y_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == y_metal,])
+        
+        # select current channels
+        cur_counts <- as.data.frame(t(assay(cur_sce, "asinh")[c(x_original, y_original),]))
+        
+        # check if cells are in gate
+        cur_counts$in_gate <- ifelse(cur_counts[,1] >= cur_gate[1,1] &
+                                       cur_counts[,1] <= cur_gate[1,2] &
+                                       cur_counts[,2] >= cur_gate[2,1] &
+                                       cur_counts[,2] <= cur_gate[2,2], TRUE, FALSE)
+        
+        # cellIDs of cells in gate (for next gate)
+        cur_cells <- rownames(cur_counts[cur_counts$in_gate == TRUE,])
+        
+        # update cur_sce
+        cur_sce <<- cur_sce[,cur_sce$cellID %in% cur_cells]
+        
+        # plot
+        p <- ggplot() +
+          geom_point_rast(data=cur_counts, aes(x=cur_counts[,1], y=cur_counts[,2], 
+                                               color=ifelse(cur_counts[,"in_gate"] == TRUE, "red", "black")),
+                          alpha=ifelse(cur_counts[,"in_gate"] == TRUE, 0.5,0.1)) +
+          geom_rect(data = cur_gate, aes(xmin=cur_gate[1,1], xmax=cur_gate[1,2], ymin=cur_gate[2,1],
+                                         ymax=cur_gate[2,2]),
+                    color="black", alpha=0.2) +
+          xlab(x_gate) +
+          ylab(y_gate) +
+          scale_color_identity() +
+          theme_bw() +
+          theme(legend.position = "none") +
+          coord_cartesian(xlim = c(0,8), ylim = c(0,8))
+        p
+      }
+      else {
+        # select current channels
+        cur_counts <- as.data.frame(assay(cur_sce, "asinh")[c(x_original),])
+        
+        # check if cells are in gate
+        cur_counts$in_gate <- ifelse(cur_counts[,1] >= cur_gate[1,1] &
+                                       cur_counts[,1] <= cur_gate[1,2], TRUE, FALSE)
+        
+        # cellIDs of cells in gate (for next gate)
+        cur_cells <- rownames(cur_counts[cur_counts$in_gate == TRUE,])
+        
+        # update cur_sce
+        cur_sce <<- cur_sce[,cur_sce$cellID %in% cur_cells]
+        
+        # plot
+        p <- ggplot() +
+          geom_jitter_rast(data=cur_counts, aes(x=rownames(cur_gate), y=cur_counts[,1], 
+                                                color=ifelse(cur_counts[,"in_gate"] == TRUE, "red", "black")),
+                           alpha=ifelse(cur_counts[,"in_gate"] == TRUE, 0.5,0.1)) +
+          geom_hline(yintercept = cur_gate[1,1], color="black", alpha=1) +
+          geom_hline(yintercept = cur_gate[1,2], color="black", alpha=1) +
+          xlab(x_gate) +
+          ylab("Expression (asinh)") +
+          scale_color_identity() +
+          theme_bw() +
+          theme(legend.position = "none",
+                axis.text.x = element_blank()) +
+          coord_cartesian(xlim = c(0,8), ylim = c(0,8))
+        p
+      }
     })
   }
   
   n <- length(plots)
   nCol <- floor(sqrt(n))
-  do.call("grid.arrange", c(plots, ncol=nCol, top=cur_celltype))
+  do.call("grid.arrange", c(plots, ncol=3, nrow=4, top=cur_celltype))
 }
 ```
+
+
+```{r all cells heatmap, fig.width=7.5, fig.height=5.5, dev=("pdf")}
+set.seed(2345)
+good_markers <- rownames(sce_prot)[rowData(sce_prot)$good_marker]
+
+es <- assay(sce_prot, "counts")
+
+# here we define the clipping percentage. all values above the fraction are then put to 1
+for (i in c(0.99)){
+  qs <- rowQuantiles(es, probs = c(0.0, i))
+  x <- (es - qs[, 1]) / (qs[, 2] - qs[, 1])
+  x[x < 0] <- 0; x[x > 1] <- 1
+  assay(sce_prot, paste0("scaled_",i)) <- x
+}
+cur_sce <- sce_prot[,sce_prot$celltype == "Tumor"]
+cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 500,replace =FALSE)]
+
+for (i in unique(sce_prot$celltype)[2:length(unique(sce_prot$celltype))]) {
+  x <- sce_prot[,sce_prot$celltype == i]
+  x <- x[,sample(colnames(x),size= 500, replace=FALSE)]
+  cur_sce <- cbind(cur_sce,x)
+}
+
+colors <- metadata(sce_prot)$colour_vector$celltype
+colors <- colors[c("B cell", "BnT cell", "CD4+ T cell", "CD8+ T cell", "FOXP3+ T cell", "Macrophage", "Neutrophil", "pDC", "Stroma", "Tumor", "unknown")]
+
+dittoHeatmap(cur_sce,
+             genes = good_markers, 
+             assay = "asinh",
+            annot.by = c("celltype"),
+            show_colnames = FALSE,
+            cluster_rows = TRUE,
+            annot.colors = colors,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101),
+            use_raster=TRUE)
+```
+
+## RNA dataset
+
+```{r  RNA data all cells heatmap, fig.width=7.5, fig.height=5.5, dev=("pdf")}
+set.seed(2345)
+good_markers <- rownames(sce_rna)[rowData(sce_rna)$good_marker]
+
+
+cur_sce <- sce_rna[,sce_rna$celltype == "Tumor"]
+cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 500,replace =FALSE)]
+
+for (i in unique(sce_rna$celltype)[2:length(unique(sce_rna$celltype))]) {
+  x <- sce_rna[,sce_rna$celltype == i]
+  x <- x[,sample(colnames(x),size= 500, replace=FALSE)]
+  cur_sce <- cbind(cur_sce,x)
+}
+
+colors <- metadata(sce_rna)$colour_vector$celltype
+colors <- colors[c("CD38", "CD8- T cell", "CD8+ T cell", "HLA-DR", "Macrophage", "Neutrophil", "Stroma", "Tumor", "unknown", "Vasculature")]
+
+dittoHeatmap(cur_sce, genes = good_markers, assay = "asinh",
+            annot.by = c("celltype"),
+            show_colnames = FALSE,
+            cluster_rows = TRUE,
+            annot.colors = colors,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101),
+            use_raster=TRUE)
+```
+
+## CD20 
+
+```{r Supp_Fig_6C_myeloid_Bcells, fig.height=6, fig.width=6, dev=("pdf")}
+cur_sce <- sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "Macrophage", "Neutrophil", "pDC")]
+
+ggcells(cur_sce, aes(x=CD20, y=CD11c), exprs_values = "asinh") + 
+  geom_point(alpha=.1) + 
+  facet_wrap(~celltype) +
+  theme_bw() +
+  theme(text = element_text(size=16))
+
+ggcells(cur_sce, aes(x=CD68, y=HLADR), exprs_values = "asinh") + 
+  geom_point(alpha=.1) + 
+  facet_wrap(~celltype) +
+  theme_bw() +
+  theme(text = element_text(size=16)) +
+  geom_smooth(method = "lm") +
+  stat_cor(method = "pearson",
+           aes(label = paste(..r.label.., ..rr.label.., sep = "~`,`~")),
+           size = 3, cor.coef.name = "R", label.sep="\n", label.y.npc = "top", label.x.npc = "left")
+
+ggcells(cur_sce, aes(x=CD11c, y=HLADR), exprs_values = "asinh") + 
+  geom_point(alpha=.1) + 
+  facet_wrap(~celltype) +
+  theme_bw() +
+  theme(text = element_text(size=16)) +
+  geom_smooth(method = "lm") +
+  stat_cor(method = "pearson",
+           aes(label = paste(..r.label.., ..rr.label.., sep = "~`,`~")),
+           size = 3, cor.coef.name = "R", label.sep="\n", label.y.npc = "top", label.x.npc = "left")
+
+ggcells(cur_sce, aes(x=CD11c, y=CD68), exprs_values = "asinh") + 
+  geom_point(alpha=.1) + 
+  facet_wrap(~celltype) +
+  theme_bw() +
+  theme(text = element_text(size=16)) +
+  geom_smooth(method = "lm") +
+  stat_cor(method = "pearson",
+           aes(label = paste(..r.label.., ..rr.label.., sep = "~`,`~")),
+           size = 3, cor.coef.name = "R", label.sep="\n", label.y.npc = "top", label.x.npc = "left")
+```
+
+## UMAP B cells vs. myeloid
+
+```{r Supp_Fig_6D_myeloid_Bcells, fig.height=5, fig.width=5, dev=("pdf")}
+cur_sce <- runUMAP(cur_sce, exprs_values = "asinh", subset_row = c("CD20", "CD11c", "HLADR", "CD68"))
+
+plotReducedDim(cur_sce, dimred = "UMAP", colour_by = "celltype", point_alpha = .2) 
+```
+
+## B cell Score Median Splits
+
+```{r}
+noPatches <- sce_prot[,sce_prot$bcell_patch_score %in% c("No B cells", "No B cell Patches")]
+patches <- sce_prot[,sce_prot$bcell_patch_score %in% c("Small B cell Patches", "B cell Follicles")]
+
+cellcount_noPatches <- data.frame(colData(noPatches)) %>%
+  filter(celltype %in% c("B cell", "BnT cell")) %>%
+  group_by(Description, bcell_patch_score) %>%
+  summarise(n=n()) %>%
+  arrange(n)
+
+im_order <- cellcount_noPatches %>%
+  arrange(n) %>%
+  pull(Description)
+
+ggplot(cellcount_noPatches, aes(x = factor(Description,levels = im_order),
+                                     y = n, fill=bcell_patch_score))+
+  geom_bar(stat="identity")+
+  theme(axis.text.x = element_text(angle = 90))
+
+cellcount_Patches <- data.frame(colData(patches)) %>%
+  group_by(Description, bcell_patch_score,bcell_patch) %>%
+  summarise(n=n()) %>%
+  filter(bcell_patch > 0) %>%
+  group_by(Description, bcell_patch_score) %>%
+  summarise(min_patch_size = max(n)) %>%
+  arrange(min_patch_size)
+
+im_order <- cellcount_Patches %>%
+  arrange(min_patch_size) %>%
+  pull(Description)
+
+ggplot(cellcount_Patches, aes(x = factor(Description,levels = im_order),y = min_patch_size, fill=bcell_patch_score))+
+  geom_bar(stat="identity")+
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+

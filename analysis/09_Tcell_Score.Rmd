@@ -72,10 +72,10 @@ sce_prot$cyotoxic_density_image <- cur_sce$density
 ```
 
 ## T cell density score per image
-- absent: up to 40 cytotoxic T cells/mm2
-- low: 40-100 cytotoxic T cells/mm2
-- med: 100-400 cytotoxic T cells/mm2
-- high: >400 cytotoxic T cells/mm2
+- absent: 1. quantile
+- low: 2. quantile 
+- med: 3. quantile
+- high: 4. quantile
 
 ```{r}
 # define a vector with all ImgeNumbers
@@ -83,10 +83,11 @@ T_density_scores <- c(1:length(unique(cellcount$ImageNumber)))
 
 T_density_scores  <- rep("unassigned",length(unique(cellcount$ImageNumber)))
 
-T_absent <- which(cellcount$density <= 40)
-T_low <- which(cellcount$density > 40 & cellcount[cellcount$celltype == "CD8+ T cell",]$density <= 100)
-T_med <- which(cellcount$density > 100 & cellcount$density <= 400)
-T_high <- which(cellcount$density > 400)
+# use quantiles for scoring system
+T_absent <- which(cellcount$density <= quantile(cellcount$density)[[2]])
+T_low <- which(cellcount$density > quantile(cellcount$density)[[2]] & cellcount$density <= quantile(cellcount$density)[[3]])
+T_med <- which(cellcount$density > quantile(cellcount$density)[[3]] & cellcount$density <= quantile(cellcount$density)[[4]])
+T_high <- which(cellcount$density > quantile(cellcount$density)[[4]])
 
 T_density_scores[T_absent] <- "absent"
 T_density_scores[T_low] <- "low"

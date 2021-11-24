@@ -191,7 +191,7 @@ c <- ggplot(Bcell_patch[rowSums(Bcell_patch[,-1]) > 0,], aes(x = maxClustSize, y
   geom_point() +
   geom_smooth(method="lm") + 
   stat_cor(method = "pearson",
-           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
+           aes(label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
            size = 6, cor.coef.name = "R", label.sep="\n", label.y = 0.5, label.x = 2) + 
   ylab("Max Size of B cell\nPatches (log10)") +
   xlab("Max Size of CXCL13 Patches (log10)") +
@@ -202,7 +202,7 @@ d <- ggplot(Bcell, aes(x = maxClustSize, y = `B cell`, label=Description)) +
   geom_point() +
   geom_smooth(method="lm") + 
   stat_cor(method = "pearson",
-           aes(label = paste0("atop(", ..r.label..,  ",", ..rr.label.. ,")")),
+           aes(label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
            size = 6, cor.coef.name = "R", label.sep="\n", label.y = 0.05, label.x = 2) + 
   ylab("B Cell Fraction") +
   xlab("Max Size of CXCL13 Patches (log10)") +
@@ -252,7 +252,7 @@ dat_survival_prot_sub %>%
 
 ## TCF7/PD1 fraction in responder vs. non responder
 
-```{r, Supp_Fig_5C_responder_nonresponder_tcf7pd1, fig.height=5.3, fig.width=13.2, dev=("pdf")}
+```{r, Supp_Fig_5C_responder_nonresponder_tcf7pd1, fig.height=7.3, fig.width=11.2, dev=("pdf")}
 cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_survival_prot_sub$BlockID)])) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
@@ -279,8 +279,13 @@ cur_dat <- left_join(cur_dat, im_size[im_size$Description %in% unique(cur_dat$De
 cur_dat$n_per_mm2 <- cur_dat$n / cur_dat$mm2
 cur_dat$celltype2 <- paste(cur_dat$celltype, cur_dat$TCF7_PD1, sep = ", ")
 
+# per patient 
+cur_dat <- cur_dat %>%
+  group_by(PatientID, celltype2, TCF7_PD1, Status_at_3m) %>%
+  summarise(n_per_mm2 = mean(n_per_mm2))
+  
 stat.test <- cur_dat %>%
-  filter(TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-")) %>%
+  filter(TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-", "TCF7-_PD1+")) %>%
   mutate(log10_n_per_mm2 = log10(n_per_mm2 + 1)) %>%
   group_by(celltype2) %>%
   wilcox_test(data = ., log10_n_per_mm2 ~ Status_at_3m) %>%
@@ -295,14 +300,14 @@ info <- cur_dat[,c("celltype2", "TCF7_PD1")] %>%
 
 # filter relevant tests
 stat.test <- left_join(stat.test, info) %>%
-  filter(TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"))
+  filter(TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-", "TCF7-_PD1+"))
 
 stat.test$p_and_p.adj <- paste(paste("p = ", round(stat.test$p,2), sep = ""), paste("p.adj = ", round(stat.test$p.adj,2), sep = ""), sep = "\n")
 
-ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Status_at_3m, y=log10(n_per_mm2+1), label=PatientID)) + 
+ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-", "TCF7-_PD1+"),], aes(x=Status_at_3m, y=log10(n_per_mm2+1))) + 
   geom_boxplot(alpha=.4, outlier.shape = NA, aes(fill=Status_at_3m)) +
   geom_beeswarm(size=3) +
-  geom_label_repel(aes(label=PatientID), max.overlaps = 10, size = 5, alpha=.5, force_pull = 2, force = 0.5) + 
+  #geom_label_repel(aes(label=PatientID), max.overlaps = 10, size = 5, alpha=.5, force_pull = 2, force = 0.5) + 
   stat_pvalue_manual(stat.test, label = "p_and_p.adj", size=5, label.x.npc = "left", y.position = -0.9, bracket.size = 0) +
   theme_bw() +
   theme(text = element_text(size=18)) +
@@ -310,21 +315,7 @@ ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-"),], aes(x=Stat
   scale_fill_manual(values=c("blue", "orange")) + 
   xlab("") +
   guides(fill=guide_legend(title="Response 3m", override.aes = c(lwd=0.5, size=1))) +
-  facet_wrap(~celltype2, scales = "free")
-
-# number of patients
-unique(cur_dat$PatientID)
-cur_dat %>%
-  distinct(PatientID, .keep_all = T) %>%
-  group_by(Status_at_3m) %>%
-  summarise(n=n())
-
-# number of images
-unique(cur_dat$Description)
-cur_dat %>%
-  distinct(Description, .keep_all = T) %>%
-  group_by(Status_at_3m) %>%
-  summarise(n=n())
+  facet_wrap(~celltype2, scales = "free", ncol=3, nrow=2)
 ```
 
 # Supp Figure 5D

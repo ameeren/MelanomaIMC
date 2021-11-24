@@ -1,0 +1,118 @@
+---
+title: "Table_1"
+author: "toobiwankenobi"
+date: "2021-11-22"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Introduction
+
+```{r}
+library(dplyr)
+```
+
+## Load Clinical Data
+
+```{r}
+clinical_data_protein <- read.csv2("data/data_for_analysis/protein/clinical_data_protein.csv", sep = ",")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+```
+
+## Information to add
+
+```{r}
+info <- as.data.frame(colData(sce_prot)) %>%
+  distinct(BlockID, .keep_all = TRUE) %>%
+  select(BlockID, MM_location_simplified)
+
+clinical_data_protein <- left_join(clinical_data_protein, info)
+```
+
+
+# Information for Clinical Data Table
+
+## BlockID level
+
+```{r}
+block_level <- clinical_data_protein %>%
+  filter(Location != "CTRL") %>%
+  distinct(BlockID, .keep_all = TRUE) %>%
+  select(BlockID, Age_range, Gender, Primary_melanoma_type, MM_location, Cancer_Stage, Mutation,
+         Last_sys_treatment_before_surgery, Treatment_after_surgery, MM_location_simplified, Status_at_3m)
+
+# total blocks
+length(unique(block_level$BlockID))
+
+# Sex
+block_level %>%
+  group_by(Gender) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = n / sum(n) *100)
+
+# Age
+block_level %>%
+  group_by(Age_range) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = n / sum(n) *100)
+
+# Met Location
+block_level %>%
+  group_by(MM_location_simplified) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = n / sum(n) *100)
+
+# Met Location
+block_level %>%
+  group_by(MM_location) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = n / sum(n) *100) %>%
+  mutate(MM_location = ifelse(percentage > 5, MM_location, "other")) %>%
+  group_by(MM_location) %>%
+  summarise(n=sum(n), percentage=sum(percentage))
+
+# Cancer Stage
+block_level %>%
+  group_by(Cancer_Stage) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = n / sum(n) *100)
+
+# Mutation
+block_level %>%
+  group_by(Mutation) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = n / sum(n) *100) %>%
+  mutate(Mutation = ifelse(percentage > 5, Mutation, "other")) %>%
+  group_by(Mutation) %>%
+  summarise(n=sum(n), percentage=sum(percentage))
+
+# Systemic Treatment Before
+block_level %>%
+  group_by(Last_sys_treatment_before_surgery) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = n / sum(n) *100) %>%
+  mutate(Last_sys_treatment_before_surgery = ifelse(percentage > 5, Last_sys_treatment_before_surgery, "other")) %>%
+  group_by(Last_sys_treatment_before_surgery) %>%
+  summarise(n=sum(n), percentage=sum(percentage))
+
+# Systemic Treatment After
+block_level %>%
+  group_by(Treatment_after_surgery) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = n / sum(n) *100) %>%
+  mutate(Treatment_after_surgery = ifelse(percentage > 5, Treatment_after_surgery, "other")) %>%
+  group_by(Treatment_after_surgery) %>%
+  summarise(n=sum(n), percentage=sum(percentage))
+
+# Response Information 3M after 
+block_level %>%
+  group_by(Status_at_3m) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = n / sum(n) *100) %>%
+  mutate(Status_at_3m = ifelse(percentage > 5, Status_at_3m, "other")) %>%
+  group_by(Status_at_3m) %>%
+  summarise(n=sum(n), percentage=sum(percentage))
+```
+

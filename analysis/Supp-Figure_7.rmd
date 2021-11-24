@@ -1,0 +1,82 @@
+---
+title: "Supp-Figure_7"
+author: "toobiwankenobi"
+date: "2021-11-24"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Load libraries
+
+```{r load libraries}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(data.table)
+library(ggplot2)
+library(broom)
+library(dplyr)
+library(tidyverse)
+library(cowplot)
+library(ggbeeswarm)
+library(gridExtra)
+library(SingleCellExperiment)
+library(scater)
+library(reshape2)
+library(circlize)
+library(rstatix)
+library(corrplot)
+library(ggpubr)
+```
+
+## Load Data
+
+```{r}
+# SCE object
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+```
+
+# Supp Figure 7B
+
+## Mean Chemokine+ Fraction per Patient
+
+```{r Supp_Fig_7B_revision_statistical_comparison, dev=c('pdf'), fig.width=12, fig.height=8}
+chemo_mutation <- as.data.frame(colData(sce_rna)) %>%
+  group_by(ImageNumber, chemokine) %>%
+  dplyr::summarise(n = n()) %>%
+  dplyr::mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(ImageNumber ~ chemokine, value.var = "fraction", fill = 0) %>%
+  reshape2::melt(id.vars=c("ImageNumber"), variable.name = "chemokine", value.name="fraction")
+
+info <- as.data.frame(colData(sce_rna)) %>%
+  group_by(PatientID, ImageNumber, Mutation, MM_location_simplified) %>%
+  distinct(ImageNumber, .keep_all = T) %>%
+  select(PatientID, ImageNumber, Mutation, MM_location_simplified)
+
+chemo_mutation <- left_join(chemo_mutation, info) %>%
+  filter(Mutation %in% c("BRAF", "NRAS", "wt")) %>%
+  group_by(PatientID, Mutation, chemokine, MM_location_simplified) %>%
+  summarise(mean_image_patient = mean(fraction)) %>%
+  filter(chemokine == TRUE) %>%
+  ungroup()
+
+chemo_mutation$Mutation <- factor(chemo_mutation$Mutation, levels=c("BRAF", "NRAS", "wt"))
+
+stat.test <- chemo_mutation %>%
+  wilcox_test(mean_image_patient ~ Mutation) %>%
+  adjust_pvalue(method="BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_xy_position(x = "Mutation")
+
+ggplot(chemo_mutation, aes(x=Mutation, y=mean_image_patient)) +
+  geom_boxplot(outlier.shape = NA) + 
+  geom_quasirandom(aes(col=MM_location_simplified), size=2, alpha=.8) +
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 5) +
+  theme_bw() +
+  ylab("Mean Image Fraction per Patient") +
+  guides(col=guide_legend("Location")) + 
+  theme_bw() +
+  theme(text = element_text(size=16))
+```

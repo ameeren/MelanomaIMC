@@ -1,14 +1,14 @@
 ---
-title: "Figure 5"
-author: "Tobias Hoch and Daniel Schulz"
-date: "2021-01-30"
+title: "Supp-Figure_13"
+author: "toobiwankenobi"
+date: "2021-10-20"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
 ---
 
 # Introduction
-This script generates plots for Figure 5.
+This script generates plots for Figure 5 without any LN samples.
 
 # Preparations
 
@@ -58,6 +58,10 @@ library(RANN)
 ```{r}
 sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+
+# remove all LN samples
+sce_rna <- sce_rna[,sce_rna$MM_location_simplified != "LN"]
+sce_prot <- sce_prot[,sce_prot$MM_location_simplified != "LN"]
 
 sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
 sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
@@ -313,7 +317,7 @@ ggplot(all_images,aes(x=bcell_patch_score, y = as.numeric(fraction), fill=cellty
 ## Example of CXCL10 Cluster and corresponding Community
 
 ```{r Fig_5E_clusters_and_communities, fig.width=6, fig.height=6, dev=c('pdf')}
-example <- findPatch(sce_prot[,sce_prot$Description == "C9"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
+example <- findPatch(sce_prot[,sce_prot$Description == "M3"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
                     'Description', 
