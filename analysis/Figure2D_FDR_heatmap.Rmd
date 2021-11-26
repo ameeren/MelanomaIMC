@@ -27,8 +27,8 @@ library(psych)
 ## Load data
 
 ```{r load_data}
-sce_rna <- readRDS(file = "/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_RNA.rds")
-sce_prot <- readRDS(file = "/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_protein.rds")
+sce_rna <- readRDS(file = "D:/Data/Melanoma_HotCold_paper/data_for_analysis/sce_RNA.rds")
+sce_prot <- readRDS(file = "D:/Data/Melanoma_HotCold_paper/data_for_analysis/sce_protein.rds")
 ```
 
 # Figure 2D
@@ -120,3 +120,69 @@ p <- ggplot()+
 p
 
 ```
+
+
+```{r, fig.height=7,fig.width=7}
+all_dat <- left_join(rna_sum,prot_sum,"Description")
+
+p.list <- list()
+for(i in ex_markers){
+  p.list[[i]] <- plotReducedDim(CD8_sce,dimred = "UMAP_Tcells_scaled_0.99",colour_by = i, by_exprs_values = "scaled_0.99", 
+                          point_size = 0.25, point_alpha = 1, shape_by = "dysfunction_score") +
+    scale_colour_gradientn(colours = c("#2166ac","orange"),name = i,
+                           limits = c(0, 1), oob=squish)
+}
+
+all_dat <- as_tibble(all_dat)
+p1 <- all_dat %>%
+ggplot()+
+  geom_point(aes(x=CCL19,y = `CD8+ T cell`))
+p2 <- all_dat %>%
+ggplot()+
+  geom_point(aes(x=CCL19,y = `CD4+ T cell`))
+p3 <- all_dat %>%
+ggplot()+
+  geom_point(aes(x=CCL19,y = `pDC`))
+
+p4 <- all_dat %>%
+ggplot()+
+  geom_point(aes(x=CCL22,y = `CD8+ T cell`))
+p5 <- all_dat %>%
+ggplot()+
+  geom_point(aes(x=CCL22,y = `CD4+ T cell`))
+p6 <- all_dat %>%
+ggplot()+
+  geom_point(aes(x=CCL22,y = `FOXP3+ T cell`))
+
+library(cowplot)
+
+plot_grid(p1,p2,p3,p4,p5,p6,ncol = 2)
+
+p2 <- all_dat %>%
+  arrange(CCL22) %>%
+slice_head(n=dim(all_dat)[1]-7) %>%
+ggplot()+
+  geom_point(aes(x=CCL22,y = `FOXP3+ T cell`))
+
+test_dat <- all_dat %>%
+  arrange(CCL22) %>%
+slice_head(n=dim(all_dat)[1]-7)
+
+cor.test(test_dat$CCL22,test_dat$`FOXP3+ T cell`, method = "pearson")
+
+p1 <- all_dat %>%
+  arrange(CCL22) %>%
+slice_head(n=dim(all_dat)[1]-7) %>%
+ggplot()+
+  geom_point(aes(x=CCL22,y = `CD4+ T cell`))
+
+test_dat <- all_dat %>%
+  arrange(CCL22) %>%
+slice_head(n=dim(all_dat)[1]-7)
+
+cor.test(test_dat$CCL19,test_dat$`CD4+ T cell`, method = "pearson")
+
+plot_grid(p5, p6,p1,p2, ncol = 2)
+```
+```
+

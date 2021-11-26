@@ -104,60 +104,57 @@ read_Data <- function(data,
 
 ```{r load datasets}
 
-SKCM_GSE123139 <- read_Data(data = "../Downloads/SKCM_GSE123139_expression.h5",
-                      metadata = "../Downloads/SKCM_GSE123139_CellMetainfo_table.tsv",
+SKCM_GSE123139 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE123139_expression.h5",
+                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE123139_CellMetainfo_table.tsv",
                       name = "SKCM_GSE123139",
                       sorting = "immune")
 
-SKCM_GSE72056 <- read_Data(data = "../Downloads/SKCM_GSE72056_expression.h5",
-                      metadata = "../Downloads/SKCM_GSE72056_CellMetainfo_table.tsv",
+SKCM_GSE72056 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE72056_expression.h5",
+                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE72056_CellMetainfo_table.tsv",
                       name = "SKCM_GSE72056",
                       sorting = "all")
 
-SKCM_GSE115978 <- read_Data(data = "../Downloads/SKCM_GSE115978_aPD1_expression.h5",
-                      metadata = "../Downloads/SKCM_GSE115978_aPD1_CellMetainfo_table.tsv",
+SKCM_GSE115978 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE115978_aPD1_expression.h5",
+                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE115978_aPD1_CellMetainfo_table.tsv",
                       name = "SKCM_GSE115978",
                       sorting = "all")
 
-SKCM_GSE120575 <- read_Data(data = "../Downloads/SKCM_GSE120575_aPD1aCTLA4_expression.h5",
-                      metadata = "../Downloads/SKCM_GSE120575_aPD1aCTLA4_CellMetainfo_table.tsv",
+SKCM_GSE120575 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_expression.h5",
+                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_CellMetainfo_table.tsv",
                       name = "SKCM_GSE120575",
                       sorting = "immune")
 
-SKCM_GSE139249 <- read_Data(data = "../Downloads/SKCM_GSE139249_expression.h5",
-                      metadata = "../Downloads/SKCM_GSE139249_CellMetainfo_table.tsv",
-                      name = "SKCM_GSE139249",
-                      sorting = "NKcells")
-
-HNSC_GSE139324 <- read_Data(data = "../Downloads/HNSC_GSE139324_expression.h5",
-                      metadata = "../Downloads/HNSC_GSE139324_CellMetainfo_table.tsv",
+HNSC_GSE139324 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/HNSC_GSE139324_expression.h5",
+                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/HNSC_GSE139324_CellMetainfo_table.tsv",
                       name = "HNSC_GSE139324",
-                      sorting = "all")
+                      sorting = "immune")
 
-NSCLC_GSE131907 <- read_Data(data = "../Downloads/NSCLC_GSE131907_expression.h5",
-                      metadata = "../Downloads/NSCLC_GSE131907_CellMetainfo_table.tsv",
+NSCLC_GSE131907 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/NSCLC_GSE131907_expression.h5",
+                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/NSCLC_GSE131907_CellMetainfo_table.tsv",
                       name = "NSCLC_GSE131907",
                       sorting = "all")
 
-PAAD_CRA001160 <- read_Data(data = "../Downloads/PAAD_CRA001160_expression.h5",
-                      metadata = "../Downloads/PAAD_CRA001160_CellMetainfo_table.tsv",
+PAAD_CRA001160 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/PAAD_CRA001160_expression.h5",
+                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/PAAD_CRA001160_CellMetainfo_table.tsv",
                       name = "PAAD_CRA001160",
                       sorting = "all")
 
-UVM_GSE139829 <- read_Data(data = "../Downloads/UVM_GSE139829_expression.h5",
-                      metadata = "../Downloads/UVM_GSE139829_CellMetainfo_table.tsv",
+UVM_GSE139829 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/UVM_GSE139829_expression.h5",
+                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/UVM_GSE139829_CellMetainfo_table.tsv",
                       name = "UVM_GSE139829",
                       sorting = "all")
 
 # merge the datasets
-sc_dat <- rbind(SKCM_GSE115978,SKCM_GSE120575,SKCM_GSE123139,SKCM_GSE139249,SKCM_GSE72056,HNSC_GSE139324,NSCLC_GSE131907,PAAD_CRA001160,UVM_GSE139829)
+sc_dat <- rbind(SKCM_GSE115978,SKCM_GSE120575,SKCM_GSE123139,SKCM_GSE72056,HNSC_GSE139324,NSCLC_GSE131907,PAAD_CRA001160,UVM_GSE139829)
+
+comp_dataset <- c("NSCLC_GSE131907","PAAD_CRA001160","UVM_GSE139829","HNSC_GSE139324","SKCM_GSE115978","SKCM_GSE72056")
 
 ```
 ## plot the fractions per chemokine positive type
 
 ```{r, fig.height=10, fig.width=10}
 sc_dat %>%
-  filter(sorting == "all") %>%
+  #filter(dataset %in% mel_data) %>%
   ggplot(aes(x=celltype,y=frac_of_chemokine_pos))+
   geom_boxplot()+
   geom_jitter(aes(col= dataset), position = position_jitter(width = 0))+
@@ -260,7 +257,8 @@ we will also unify the cell type names wherever possible
 
 ```{r, fig.height=10,fig.width=10}
 plot_dat <- sc_dat %>%
-  filter(celltype %in% celltypes, sorting == "all")
+  filter(celltype %in% celltypes, dataset %in% comp_dataset)
+
 
 # order IMC data correct for merging 
 imc_long <- imc_long[,colnames(plot_dat)]
@@ -288,6 +286,26 @@ ggplot()+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
   labs()
+```
+
+## check if sorting has effect on the fractions
+some of the scRNAseq datasets had been sorted before sequencing. this means that potentially, the fraction of expression is observed amongst immune cells is higher as it would be if there we additional chemokine expressing tumor cells detected. indeed we do see a slight trend for CCL19, CCL2, CXCL10 and CXCL12 to have higher fractions. however, as we will see in the comparison to IMC below, these are 
+
+```{r fig.height=10, fig.width=10}
+plot_dat <- sc_dat %>%
+  filter(celltype %in% celltypes)
+
+ggplot()+
+  geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
+  geom_point(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(sorting)))+
+  geom_point(data = imc_long,aes(x=celltype,y=frac_of_chemokine_pos),color="red")+
+  facet_wrap(.~chemokine, scales = "free")+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
+  labs()
+
+plot_dat <- sc_dat %>%
+  filter(celltype %in% celltypes, dataset %in% comp_dataset)
 ```
 
 ```{r grubbs statistical test}
@@ -319,27 +337,31 @@ sig_dat <- test_dat %>%
          sig = p_grubbs <= 0.05) %>%
   filter(sig == TRUE,is_IMC == TRUE)
 
-
+test_dat %>%
+  filter(celltype == "CD8+ T cell")
 ```
 
-```{r add significance to plot, fig.height=15,fig.width=15}
+```{r add significance to plot, fig.height=10,fig.width=15}
 library(ggpubr)
 
+#pdf(file = "D:/Data/Melanoma_HotCold_paper/scRNAseq chemokines vs IMC.pdf", width = 12, height = 10)
 ggplot()+
-  geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
-  geom_point(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
-  geom_point(data = imc_long,aes(x=celltype,y=frac_of_chemokine_pos),color="red",shape=18, size=5)+
-  geom_text(data = sig_dat,aes(x=celltype,y=0.85,label = p_grubbs), color= "red", angle=90) +
+  geom_boxplot(data = all_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
+  geom_point(data = all_dat[which(all_dat$dataset != "imc"),],aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
+  geom_point(data = all_dat[which(all_dat$dataset == "imc"),],aes(x=celltype,y=frac_of_chemokine_pos),col="red",shape=18, size=5)+
+  geom_text(data = sig_dat,aes(x=celltype,y=0.75,label = p_grubbs), color= "red", angle=90) +
   facet_wrap(.~chemokine)+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
   labs(title = "proportion of chemokine expressing cells as a fraction of chemokine expressing cells")
+#dev.off()
 ```
 
 ## plot the proportion of chemokine expressing cell types as a fraction of the cell types (for merged data)
 we will then below also add a statistical test (Grubbs test) to test whether IMC data is significantly different from scRNAseq data
 
-```{r fig.height=10, fig.width=10}
+```{r fig.height=10, fig.width=15}
+#pdf(file = "D:/Data/Melanoma_HotCold_paper/sensitivity scRNAseq chemokines vs IMC.pdf", width = 12, height = 10)
 ggplot()+
   geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_celltype))+
   geom_point(data = plot_dat,aes(x=celltype,y=frac_of_celltype),color="black")+
@@ -348,6 +370,7 @@ ggplot()+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
   labs()
+#dev.off()
 ```
 
 ```{r grubbs statistical test}
@@ -448,100 +471,5 @@ ggplot()+
   labs()
 
 
-```
-
-
-```{r}
-read_Data_unprocessed <- function(data,
-                      metadata,
-                      name,
-                      sorting){
-  
-  dat <- Seurat::Read10X_h5(data)
-
-  seurat<-CreateSeuratObject(counts = dat, project = name)
-  sce <- as.SingleCellExperiment(seurat)
-  
-  metadata <- read.delim(metadata)
-  # add the metadata to the sce object
-  colData(sce) <- cbind(colData(sce),metadata)
-  
-  sce$UMAP_1 <- NULL
-  sce$UMAP_2 <- NULL
-  
-  UMAP_dat <- metadata[,c("UMAP_1","UMAP_2")]
-  rownames(UMAP_dat) <- metadata$Cell
-  
-  reducedDim(sce, "UMAP",) <- UMAP_dat
-  
-  targets <- rownames(sce)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",rownames(sce))]
-
-  for (i in targets) {
-    colData(sce)[i] <- ifelse(t(counts(sce))[,i]>1,yes = 1,no = 0)
-  }
-  
-    chem_dat <- as.data.table(colData(sce))
-  chem_dat$CellID <- sapply(chem_dat$Cell,FUN = function(x){strsplit(x,"_")[[1]][1]})
-  
-  return(chem_dat)
-}
-```
-
-```{r}
-HNSC <- read_Data_unprocessed(data = "../Downloads/HNSC_GSE139324_expression.h5",
-                      metadata = "../Downloads/HNSC_GSE139324_CellMetainfo_table.tsv",
-                      name = "HNSC_GSE139324",
-                      sorting = "all")
-
-doubl_vec <- HNSC %>%
-  select(colnames(HNSC)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",colnames(HNSC))]) %>%
-  rowSums()
-
-length(doubl_vec[which(doubl_vec %in% c(2:9))])/length(doubl_vec[doubl_vec == 1])
-```
-
-
-
-
-```{r}
-NSCLC <- read_Data_unprocessed(data = "../Downloads/NSCLC_GSE131907_expression.h5",
-                      metadata = "../Downloads/NSCLC_GSE131907_CellMetainfo_table.tsv",
-                      name = "NSCLC_GSE131907",
-                      sorting = "all")
-
-doubl_vec <- NSCLC %>%
-  select(colnames(NSCLC)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",colnames(NSCLC))]) %>%
-  rowSums()
-
-NSCLC[which(doubl_vec %in% c(2:9)),]
-
-length(doubl_vec[which(doubl_vec %in% c(2:9))])/length(doubl_vec[doubl_vec == 1])
-```
-
-```{r}
-UVM <- read_Data_unprocessed(data = "../Downloads/UVM_GSE139829_expression.h5",
-                      metadata = "../Downloads/UVM_GSE139829_CellMetainfo_table.tsv",
-                      name = "UVM_GSE139829",
-                      sorting = "all")
-
-doubl_vec <- UVM %>%
-  select(colnames(UVM)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",colnames(UVM))]) %>%
-  rowSums()
-
-length(doubl_vec[which(doubl_vec %in% c(2:9))])/length(doubl_vec[doubl_vec == 1])
-```
-
-
-```{r}
-MEL <- read_Data_unprocessed(data = "../Downloads/SKCM_GSE72056_expression.h5",
-                      metadata = "../Downloads/SKCM_GSE72056_CellMetainfo_table.tsv",
-                      name = "SKCM_GSE72056",
-                      sorting = "all")
-
-doubl_vec <- MEL %>%
-  select(colnames(MEL)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",colnames(MEL))]) %>%
-  rowSums()
-
-length(doubl_vec[which(doubl_vec %in% c(2:9))])/length(doubl_vec[doubl_vec == 1])
 ```
 

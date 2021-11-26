@@ -65,11 +65,16 @@ sce_2[,sce_2$Description %in% c("D3","B6","B3","A4","I11","M9","N8")]$dysfunctio
 ```
 
 ## merge sce objects
+we will also remove images E2. this images was the first image of a measurement after downtime of the machine and had substantially higher intensities that all other images.
 
 ```{r}
 sce <- cbind(sce_1,sce_2)
 rm(sce_1,sce_2)
+
+sce <- sce[,sce$Description != "E2"]
 ```
+
+
 
 
 ## UMAP
@@ -132,7 +137,7 @@ plot_grid(plotlist = p.list, ncol = 6)
 ## define cut offs for the definition of CD8 T cells per sample
 here we check if there are any global intensity biases for CD8
 
-```{r, fig.height=8, fig.width=8}
+```{r, fig.height=12, fig.width=8}
 dittoRidgePlot(sce,var="CD8a", group.by= "Description",assay = "asinh")
 ```
 __samples E2, F2 L8, D4 and B3 should be inspected further since they have higher CD8 background. However, we will more generally chose a conservative cut off for T cell definition__
@@ -144,39 +149,26 @@ for (i  in unique(sce$Description)) {
 }
 
 ```
-cut off generally at: 2 asinh counts
-for E2, F2, D4: 2.5
-
-CXCL13 the cut off can generally be 2 but again:
-for E2, F2 and D4 should be: 2.75
+CD8 cut-off at asinh = 2
 
 ```{r, fig.height=5, fig.width=5}
 for (i  in unique(sce$Description)) {
-  p <-dittoScatterPlot(sce[,which(sce$Description == i )],x.var = "CXCL13",y.var = "PD-1",assay.x = "asinh",assay.y = "asinh", main=i,)
+  p <-dittoScatterPlot(sce[,which(sce$Description == i )],x.var = "CD3",y.var = "CD8a",assay.x = "asinh",assay.y = "asinh", main=i,)
   plot(p)
 }
 ```
 
 general cut off for CD3: 1
-for samples E2 and F2: 1.75
 
 ## CD8 expression per sample
 
 ```{r}
 sce$celltype <- "other"
 sce$CXCL13 <- "negative"
-# define CD8 T cells for outlier samples
-out_sce <- sce[,(sce$Description %in% c("E2","F2","D4"))]
-out_sce[,which(t(assay(out_sce,"asinh"))[,"CD8a"] > 2.5 & t(assay(out_sce,"asinh"))[,"CD3"] > 1.75 ) ]$celltype <- "CD8_Tcell"
-out_sce[,which(t(assay(out_sce,"asinh"))[,"CXCL13"] > 2.75 ) ]$CXCL13 <- "positive"
 
-# define CD8 T cells for outlier samples
-cur_sce <- sce[,!(sce$Description %in% c("E2","F2","D4"))]
-cur_sce[,which(t(assay(cur_sce,"asinh"))[,"CD8a"] > 2 & t(assay(out_sce,"asinh"))[,"CD3"] > 1) ]$celltype <- "CD8_Tcell"
-cur_sce[,which(t(assay(cur_sce,"asinh"))[,"CXCL13"] > 2 ) ]$CXCL13 <- "positive"
-#merge samples back together
-sce <- cbind(cur_sce,out_sce)
-rm(cur_sce,out_sce)
+sce[,which(t(assay(sce,"asinh"))[,"CD8a"] > 2 & t(assay(sce,"asinh"))[,"CD3"] > 1) ]$celltype <- "CD8_Tcell"
+sce[,which(t(assay(sce,"asinh"))[,"CXCL13"] > 2 ) ]$CXCL13 <- "positive"
+
 
 sce[,which(sce$celltype == "CD8_Tcell" & sce$CXCL13 == "positive")]$celltype <- "CD8_CXCL13+_Tcell"
 sce[,which(sce$celltype == "other" & sce$CXCL13 == "positive")]$celltype <- "other_CXCL13+"
@@ -193,6 +185,7 @@ plotReducedDim(sce,dimred = "UMAP_asinh",colour_by = "CD8a", by_exprs_values = "
 ```{r}
 ex_markers <- c("CXCL13","PD-1","EOMES","CD39","GITR","Tim-3","LAG-3","CD38","Ki-67","GranzymeB")
 CD8_sce <- sce[,sce$celltype %in% c("CD8_Tcell","CD8_CXCL13+_Tcell")]
+
 CD8_sce <- runUMAP(CD8_sce, exprs_values = "asinh", 
                      subset_row = ex_markers, name = "UMAP_Tcells_asinh",
                external_neighbors = TRUE, BNPARAM = AnnoyParam(),
@@ -259,30 +252,23 @@ plot_grid(plotlist = p.list, ncol = 5)
 
 ## Heatmap of CD8+ T cells only
 
-```{r, fig.height=4, fig.width=7}
+```{r, fig.height=7, fig.width=12}
+CD8T_markers <- c("CXCL13","PD-1","CD39","Tim-3","LAG-3","GITR","EOMES","ICOS","CD38","GranzymeB","CD45RO","Ki-67","TCF7","CD45RA","CD57")
+
+pdf("/media/dan/Data/Data/Melanoma_HotCold_paper/CXCL13_heatmap_sorted.pdf",width = 12,height = 8)
 dittoHeatmap(CD8_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
-             assay = "asinh",show_colnames = FALSE,
-            cluster_rows = TRUE,cluster_cols = FALSE,order.by = "CXCL13",
+             assay = "asinh",show_colnames = FALSE,order.by = "CXCL13",
+            cluster_rows=FALSE,
             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             breaks = seq(-3,3, length.out = 101))
-
-dittoHeatmap(CD8_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
-             assay = "scaled_0.99",show_colnames = FALSE,scale= "none",
-            cluster_rows = TRUE,cluster_cols = FALSE,order.by = "CXCL13",
-            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(0,1, length.out = 101))
-dittoHeatmap(CD8_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
-             assay = "scaled_0.99",show_colnames = FALSE,scale= "none",
-            cluster_rows = TRUE,cluster_cols = FALSE,
-            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(0,1, length.out = 101))
+dev.off()
 ```
 
 
 ## correlation analysis per image
 
 ```{r}
-library(dplyr)
+library(tidyverse)
 cor_dat <- matrix(nrow = 32, ncol = 26)
 colnames(cor_dat) <- unique(sce$Description)
 rownames(cor_dat) <- good_markers[which(good_markers != "CXCL13")]
@@ -293,19 +279,20 @@ for (i in unique(CD8_sce$Description)) {
   cor_dat[,i] <- x
 }
 
-cor_dat <- reshape2::melt(cor_dat,id.vars = ex_markers,value.name = "correlation",)
+cor_dat <- reshape2::melt(cor_dat,id.vars = ex_markers,value.name = "correlation")
+cor_dat$Var1 <- as.character(cor_dat$Var1)
 cor_dat <- cor_dat %>%
-  filter(Var1 %in% Tcell_markers)
+  filter(Var1 %in% CD8T_markers)
 
 order_vec <- cor_dat %>%
   group_by(Var1) %>%
-  mutate(median_cor = median(correlation)) %>%
+  mutate(median_cor = median(correlation,na.rm = TRUE)) %>%
   select(Var1,median_cor) %>%
   distinct() %>%
   arrange(desc(median_cor)) %>%
   pull(Var1)
 
-names_ordered <- ex_markers[which(ex_markers != "CXCL13")]
+names_ordered <- CD8T_markers[which(ex_markers != "CXCL13")]
 factor(names_ordered,levels = order_vec)
 
 ggplot(data = cor_dat,aes(x = factor(Var1,levels=order_vec),y=correlation))+
@@ -316,7 +303,14 @@ ggplot(data = cor_dat,aes(x = factor(Var1,levels=order_vec),y=correlation))+
 ## fraction of PD-1+ CD8 T cells that are also CXCL13 positive
 
 ```{r}
-dittoScatterPlot(CD8_sce,x.var = "CXCL13",y.var = "PD-1",assay.x = "asinh",assay.y = "asinh")
+# PD-1 CXCL13 correlation
+xy <- cor.test(t(assay(CD8_sce,"asinh"))[,"PD-1"],t(assay(CD8_sce,"asinh"))[,"CXCL13"],method = "pearson")
+
+dittoScatterPlot(CD8_sce,x.var = "CXCL13",y.var = "PD-1",assay.x = "asinh",assay.y = "asinh",main = 
+                  "coorelation of PD-1 and CXCL13", sub = paste0("R = ", round(xy$estimate,digits = 3), " p.value = ", xy$p.value))
+                 
+
+
 
 CD8_sce$celltype_2 <- "CD8_Tcell"
 
@@ -360,10 +354,10 @@ cor_dat %>%
 
 ## work with exhaustion markers, not CXCL13
 
-```{r, fig.height=7, fig.width=15}
-ex_markers_noCXCL13 <- ex_markers[c(2,4,5,6,7,8)]
+```{r, fig.height=10, fig.width=15}
+ex_markers_noCXCL13 <- ex_markers[c(2,4,5,6,7)]
 
-g <- buildSNNGraph(CD8_sce,subset.row = ex_markers_noCXCL13, k=20, type = "jaccard",assay.type = "scaled_0.99")
+g <- buildSNNGraph(CD8_sce,subset.row = ex_markers_noCXCL13, k=20, type = "jaccard",assay.type = "asinh")
 
 clust<- igraph::cluster_louvain(g)$membership
 table(clust)
@@ -374,17 +368,227 @@ CD8_sce$clusters <- as_factor(clust)
 #sce[,sce$celltype == "CD8_Tcell"]$celltype <- paste0(sce[,sce$celltype == "CD8_Tcell"]$celltype,"_",clust_vec)
 
 
-dittoHeatmap(CD8_sce, genes = ex_markers,annot.by =  c("clusters", "Description"),assay = "scaled_0.99",
+dittoHeatmap(CD8_sce, genes = ex_markers,annot.by =  c("clusters", "Description"),assay = "asinh",
              heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             breaks = seq(-3,3, length.out = 101))
 
 
 ```
 
-## exhausted cluster fraction correlation with CXCL13+ fraction in protein data only
+## per image correlation for exhausted clusters 2,3,4
 
 ```{r}
-ex_clusters <- c(2,3,4)
+ex_clusters <- c(2,3,4,8)
+
+cur_dat <- as_tibble(colData(CD8_sce))
+RNA_dat <- as_tibble(colData(sce_RNA))
+
+prot_dat_ex <- cur_dat %>%
+  select(Description, clusters) %>%
+  group_by(Description,clusters) %>%
+  count(clusters) %>%
+  ungroup() %>%
+  group_by(Description, .drop = FALSE) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  #filter(clusters %in% ex_clusters) %>%
+  mutate(ex_sum = sum(n[clusters %in% ex_clusters]),frac = ex_sum/total_cellcount) %>%
+  select(Description,frac) %>%
+  distinct() %>%
+  pull(frac,Description)
+
+prot_dat_CXCL13 <- cur_dat %>%
+  select(Description,celltype_2) %>%
+  group_by(Description,celltype_2) %>%
+  count(celltype_2) %>%
+  ungroup() %>%
+  group_by(Description) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  #filter(celltype_2 %in% c("PD-1+_CXCl13+_Tcell","PD-1-_CXCl13+_Tcell")) %>%
+  mutate(CD8_CXCL13 = sum(n[celltype_2 %in% c("PD-1+_CXCl13+_Tcell","PD-1-_CXCl13+_Tcell")]),frac = CD8_CXCL13/total_cellcount) %>%
+  select(Description,frac) %>%
+  distinct() %>%
+  pull(frac,Description)
+  
+rna_dat <- RNA_dat %>%
+  select(celltype,Description,dysfunction_score,CXCL13) %>%
+  mutate(celltype = paste0(celltype,"_",CXCL13)) %>%
+  filter(celltype %in% c("CD8+ T cell_0","CD8+ T cell_1")) %>%
+  group_by(Description,celltype, .drop = FALSE) %>%
+  count(celltype) %>%
+  ungroup() %>%
+  group_by(Description, .drop = FALSE) %>%
+  mutate(total_cellcount = sum(n),frac=n/total_cellcount) %>%
+  filter(celltype == "CD8+ T cell_0") %>%
+  mutate(frac_CD8_CXCL13 = 1-frac) %>%
+  pull(frac_CD8_CXCL13,Description)
+
+# check names and only select those names in RNA data that we have in protein data
+identical(names(prot_dat_ex),names(prot_dat_CXCL13))
+rna_dat <- rna_dat[names(prot_dat_CXCL13)]
+
+# merge all data
+all_dat <- data.frame(Description = names(prot_dat_ex),
+                      prot_ex = as.vector(prot_dat_ex),
+                      prot_CXCL13 = as.vector(prot_dat_CXCL13),
+                      rna_frac = as.vector(rna_dat))
+
+# find cores that are Margin and LN
+LN_margin_cores <- RNA_dat %>%
+  select(Description,Location,MM_location) %>%
+  distinct() %>%
+  filter(Location == "M",MM_location == "LN") %>%
+  pull(Description)
+
+all_dat <-all_dat %>%
+  filter(!(Description %in% LN_margin_cores))
+```
+
+
+```{r}
+
+ggplot(all_dat, aes(x=prot_ex, y=prot_CXCL13)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8 exhausted clusters (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (protein data)")
+
+ggplot(all_dat, aes(x=prot_ex, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8 exhausted clusters (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+
+#pdf("D:/Data/Melanoma_HotCold_paper/CXCL13_RNA_vs_protein_correlation_pearson.pdf",width=7,height = 5)
+ggplot(all_dat, aes(x=prot_CXCL13, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8+ CXCL13+ T cells (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+#dev.off()
+```
+per patient data
+
+```{r}
+pat_dat <- RNA_dat %>%
+  select(Description,PatientID) %>%
+  filter(Description %in% all_dat$Description) %>%
+  distinct()
+
+
+cur_dat <- as_tibble(colData(CD8_sce))
+cur_dat <- left_join(cur_dat,pat_dat,"Description")
+RNA_dat <- as_tibble(colData(sce_RNA))
+
+
+# find cores that are Margin and LN
+LN_margin_cores <- RNA_dat %>%
+  select(Description,Location,MM_location) %>%
+  distinct() %>%
+  filter(Location == "M",MM_location == "LN") %>%
+  pull(Description)
+
+cur_dat <- cur_dat %>%
+  filter(!(Description %in% LN_margin_cores))
+RNA_dat <- RNA_dat %>%
+  filter(!(Description %in% LN_margin_cores))
+
+
+prot_dat_ex <- cur_dat %>%
+  select(PatientID, clusters) %>%
+  group_by(PatientID,clusters) %>%
+  count(clusters) %>%
+  ungroup() %>%
+  group_by(PatientID, .drop = FALSE) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  #filter(clusters %in% ex_clusters) %>%
+  mutate(ex_sum = sum(n[clusters %in% ex_clusters]),frac = ex_sum/total_cellcount) %>%
+  select(PatientID,frac) %>%
+  distinct() %>%
+  pull(frac,PatientID)
+
+prot_dat_CXCL13 <- cur_dat %>%
+  select(PatientID,celltype_2) %>%
+  group_by(PatientID,celltype_2) %>%
+  count(celltype_2) %>%
+  ungroup() %>%
+  group_by(PatientID) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  #filter(celltype_2 %in% c("PD-1+_CXCl13+_Tcell","PD-1-_CXCl13+_Tcell")) %>%
+  mutate(CD8_CXCL13 = sum(n[celltype_2 %in% c("PD-1+_CXCl13+_Tcell","PD-1-_CXCl13+_Tcell")]),frac = CD8_CXCL13/total_cellcount) %>%
+  select(PatientID,frac) %>%
+  distinct() %>%
+  pull(frac,PatientID)
+  
+rna_dat <- RNA_dat %>%
+  select(celltype,PatientID,dysfunction_score,CXCL13) %>%
+  mutate(celltype = paste0(celltype,"_",CXCL13)) %>%
+  filter(celltype %in% c("CD8+ T cell_0","CD8+ T cell_1")) %>%
+  group_by(PatientID,celltype, .drop = FALSE) %>%
+  count(celltype) %>%
+  ungroup() %>%
+  group_by(PatientID, .drop = FALSE) %>%
+  mutate(total_cellcount = sum(n),frac=n/total_cellcount) %>%
+  filter(celltype == "CD8+ T cell_0") %>%
+  mutate(frac_CD8_CXCL13 = 1-frac) %>%
+  pull(frac_CD8_CXCL13,PatientID)
+
+# check names and only select those names in RNA data that we have in protein data
+identical(names(prot_dat_ex),names(prot_dat_CXCL13))
+rna_dat <- rna_dat[names(prot_dat_CXCL13)]
+
+# merge all data
+all_dat <- data.frame(PatientID = names(prot_dat_ex),
+                      prot_ex = as.vector(prot_dat_ex),
+                      prot_CXCL13 = as.vector(prot_dat_CXCL13),
+                      rna_frac = as.vector(rna_dat))
+
+
+
+
+
+ggplot(all_dat, aes(x=prot_ex, y=prot_CXCL13)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8 exhausted clusters (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (protein data)")
+
+ggplot(all_dat, aes(x=prot_ex, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8 exhausted clusters (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+
+#pdf("D:/Data/Melanoma_HotCold_paper/CXCL13")
+ggplot(all_dat, aes(x=prot_CXCL13, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8+ CXCL13+ T cells (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+```
+
+
+## per image correlation for exhausted clusters 2,3,4,5
+
+```{r}
+ex_clusters <- c(2,3,4,5)
 
 cur_dat <- as_tibble(colData(CD8_sce))
 RNA_dat <- as_tibble(colData(sce_RNA))
@@ -479,17 +683,110 @@ ggplot(all_dat, aes(x=prot_CXCL13, y=rna_frac)) +
   xlab("Fraction CD8+ CXCL13+ T cells (protein data)") +
   ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
 ```
-
-## mean expresion of exhaustion markers per image
+per Patient data
 
 ```{r}
-mean_sce <- aggregateAcrossCells(CD8_sce[ex_markers,],
-                                ids = CD8_sce$Description,
-                                statistics = "mean")
-assay(mean_sce,"asinh") <- asinh(counts(mean_sce))
+pat_dat <- RNA_dat %>%
+  select(Description,PatientID) %>%
+  filter(Description %in% all_dat$Description) %>%
+  distinct()
 
-dittoHeatmap(mean_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),assay = "asinh", cluster_cols = TRUE)
+
+cur_dat <- as_tibble(colData(CD8_sce))
+cur_dat <- left_join(cur_dat,pat_dat,"Description")
+RNA_dat <- as_tibble(colData(sce_RNA))
+
+
+# find cores that are Margin and LN
+LN_margin_cores <- RNA_dat %>%
+  select(Description,Location,MM_location) %>%
+  distinct() %>%
+  filter(Location == "M",MM_location == "LN") %>%
+  pull(Description)
+
+cur_dat <- cur_dat %>%
+  filter(!(Description %in% LN_margin_cores))
+RNA_dat <- RNA_dat %>%
+  filter(!(Description %in% LN_margin_cores))
+
+
+prot_dat_ex <- cur_dat %>%
+  select(PatientID, clusters) %>%
+  group_by(PatientID,clusters) %>%
+  count(clusters) %>%
+  ungroup() %>%
+  group_by(PatientID, .drop = FALSE) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  #filter(clusters %in% ex_clusters) %>%
+  mutate(ex_sum = sum(n[clusters %in% ex_clusters]),frac = ex_sum/total_cellcount) %>%
+  select(PatientID,frac) %>%
+  distinct() %>%
+  pull(frac,PatientID)
+
+prot_dat_CXCL13 <- cur_dat %>%
+  select(PatientID,celltype_2) %>%
+  group_by(PatientID,celltype_2) %>%
+  count(celltype_2) %>%
+  ungroup() %>%
+  group_by(PatientID) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  #filter(celltype_2 %in% c("PD-1+_CXCl13+_Tcell","PD-1-_CXCl13+_Tcell")) %>%
+  mutate(CD8_CXCL13 = sum(n[celltype_2 %in% c("PD-1+_CXCl13+_Tcell","PD-1-_CXCl13+_Tcell")]),frac = CD8_CXCL13/total_cellcount) %>%
+  select(PatientID,frac) %>%
+  distinct() %>%
+  pull(frac,PatientID)
+  
+rna_dat <- RNA_dat %>%
+  select(celltype,PatientID,dysfunction_score,CXCL13) %>%
+  mutate(celltype = paste0(celltype,"_",CXCL13)) %>%
+  filter(celltype %in% c("CD8+ T cell_0","CD8+ T cell_1")) %>%
+  group_by(PatientID,celltype, .drop = FALSE) %>%
+  count(celltype) %>%
+  ungroup() %>%
+  group_by(PatientID, .drop = FALSE) %>%
+  mutate(total_cellcount = sum(n),frac=n/total_cellcount) %>%
+  filter(celltype == "CD8+ T cell_0") %>%
+  mutate(frac_CD8_CXCL13 = 1-frac) %>%
+  pull(frac_CD8_CXCL13,PatientID)
+
+# check names and only select those names in RNA data that we have in protein data
+identical(names(prot_dat_ex),names(prot_dat_CXCL13))
+rna_dat <- rna_dat[names(prot_dat_CXCL13)]
+
+# merge all data
+all_dat <- data.frame(PatientID = names(prot_dat_ex),
+                      prot_ex = as.vector(prot_dat_ex),
+                      prot_CXCL13 = as.vector(prot_dat_CXCL13),
+                      rna_frac = as.vector(rna_dat))
+
+
+
+
+
+ggplot(all_dat, aes(x=prot_ex, y=prot_CXCL13)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8 exhausted clusters (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (protein data)")
+
+ggplot(all_dat, aes(x=prot_ex, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8 exhausted clusters (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+
+ggplot(all_dat, aes(x=prot_CXCL13, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8+ CXCL13+ T cells (protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
 ```
-
-
-
