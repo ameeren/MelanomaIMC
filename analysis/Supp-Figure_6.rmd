@@ -261,28 +261,24 @@ for(element in cur_sces){
 }
 ```
 
+## Supp Fig
 
-```{r all cells heatmap, fig.width=7.5, fig.height=5.5, dev=("pdf")}
+```{r Supp_Fig_X_gatedCells_Protein, fig.width=7.5, fig.height=4.8, dev=("png")}
+# sample 300 cells per cell type
+sce_prot_sub <- sce_prot[,sce_prot$layer_1_gated != "unlabelled"]
+
 set.seed(2345)
+# sub-sample 500 cells
+sample <- data.frame(colData(sce_prot_sub)) %>%
+  group_by(celltype) %>%
+  slice_sample(n=300)
+
+# unique cellIDs
+sample <- sample[sample$cellID %in% unique(sample$cellID),]
+
+cur_sce <- sce_prot[,sce_prot$cellID %in% sample$cellID]
+
 good_markers <- rownames(sce_prot)[rowData(sce_prot)$good_marker]
-
-es <- assay(sce_prot, "counts")
-
-# here we define the clipping percentage. all values above the fraction are then put to 1
-for (i in c(0.99)){
-  qs <- rowQuantiles(es, probs = c(0.0, i))
-  x <- (es - qs[, 1]) / (qs[, 2] - qs[, 1])
-  x[x < 0] <- 0; x[x > 1] <- 1
-  assay(sce_prot, paste0("scaled_",i)) <- x
-}
-cur_sce <- sce_prot[,sce_prot$celltype == "Tumor"]
-cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 500,replace =FALSE)]
-
-for (i in unique(sce_prot$celltype)[2:length(unique(sce_prot$celltype))]) {
-  x <- sce_prot[,sce_prot$celltype == i]
-  x <- x[,sample(colnames(x),size= 500, replace=FALSE)]
-  cur_sce <- cbind(cur_sce,x)
-}
 
 colors <- metadata(sce_prot)$colour_vector$celltype
 colors <- colors[c("B cell", "BnT cell", "CD4+ T cell", "CD8+ T cell", "FOXP3+ T cell", "Macrophage", "Neutrophil", "pDC", "Stroma", "Tumor", "unknown")]
@@ -299,24 +295,27 @@ dittoHeatmap(cur_sce,
             use_raster=TRUE)
 ```
 
-## RNA dataset
-
-```{r  RNA data all cells heatmap, fig.width=7.5, fig.height=5.5, dev=("pdf")}
+```{r Supp_Fig_X_gatedCells_RNA, fig.width=8, fig.height=4.8, dev=("png")}
 set.seed(2345)
+
+sce_rna_sub <- sce_rna[,sce_rna$layer_1_gated != "unlabelled"]
+
+# remove unkown - not enough cells
+sce_rna_sub <- sce_rna_sub[,sce_rna_sub$celltype != "unknown"]
+
+# sub-sample 500 cells
+sample <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(celltype) %>%
+  slice_sample(n=300)
+
+# unique cellIDs
+sample <- sample[sample$cellID %in% unique(sample$cellID),]
+
+cur_sce <- sce_rna[,sce_rna$cellID %in% unique(sample$cellID)]
+
 good_markers <- rownames(sce_rna)[rowData(sce_rna)$good_marker]
-
-
-cur_sce <- sce_rna[,sce_rna$celltype == "Tumor"]
-cur_sce <- cur_sce[,sample(colnames(cur_sce),size = 500,replace =FALSE)]
-
-for (i in unique(sce_rna$celltype)[2:length(unique(sce_rna$celltype))]) {
-  x <- sce_rna[,sce_rna$celltype == i]
-  x <- x[,sample(colnames(x),size= 500, replace=FALSE)]
-  cur_sce <- cbind(cur_sce,x)
-}
-
-colors <- metadata(sce_rna)$colour_vector$celltype
-colors <- colors[c("CD38", "CD8- T cell", "CD8+ T cell", "HLA-DR", "Macrophage", "Neutrophil", "Stroma", "Tumor", "unknown", "Vasculature")]
+colors <- metadata(sce_rna)$colour_vector$celltype[]
+colors <- colors[c("CD38", "CD8- T cell", "CD8+ T cell", "HLA-DR", "Macrophage", "Neutrophil", "Stroma", "Tumor", "Vasculature")]
 
 dittoHeatmap(cur_sce, genes = good_markers, assay = "asinh",
             annot.by = c("celltype"),
@@ -330,7 +329,7 @@ dittoHeatmap(cur_sce, genes = good_markers, assay = "asinh",
 
 ## CD20 
 
-```{r Supp_Fig_6C_myeloid_Bcells, fig.height=6, fig.width=6, dev=("pdf")}
+```{r Supp_Fig_6C_myeloid_Bcells, fig.height=6, fig.width=6, dev=("png")}
 cur_sce <- sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "Macrophage", "Neutrophil", "pDC")]
 
 ggcells(cur_sce, aes(x=CD20, y=CD11c), exprs_values = "asinh") + 

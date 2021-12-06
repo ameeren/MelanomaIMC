@@ -11,6 +11,7 @@ editor_options:
 
 ```{r}
 library(dplyr)
+library(lubridate)
 ```
 
 ## Load Clinical Data
@@ -31,7 +32,6 @@ info <- as.data.frame(colData(sce_prot)) %>%
 clinical_data_protein <- left_join(clinical_data_protein, info)
 ```
 
-
 # Information for Clinical Data Table
 
 ## BlockID level
@@ -40,7 +40,7 @@ clinical_data_protein <- left_join(clinical_data_protein, info)
 block_level <- clinical_data_protein %>%
   filter(Location != "CTRL") %>%
   distinct(BlockID, .keep_all = TRUE) %>%
-  select(BlockID, Age_range, Gender, Primary_melanoma_type, MM_location, Cancer_Stage, Mutation,
+  select(PatientID, BlockID, Age_range, Gender, Primary_melanoma_type, MM_location, Cancer_Stage, Mutation,
          Last_sys_treatment_before_surgery, Treatment_after_surgery, MM_location_simplified, Status_at_3m)
 
 # total blocks
@@ -50,19 +50,25 @@ length(unique(block_level$BlockID))
 block_level %>%
   group_by(Gender) %>%
   summarise(n=n()) %>%
-  mutate(percentage = n / sum(n) *100)
+  mutate(percentage = round(n / sum(n) *100,2)) %>%
+  as.data.frame()
 
 # Age
 block_level %>%
   group_by(Age_range) %>%
   summarise(n=n()) %>%
-  mutate(percentage = n / sum(n) *100)
+  mutate(percentage = round(n / sum(n) *100,2)) %>%
+  as.data.frame()
 
-# Met Location
+# Primary Melanoma Type
 block_level %>%
-  group_by(MM_location_simplified) %>%
+  group_by(Primary_melanoma_type) %>%
   summarise(n=n()) %>%
-  mutate(percentage = n / sum(n) *100)
+  mutate(percentage = n / sum(n) *100) %>%
+  mutate(Primary_melanoma_type = ifelse(percentage > 5 | Primary_melanoma_type == "unknown", Primary_melanoma_type, "other")) %>%
+  group_by(Primary_melanoma_type) %>%
+  summarise(n=sum(n), percentage=round(sum(percentage),2)) %>%
+  as.data.frame()
 
 # Met Location
 block_level %>%
@@ -71,20 +77,22 @@ block_level %>%
   mutate(percentage = n / sum(n) *100) %>%
   mutate(MM_location = ifelse(percentage > 5, MM_location, "other")) %>%
   group_by(MM_location) %>%
-  summarise(n=sum(n), percentage=sum(percentage))
+  summarise(n=sum(n), percentage=round(sum(percentage),2)) %>%
+  as.data.frame()
 
 # Cancer Stage
 block_level %>%
   group_by(Cancer_Stage) %>%
   summarise(n=n()) %>%
-  mutate(percentage = n / sum(n) *100)
+  mutate(percentage = round(n / sum(n) *100,2)) %>%
+  as.data.frame()
 
 # Mutation
 block_level %>%
   group_by(Mutation) %>%
   summarise(n=n()) %>%
   mutate(percentage = n / sum(n) *100) %>%
-  mutate(Mutation = ifelse(percentage > 5, Mutation, "other")) %>%
+  mutate(Mutation = ifelse(percentage > 5 | Mutation == "unknown", Mutation, "other")) %>%
   group_by(Mutation) %>%
   summarise(n=sum(n), percentage=sum(percentage))
 
@@ -93,18 +101,31 @@ block_level %>%
   group_by(Last_sys_treatment_before_surgery) %>%
   summarise(n=n()) %>%
   mutate(percentage = n / sum(n) *100) %>%
-  mutate(Last_sys_treatment_before_surgery = ifelse(percentage > 5, Last_sys_treatment_before_surgery, "other")) %>%
+  mutate(Last_sys_treatment_before_surgery = ifelse(percentage > 5 | is.na(Last_sys_treatment_before_surgery) == T, Last_sys_treatment_before_surgery, "other")) %>%
   group_by(Last_sys_treatment_before_surgery) %>%
-  summarise(n=sum(n), percentage=sum(percentage))
+  summarise(n=sum(n)) %>%
+  mutate(percentage = round(n / sum(n) *100,2)) %>%
+  as.data.frame()
 
 # Systemic Treatment After
 block_level %>%
-  group_by(Treatment_after_surgery) %>%
+  mutate(Last_sys_treatment_before_surgery = ifelse(is.na(Last_sys_treatment_before_surgery), 
+                                                    "unknown", Last_sys_treatment_before_surgery)) %>%
+  mutate(Treatment_after_surgery = ifelse(is.na(Treatment_after_surgery), 
+                                                    "unknown", Treatment_after_surgery)) %>%
+  mutate(treatmentGroup_before = ifelse(Last_sys_treatment_before_surgery == "untreated", 
+         "Naive", "Pre-Treated")) %>%
+  mutate(treatmentGroup_before = ifelse(Last_sys_treatment_before_surgery == "unknown", 
+         "Unknown", treatmentGroup_before)) %>%
+  mutate(treatmentGroups = paste(treatmentGroup_before, Treatment_after_surgery, sep = "_")) %>%
+  group_by(treatmentGroup_before, treatmentGroups) %>%
   summarise(n=n()) %>%
+  ungroup() %>%
   mutate(percentage = n / sum(n) *100) %>%
-  mutate(Treatment_after_surgery = ifelse(percentage > 5, Treatment_after_surgery, "other")) %>%
-  group_by(Treatment_after_surgery) %>%
-  summarise(n=sum(n), percentage=sum(percentage))
+  mutate(treatmentGroups = ifelse(percentage > 5, treatmentGroups, paste(treatmentGroup_before, "other", sep = "_"))) %>%
+  group_by(treatmentGroups) %>%
+  summarise(n=sum(n), percentage=round(sum(percentage),2)) %>%
+  as.data.frame()
 
 # Response Information 3M after 
 block_level %>%
@@ -113,6 +134,89 @@ block_level %>%
   mutate(percentage = n / sum(n) *100) %>%
   mutate(Status_at_3m = ifelse(percentage > 5, Status_at_3m, "other")) %>%
   group_by(Status_at_3m) %>%
-  summarise(n=sum(n), percentage=sum(percentage))
+  summarise(n=sum(n), percentage=round(sum(percentage),2)) %>%
+  as.data.frame()
+```
+
+## Patient level
+
+## Which paramters are unique for patients (not multiple levels per patient)
+
+```{r}
+unique_variables <- block_level %>%
+  reshape2::melt(id.vars="PatientID", variable.name="Variable", value.name="Value") %>%
+  group_by(PatientID, Variable) %>%
+  distinct(Value, .keep_all = T) %>%
+  summarise(n=n())
+
+multiple_levels <- unique(as.character(unique_variables[unique_variables$n > 1,]$Variable))
+all_variables <- unique(as.character(unique_variables$Variable))
+unique_variables <- setdiff(all_variables, multiple_levels)
+``` 
+
+```{r}
+patient_level <- block_level %>%
+  distinct(PatientID, Age_range, Gender, Primary_melanoma_type, Cancer_Stage)
+
+# total blocks
+length(unique(patient_level$PatientID))
+
+# Sex
+patient_level %>%
+  group_by(Gender) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round(n / sum(n) *100,2)) %>%
+  as.data.frame()
+
+# Age
+patient_level %>%
+  group_by(Age_range) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round(n / sum(n) *100,2)) %>%
+  as.data.frame()
+
+# Primary Melanoma Type
+patient_level %>%
+  group_by(Primary_melanoma_type) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = n / sum(n) *100) %>%
+  mutate(Primary_melanoma_type = ifelse(percentage > 5, Primary_melanoma_type, "other")) %>%
+  group_by(Primary_melanoma_type) %>%
+  summarise(n=sum(n), percentage=round(sum(percentage),2)) %>%
+  as.data.frame()
+
+# Cancer Stage
+patient_level %>%
+  group_by(Cancer_Stage) %>%
+  summarise(n=n()) %>%
+  mutate(percentage = round(n / sum(n) *100,2)) %>%
+  as.data.frame()
+```
+
+## Whole Data Table as CSV
+
+```{r}
+# join with T cell Score, B cell Score, Dysfunction Score
+scores <- as.data.frame(colData(sce_prot)) %>%
+  distinct(Description, .keep_all = T) %>%
+  select(Description, Tcell_density_score_image, bcell_patch_score, dysfunction_score)
+
+clinicalDat <- left_join(scores, clinical_data_protein)
+
+# remove exact date in clinical data
+clinicalDat$Date_death <- format(as.Date(clinicalDat$Date_death),"01-%b-20%y")
+clinicalDat$Date_surgery <- format(as.Date(clinicalDat$Date_surgery),"01-%b-20%y")
+clinicalDat$Date_progression <- format(as.Date(clinicalDat$Date_progression),"01-%b-20%y")
+clinicalDat$Start_treatment <- format(as.Date(clinicalDat$Start_treatment),"01-%b-20%y")
+clinicalDat$End_treatment <- format(as.Date(clinicalDat$End_treatment),"01-%b-20%y")
+clinicalDat$Last_PET <- format(as.Date(clinicalDat$Last_PET),"01-%b-20%y")
+clinicalDat$IHC_T_score <- NULL
+clinicalDat$Age_range <- ifelse(clinicalDat$Age_range =="≥60", ">=60", clinicalDat$Age_range)
+
+# correct clinicalDat$Last_prev_therapy
+clinicalDat$Last_prev_therapy <- str_replace_all(clinicalDat$Last_prev_therapy, "-", ".")
+clinicalDat$Last_prev_therapy <- format(as.Date(my(clinicalDat$Last_prev_therapy)),"01-%b-20%y")
+
+write.csv2(clinicalDat, "~/bbDQBM/Git/MelanomaIMC/Table_S4.csv", row.names = FALSE)
 ```
 

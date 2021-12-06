@@ -328,18 +328,8 @@ data$`CD8- T cell_1` <- data$`CD8- T cell_1` / data$mm2_rna
 data$`HLA-DR_1` <- data$`HLA-DR_1` / data$mm2_rna
 data$`B cell` <- data$`B cell` / data$mm2_prot
 
-a <- ggplot(data=data[data$bcell_patch_score != "B cell Follicles",],aes(x=`CD8- T cell_1`, y=`B cell`)) + 
-  geom_point() +
-  geom_smooth(method="lm") +
-  stat_cor(method = "pearson",
-           aes(label = paste(..r.label.., ..p.label.., sep = "~`,`~")),
-           size = 8, cor.coef.name = "R", label.sep="\n", label.y.npc = "top", label.x.npc = "left") +
-  theme_bw() +
-  theme(text=element_text(size=15)) +
-  xlab("CXCL13+ CD8- T cells / mm2") +
-  ylab("B cells / mm2")
-
-b <- ggplot(data=data[data$bcell_patch_score != "B cell Follicles",],aes(x=`CD8+ T cell_1`, y=`B cell`)) + 
+a <- ggplot(data=data[data$bcell_patch_score != "B cell Follicles",],
+            aes(x=`CD8+ T cell_1`, y=`B cell`)) + 
   geom_point() +
   geom_smooth(method="lm") +
   stat_cor(method = "pearson",
@@ -348,9 +338,44 @@ b <- ggplot(data=data[data$bcell_patch_score != "B cell Follicles",],aes(x=`CD8+
   theme_bw() +
   theme(text=element_text(size=15)) +
   xlab("CXCL13+ CD8+ T cells / mm2") +
+  ylab("B cells / mm2") +
+  ylim(0,5000)
+
+b <- ggplot(data=data,aes(x=`CD8+ T cell_1`, y=`B cell`)) + 
+  geom_point() +
+  geom_smooth(method="lm") +
+  stat_cor(method = "pearson",
+           aes(label = paste(..r.label.., ..p.label.., sep = "~`,`~")),
+           size = 8, cor.coef.name = "R", label.sep="\n", label.y.npc = "top", label.x.npc = "left") +
+  theme_bw() +
+  theme(text=element_text(size=15)) +
+  xlab("CXCL13+ CD8+ T cells / mm2") +
+  ylab("B cells / mm2") +
+  ylim(0,5000)
+
+c <- ggplot(data=data[data$bcell_patch_score == "B cell Follicles",],aes(x=(`HLA-DR_1`), y=(`B cell`))) + 
+  geom_point() +
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman",
+           aes(label = paste(..r.label.., ..p.label.., sep = "~`,`~")),
+           size = 8, cor.coef.name = "R", label.sep="\n", label.y.npc = "top", label.x.npc = "left") +
+  theme_bw() +
+  theme(text=element_text(size=15)) +
+  xlab("CXCL13+ HLA-DR T cells / mm2") +
   ylab("B cells / mm2")
 
-grid.arrange(a,b, nrow=1)
+d <- ggplot(data=data[data$bcell_patch_score == "B cell Follicles",],aes(x=(`CD8+ T cell_1`+`CD8- T cell_1`), y=(`B cell`))) + 
+  geom_point() +
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman",
+           aes(label = paste(..r.label.., ..p.label.., sep = "~`,`~")),
+           size = 8, cor.coef.name = "R", label.sep="\n", label.y.npc = "top", label.x.npc = "left") +
+  theme_bw() +
+  theme(text=element_text(size=15)) +
+  xlab("CXCL13+  T cells / mm2") +
+  ylab("B cells / mm2")
+
+grid.arrange(b,a, nrow=1)
 ```
 
 ## Correlation Heaptmap for all groups

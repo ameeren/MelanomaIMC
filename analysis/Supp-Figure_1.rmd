@@ -569,6 +569,21 @@ corrplot(cor,
          method = "circle",
          tl.col="black",
          tl.cex = 1.5)
+
+# correlation and p-value
+common_cells <- c("Macrophage", "Neutrophil", "Tumor", "CD8+ T cell")
+
+# mean correlation for celltype specific correlation
+round(mean(cor(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"]),
+     cor(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"]),
+     cor(rna_sum[,"Tumor"], prot_sum[,"Tumor"]),
+     cor(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])),2)
+
+# p-values
+cor.test(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"])
+cor.test(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"])
+cor.test(rna_sum[,"Tumor"], prot_sum[,"Tumor"])
+cor.test(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])
 ```
 
 # Supp Figure 1H

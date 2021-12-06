@@ -317,12 +317,12 @@ ggplot(all_images,aes(x=bcell_patch_score, y = as.numeric(fraction), fill=cellty
 ## Example of CXCL10 Cluster and corresponding Community
 
 ```{r Fig_5E_clusters_and_communities, fig.width=6, fig.height=6, dev=c('pdf')}
-example <- findPatch(sce_prot[,sce_prot$Description == "M3"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
+example <- findPatch(sce_prot[,sce_prot$Description == "P5"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
                     'Description', 
                     distance = 15, 
-                    min_clust_size = 20,
+                    min_clust_size = 10,
                     output_colname = "example_patch")
 
 example <- findMilieu(example, 
@@ -330,7 +330,7 @@ example <- findMilieu(example,
               'Center_X', 'Center_Y', 
               'Description', 
               'example_patch', 
-              distance = 50,
+              distance = 30,
               output_colname = "example_milieu",
               plot = TRUE)
 ```

@@ -28,6 +28,7 @@ library(tidyverse)
 library(dittoSeq)
 library(viridis)
 library(doParallel)
+library(ggpubr)
 ```
 
 ## Load data
@@ -293,13 +294,13 @@ plot(cur_varImp, top = 34)
 
 Finally, we will validate the model using the test data.
 
-```{r model-testing}
+```{r model-testing, dev=("pdf"), fig.width=4.3, fig.height=2.4}
 cur_pred <- predict(rffit, newdata = t(assay(test_sce, "asinh")[rowData(sce)$good_marker,]))
 
 cm <- confusionMatrix(data = cur_pred, reference = factor(test_sce$layer_1_gated))
 cm
 
-data.frame(cm$byClass) %>%
+a <- data.frame(cm$byClass) %>%
   mutate(class = sub("Class: ", "", rownames(cm$byClass))) %>%
   ggplot() + 
   geom_point(aes(1 - Specificity, Sensitivity, 
@@ -308,8 +309,16 @@ data.frame(cm$byClass) %>%
              shape = 21) + 
   scale_fill_manual(values = metadata(sce)$colour_vectors$layer_1) + 
   theme_bw() + 
+  theme(text=element_text(size=12)) +
   ylab("Sensitivity (TPR)") +
   xlab("1 - Specificity (FPR)")
+
+legend <- get_legend(a)
+a + theme(legend.position = "none")
+```
+
+```{r model-testing-legend, dev=("pdf"), fig.width=2.1, fig.height=5}
+plot(legend)
 ```
 
 We will also observe the distribution of classification probabilities per image and class:

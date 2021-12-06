@@ -122,6 +122,7 @@ plotDist(sce, plot_type = "ridges",
 ```
 
 ## Define markers which had poor staining
+By visual inspection, we defined bad markers
 
 ```{r define good markers}
 rowData(sce)$good_marker <- !grepl( "DNA|Histone|Vimentin|Ki67Pt198|CD19|TOX1",rownames(sce))
