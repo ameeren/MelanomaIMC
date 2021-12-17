@@ -103,43 +103,43 @@ read_Data <- function(data,
 
 ```{r load datasets}
 
-SKCM_GSE123139 <- read_Data(data = "/Volumes/datasharing/Daniel/scRNAseq/SKCM_GSE123139_expression.h5",
-                      metadata_file = "/Volumes/datasharing/Daniel/scRNAseq/SKCM_GSE123139_CellMetainfo_table.tsv",
+SKCM_GSE123139 <- read_Data(data = "W:/Daniel/scRNAseq/SKCM_GSE123139_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/SKCM_GSE123139_CellMetainfo_table.tsv",
                       name = "SKCM_GSE123139",
                       sorting = "immune")
 
-SKCM_GSE72056 <- read_Data(data = "/Volumes/datasharing/Daniel/scRNAseq/SKCM_GSE72056_expression.h5",
-                      metadata_file = "/Volumes/datasharing/Daniel/scRNAseq/SKCM_GSE72056_CellMetainfo_table.tsv",
+SKCM_GSE72056 <- read_Data(data = "W:/Daniel/scRNAseq/SKCM_GSE72056_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/SKCM_GSE72056_CellMetainfo_table.tsv",
                       name = "SKCM_GSE72056",
                       sorting = "all")
 
-SKCM_GSE115978 <- read_Data(data = "/Volumes/datasharing/Daniel/scRNAseq/SKCM_GSE115978_aPD1_expression.h5",
-                      metadata_file = "/Volumes/datasharing/Daniel/scRNAseq/SKCM_GSE115978_aPD1_CellMetainfo_table.tsv",
+SKCM_GSE115978 <- read_Data(data = "W:/Daniel/scRNAseq/SKCM_GSE115978_aPD1_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/SKCM_GSE115978_aPD1_CellMetainfo_table.tsv",
                       name = "SKCM_GSE115978",
                       sorting = "all")
 
-SKCM_GSE120575 <- read_Data(data = "/Volumes/datasharing/Daniel/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_expression.h5",
-                      metadata_file = "/Volumes/datasharing/Daniel/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_CellMetainfo_table.tsv",
+SKCM_GSE120575 <- read_Data(data = "W:/Daniel/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_CellMetainfo_table.tsv",
                       name = "SKCM_GSE120575",
                       sorting = "immune")
 
-HNSC_GSE139324 <- read_Data(data = "/Volumes/datasharing/Daniel/scRNAseq/HNSC_GSE139324_expression.h5",
-                      metadata_file = "/Volumes/datasharing/Daniel/scRNAseq/HNSC_GSE139324_CellMetainfo_table.tsv",
+HNSC_GSE139324 <- read_Data(data = "W:/Daniel/scRNAseq/HNSC_GSE139324_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/HNSC_GSE139324_CellMetainfo_table.tsv",
                       name = "HNSC_GSE139324",
                       sorting = "immune")
 
-NSCLC_GSE131907 <- read_Data(data = "/Volumes/datasharing/Daniel/scRNAseq/NSCLC_GSE131907_expression.h5",
-                      metadata_file = "/Volumes/datasharing/Daniel/scRNAseq/NSCLC_GSE131907_CellMetainfo_table.tsv",
+NSCLC_GSE131907 <- read_Data(data = "W:/Daniel/scRNAseq/NSCLC_GSE131907_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/NSCLC_GSE131907_CellMetainfo_table.tsv",
                       name = "NSCLC_GSE131907",
                       sorting = "all")
 
-PAAD_CRA001160 <- read_Data(data = "/Volumes/datasharing/Daniel/scRNAseq/PAAD_CRA001160_expression.h5",
-                      metadata_file = "/Volumes/datasharing/Daniel/scRNAseq/PAAD_CRA001160_CellMetainfo_table.tsv",
+PAAD_CRA001160 <- read_Data(data = "W:/Daniel/scRNAseq/PAAD_CRA001160_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/PAAD_CRA001160_CellMetainfo_table.tsv",
                       name = "PAAD_CRA001160",
                       sorting = "all")
 
-UVM_GSE139829 <- read_Data(data = "/Volumes/datasharing/Daniel/scRNAseq/UVM_GSE139829_expression.h5",
-                      metadata_file = "/Volumes/datasharing/Daniel/scRNAseq/UVM_GSE139829_CellMetainfo_table.tsv",
+UVM_GSE139829 <- read_Data(data = "W:/Daniel/scRNAseq/UVM_GSE139829_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/UVM_GSE139829_CellMetainfo_table.tsv",
                       name = "UVM_GSE139829",
                       sorting = "all")
 
@@ -176,7 +176,7 @@ sc_dat %>%
 ## IMC data
 
 ```{r}
-sce_rna <- readRDS(file = "/Volumes/sh_thoch/Git/MelanomaIMC/data/data_for_analysis/sce_RNA.rds")
+sce_rna <- readRDS(file = "D:/Data/Melanoma_HotCold_paper/data_for_analysis/sce_RNA.rds")
 
 cur_dat <- as_tibble(colData(sce_rna))
 
@@ -288,11 +288,11 @@ ggplot()+
 ```
 
 ## check if sorting has effect on the fractions
-some of the scRNAseq datasets had been sorted before sequencing. this means that potentially, the fraction of expression is observed amongst immune cells is higher as it would be if there we additional chemokine expressing tumor cells detected. indeed we do see a slight trend for CCL19, CCL2, CXCL10 and CXCL12 to have higher fractions. however, as we will see in the comparison to IMC below, these are 
+some of the scRNAseq datasets had been sorted before sequencing. this means that potentially, the fraction of expression is observed amongst immune cells is higher as it would be if there we additional chemokine expressing tumor cells detected. indeed we do see a slight trend for CCL19, CCL2, CXCL10 and CXCL12 to have higher fractions. however, as we will see in the comparison to IMC below, these are not systematically different.
 
 ```{r fig.height=10, fig.width=10}
 plot_dat <- sc_dat %>%
-  filter(celltype %in% celltypes)
+  filter(celltype %in% celltypes, dataset %in% comp_dataset)
 
 ggplot()+
   geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
@@ -346,8 +346,8 @@ library(ggpubr)
 #pdf(file = "D:/Data/Melanoma_HotCold_paper/scRNAseq chemokines vs IMC.pdf", width = 12, height = 10)
 ggplot()+
   geom_boxplot(data = all_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
-  geom_point(data = all_dat[which(all_dat$dataset != "imc"),],aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
-  geom_point(data = all_dat[which(all_dat$dataset == "imc"),],aes(x=celltype,y=frac_of_chemokine_pos),col="red",shape=18, size=5)+
+  geom_point(data = all_dat[which(all_dat$dataset != "IMC"),],aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
+  geom_point(data = all_dat[which(all_dat$datatype == "IMC"),],aes(x=celltype,y=frac_of_chemokine_pos),col="red",shape=18, size=5)+
   geom_text(data = sig_dat,aes(x=celltype,y=0.75,label = p_grubbs), color= "red", angle=90) +
   facet_wrap(.~chemokine)+
   theme_bw()+
