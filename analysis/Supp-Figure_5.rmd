@@ -44,318 +44,101 @@ library(ggrepel)
 library(rstatix)
 ```
 
-## Read the data
+# Supp Fig 5A
 
-```{r load data}
-sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
-sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+```{r Supp_Fig_5A_gatedCells_Protein, fig.width=7.5, fig.height=4.8, dev=("png")}
+# sample 300 cells per cell type
+sce_prot_sub <- sce_prot[,sce_prot$layer_1_gated != "unlabelled"]
 
-# remove LN margin samples and control samples
-sce_rna$PunchLocation <- paste(sce_rna$MM_location, sce_rna$Location, sep = "_")
-sce_prot$PunchLocation <- paste(sce_prot$MM_location, sce_prot$Location, sep = "_")
-sce_rna <- sce_rna[,sce_rna$PunchLocation != "LN_M" & sce_rna$Location != "CTRL"]
-sce_prot <- sce_prot[,sce_prot$PunchLocation != "LN_M" & sce_prot$Location != "CTRL"]
+set.seed(2345)
+# sub-sample 500 cells
+sample <- data.frame(colData(sce_prot_sub)) %>%
+  group_by(celltype) %>%
+  slice_sample(n=300)
 
-# image
-image_mat_prot <- read.csv("data/data_for_analysis/protein/Image.csv")
+# unique cellIDs
+sample <- sample[sample$cellID %in% unique(sample$cellID),]
 
-# surv_dat
-dat_survival_prot <- fread(file = "data/data_for_analysis/protein/clinical_data_protein.csv")
+cur_sce <- sce_prot[,sce_prot$cellID %in% sample$cellID]
+
+good_markers <- rownames(sce_prot)[rowData(sce_prot)$good_marker]
+
+colors <- metadata(sce_prot)$colour_vector$celltype
+colors <- colors[c("B cell", "BnT cell", "CD4+ T cell", "CD8+ T cell", "FOXP3+ T cell", "Macrophage", "Neutrophil", "pDC", "Stroma", "Tumor", "unknown")]
+
+dittoHeatmap(cur_sce,
+             genes = good_markers, 
+             assay = "asinh",
+            annot.by = c("celltype"),
+            show_colnames = FALSE,
+            cluster_rows = TRUE,
+            annot.colors = colors,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101),
+            use_raster=TRUE)
 ```
 
-## Prepare image size data
+# Supp Figure 5B
 
-```{r}
-im_size <- as.data.frame(cbind(image_mat_prot$Metadata_Description, (image_mat_prot$Height_cellmask * image_mat_prot$Width_cellmask)/1000000))
-names(im_size) <- c("Description", "mm2")
-im_size$mm2 <- as.numeric(im_size$mm2)
-im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2 <- mean(im_size[im_size$Description %in% c("G1", "G1 - split"), ]$mm2)
-im_size <- im_size[im_size != "G1 - split",]
+```{r Supp_Fig_5B_gatedCells_RNA, fig.width=8, fig.height=4.8, dev=("png")}
+set.seed(2345)
+
+sce_rna_sub <- sce_rna[,sce_rna$layer_1_gated != "unlabelled"]
+
+# remove unkown - not enough cells
+sce_rna_sub <- sce_rna_sub[,sce_rna_sub$celltype != "unknown"]
+
+# sub-sample 500 cells
+sample <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(celltype) %>%
+  slice_sample(n=300)
+
+# unique cellIDs
+sample <- sample[sample$cellID %in% unique(sample$cellID),]
+
+cur_sce <- sce_rna[,sce_rna$cellID %in% unique(sample$cellID)]
+
+good_markers <- rownames(sce_rna)[rowData(sce_rna)$good_marker]
+colors <- metadata(sce_rna)$colour_vector$celltype[]
+colors <- colors[c("CD38", "CD8- T cell", "CD8+ T cell", "HLA-DR", "Macrophage", "Neutrophil", "Stroma", "Tumor", "Vasculature")]
+
+dittoHeatmap(cur_sce, genes = good_markers, assay = "asinh",
+            annot.by = c("celltype"),
+            show_colnames = FALSE,
+            cluster_rows = TRUE,
+            annot.colors = colors,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101),
+            use_raster=TRUE)
 ```
 
-# Supp Figure 5A/5B
+# Supp Figure 5C and 5D
+These plots are generated after the randomForest classification. For this, see files XY...
 
-## Diffusion Map for CXCL13 Producing Cells
+# Supp Figure 5E
 
-```{r Fig_5A5B_DiffusionMap_producing_cells, fig.height=7, fig.width=11, dev=c('pdf')}
-# loop through all patches 
-for(i in c("cxcl13only_clust")){
-  # subset sce object to only contain community cells
-  sce_sub <- sce_rna[,colData(sce_rna)[,i] > 0]
-
-  assay(sce_sub, "scaled_asinh") <- t(scale(t(assay(sce_sub, "asinh"))))
-  
-  # create UAMP
-  set.seed(12345)
-  sce_sub <- runDiffusionMap(sce_sub, 
-                             exprs_values = "asinh", 
-                             subset_row = rowData(sce_sub)$good_marker,
-                             ncomponents = 2)
-  
-  # add patch size to sce
-  cur_df <- data.frame(colData(sce_sub))
-
-  clust_size <- cur_df %>%
-    group_by(cur_df[,i]) %>%
-    summarise(clust_size = n())
-   
-  names(clust_size)[1] <- i 
-  
-  cur_df <- left_join(cur_df, clust_size)
-  sce_sub$clust_size = as.numeric(log10(cur_df$clust_size))
-  
-   # col by clust size
-  a <- dittoDimPlot(sce_sub,
-                    reduction.use = "DiffusionMap",
-                    var = "clust_size", 
-                    size = 1,
-                    legend.show = TRUE,
-                    opacity = 1,
-                    max.color = "red", min.color = "blue",
-                    main = NULL,
-                    legend.title = "Patch Size (log10)") +
-    xlim(quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.05)[[1]],
-         quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.95)[[1]]) +
-    ylim(quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.05)[[1]],
-         quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.95)[[1]]) +
-    theme_bw() +
-    theme(text = element_text(size=18))
-
-  # col by celltype
-  b <- dittoDimPlot(sce_sub, 
-             reduction.use = "DiffusionMap", 
-             var = "celltype", 
-             opacity = 1,
-             color.panel = metadata(sce_sub)$colour_vector$celltype,
-             size = 1,
-             legend.show = TRUE,
-                    main = NULL,
-             legend.title = "Cell Type") +
-    theme_bw() +
-    xlim(quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.05)[[1]],
-         quantile(reducedDim(sce_sub, "DiffusionMap")[,1], 0.95)[[1]]) +
-    ylim(quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.05)[[1]],
-         quantile(reducedDim(sce_sub, "DiffusionMap")[,2], 0.95)[[1]]) +
-    theme(text = element_text(size=18)) + 
-    guides(colour = guide_legend(override.aes = list(alpha = 1, size=3))) 
-  
-  leg_a <- cowplot::get_legend(a)
-  leg_b <- cowplot::get_legend(b)
-
-}
-
-sce_sub <- sce_rna[,colData(sce_rna)[,"cxcl13only_clust"] > 0]
-
-# add patch size to sce
-cur_df <- data.frame(colData(sce_sub))
-
-clust_size <- cur_df %>%
-  group_by(cxcl13only_clust) %>%
-  summarise(clust_size = n())
-   
-names(clust_size)[1] <- "cxcl13only_clust"
-  
-cur_df <- left_join(cur_df, clust_size)
-
-sce_sub$clust_size = as.numeric(log10(cur_df$clust_size))
-
-# add clust size correlation plot 
-clust_size <- data.frame(colData(sce_sub)) %>%
-  distinct(Description, cxcl13only_clust, .keep_all = T) %>%
-  group_by(Description) %>%
-  summarise(maxClustSize = max(clust_size))
-
-Bcell_patch <- data.frame(colData(sce_prot)) %>%
-  group_by(Description, bcell_patch) %>%
-  summarise(n=n()) %>%
-  mutate(n = ifelse(bcell_patch == 0, 0, n)) %>%
-  mutate(maxPatchSize = log10(max(n+1))) %>%
-  distinct(Description, .keep_all = T) %>% 
-  select(Description, maxPatchSize)
-
-Bcell_patch <- left_join(Bcell_patch, clust_size)
-Bcell_patch[is.na(Bcell_patch$maxClustSize), ]$maxClustSize <- 0
-
-Bcell <- data.frame(colData(sce_prot)) %>%
-  group_by(Description, celltype) %>%
-  summarise(n=n()) %>%
-  mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0) %>%
-  select(Description, `B cell`)
-
-Bcell <- left_join(Bcell, clust_size)
-Bcell[is.na(Bcell$maxClustSize), ]$maxClustSize <- 0
-
-# only when not 0 - CHANGE?
-c <- ggplot(Bcell_patch[rowSums(Bcell_patch[,-1]) > 0,], aes(x = maxClustSize, y = maxPatchSize, label=Description)) + 
-  geom_point() +
-  geom_smooth(method="lm") + 
-  stat_cor(method = "pearson",
-           aes(label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
-           size = 6, cor.coef.name = "R", label.sep="\n", label.y = 0.5, label.x = 2) + 
-  ylab("Max Size of B cell\nPatches (log10)") +
-  xlab("Max Size of CXCL13 Patches (log10)") +
-  theme_bw() + 
-  theme(text = element_text(size=18))
-
-d <- ggplot(Bcell, aes(x = maxClustSize, y = `B cell`, label=Description)) + 
-  geom_point() +
-  geom_smooth(method="lm") + 
-  stat_cor(method = "pearson",
-           aes(label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
-           size = 6, cor.coef.name = "R", label.sep="\n", label.y = 0.05, label.x = 2) + 
-  ylab("B Cell Fraction") +
-  xlab("Max Size of CXCL13 Patches (log10)") +
-  theme_bw() + 
-  theme(text = element_text(size=18))
-
-plot_grid(grid.arrange(a + theme(legend.position = "none"), 
-                       b + theme(legend.position = "none"),
-                       ncol = 2),
-          grid.arrange(d,c, ncol = 2),
-          ncol = 1, 
-          rel_heights = c(0.65,0.35))
-```
-
-## Legend for Plot
-
-```{r Supp_Fig_5A5B_Legend, dev=c('pdf'), fig.height=3, fig.width=3}
-grid.arrange(leg_a)
-grid.arrange(leg_b)
-```
-
-# Supp Figure 5C
-
-## Response / Survival Analysis
-
-```{r}
-# select blocks in ICI subgroup that are treatment-naive and non-adjuvant
-blocks <- unique(sce_prot[,sce_prot$treatment_status_before_surgery == "naive" & 
-                            sce_prot$treatment_group_after_surgery == "ICI" &
-                            sce_prot$Adjuvant == "n"]$BlockID)
-
-# subset survival data (only data points that contain info for 3m response)
-dat_survival_prot_sub <- dat_survival_prot[dat_survival_prot$BlockID %in% blocks & 
-                                             is.na(dat_survival_prot$Status_at_3m) == FALSE, ]
-
-# remove LN margin samples
-dat_survival_prot_sub <- dat_survival_prot_sub %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M")
-
-# group sizes
-dat_survival_prot_sub %>%
-  distinct(PatientID, .keep_all = T) %>%
-  group_by(Status_at_3m) %>%
-  summarise(n=n())
-```
-
-## TCF7/PD1 fraction in responder vs. non responder
-
-```{r, Supp_Fig_5C_responder_nonresponder_tcf7pd1, fig.height=7.3, fig.width=11.2, dev=("pdf")}
-cur_dat <- data.frame(colData(sce_prot[,sce_prot$BlockID %in% unique(dat_survival_prot_sub$BlockID)])) %>%
-  mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
-  filter(mmLocationPunch != "LN_M") %>% # remove LN margin images 
-  #filter(celltype != "Tumor") %>%
-  mutate(TCF7_PD1 = paste(TCF7, PD1, sep = "_")) %>%
-  group_by(PatientID,BlockID, Description, bcell_patch_score, celltype, TCF7_PD1) %>%
-  summarise(n=n()) %>% 
-  reshape2::dcast(PatientID + BlockID + Description + bcell_patch_score + TCF7_PD1 ~ celltype, value.var = "n", fill=0) %>%
-  reshape2::melt(id.vars = c("PatientID","BlockID", "Description", "bcell_patch_score", "TCF7_PD1"), 
-                 variable.name = "celltype", value.name = "n") %>%
-  reshape2::dcast(PatientID + BlockID + Description + bcell_patch_score + celltype ~ TCF7_PD1, value.var = "n", fill=0) %>%
-  reshape2::melt(id.vars = c("PatientID","BlockID", "Description", "bcell_patch_score", "celltype"), 
-                 variable.name = "TCF7_PD1", value.name = "n") %>%
-  group_by(Description, celltype) %>%
-  mutate(fraction = n/sum(n)) %>%
-  mutate(total_cells = sum(n)) %>%
-  ungroup() %>%
-  filter(celltype %in% c("CD8+ T cell", "CD4+ T cell")) 
-
-cur_dat <- left_join(cur_dat, dat_survival_prot_sub[,c("BlockID", "Status_at_3m", "Primary_melanoma_type")]) %>%
-  distinct(Description, celltype, TCF7_PD1, .keep_all = T)
-
-cur_dat <- left_join(cur_dat, im_size[im_size$Description %in% unique(cur_dat$Description),])
-cur_dat$n_per_mm2 <- cur_dat$n / cur_dat$mm2
-cur_dat$celltype2 <- paste(cur_dat$celltype, cur_dat$TCF7_PD1, sep = ", ")
-
-# per patient 
-cur_dat <- cur_dat %>%
-  group_by(PatientID, celltype2, TCF7_PD1, Status_at_3m) %>%
-  summarise(n_per_mm2 = mean(n_per_mm2))
-  
-stat.test <- cur_dat %>%
-  filter(TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-", "TCF7-_PD1+")) %>%
-  mutate(log10_n_per_mm2 = log10(n_per_mm2 + 1)) %>%
-  group_by(celltype2) %>%
-  wilcox_test(data = ., log10_n_per_mm2 ~ Status_at_3m) %>%
-  adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1))
-
-# check adjusted p-values with another function
-p.adjust(stat.test$p, method = "BH")
-
-info <- cur_dat[,c("celltype2", "TCF7_PD1")] %>%
-  distinct(celltype2, .keep_all = T)
-
-# filter relevant tests
-stat.test <- left_join(stat.test, info) %>%
-  filter(TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-", "TCF7-_PD1+"))
-
-stat.test$p_and_p.adj <- paste(paste("p = ", round(stat.test$p,2), sep = ""), paste("p.adj = ", round(stat.test$p.adj,2), sep = ""), sep = "\n")
-
-ggplot(cur_dat[cur_dat$TCF7_PD1 %in% c("TCF7+_PD1+", "TCF7+_PD1-", "TCF7-_PD1+"),], aes(x=Status_at_3m, y=log10(n_per_mm2+1))) + 
-  geom_boxplot(alpha=.4, outlier.shape = NA, aes(fill=Status_at_3m)) +
-  geom_beeswarm(size=3) +
-  #geom_label_repel(aes(label=PatientID), max.overlaps = 10, size = 5, alpha=.5, force_pull = 2, force = 0.5) + 
-  stat_pvalue_manual(stat.test, label = "p_and_p.adj", size=5, label.x.npc = "left", y.position = -0.9, bracket.size = 0) +
-  theme_bw() +
-  theme(text = element_text(size=18)) +
-  ylab("Cells per mm2 (log10)") +
-  scale_fill_manual(values=c("blue", "orange")) + 
-  xlab("") +
-  guides(fill=guide_legend(title="Response 3m", override.aes = c(lwd=0.5, size=1))) +
-  facet_wrap(~celltype2, scales = "free", ncol=3, nrow=2)
-```
-
-# Supp Figure 5D
-
-## Chemokine Correlation with Tcf7+CD8+
-
-```{r Supp_Fig_5D_chemokines_tcfpd1_correlation, fig.height=6.2, fig.width=10.1, dev=("pdf")}
-targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
-
-# top abundant chemokines
-cur_rna <- data.frame(colData(sce_rna)) %>%
-  filter(Location != "CTRL")
+```{r Supp_Fig_5E_cross_correlation, fig.width=9, fig.height=9, dev=c('pdf')}
+# rna data
+cur_rna <- data.frame(colData(sce_rna))
 
 # protein data
-cur_prot <- data.frame(colData(sce_prot)) %>%
-  filter(Location != "CTRL")
+cur_prot <- data.frame(colData(sce_prot))
 
-# sum
+# rna data set - cell type fractions
 rna_sum <- cur_rna %>%
-  group_by(Description) %>%
-  mutate(total_cells=n()) %>%
-  ungroup() %>%
-  group_by(Description, total_cells, expressor) %>%
-  summarise(n=n()) %>%
-  mutate(fraction=n/total_cells) %>%
-  reshape2::dcast(Description ~ expressor, value.var = "fraction", fill = 0) 
-
-# only keep highly abundant chemokines
-rna_sum <- rna_sum[,c("Description", targets)]
-
-prot_sum <- cur_prot %>%
-  mutate(celltype2 = ifelse(celltype %in% c("CD4+ T cell", "CD8+ T cell"), 
-                            paste(paste(celltype, TCF7, sep="_"), PD1, sep = "_"), celltype)) %>%
-  group_by(Description, celltype2) %>%
+  group_by(Description, celltype) %>%
   summarise(n = n()) %>%
   group_by(Description) %>%
   mutate(fraction = n/sum(n)) %>%
-  #filter(!celltype2 %in% c("CD4+ T cell_TCF7+_PD1+", "CD4+ T cell_TCF7-_PD1+", "CD8+ T cell_TCF7+_PD1+")) %>%
-  reshape2::dcast(Description ~ celltype2, value.var = "fraction", fill = 0) %>%
-  select(Description,contains(c("CD8+ T cell", "CD4+ T cell")))
+  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
+
+# protein data set - cell type fractions
+prot_sum <- cur_prot %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  group_by(Description) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
 
 # equal images
 all(rna_sum$Description == prot_sum$Description)
@@ -363,58 +146,28 @@ all(rna_sum$Description == prot_sum$Description)
 # correlation
 cor <- cor(rna_sum[,-1], prot_sum[,-1], method = "pearson")
 
-ha <- t(str_split_fixed(colnames(cor), "_", n=3))
+# reorder cor matrix
+cor <- cor[c("CD38", "HLA-DR", "Stroma", "Vasculature", "unknown", "CD8- T cell", "CD8+ T cell", "Macrophage", "Neutrophil", "Tumor"),
+           c("B cell", "BnT cell", "pDC", "Stroma", "unknown", "FOXP3+ T cell", "CD4+ T cell", "CD8+ T cell", "Macrophage", "Neutrophil", "Tumor") ]
 
-dat_sum <- cur_prot %>%
-  filter(celltype %in% c("CD4+ T cell", "CD8+ T cell")) %>%
-  mutate(celltype2 = ifelse(celltype %in% c("CD4+ T cell", "CD8+ T cell"), 
-                            paste(paste(celltype, TCF7, sep="_"), PD1, sep = "_"), celltype)) %>%
-  group_by(celltype2) %>%
-  summarise(n = n())
+corrplot(cor, 
+         addCoef.col = "black",
+         method = "circle",
+         tl.col="black",
+         tl.cex = 1.5)
 
+# correlation and p-value
+common_cells <- c("Macrophage", "Neutrophil", "Tumor", "CD8+ T cell")
 
-ha1 <- HeatmapAnnotation("TCF7_PD1" = anno_text(paste(ha[2,], ha[3,], sep = " ")),
-                         "Cell Type" = ha[1,],
-                         "Number of Cells" = anno_barplot(dat_sum$n,
-                                                         height = unit(2,"cm"),
-                                                         axis_param = list(gp = gpar(fontsize=14))),
-                        "Numbers" = anno_text(dat_sum$n, 
-                                              which = "column", 
-                                              rot = 0,
-                                              height = unit(0.5,"cm"),
-                                              just = "center", 
-                                              location = 0.5),
-                         col = list("Cell Type" = metadata(sce_prot)$colour_vectors$celltype[c("CD4+ T cell", "CD8+ T cell")]),
-                         show_legend = FALSE)
+# mean correlation for celltype specific correlation
+round(mean(cor(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"]),
+     cor(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"]),
+     cor(rna_sum[,"Tumor"], prot_sum[,"Tumor"]),
+     cor(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])),2)
 
-h <- Heatmap(cor,
-        name = "Pearson\nCorrelation",
-        cluster_rows = FALSE,
-        cluster_columns = FALSE,
-        show_column_names = FALSE,
-        show_row_names = TRUE,
-        cell_fun = function(j, i, x, y, width, height, fill) {
-          grid.text(sprintf("%.2f", cor[i, j]), x, y, gp = gpar(fontsize = 15, col = "black"))
-          },
-        col = colorRamp2(c(-1, 0, 1), c("red", "white", "blue")),
-        row_title = "Expressor",
-        row_names_side = "left",
-        top_annotation = ha1,
-        width = unit(18, "cm"),
-        height = unit(10, "cm"),
-        show_heatmap_legend = FALSE)
-
-# draw heatmap
-draw(h)
+# p-values
+cor.test(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"])
+cor.test(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"])
+cor.test(rna_sum[,"Tumor"], prot_sum[,"Tumor"])
+cor.test(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])
 ```
-
-## Legend heatmap
-
-```{r Supp_Fig_5D_legend_heatmap, dev="pdf", fig.height=3, fig.width=2}
-lgd1 = color_mapping_legend(h@matrix_color_mapping, plot = FALSE, legend_direction = "vertical", legend_width=unit(3,"cm"), at = c(-1:1))
-lgd2 = color_mapping_legend(ha1@anno_list$`Cell Type`@color_mapping, plot = FALSE, legend_direction = "vertical", nrow = 4)
-
-lgd_list = packLegend(lgd1,lgd2,direction = "vertical", gap = unit(1,"cm"))
-draw(lgd_list)
-```
-

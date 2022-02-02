@@ -1,11 +1,16 @@
 ---
-title: "Supp-Figure_11"
-author: "toobiwankenobi"
+title: "Supplementary Figure 11"
+author: "Tobias Hoch and Daniel Schulz"
 date: "2021-11-18"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
 ---
+
+# Introduction
+This script generates plots for Supplementary Figure 11.
+
+# Preparations
 
 ## Load libraries
 
@@ -21,7 +26,7 @@ library(ggplot2)
 library(ggrastr)
 ```
 
-## Introduction
+## Load Data
 
 ```{r}
 ## Read the data
@@ -29,7 +34,9 @@ sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
 ```
 
-```{r Supp_Fig_11_noBcellPatch_, fig.width=6, fig.height=6, dev=c('pdf')}
+# Supp Fig 11A
+
+```{r Supp_Fig_11A_noBcellPatch, fig.width=6, fig.height=6, dev=c('pdf')}
 example <- findPatch(sce_prot[,sce_prot$Description == "G3"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
@@ -48,7 +55,9 @@ example <- findMilieu(example,
               plot = TRUE)
 ```
 
-```{r Supp_Fig_11_smallBcellPatch_, fig.width=6, fig.height=6, dev=c('pdf')}
+# Supp Fig 11B
+
+```{r Supp_Fig_11B_smallBcellPatch, fig.width=6, fig.height=6, dev=c('pdf')}
 example <- findPatch(sce_prot[,sce_prot$Description == "F5"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
@@ -67,7 +76,9 @@ example <- findMilieu(example,
               plot = TRUE)
 ```
 
-```{r Supp_Fig_11_BcellFollicle_, fig.width=6, fig.height=6, dev=c('pdf')}
+# Supp Fig 11C
+
+```{r Supp_Fig_11C_BcellFollicle, fig.width=6, fig.height=6, dev=c('pdf')}
 example <- findPatch(sce_prot[,sce_prot$Description == "B6"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 

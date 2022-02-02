@@ -449,20 +449,27 @@ median_per_gene <- cells_panel_12plex %>%
 rna_seq <- data.frame(median_per_gene$gene)
 colnames(rna_seq) <- "gene"
 
-# Normalized Expression Data from Human Protein Atlas 
-rna_seq$expression_RNAseq <- c(145.3, 89.2, 217.1, 21.3, 74.9, 1.2, 54.7, 87.9, 83.6, 72.4, 23.9, 62.9)
+# load scRNA-seq data (downloaded from HPA, https://www.proteinatlas.org/about/download, Human Protein Atlas version 21.0)
+HPA_data <- read.delim("data/data_for_analysis/HPA_rna_celline.tsv")
 
-# merge
-sum <- left_join(median_per_gene, rna_seq)
+# HeLa cell line with genes-of-interest
+HPA_data_sub <- HPA_data %>%
+  filter(Cell.line == "HeLa") %>%
+  filter(Gene.name %in% unique(cells_panel_12plex$gene))
+
+colnames(HPA_data_sub) <- c("geneID", "gene", "cellline", "TPM", "pTPM", "nTPM")
+
+# merge 
+sum <- left_join(median_per_gene, HPA_data_sub)
 
 # plot 
-ggplot(sum, aes(x=log2(expression_RNAseq), y=expression_RNAScope, label=gene)) + 
+ggplot(sum, aes(x=log2(nTPM), y=expression_RNAScope, label=gene)) + 
   geom_label_repel(size=7, fill="deepskyblue1", alpha=1,
                    min.segment.length = unit(0, 'lines'),
                    force_pull = 0) +
   geom_point(size=3) +
   geom_smooth(method = "lm") +
-  xlab("Normalized Expression RNA-Seq [log2]") +
+  xlab("Normalized Expression RNA-Seq nTPM [log2]") +
   ylab("Median Expression RNAScope [asinh]") + 
   stat_cor(method = "pearson",
            aes(label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
@@ -475,7 +482,7 @@ ggplot(sum, aes(x=log2(expression_RNAseq), y=expression_RNAScope, label=gene)) +
 
 ```{r}
 # correlation of the two technologies
-cor(sum$expression_RNAScope, sum$expression_RNAseq, method = c("spearman"))
+cor(sum_sub$expression_RNAScope, log2(sum_sub$nTPM), method = c("pearson"))
 ```
 
 # Preparations 3
@@ -490,101 +497,13 @@ sce_prot <- readRDS("data/data_for_analysis/sce_protein.rds")
 dat <- read_csv("data/data_for_analysis/protein/clinical_data_protein.csv")
 ```
 
-# Supp Figure 1F 
 
-## Clinical features of the cohort 
-
-Note: as the cohort is very diverse, we are using the BlockID as the minimal unit since clinical parameters are described per BlockID. However, sometimes we do have patients of which we have multiple FFPE blocks (BlockIDs). Nonetheless, clinical parameters are not given per patient but per patient FFPE block and are therefore considered the minimial unit.
-
-## Number of Samples
-
-```{r Supp_Fig_1F_number_of_samples, fig.height=6, fig.width=17, dev=c('pdf')}
-dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
-
-# remove control samples
-dat <- dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location != "CTRL"]$BlockID),]
-
-p1 <- unique(dat[,c("BlockID","MM_location")]) %>%
-  ggplot()+
-  geom_bar(aes(y=MM_location),stat ="count") +
-  xlab("Biopsy Blocks per Location") +
-  ylab("Metastasis Location") +
-  theme_bw()+
-  theme(text = element_text(size=16))
-  
-p2 <- dat %>%
-  ggplot()+
-  geom_bar(aes(x=BlockID, fill=(MM_location)),stat="count")+
-  theme_bw()+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x=element_blank(),
-        text = element_text(size=16)) + 
-  ylab("Number of Samples") +
-  xlab("Biopsy Blocks") +
-  scale_y_continuous(limits = c(0,4), expand = c(0, 0)) +
-  guides(fill=guide_legend(title="Metasis Location"))
-
-plot_grid(p1,p2,rel_widths = c(1.25,3))  
-```
 
 # Supp Figure 1G
 
 ## Correlation across the two data sets
 
-```{r Supp_Fig_1G_pearson_correlation__prot_data, fig.width=9, fig.height=9, dev=c('pdf')}
-# top abundant chemokines
-cur_rna <- data.frame(colData(sce_rna))
 
-# protein data
-cur_prot <- data.frame(colData(sce_prot))
-
-# rna data set - cell type fractions
-rna_sum <- cur_rna %>%
-  group_by(Description, celltype) %>%
-  summarise(n = n()) %>%
-  group_by(Description) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
-
-# protein data set - cell type fractions
-prot_sum <- cur_prot %>%
-  group_by(Description, celltype) %>%
-  summarise(n = n()) %>%
-  group_by(Description) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
-
-# equal images
-all(rna_sum$Description == prot_sum$Description)
-
-# correlation
-cor <- cor(rna_sum[,-1], prot_sum[,-1], method = "pearson")
-
-# reorder cor matrix
-cor <- cor[c("CD38", "HLA-DR", "Stroma", "Vasculature", "unknown", "CD8- T cell", "CD8+ T cell", "Macrophage", "Neutrophil", "Tumor"),
-           c("B cell", "BnT cell", "pDC", "Stroma", "unknown", "FOXP3+ T cell", "CD4+ T cell", "CD8+ T cell", "Macrophage", "Neutrophil", "Tumor") ]
-
-corrplot(cor, 
-         addCoef.col = "black",
-         method = "circle",
-         tl.col="black",
-         tl.cex = 1.5)
-
-# correlation and p-value
-common_cells <- c("Macrophage", "Neutrophil", "Tumor", "CD8+ T cell")
-
-# mean correlation for celltype specific correlation
-round(mean(cor(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"]),
-     cor(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"]),
-     cor(rna_sum[,"Tumor"], prot_sum[,"Tumor"]),
-     cor(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])),2)
-
-# p-values
-cor.test(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"])
-cor.test(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"])
-cor.test(rna_sum[,"Tumor"], prot_sum[,"Tumor"])
-cor.test(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])
-```
 
 # Supp Figure 1H
 

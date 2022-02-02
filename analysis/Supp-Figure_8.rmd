@@ -1,0 +1,333 @@
+---
+title: "Supplementary Figure 8"
+author: "Tobias Hoch and Daniel Schulz"
+date: "2021-12-10"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+This script generates plots for Supplementary Figure 8.
+
+# Preparations
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
+```
+
+## Load libraries
+
+```{r load libraries}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(dplyr)
+library(ggplot2)
+library(ggbeeswarm)
+library(tidyr)
+library(scater)
+library(dittoSeq)
+library(gridExtra)
+library(cowplot)
+library(data.table)
+library(ggpmisc)
+library(ggpubr)
+library(ComplexHeatmap)
+library(rstatix)
+library(dendextend)
+```
+
+## Load Data
+
+```{r}
+# SCE object
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+
+# meta data
+dat_relation = fread(file = "data/data_for_analysis/protein/Object relationships.csv",stringsAsFactors = FALSE)
+dat_relation_rna = fread(file = "data/data_for_analysis/RNA/Object relationships.csv",stringsAsFactors = FALSE)
+
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+```
+
+## Prepare Relation Table
+
+```{r}
+# prepare data 
+dat_relation$cellID_first <- paste("RNA", paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = "_"), sep = "_")
+dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = "_"), sep = "_")
+```
+
+# Supp Figure 8A
+
+## Expressor in Tcell groups
+
+```{r Supp_Fig_8A_expressor_cd8_grouping, fig.width=14, fig.height=5, dev=("pdf")}
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
+frac <- data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(Description, Tcell_density_score_image, expressor) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(expressor %in% targets) %>%
+  reshape2::dcast(Description + Tcell_density_score_image ~ expressor, value.var = "fraction", fill = 0) %>%
+  reshape2::melt(id.vars = c("Description", "Tcell_density_score_image"), variable.name = "expressor", value.name = "fraction")
+
+stat.test <- frac %>%
+  group_by(expressor) %>%
+  kruskal_test(data = ., fraction ~ Tcell_density_score_image) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  arrange(p.adj) %>%
+  mutate(group1 = expressor, group2 = expressor) %>%
+  add_x_position()
+
+frac$expressor <- factor(frac$expressor, levels = stat.test$expressor)
+
+ggplot(frac, aes(x=expressor, y = fraction)) + 
+  geom_boxplot(alpha=.75, outlier.size = 0.5, aes(fill = Tcell_density_score_image)) +
+  stat_pvalue_manual(x = "group1", y.position = 0.055, stat.test, size = 4) +
+  scale_color_discrete(guide = FALSE) +
+  theme_bw() +
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+  guides(fill=guide_legend(title="T cell Score")) +
+  xlab("") + 
+  ylab("Fractions")  +
+  coord_cartesian(ylim = c(0,0.06))
+```
+
+# Supp Figure 8A
+
+## Grouping from Figure 1E
+
+```{r Supp_Fig_8B_expressor_dend_cluster, fig.width=14, fig.height=5, dev=("pdf")}
+# Create table with celltype fractions
+cur_df <- data.frame(celltype = sce_prot$celltype,
+                     Description = sce_prot$Description,
+                     Location = sce_prot$Location)
+
+# remove control samples 
+cur_df <- cur_df %>%
+  filter(Location != "CTRL") %>%
+  group_by(Description, celltype) %>%
+  summarise(n=n()) %>% 
+  group_by(Description) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill=0)
+
+matrixrownames <- cur_df$Description 
+
+# now we create a matrix from the data and cluster the data based on the cell fractions
+hm_dat = as.matrix(cur_df[,-1])
+rownames(hm_dat) <- as.character(matrixrownames)
+
+# calculate distance and then cluster images based on cluster fraction
+dd <- dist((hm_dat), method = "euclidean")
+hc <- hclust(dd, method = "ward.D2")
+row_sorted <- hc$labels
+
+dend <- as.dendrogram(hc)
+clusters <- data.frame(cutree(dend, k=4)) #### order_clusters_as_data = FALSE?? 
+clusters_1E <- color_branches(dend, k = 4, col = c("gray50", "blue", "green", "red"), groupLabels = TRUE)
+
+# get labels from dend
+dend_labels <- clusters_1E %>%
+  labels()
+
+# change colnames
+colnames(clusters) <- "dend_cluster"
+clusters$Description <- rownames(clusters)
+
+# same orientation as in 1E
+clusters <- clusters[match(dend_labels, clusters$Description),]
+
+# change cluster names
+clusters$cluster_name <- ""
+clusters[clusters$dend_cluster == 3,]$cluster_name <- "Grey Branch" 
+clusters[clusters$dend_cluster == 4,]$cluster_name <- "Blue Branch" 
+clusters[clusters$dend_cluster == 2,]$cluster_name <- "Green Branch" 
+clusters[clusters$dend_cluster == 1,]$cluster_name <- "Red Branch" 
+
+# add cluster to sce_rna object
+all_dat <- data.frame(colData(sce_rna))[,c("Description", "ImageNumber")]
+all_dat <- left_join(all_dat, clusters)
+sce_rna$cluster_name <- as.character(all_dat$cluster_name)
+
+sce_rna$cluster_name <- factor(sce_rna$cluster_name, levels = c("Red Branch", "Green Branch", "Blue Branch", "Grey Branch"))
+
+
+targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+
+frac <- data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  group_by(Description, cluster_name, expressor) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n / sum(n)) %>%
+  filter(expressor %in% targets) %>%
+  reshape2::dcast(Description + cluster_name ~ expressor, value.var = "fraction", fill = 0) %>%
+  reshape2::melt(id.vars = c("Description", "cluster_name"), variable.name = "expressor", value.name = "fraction")
+
+stat.test <- frac %>%
+  group_by(expressor) %>%
+  kruskal_test(data = ., fraction ~ cluster_name) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  arrange(p.adj) %>%
+  mutate(group1 = expressor, group2 = expressor) %>%
+  add_x_position()
+
+frac$expressor <- factor(frac$expressor, levels = stat.test$expressor)
+
+ggplot(frac, aes(x=expressor, y = fraction)) + 
+  geom_boxplot(alpha=.75, outlier.size = 0.5, aes(fill = cluster_name)) +
+  stat_pvalue_manual(x = "group1", y.position = 0.055, stat.test, size = 4) +
+  scale_color_discrete(guide = FALSE) +
+  theme_bw() +
+  theme(text = element_text(size = 15),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+  guides(fill=guide_legend(title="Dendrogram Cluster")) +
+  xlab("") + 
+  scale_fill_manual(values=c("red", "green", "blue", "grey")) +
+  ylab("Fractions")  +
+  coord_cartesian(ylim = c(0,0.06))
+```
+
+# Supp Figure 8C
+
+## CP output
+
+```{r}
+# Load and prepare
+dat_cells = fread(file = "data/data_for_analysis/rna/cell.csv",stringsAsFactors = FALSE)
+dat_relation = fread(file = "data/data_for_analysis/rna/Object relationships.csv",stringsAsFactors = FALSE)
+
+# Number of cores used for multicore:
+if(detectCores() >= 12){
+  ncores = round(detectCores()/1.25,0)
+}
+if(detectCores() > 1 & detectCores() < 12){
+  ncores = round(detectCores()/2,0)
+}
+if(detectCores() == 1){
+  ncores = 1
+}
+
+n_perm = 100 
+```
+
+## Start the analysis
+
+```{r milieu_analysis}
+start = Sys.time()
+cur_sce <- as.data.frame(colData(sce_rna))
+
+# add same cellID to dat_cells as in sce object
+dat_cells$cellID <- paste("RNA_", paste(dat_cells$ImageNumber, dat_cells$ObjectNumber, sep = "_"), sep = "")
+
+image_df <- data.frame()
+for(size in c(2,3,4,5,6)) {
+  images <- data.frame()
+  for(i in colnames(cur_sce[,grepl("CCL|CXCL",colnames(cur_sce))])){
+    # add chemokine info to celltype
+    sce_info <- cur_sce[,c("cellID", i , "Description")]
+    
+    # add celltype information
+    dat_cells_tmp <- left_join(as.data.frame(dat_cells), sce_info, by = "cellID")
+    
+    #assign labels and groups
+    dat_cells_tmp$label <- dat_cells_tmp[,i]
+    dat_cells_tmp$group <- dat_cells_tmp$Description
+    dat_cells_tmp <- as.data.table(dat_cells_tmp)
+    
+    # subset dat_relation and dat_cells
+    dat_cells_sub <- dat_cells_tmp
+    dat_relation_sub <- dat_relation
+    
+    # Prepare the data
+    d = neighbouRhood::prepare_tables(dat_cells_sub, dat_relation_sub)
+    
+    # Calculate the baseline statistics
+    dat_baseline = neighbouRhood::apply_labels(d[[1]], d[[2]]) %>%
+      neighbouRhood::aggregate_classic_patch(., patch_size = size)
+    
+    # Calculate the permutation statistics
+    # This will run the test using parallel computing. The name of the idcol does actually not matter.
+    
+    set.seed(12312)
+    dat_perm = rbindlist(mclapply(1:n_perm, function(x){
+      dat_labels = neighbouRhood::shuffle_labels(d[[1]])
+      neighbouRhood::apply_labels(dat_labels, d[[2]]) %>%
+        neighbouRhood::aggregate_classic_patch(., patch_size = size)
+    },mc.cores = ncores
+    ), idcol = 'run')
+    
+    # calc p values
+    dat_p <- neighbouRhood::calc_p_vals(dat_baseline, dat_perm, n_perm = n_perm, p_tresh = 0.01) 
+    
+    # select interactions between chemokine+ cells
+    dat_p$interaction <- paste(dat_p$FirstLabel, dat_p$SecondLabel, sep = "_")
+    
+    dat_p_wide <- dat_p %>%
+      reshape2::dcast(group ~ interaction, value.var = "sigval", fill = 0) %>%
+      select(group, `1_1`)
+    
+    summary <- as.data.frame(dat_p_wide) %>%
+      group_by(`1_1`) %>%
+      summarise(n=n(),.groups = 'drop') %>%
+      ungroup() %>%
+      mutate(percentage_sig = (n/sum(n)) * 100)
+    
+    images <- rbind(images, cbind(summary[1,], i))
+  }
+  
+  # calculate percentage of images with significant patches
+  images$percentage_sig <- 100 - images$percentage_sig
+  images$patch_size <- size
+  images <- select(images, percentage_sig, i, patch_size)
+  colnames(images) <- c("significant_images", "chemokine", "patch_size")
+  
+  # add to data.frame
+  image_df <- rbind(image_df, images)
+}
+end = Sys.time()
+
+print(end-start)
+```
+
+## Visualize 
+
+```{r Supp_Fig_8C_patch_analysis, dev=("pdf"), fig.height=5, fig.width=8}
+dat <- image_df %>%
+  reshape2::dcast(chemokine ~ patch_size, value.var = "significant_images", fill = 0)
+
+rownames(dat) <- dat$chemokine
+dat$chemokine <- NULL
+
+m <- t(as.matrix(dat))
+
+col_fun = viridis::inferno(100)
+
+Heatmap(m,
+        cluster_rows = FALSE,
+        col = col_fun,
+        column_title = "Self-Interaction",
+        column_title_side = "bottom",
+        show_row_names = TRUE,
+        cell_fun = function(j, i, x, y, width, height, fill) {
+          grid.text(sprintf("%.1f", m[i, j]), x, y, gp = gpar(fontsize = 15, col = "grey"))
+          },
+        heatmap_legend_param = list(
+          title = "% Significant\nImages", at = c(0, 10, 20, 30, 40, 50),
+          labels = c("0%", "10%", "20%", "30%","40%", "50%")),
+        row_title = "Motif Size",
+        row_names_side = "left",
+        width = unit(15, "cm"),
+        height = unit(8, "cm"))
+```

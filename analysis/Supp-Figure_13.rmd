@@ -1,6 +1,6 @@
 ---
-title: "Supp-Figure_13"
-author: "toobiwankenobi"
+title: "Supplementary Figure 13"
+author: "Tobias Hoch and Daniel Schulz"
 date: "2021-10-20"
 output: workflowr::wflow_html
 editor_options:
@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates plots for Figure 5 without any LN samples.
+This script generates plots for Supplementary Figure 13, which shows Figure 5 without any LN samples.
 
 # Preparations
 
@@ -115,11 +115,11 @@ dat_relation_rna <- left_join(dat_relation_rna, celltype_second, by = "cellID_se
 colnames(dat_relation_rna)[5] <- "FirstImageNumber"
 ```
 
-# Figure 5A
+# Supp Figure 13A
 
 ## Generate adjacency matrix for all images
 
-```{r Fig_5A_interaction_chord_groups, fig.height=7, fig.width=5, dev=c('pdf')}
+```{r Supp_Fig_13A_interaction_chord_groups, fig.height=7, fig.width=5, dev=c('pdf')}
 # subset sce for inflamed/exhausted in high samples
 sce_protein_sub <- sce_prot[, sce_prot$dysfunction_density %in% c("high - High Dysfunction", "high - Low Dysfunction")]
 
@@ -155,13 +155,6 @@ for (i in c("high - High Dysfunction", "high - Low Dysfunction")){
     dplyr::count(celltype_first, celltype_clust_second) %>%
     data.frame()
   
-  # remove tumor-tumor interactions
-  cur_dat_relation_subcluster <- cur_dat_relation_subcluster[cur_dat_relation_subcluster$celltype_first == "CD8+ T cell",]
-  cur_dat_relation_subcluster <- cur_dat_relation_subcluster[cur_dat_relation_subcluster$celltype_clust_second %in% 
-                                                               unique(sce_prot[,sce_prot$celltype == "Tumor"]$celltype_clustered),]
-  # return subcluster adj df
-  return[[i]] <- cur_dat_relation_subcluster
-  
   # make coord diagram
   chordDiagramFromDataFrame(cur_dat_relation,
                             grid.col = metadata(sce_prot)$colour_vectors$celltype,
@@ -171,7 +164,7 @@ for (i in c("high - High Dysfunction", "high - Low Dysfunction")){
 }
 ```
 
-```{r Fig_5A_legend, dev=c('pdf'), fig.height=5, fig.width=1.5}
+```{r Supp_Fig_13A_legend, dev=c('pdf'), fig.height=5, fig.width=1.5}
 # create legend for tumor subclusters
 lgd2 = Legend(labels = names(metadata(sce_prot)$colour_vector$celltype), title = "Cell Type", legend_gp = gpar(fill = unname(metadata(sce_prot)$colour_vector$celltype)))
 draw(packLegend(lgd2, 
@@ -179,11 +172,11 @@ draw(packLegend(lgd2,
                 gap = unit(2, "cm")))
 ```
 
-# Figure 5B
+# Supp Figure 13B
 
 ## Celltypes
 
-```{r Fig_5B_celltype_fractions_dysfunction, dev=("pdf"), fig.width=8.6, fig.height=5.35}
+```{r Supp_Fig_13B_celltype_fractions_dysfunction, dev=("pdf"), fig.width=8.6, fig.height=5.35}
 celltypes <- data.frame(colData(sce_prot)) %>%
   filter(celltype != "Tumor") %>%
   group_by(ImageNumber, bcell_patch_score, dysfunction_score, celltype) %>%
@@ -225,11 +218,11 @@ celltypes %>%
   filter(fraction > median_frac)
 ```
 
-# Figure 5C
+# Supp Figure 13C
 
 ## B cell patch grouping for dysfunction groups
 
-```{r Fig_5C_bcell_groups_fraction, dev=("pdf"), fig.width=10, fig.height=3}
+```{r Supp_Fig_13C_bcell_groups_fraction, dev=("pdf"), fig.width=10, fig.height=3}
 a <- data.frame(colData(sce_rna)) %>%
   distinct(Description, .keep_all = T) %>%
   group_by(bcell_patch_score, dysfunction_score) %>%
@@ -248,11 +241,11 @@ ggplot(a) +
   guides(fill=guide_legend(title="B cell Score"))
 ```
 
-# Figure 5D
+# Supp Figure 13D
 
 ## Analysis and Visualization
 
-```{r Fig_5D_Bcell_patches_CXCL13_fractions, fig.height=6.2, fig.width=7.9, dev=c('pdf')}
+```{r Supp_Fig_13D_Bcell_patches_CXCL13_fractions, fig.height=6.2, fig.width=7.9, dev=c('pdf')}
 # fraction of all CXCL13 production
 cxcl13_fraction <- data.frame(colData(sce_rna)) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
@@ -312,11 +305,11 @@ ggplot(all_images,aes(x=bcell_patch_score, y = as.numeric(fraction), fill=cellty
   scale_color_discrete(guide = FALSE)
 ```
 
-# Figure 5E
+# Supp Figure 13E
 
 ## Example of CXCL10 Cluster and corresponding Community
 
-```{r Fig_5E_clusters_and_communities, fig.width=6, fig.height=6, dev=c('pdf')}
+```{r Supp_Fig_13E_clusters_and_communities, fig.width=6, fig.height=6, dev=c('pdf')}
 example <- findPatch(sce_prot[,sce_prot$Description == "P5"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
                     'cellID', 
                     'Center_X', 'Center_Y', 
@@ -335,11 +328,11 @@ example <- findMilieu(example,
               plot = TRUE)
 ```
 
-# Figure 5F
+# Supp Figure 13F
 
 ## Fraction of Tcf7 Tcells cells in B cell patch groups
 
-```{r Fig_5F_cd8_tcf7_pd1_bcells, dev=("pdf"), fig.width=6.66, fig.height=3.16}
+```{r Supp_Fig_13F_cd8_tcf7_pd1_bcells, dev=("pdf"), fig.width=6.66, fig.height=3.16}
 celltypes <- data.frame(colData(sce_prot)) %>%
   mutate(mmLocationPunch = paste(MM_location, Location, sep = "_")) %>%
   filter(mmLocationPunch != "LN_M") %>% # remove LN margin images
@@ -383,7 +376,7 @@ ggplot(celltypes, aes(x=TCF7_PD1, y=fraction)) +
 
 ## Magnify TCF7+PD1+ population
 
-```{r Fig_5F_zoom, dev=("pdf"), fig.width=4.1, fig.height=2}
+```{r Supp_Fig_13F_zoom, dev=("pdf"), fig.width=4.1, fig.height=2}
 # magnify PD1+TCF7+ population
 ggplot(celltypes[celltypes$TCF7_PD1 == "PD1+_TCF7+",], aes(x=TCF7_PD1, y=fraction)) +
   geom_boxplot(alpha=1, lwd = 0.5, outlier.size = 0.5, aes(fill=bcell_patch_score)) +
@@ -397,11 +390,11 @@ ggplot(celltypes[celltypes$TCF7_PD1 == "PD1+_TCF7+",], aes(x=TCF7_PD1, y=fractio
   coord_cartesian(ylim = c(0,0.05))
 ```
 
-# Figure 5G
+# Supp Figure 13G
 
 ## Percentage of TCF7+PD1+CD8+ cells that are part of a Bcell milieu
 
-```{r Fig_5G_milieu_presence_tcells, fig.height=4, fig.width=4.9, dev=("pdf")}
+```{r Supp_Fig_13G_milieu_presence_tcells, fig.height=4, fig.width=4.9, dev=("pdf")}
 # what fraction of each celltype is part of a milieu?
 cur_dat <- data.frame(colData(sce_prot)) %>%
   mutate(MMLocationPunch = paste(MM_location, Location, sep = "_")) %>%

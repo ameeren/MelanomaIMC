@@ -1,6 +1,6 @@
 ---
-title: "Supp-Figure_10"
-author: "toobiwankenobi"
+title: "Supplementary Figure 10"
+author: "Tobias Hoch and Daniel Schulz"
 date: "2021-11-24"
 output: workflowr::wflow_html
 editor_options:
@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates plots for Supplementary Figure 4.
+This script generates plots for Supplementary Figure 10.
 
 # Preparations
 
@@ -131,6 +131,8 @@ grid.arrange(p + theme(legend.position = "none"))
 grid.arrange(leg)
 ```
 
+# Supp Figure 10B
+will follow - Code from Daniel
 
 # Supp Figure 10C
 
@@ -299,6 +301,8 @@ ht1 = Heatmap(m,
 draw(ht1)
 ```
 
+## Legend
+
 ```{r Supp_Fig_10C_legend, dev=c('pdf'), fig.width=3, fig.height=1}
 # manual legends
 lgd1 = Legend(labels = c("Stand-alone", "Milieu"), title = "Production Mode", legend_gp = gpar(fill = c("#F8766D", "#00BFC4")))
@@ -445,4 +449,3 @@ ggplot(s100, aes(x=dysfunction_score, y=fraction)) +
         legend.position = "none") +
   ylim(0,1.05)
 ```
-

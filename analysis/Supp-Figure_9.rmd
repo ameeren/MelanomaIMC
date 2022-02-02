@@ -1,5 +1,5 @@
 ---
-title: "Supplementary Figure 6"
+title: "Supplementary Figure 9"
 author: "Tobias Hoch and Daniel Schulz"
 date: "2021-11-18"
 output: workflowr::wflow_html
@@ -7,7 +7,7 @@ editor_options:
   chunk_output_type: console
 ---
 # Introduction
-This script generates plots for Supplementary Figure 6. 
+This script generates plots for Supplementary Figure 9. 
 
 # Preparations 
 
@@ -21,8 +21,6 @@ library(dplyr)
 library(ggrastr)
 ```
 
-# Protein Gates
-
 ## Load data
 
 ```{r}
@@ -32,6 +30,9 @@ sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
 sce_rna <- readRDS("data/data_for_analysis/sce_RNA.rds")
 sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
 ```
+
+# Supp Figure 9
+
 ## B cell and HLADR overlap between data sets
 
 ```{r Supp_Fig_9A_rna_prot_Bcell_overlap, fig.height=9, fig.width=6.5, dev=("pdf")}

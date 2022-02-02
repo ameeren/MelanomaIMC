@@ -14,8 +14,6 @@ This script generates plots for Supplementary Figure 4.
 
 ## Load libraries
 
-First, we will load the libraries needed for this part of the analysis.
-
 ```{r, message=FALSE}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
 library(SingleCellExperiment)
@@ -33,14 +31,275 @@ library(ggpubr)
 library(ggridges)
 library(gridExtra)
 library(rstatix)
+library(cowplot)
+library(ggrastr)
 ```
 
 ## Read the data
 
 ```{r}
-sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
-sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+# clinical data
+dat <- read_csv("data/data_for_analysis/protein/clinical_data_protein.csv")
 
-sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+# Protein data
+
+sce_prot <- readRDS("data/data_for_analysis/sce_protein.rds")
 sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+
+# take panel_meta because there are the channel names from the shiny output (and only there, not in the SCE)
+panel_meta_prot <- read.csv(file = "data/data_for_analysis/protein/melanoma_1.06_protein.csv", 
+                       sep= ",",  stringsAsFactors = FALSE )
+
+
+# RNA data
+
+sce_rna <- readRDS("data/data_for_analysis/sce_rna.rds")
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+
+# take panel_meta because there are the channel names from the shiny output (and only there, not in the SCE)
+panel_meta_rna <- read.csv(file = "data/data_for_analysis/rna/panel_mat.csv", stringsAsFactors = FALSE )
+```
+
+# Supp Figure 4A
+
+## Clinical features of the cohort 
+
+Note: as the cohort is very diverse, we are using the BlockID as the minimal unit since clinical parameters are described per BlockID. However, sometimes we do have patients of which we have multiple FFPE blocks (BlockIDs). Nonetheless, clinical parameters are not given per patient but per patient FFPE block and are therefore considered the minimial unit.
+
+## Number of Samples
+
+```{r Supp_Fig_4A_number_of_samples, fig.height=6, fig.width=17, dev=c('pdf')}
+dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
+
+# remove control samples
+dat <- dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location != "CTRL"]$BlockID),]
+
+p1 <- unique(dat[,c("BlockID","MM_location")]) %>%
+  ggplot()+
+  geom_bar(aes(y=MM_location),stat ="count") +
+  xlab("Biopsy Blocks per Location") +
+  ylab("Metastasis Location") +
+  theme_bw()+
+  theme(text = element_text(size=16))
+  
+p2 <- dat %>%
+  ggplot()+
+  geom_bar(aes(x=BlockID, fill=(MM_location)),stat="count")+
+  theme_bw()+
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        text = element_text(size=16)) + 
+  ylab("Number of Samples") +
+  xlab("Biopsy Blocks") +
+  scale_y_continuous(limits = c(0,4), expand = c(0, 0)) +
+  guides(fill=guide_legend(title="Metasis Location"))
+
+plot_grid(p1,p2,rel_widths = c(1.25,3))  
+```
+
+# Supp Figure 4B
+
+## Select one random file per celltype and load file
+
+```{r}
+# load all subsetted sce object from hierarchichal gating and combine the
+label.files <- list.files("data/data_for_analysis/protein/celltype_classifier", full.names = TRUE)
+file_names <- data.frame(path = label.files)
+file_names$fileName <- sub(".*/", "", label.files)
+file_names$celltype <- sub("\\_.*", "", file_names$fileName)
+
+# select one random file per celltype
+file_names <- file_names %>%
+  group_by(celltype) %>%
+  sample_n(1)
+
+# Read in SCE objects
+cur_sces <- lapply(file_names$path, readRDS)
+```
+
+## Print gating scheme - Protein
+
+```{r Supp_Fig_4B_gating_scheme_protein, fig.height=8, fig.width=6, dev=("pdf")}
+for(element in cur_sces){
+  # current labelled sce object
+  sce_label <- element
+  cur_celltype <- unique(sce_label$cytomapper_CellLabel)
+  # select all gates from metadata
+  gates <- metadata(sce_label)[grepl("cytomapper_gate_", names(metadata(sce_label)))]
+  cur_img <- gates[[1]]$img_id
+  # subset sce to current image 
+  cur_sce <- sce_prot[,sce_prot$ImageNumber == cur_img]
+  plots <- list()
+  
+  for(i in names(gates)) {
+    plots[[i]] <- local({
+      # select gates and imageID
+      cur_gate <- as.data.frame(gates[[i]]$gate)
+      cur_img <- gates[[i]]$img_id
+      
+      # names of channels (complicated because shiny has different channel names than SCE)
+      x_gate <- rownames(cur_gate)[1]
+      y_gate <- rownames(cur_gate)[2]
+      x_metal <- panel_meta_prot[panel_meta_prot$clean_target == x_gate, "Metal.Tag"]
+      y_metal <- panel_meta_prot[panel_meta_prot$clean_target == y_gate, "Metal.Tag"]
+      x_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == x_metal,])
+      y_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == y_metal,])
+      
+      # select current channels
+      cur_counts <- as.data.frame(t(assay(cur_sce, "asinh")[c(x_original, y_original),]))
+      
+      # check if cells are in gate
+      cur_counts$in_gate <- ifelse(cur_counts[,1] >= cur_gate[1,1] &
+                                     cur_counts[,1] <= cur_gate[1,2] &
+                                     cur_counts[,2] >= cur_gate[2,1] &
+                                     cur_counts[,2] <= cur_gate[2,2], TRUE, FALSE)
+      
+      # cellIDs of cells in gate (for next gate)
+      cur_cells <- rownames(cur_counts[cur_counts$in_gate == TRUE,])
+      
+      # update cur_sce
+      cur_sce <<- cur_sce[,cur_sce$cellID %in% cur_cells] ####### !!!!
+      
+      # plot
+      p <- ggplot() +
+        geom_point_rast(data=cur_counts, aes(x=cur_counts[,1], y=cur_counts[,2], 
+                                        color=ifelse(cur_counts[,"in_gate"] == TRUE, "red", "black")),
+                   alpha=ifelse(cur_counts[,"in_gate"] == TRUE, 0.5,0.1)) +
+        geom_rect(data = cur_gate, aes(xmin=cur_gate[1,1], xmax=cur_gate[1,2], ymin=cur_gate[2,1],
+                                       ymax=cur_gate[2,2]),
+                  color="black", alpha=0.2) +
+        xlab(x_gate) +
+        ylab(y_gate) +
+        scale_color_identity() +
+        theme_bw() +
+        theme(legend.position = "none") +
+        coord_cartesian(xlim = c(0,6.5), ylim = c(0,6.5))
+      p
+    })
+  }
+  
+  n <- length(plots)
+  nCol <- floor(sqrt(n))
+  do.call("grid.arrange", c(plots, ncol=3,nrow=4, top=cur_celltype))
+}
+```
+
+# Supp Figure 4C
+
+## Select one random file per celltype and load file
+
+```{r}
+# load all subsetted sce object from hierarchichal gating and combine the
+label.files <- list.files("data/data_for_analysis/rna/celltype_classifier", full.names = TRUE)
+file_names <- data.frame(path = label.files)
+file_names$fileName <- sub(".*/", "", label.files)
+file_names$celltype <- sub("\\_.*", "", file_names$fileName)
+
+# select one random file per celltype
+file_names <- file_names %>%
+  group_by(celltype) %>%
+  sample_n(1)
+
+# Read in SCE objects
+cur_sces <- lapply(file_names$path, readRDS)
+```
+
+## Print gating scheme
+
+```{r Supp_Fig_4C_gating_scheme_rna, fig.height=8, fig.width=6, dev=("pdf")}
+for(element in cur_sces){
+  # current labelled sce object
+  sce_label <- element
+  cur_celltype <- unique(sce_label$cytomapper_CellLabel)
+  # select all gates from metadata
+  gates <- metadata(sce_label)[grepl("cytomapper_gate_", names(metadata(sce_label)))]
+  cur_img <- gates[[1]]$img_id
+  # subset sce to current image 
+  cur_sce <- sce_rna[,sce_rna$ImageNumber == cur_img]
+  plots <- list()
+  
+  for(i in names(gates)) {
+    plots[[i]] <- local({
+      # select gates and imageID
+      cur_gate <- as.data.frame(gates[[i]]$gate)
+      cur_img <- gates[[i]]$img_id
+      
+      # names of channels (complicated because shiny has different channel names than SCE)
+      x_gate <- rownames(cur_gate)[1]
+      x_metal <- panel_meta_rna[panel_meta_rna$clean_target == x_gate, "Metal.Tag"]
+      x_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == x_metal,])
+      
+      if(nrow(gates[[i]]$gate) == 2) {
+        y_gate <- rownames(cur_gate)[2]
+        y_metal <- panel_meta_rna[panel_meta_rna$clean_target == y_gate, "Metal.Tag"]
+        y_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == y_metal,])
+        
+        # select current channels
+        cur_counts <- as.data.frame(t(assay(cur_sce, "asinh")[c(x_original, y_original),]))
+        
+        # check if cells are in gate
+        cur_counts$in_gate <- ifelse(cur_counts[,1] >= cur_gate[1,1] &
+                                       cur_counts[,1] <= cur_gate[1,2] &
+                                       cur_counts[,2] >= cur_gate[2,1] &
+                                       cur_counts[,2] <= cur_gate[2,2], TRUE, FALSE)
+        
+        # cellIDs of cells in gate (for next gate)
+        cur_cells <- rownames(cur_counts[cur_counts$in_gate == TRUE,])
+        
+        # update cur_sce
+        cur_sce <<- cur_sce[,cur_sce$cellID %in% cur_cells]
+        
+        # plot
+        p <- ggplot() +
+          geom_point_rast(data=cur_counts, aes(x=cur_counts[,1], y=cur_counts[,2], 
+                                               color=ifelse(cur_counts[,"in_gate"] == TRUE, "red", "black")),
+                          alpha=ifelse(cur_counts[,"in_gate"] == TRUE, 0.5,0.1)) +
+          geom_rect(data = cur_gate, aes(xmin=cur_gate[1,1], xmax=cur_gate[1,2], ymin=cur_gate[2,1],
+                                         ymax=cur_gate[2,2]),
+                    color="black", alpha=0.2) +
+          xlab(x_gate) +
+          ylab(y_gate) +
+          scale_color_identity() +
+          theme_bw() +
+          theme(legend.position = "none") +
+          coord_cartesian(xlim = c(0,8), ylim = c(0,8))
+        p
+      }
+      else {
+        # select current channels
+        cur_counts <- as.data.frame(assay(cur_sce, "asinh")[c(x_original),])
+        
+        # check if cells are in gate
+        cur_counts$in_gate <- ifelse(cur_counts[,1] >= cur_gate[1,1] &
+                                       cur_counts[,1] <= cur_gate[1,2], TRUE, FALSE)
+        
+        # cellIDs of cells in gate (for next gate)
+        cur_cells <- rownames(cur_counts[cur_counts$in_gate == TRUE,])
+        
+        # update cur_sce
+        cur_sce <<- cur_sce[,cur_sce$cellID %in% cur_cells]
+        
+        # plot
+        p <- ggplot() +
+          geom_jitter_rast(data=cur_counts, aes(x=rownames(cur_gate), y=cur_counts[,1], 
+                                                color=ifelse(cur_counts[,"in_gate"] == TRUE, "red", "black")),
+                           alpha=ifelse(cur_counts[,"in_gate"] == TRUE, 0.5,0.1)) +
+          geom_hline(yintercept = cur_gate[1,1], color="black", alpha=1) +
+          geom_hline(yintercept = cur_gate[1,2], color="black", alpha=1) +
+          xlab(x_gate) +
+          ylab("Expression (asinh)") +
+          scale_color_identity() +
+          theme_bw() +
+          theme(legend.position = "none",
+                axis.text.x = element_blank()) +
+          coord_cartesian(xlim = c(0,8), ylim = c(0,8))
+        p
+      }
+    })
+  }
+  
+  n <- length(plots)
+  nCol <- floor(sqrt(n))
+  do.call("grid.arrange", c(plots, ncol=3, nrow=4, top=cur_celltype))
+}
 ```

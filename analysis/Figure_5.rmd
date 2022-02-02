@@ -151,17 +151,10 @@ for (i in c("high - High Dysfunction", "high - Low Dysfunction")){
     dplyr::count(celltype_first, celltype_clust_second) %>%
     data.frame()
   
-  # remove tumor-tumor interactions
-  cur_dat_relation_subcluster <- cur_dat_relation_subcluster[cur_dat_relation_subcluster$celltype_first == "CD8+ T cell",]
-  cur_dat_relation_subcluster <- cur_dat_relation_subcluster[cur_dat_relation_subcluster$celltype_clust_second %in% 
-                                                               unique(sce_prot[,sce_prot$celltype == "Tumor"]$celltype_clustered),]
-  # return subcluster adj df
-  return[[i]] <- cur_dat_relation_subcluster
-  
   # make coord diagram
   chordDiagramFromDataFrame(cur_dat_relation,
                             grid.col = metadata(sce_prot)$colour_vectors$celltype,
-                            reduce = 0.05, 
+                            #reduce = 0.05, 
                             transparency = ifelse(cur_dat_relation[[1]] %in% c("CD8+ T cell"),0,0.6),
                             annotationTrack = c("grid"))
 }
