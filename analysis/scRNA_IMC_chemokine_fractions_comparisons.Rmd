@@ -11,7 +11,7 @@ we will then calculate the proportions of each cell type expressing individual c
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
+```{r, message=FALSE}
 set.seed(12345)
 
 library(Seurat)
@@ -35,7 +35,7 @@ the data from tisch cannot be access via API. therefore we downloaded a number o
 
 ```{r}
 read_Data <- function(data,
-                      metadata,
+                      metadata_file,
                       name,
                       sorting){
   
@@ -44,7 +44,7 @@ read_Data <- function(data,
   seurat<-CreateSeuratObject(counts = dat, project = name)
   sce <- as.SingleCellExperiment(seurat)
   
-  metadata <- read.delim(metadata)
+  metadata <- read.delim(metadata_file)
   # add the metadata to the sce object
   colData(sce) <- cbind(colData(sce),metadata)
   
@@ -59,7 +59,7 @@ read_Data <- function(data,
   targets <- rownames(sce)[grepl("CCL2$|CCL4$|CCL8|CCL18|CCL19|CCL22|CXCL8|CXCL9|CXCL10|CXCL12|CXCL13",rownames(sce))]
 
   for (i in targets) {
-    colData(sce)[i] <- ifelse(t(counts(sce))[,i]>1,yes = 1,no = 0)
+    colData(sce)[i] <- as.numeric(counts(sce)[i,] > 1)
   }
   
   chem_dat <- as.data.table(colData(sce))
@@ -76,27 +76,26 @@ read_Data <- function(data,
   out_dat[which(out_dat$celltype == "CD4Tconv"),]$celltype <- "CD8- T cell"
   out_dat[which(out_dat$celltype == "Treg"),]$celltype <- "CD8- T cell"
   
-  out_dat$sorting = sorting
-  out_dat$dataset = name
+  out_dat$sorting <- sorting
+  out_dat$dataset <- name
 
-  
-  out_dat <- out_dat %>%  
-  group_by(celltype,dataset,.drop = FALSE) %>%
-  add_count(name = "total_celltype_count") %>%
-  ungroup() %>%
-  pivot_longer(cols = targets,names_to = "chemokine") %>%
-  group_by(chemokine,.drop = FALSE) %>%
-  mutate(total_chem_count = sum(value)) %>%
-  ungroup() %>%
-  group_by(celltype,chemokine,dataset,.drop = FALSE) %>%
-  mutate(celltype_chemokine_sum = sum(value)) %>%
-  select(celltype,chemokine,celltype_chemokine_sum,total_chem_count,total_celltype_count,dataset,sorting) %>%
-  distinct() %>%
-  mutate(frac_of_chemokine_pos = celltype_chemokine_sum/total_chem_count,
-         frac_of_celltype = celltype_chemokine_sum/total_celltype_count) %>%
-  ungroup()
+  out <- out_dat %>%  
+    group_by(celltype,dataset,.drop = FALSE) %>%
+    add_count(name = "total_celltype_count") %>%
+    ungroup() %>%
+    pivot_longer(cols = targets,names_to = "chemokine") %>%
+    group_by(chemokine,.drop = FALSE) %>%
+    mutate(total_chem_count = sum(value)) %>%
+    ungroup() %>%
+    group_by(celltype,chemokine,dataset,.drop = FALSE) %>%
+    mutate(celltype_chemokine_sum = sum(value)) %>%
+    select(celltype,chemokine,celltype_chemokine_sum,total_chem_count,total_celltype_count,dataset,sorting) %>%
+    distinct() %>%
+    mutate(frac_of_chemokine_pos = celltype_chemokine_sum/total_chem_count,
+             frac_of_celltype = celltype_chemokine_sum/total_celltype_count) %>%
+    ungroup()
 
-  return(out_dat)
+  return(out)
   
 }
 ```
@@ -104,43 +103,43 @@ read_Data <- function(data,
 
 ```{r load datasets}
 
-SKCM_GSE123139 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE123139_expression.h5",
-                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE123139_CellMetainfo_table.tsv",
+SKCM_GSE123139 <- read_Data(data = "W:/Daniel/scRNAseq/SKCM_GSE123139_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/SKCM_GSE123139_CellMetainfo_table.tsv",
                       name = "SKCM_GSE123139",
                       sorting = "immune")
 
-SKCM_GSE72056 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE72056_expression.h5",
-                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE72056_CellMetainfo_table.tsv",
+SKCM_GSE72056 <- read_Data(data = "W:/Daniel/scRNAseq/SKCM_GSE72056_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/SKCM_GSE72056_CellMetainfo_table.tsv",
                       name = "SKCM_GSE72056",
                       sorting = "all")
 
-SKCM_GSE115978 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE115978_aPD1_expression.h5",
-                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE115978_aPD1_CellMetainfo_table.tsv",
+SKCM_GSE115978 <- read_Data(data = "W:/Daniel/scRNAseq/SKCM_GSE115978_aPD1_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/SKCM_GSE115978_aPD1_CellMetainfo_table.tsv",
                       name = "SKCM_GSE115978",
                       sorting = "all")
 
-SKCM_GSE120575 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_expression.h5",
-                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_CellMetainfo_table.tsv",
+SKCM_GSE120575 <- read_Data(data = "W:/Daniel/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_CellMetainfo_table.tsv",
                       name = "SKCM_GSE120575",
                       sorting = "immune")
 
-HNSC_GSE139324 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/HNSC_GSE139324_expression.h5",
-                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/HNSC_GSE139324_CellMetainfo_table.tsv",
+HNSC_GSE139324 <- read_Data(data = "W:/Daniel/scRNAseq/HNSC_GSE139324_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/HNSC_GSE139324_CellMetainfo_table.tsv",
                       name = "HNSC_GSE139324",
                       sorting = "immune")
 
-NSCLC_GSE131907 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/NSCLC_GSE131907_expression.h5",
-                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/NSCLC_GSE131907_CellMetainfo_table.tsv",
+NSCLC_GSE131907 <- read_Data(data = "W:/Daniel/scRNAseq/NSCLC_GSE131907_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/NSCLC_GSE131907_CellMetainfo_table.tsv",
                       name = "NSCLC_GSE131907",
                       sorting = "all")
 
-PAAD_CRA001160 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/PAAD_CRA001160_expression.h5",
-                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/PAAD_CRA001160_CellMetainfo_table.tsv",
+PAAD_CRA001160 <- read_Data(data = "W:/Daniel/scRNAseq/PAAD_CRA001160_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/PAAD_CRA001160_CellMetainfo_table.tsv",
                       name = "PAAD_CRA001160",
                       sorting = "all")
 
-UVM_GSE139829 <- read_Data(data = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/UVM_GSE139829_expression.h5",
-                      metadata = "/mnt/dqbm_bbvolume/Data/Melanoma/12plex/scRNAseq/UVM_GSE139829_CellMetainfo_table.tsv",
+UVM_GSE139829 <- read_Data(data = "W:/Daniel/scRNAseq/UVM_GSE139829_expression.h5",
+                      metadata_file = "W:/Daniel/scRNAseq/UVM_GSE139829_CellMetainfo_table.tsv",
                       name = "UVM_GSE139829",
                       sorting = "all")
 
@@ -177,7 +176,7 @@ sc_dat %>%
 ## IMC data
 
 ```{r}
-sce_rna <- readRDS(file = "/media/dan/Data/Data/Melanoma_HotCold_paper/data_for_analysis/sce_RNA.rds")
+sce_rna <- readRDS(file = "D:/Data/Melanoma_HotCold_paper/data_for_analysis/sce_RNA.rds")
 
 cur_dat <- as_tibble(colData(sce_rna))
 
@@ -203,7 +202,7 @@ imc_long <- imc_long %>%
   ungroup()
 
 imc_long$sorting <- "all"
-imc_long$dataset <- "imc"
+imc_long$dataset <- "IMC"
 ```
 
 ## plot the fractions per chemokine positive type
@@ -279,9 +278,9 @@ we will then below also add a statistical test (Grubbs test) to test whether IMC
 
 ```{r fig.height=10, fig.width=10}
 ggplot()+
-  geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
-  geom_point(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
-  geom_point(data = imc_long,aes(x=celltype,y=frac_of_chemokine_pos),color="red")+
+  geom_boxplot(data = all_dat[all_dat$datatype == "scRNAseq",],aes(x=celltype,y=frac_of_chemokine_pos))+
+  geom_point(data = all_dat[all_dat$datatype == "scRNAseq",],aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
+  geom_point(data = all_dat[all_dat$datatype == "IMC",],aes(x=celltype,y=frac_of_chemokine_pos),color="red")+
   facet_wrap(.~chemokine, scales = "free")+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
@@ -289,11 +288,11 @@ ggplot()+
 ```
 
 ## check if sorting has effect on the fractions
-some of the scRNAseq datasets had been sorted before sequencing. this means that potentially, the fraction of expression is observed amongst immune cells is higher as it would be if there we additional chemokine expressing tumor cells detected. indeed we do see a slight trend for CCL19, CCL2, CXCL10 and CXCL12 to have higher fractions. however, as we will see in the comparison to IMC below, these are 
+some of the scRNAseq datasets had been sorted before sequencing. this means that potentially, the fraction of expression is observed amongst immune cells is higher as it would be if there we additional chemokine expressing tumor cells detected. indeed we do see a slight trend for CCL19, CCL2, CXCL10 and CXCL12 to have higher fractions. however, as we will see in the comparison to IMC below, these are not systematically different.
 
 ```{r fig.height=10, fig.width=10}
 plot_dat <- sc_dat %>%
-  filter(celltype %in% celltypes)
+  filter(celltype %in% celltypes, dataset %in% comp_dataset)
 
 ggplot()+
   geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
@@ -308,7 +307,7 @@ plot_dat <- sc_dat %>%
   filter(celltype %in% celltypes, dataset %in% comp_dataset)
 ```
 
-```{r grubbs statistical test}
+```{r grubbs-statistical-test-1}
 library(outliers)
 library(purrr)
 
@@ -341,14 +340,14 @@ test_dat %>%
   filter(celltype == "CD8+ T cell")
 ```
 
-```{r add significance to plot, fig.height=10,fig.width=15}
+```{r add-significance-to-plot-1, fig.height=10,fig.width=15}
 library(ggpubr)
 
 #pdf(file = "D:/Data/Melanoma_HotCold_paper/scRNAseq chemokines vs IMC.pdf", width = 12, height = 10)
 ggplot()+
   geom_boxplot(data = all_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
-  geom_point(data = all_dat[which(all_dat$dataset != "imc"),],aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
-  geom_point(data = all_dat[which(all_dat$dataset == "imc"),],aes(x=celltype,y=frac_of_chemokine_pos),col="red",shape=18, size=5)+
+  geom_point(data = all_dat[which(all_dat$dataset != "IMC"),],aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
+  geom_point(data = all_dat[which(all_dat$datatype == "IMC"),],aes(x=celltype,y=frac_of_chemokine_pos),col="red",shape=18, size=5)+
   geom_text(data = sig_dat,aes(x=celltype,y=0.75,label = p_grubbs), color= "red", angle=90) +
   facet_wrap(.~chemokine)+
   theme_bw()+
@@ -373,7 +372,7 @@ ggplot()+
 #dev.off()
 ```
 
-```{r grubbs statistical test}
+```{r grubbs-statistical-test-2}
 test_dat <- all_dat %>%
   filter(! celltype %in% c("CD38","HLA-DR","Neutrophil", "unknown"), chemokine %in% c("CCL2","CXCL8","CXCL9","CXCL10","CXCL12","CCL19")) %>%
   group_by(chemokine, celltype) %>%
@@ -404,7 +403,7 @@ test_dat %>%
   filter(chemokine == "CXCL8")
 ```
 
-```{r add significance to plot, fig.height=15,fig.width=15}
+```{r add-significance-to-plot-2, fig.height=15,fig.width=15}
 ggplot()+
   geom_boxplot(data = plot_dat,aes(x=celltype,y=frac_of_celltype))+
   geom_point(data = plot_dat,aes(x=celltype,y=frac_of_celltype,col=as.factor(dataset)))+
@@ -445,7 +444,7 @@ imc_long <- imc_long %>%
   ungroup()
 
 imc_long$sorting <- "all"
-imc_long$dataset <- "imc"
+imc_long$dataset <- "IMC"
 ```
 
 ```{r, fig.height=10,fig.width=10}
@@ -469,7 +468,5 @@ ggplot()+
   theme_bw()+
   theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))+
   labs()
-
-
 ```
 
