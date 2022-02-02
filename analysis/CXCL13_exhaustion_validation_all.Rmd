@@ -255,13 +255,13 @@ plot_grid(plotlist = p.list, ncol = 5)
 ```{r, fig.height=7, fig.width=12}
 CD8T_markers <- c("CXCL13","PD-1","CD39","Tim-3","LAG-3","GITR","EOMES","ICOS","CD38","GranzymeB","CD45RO","Ki-67","TCF7","CD45RA","CD57")
 
-pdf("/media/dan/Data/Data/Melanoma_HotCold_paper/CXCL13_heatmap_sorted.pdf",width = 12,height = 8)
+#pdf("/media/dan/Data/Data/Melanoma_HotCold_paper/CXCL13_heatmap_sorted.pdf",width = 12,height = 8)
 dittoHeatmap(CD8_sce,genes = ex_markers,annot.by = c("Description","dysfunction_score"),
              assay = "asinh",show_colnames = FALSE,order.by = "CXCL13",
             cluster_rows=FALSE,
             heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
             breaks = seq(-3,3, length.out = 101))
-dev.off()
+#dev.off()
 ```
 
 
@@ -269,7 +269,7 @@ dev.off()
 
 ```{r}
 library(tidyverse)
-cor_dat <- matrix(nrow = 32, ncol = 26)
+cor_dat <- matrix(nrow = 32, ncol = 25)
 colnames(cor_dat) <- unique(sce$Description)
 rownames(cor_dat) <- good_markers[which(good_markers != "CXCL13")]
 for (i in unique(CD8_sce$Description)) {
@@ -378,7 +378,7 @@ dittoHeatmap(CD8_sce, genes = ex_markers,annot.by =  c("clusters", "Description"
 ## per image correlation for exhausted clusters 2,3,4
 
 ```{r}
-ex_clusters <- c(2,3,4,8)
+ex_clusters <- c(2,3,4)
 
 cur_dat <- as_tibble(colData(CD8_sce))
 RNA_dat <- as_tibble(colData(sce_RNA))
@@ -475,6 +475,7 @@ ggplot(all_dat, aes(x=prot_CXCL13, y=rna_frac)) +
   ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
 #dev.off()
 ```
+
 per patient data
 
 ```{r}
@@ -573,7 +574,7 @@ ggplot(all_dat, aes(x=prot_ex, y=rna_frac)) +
   xlab("Fraction CD8 exhausted clusters (protein data)") +
   ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
 
-#pdf("D:/Data/Melanoma_HotCold_paper/CXCL13")
+pdf("/media/dan/Data/Data/Melanoma_HotCold_paper/CXCL13_per_patient_RNA_protein_correlation.pdf")
 ggplot(all_dat, aes(x=prot_CXCL13, y=rna_frac)) + 
   geom_point(size=3) + 
   geom_smooth(method="lm") +
@@ -582,13 +583,14 @@ ggplot(all_dat, aes(x=prot_CXCL13, y=rna_frac)) +
   theme(text = element_text(size=15)) +
   xlab("Fraction CD8+ CXCL13+ T cells (protein data)") +
   ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+dev.off()
 ```
 
 
-## per image correlation for exhausted clusters 2,3,4,5
+## per image correlation for exhausted clusters 2,3,4,10
 
 ```{r}
-ex_clusters <- c(2,3,4,5)
+ex_clusters <- c(2,3,4,10)
 
 cur_dat <- as_tibble(colData(CD8_sce))
 RNA_dat <- as_tibble(colData(sce_RNA))
