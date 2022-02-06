@@ -27,7 +27,6 @@ library(tidyverse)
 library(dplyr)
 library(data.table) 
 library(ggplot2)
-library(cba)
 library(ComplexHeatmap)
 library(colorRamps)
 library(circlize)
@@ -38,12 +37,9 @@ library(gridExtra)
 library(tidyr)
 library(ggpmisc)
 library(circlize)
-library(coxme)
 library(dittoSeq)
 library(scater)
 library(cowplot)
-library(survminer)
-library(ggalluvial)
 library(cytomapper)
 library(ggrepel)
 library(rstatix)
@@ -323,13 +319,15 @@ ex_markers <- c("CXCL13","PD-1","EOMES","CD39","GITR","Tim-3","LAG-3","CD38","Ki
 
 CD8_sce <- sce_dysfunction[,sce_dysfunction$celltype %in% c("CD8_Tcell","CD8_CXCL13+_Tcell")]
 
+CD8_sce$CXCL13 <- NULL
 dittoHeatmap(CD8_sce,
              genes = ex_markers,
              annot.by = c("dysfunction_score"),
              assay = "asinh",
              show_colnames = FALSE,
-             order.by = "dysfunction_score",
+             order.by = "CXCL13",
              cluster_rows=FALSE,
+             cluster_cols = FALSE,
              heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
              annotation_colors = list(dysfunction_score = c(`Low Dysfunction` = "#00BFC4",
                                                       `High Dysfunction` = "#F8766D")),

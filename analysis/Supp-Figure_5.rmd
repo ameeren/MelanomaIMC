@@ -43,6 +43,8 @@ library(cowplot)
 library(circlize)
 library(ggrepel)
 library(rstatix)
+library(ape)
+library(biomaRt)
 ```
 
 # Load Data
@@ -56,7 +58,6 @@ sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
 ```
 
 # Analysis
-
 
 # Supp Fig 5A
 
@@ -186,7 +187,7 @@ cor.test(rna_sum[,"Tumor"], prot_sum[,"Tumor"])
 cor.test(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])
 ```
 
-# Supp Figure 5E
+# Supp Figure 5F
 
 ## Detection of chemokine expressing cells
 
@@ -209,7 +210,7 @@ output_list <- compute_difference(sce_rna,
 
 ## Plot Results from Chemokine Detection
 
-```{r Supp_Fig_5E_chemokine_detection,fig.height=7, fig.width=17, dev=c("pdf"), dpi=25}
+```{r Supp_Fig_5F_chemokine_detection,fig.height=7, fig.width=17, dev=c("pdf"), dpi=25}
 # check difference between DapB and signal (histogram)
 plot_list = list()
 for(i in chemokine_channels_sub){
@@ -261,10 +262,7 @@ We will first look at the identity matrix, inidcating the percentage of
 sequence similarity.
 
 ```{r read-in-data, message=FALSE, warning=FALSE}
-library(tidyverse)
-library(SingleCellExperiment)
-
-seq_similarity <- read.table("~/switchdrive/Institution/MelanomaMC/ClustalW_results/identity_matrix.txt")
+seq_similarity <- read.table("data/data_for_analysis/ClustalW_results/identity_matrix.txt")
 rownames(seq_similarity) <- seq_similarity$V2
 seq_similarity <- seq_similarity[,-c(1,2)]
 
@@ -273,16 +271,14 @@ seq_similarity <- seq_similarity[!grepl("XR_|NR_", rownames(seq_similarity)),
                                  !grepl("XR_|NR_", rownames(seq_similarity))]
 rownames(seq_similarity) <- sub("\\.[0-9]*", "", rownames(seq_similarity))
 
-library(ape)
-phylogenetic_tree <- read.tree("~/switchdrive/Institution/MelanomaMC/ClustalW_results/phylogenetic_tree.txt")
-plot(phylogenetic_tree)
+
+phylogenetic_tree <- read.tree("data/data_for_analysis/ClustalW_results/phylogenetic_tree.txt")
 ```
 
 Now, we will map between RefSeq transcript ids, ensemble transcript ids and
 gene names.
 
 ```{r biomart}
-library(biomaRt)
 ensembl <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
 cur_tab <- getBM(attributes=c("refseq_mrna", "ensembl_gene_id", "hgnc_symbol"), 
       filters = "refseq_mrna", values = rownames(seq_similarity), 
@@ -293,14 +289,6 @@ rownames(seq_similarity)  <- colnames(seq_similarity) <-
     paste0(cur_tab$refseq_mrna, "_", cur_tab$hgnc_symbol)
 ```
 
-We now visualize the similarity as heatmap.
-
-```{r viz-similarity-heatmap, fig.height=7, fig.width=7}
-library(pheatmap)
-library(viridis)
-pheatmap(seq_similarity, cluster_cols = FALSE,
-         cluster_rows = FALSE, color = inferno(100), breaks = 0:100)
-```
 
 And we compare it to correlation in expression across all cells.
 
@@ -356,9 +344,7 @@ cor.test(sim_tibble$mean_similarity,
 Finally, we will compare the sequence similarity to the jaccard index 
 of chemokine expressors.
 
-```{r}
-library(ggpubr)
-
+```{r Supp_Fig_5G_JaccardPlot, dev="pdf", fig.width=7, fig.height=5}
 # Define the jaccard similarity
 jaccard <- function(x,y){
     intersection <- length(intersect(x,y))
@@ -375,7 +361,7 @@ cur_out <- lapply(seq_len(nrow(sim_tibble)),
        })
 sim_tibble$jaccard_sim <- unlist(cur_out)
 
-p <- ggplot(data.frame(similarity = sim_tibble$mean_similarity,
+ggplot(data.frame(similarity = sim_tibble$mean_similarity,
                   jaccard_sim = sim_tibble$jaccard_sim)) +
     geom_point(aes(similarity, jaccard_sim)) +
     geom_smooth(method = "lm", aes(similarity, jaccard_sim)) +  stat_cor(method = "pearson",
@@ -384,12 +370,9 @@ p <- ggplot(data.frame(similarity = sim_tibble$mean_similarity,
     theme_bw() + theme(text=element_text(size=15)) +
     xlab("Sequence similarity") + ylab("Chemokine co-expression [Jaccard index]")
 
-ggsave("milieu_sequence_similarity.pdf", p, width = 7, height = 5)
-
 cor.test(sim_tibble$mean_similarity,
          sim_tibble$jaccard_sim)
 ```
-
 
 # Supp Figure 5H
 

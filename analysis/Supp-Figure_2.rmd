@@ -1,156 +1,459 @@
 ---
 title: "Supplementary Figure 2"
 author: "Tobias Hoch and Daniel Schulz"
-date: "2020-10-13"
+date: "2020-08-04"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
 ---
 
 # Introduction
-This script generates plots for Supplementary Figure 2. Panel B was created manually. 
+This script generates plots for Supplementary Figure 2. It contains data that is not stored in the SCE format. 
 
-# Preparations
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, message= FALSE)
-knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
-```
+# Preparations 1
 
 ## Load libraries
 
-```{r load libraries}
+```{r}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
-library(data.table)
-library(survival)
-library(ggplot2)
-library(broom)
-library(dplyr)
-library(RColorBrewer)
-library(ggalluvial)
-library(tidyverse)
-library(cowplot)
-library(ggbeeswarm)
-library(gridExtra)
 library(SingleCellExperiment)
-library(scater)
-library(cba)
-library(ComplexHeatmap)
-library(reshape2)
-library(rms)
-library(ggrepel)
-library(circlize)
-library(coxme)
-library(rstatix)
-library(corrplot)
+library(data.table)
+library(ggplot2)
+library(dplyr)
+library(stringr)
 library(ggpubr)
+library(ComplexHeatmap)
+library(circlize)
+library(gridExtra)
+library(ggbeeswarm)
+library(ggrepel)
+library(ggpmisc)
+library(ggrastr)
+library(readr)
+library(cowplot)
+library(corrplot)
+library(rstatix)
 ```
 
-## Load Data
+## Load and process the data
 
 ```{r}
-# clinical data
-dat <- read_csv("data/data_for_analysis/protein/clinical_data_protein.csv")
+# load data
+cells1 = fread("data/data_for_analysis/12plex_validation/overexpression/20190305/cell.csv", header = T,sep=",")
+cells2 = fread("data/data_for_analysis/12plex_validation/overexpression/20190306/cell.csv", header = T,sep=",")
+meta1 = fread("data/data_for_analysis/12plex_validation/overexpression/20190305/Image.csv",header = T,sep=",")
+meta2 = fread("data/data_for_analysis/12plex_validation/overexpression/20190306/Image.csv",header = T,sep=",")
+panel = fread( "data/data_for_analysis/12plex_validation/overexpression/20190305/20190305_A431_overexpression.csv")
 
-# SCE object
-sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
-sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+# extract replicate and stain info
+meta1 = meta1[,.(ImageNumber,FileName_CellImage, Group_Number, Metadata_Target)]
+meta1[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1)), by=ImageNumber]
+meta2 = meta2[,.(ImageNumber,FileName_CellImage, Group_Number, Metadata_Target)]
+meta2[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1)), by=ImageNumber]
 
-sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
-sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+# sort Metal Number in same order than in the Image.csv file
+panel$`Metal Number` = str_extract(panel$`Metal Tag`, "[0-9]+")
+panel = panel[order(panel$`Metal Number`),]
+panel$channel = c(1:nrow(panel))
 
-clincial = read.csv(file = "data/data_for_analysis/protein/clinical_data_protein.csv")
+cells_long1 = melt.data.table(cells1,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
+cells_long2 = melt.data.table(cells2,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
 
-targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+# create unique ID with Image and ObjectNumber
+cells_long1[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+cells_long2[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+
+# multiply value by 2E16 since it divided by this number in CellProfiler
+cells_long1$value = cells_long1$value * 65535
+cells_long2$value = cells_long2$value * 65535
+
+# calculate counts_asinh
+cells_long1[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 counts_asinh = asinh(value/1)),
+                 by=id]
+cells_long2[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 counts_asinh = asinh(value/1)),
+                 by=id]
+
+# take only FullStack entries and not FullStackFiltered
+cells_long1[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+cells_long1[,signal_type:=getInfoFromString(variable,"_",2),by=variable]
+cells_long2[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+cells_long2[,signal_type:=getInfoFromString(variable,"_",2),by=variable]
+
+unique(cells_long1$signal_type)
+unique(cells_long2$signal_type)
 ```
 
+## Merge meta data with cells data
 
+```{r}
+cells1 = merge(cells_long1, meta1,by="ImageNumber")
+cells2 = merge(cells_long2, meta2,by="ImageNumber")
 
-## Mutation split by Location
+cells = rbind(cells1, cells2)
+```
 
-```{r Supp_Fig_2D_mutation, dev=c('pdf'), fig.width=15, fig.height=9.5, eval=F}
-# add control location to sce
-sce_rna$MM_location_simplified2 <- sce_rna$MM_location_simplified
-#sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "Skin"]$MM_location_simplified2 <- "control skin"
-#sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "Lymphnode"]$MM_location_simplified2 <- "control LN"
-#sce_rna[,sce_rna$Location == "CTRL" & sce_rna$TissueType == "PSO"]$MM_location_simplified2 <- "control psoriasis"
+## Exclude DNA, Histone and panCytokeratin data and then get the info of PPIB staining
 
-targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+```{r}
+# exclude some channels, make sure to exclude the right ones!
+cells_panel = merge(cells,panel[,.(channel,Target, `Metal Tag`, `Metal Number`)],by="channel")
+cells_panel = cells_panel[Target %in% c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),]
+cells_panel = cells_panel[measurement != "FullStack",]
+cells_panel = cells_panel[signal_type != "MeanIntensityCorrectedLS",]
+unique(cells_panel$signal_type)
 
-# subset sce_rna
-group_size <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber, Mutation) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(Mutation) %>%
-  summarise(n=n()) %>%
-  filter(n>10 & Mutation != "")
+cells_panel_LScorrected = cells_panel[cells_panel$signal_type == "MeanIntensityCorrectedLS",]
+cells_panel_uncorrected = cells_panel[cells_panel$signal_type == "MeanIntensity",]
+cells_panel_corrected = cells_panel[cells_panel$signal_type == "MeanIntensityCorrected",]
+```
 
-sce_rna_sub <- sce_rna[,sce_rna$Mutation %in% group_size$Mutation]
+# Supp Figure 2E
 
-a <- plotCellCounts(sce = sce_rna_sub, 
-                     sce_sub = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
-                     cellID = "cellID",
-                     colour_by = "expressor",
-                     split_by = "Mutation",
-                     imageID = "ImageNumber",
-                     normalize = TRUE,
-                    show_n = FALSE,
-                     colour_vector = metadata(sce_rna)$colour_vectors$chemokine_combinations) + 
-  guides(fill=guide_legend("Chemokine")) +
-  theme(text = element_text(size=18))
+## Unspecific Amplifier Binding 
 
-b <- plotCellCounts(sce = sce_rna_sub[,which(sce_rna_sub$expressor %in% targets)],
-                     cellID = "cellID",
-                     colour_by = "celltype",
-                     split_by = "Mutation",
-                     imageID = "ImageNumber",
-                     proportion = TRUE,
-                    show_n = FALSE,
-                     colour_vector = metadata(sce_rna)$colour_vectors$celltype) + 
-  guides(fill=guide_legend("Cell Type")) +
-  theme(text = element_text(size=18))
+```{r Supp_Fig_2E_heatmap_unspecific_binding, dev=c('pdf')}
+results = matrix(nrow=12, ncol = 12)
+rownames(results) = unique(cells_panel$Target)
+colnames(results) = unique(cells_panel$Target)
+results = as.data.frame(results)
 
-# fraction of chemokine-expressing cells per image
-chemo <- data.frame(colData(sce_rna_sub)) %>%
-  #filter(MM_location_simplified2 %in% c("skin_subcutaneous", "LN")) %>%
-  group_by(ImageNumber, Mutation, chemokine, MM_location_simplified2) %>%
-  summarise(n=n()) %>%
-  group_by(ImageNumber) %>%
-  mutate(fraction = n / sum(n)) %>%
-  reshape2::dcast(ImageNumber + Mutation + MM_location_simplified2 ~ chemokine, value.var = "fraction")
+cells_panel_corrected = as.data.frame(cells_panel_corrected)
 
-median_expression <- median(chemo$`TRUE`)
+# calculate percentage of unspecific binding
+for(i in unique(cells_panel$Target)){
+  mean_target = mean(cells_panel_corrected[cells_panel_corrected["Metadata_Target"] == i & cells_panel_corrected["Target"] == i, "value"])
+  for(j in unique(cells_panel$Target)){
+    row_index = which(rownames(results) %in% i)
+    col_index = which(colnames(results) %in% j)
+    results[row_index, col_index] = mean(cells_panel_corrected[cells_panel_corrected["Metadata_Target"] == j & cells_panel_corrected["Target"] == i, "value"]) / mean_target * 100
+  }
+}
 
-stat.test <- chemo %>%
-  wilcox_test(`TRUE` ~ Mutation) %>%
-  adjust_pvalue(method="BH") %>%
-  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  add_xy_position(x = "Mutation")
+# set crosstalk to 0 from one channel to same channel
+results[results == 100] <- 0
 
-stat.test$y.position <- stat.test$y.position - 0.125
+a = Heatmap(as.matrix(results),
+        col = colorRamp2(c(0,1,3), c("white","blue", "red")),
+        row_order = order(as.numeric(gsub("T", "", unique(cells_panel_corrected$Target)))),
+        column_order =  order(as.numeric(gsub("T", "", unique(cells_panel_corrected$Target)))),
+        heatmap_legend_param = list(title = "% cross-talk", size =15),
+        column_names_side = "top",
+        column_title = "Stained Channel",
+        row_title = "Other Channels",
+        row_names_side = "left",
+        column_names_rot = 0,
+        column_names_gp = gpar(fontsize = 15),
+        row_names_gp = gpar(fontsize = 15),
+        column_names_centered = T,
+        cell_fun = function(j, i, x, y, width, height, fill) {
+        grid.text(sprintf("%.1f", as.matrix(results)[i, j]), x, y, gp = gpar(fontsize = 10))
+})
+draw(a)
+```
 
-c <- ggplot(chemo, aes(x=Mutation, y=`TRUE`)) + 
-  geom_boxplot(alpha=0.2, lwd=1.5) + 
-  geom_quasirandom(aes(col=MM_location_simplified2), size=2, alpha=.8) +
-  #geom_hline(yintercept = median_expression, linetype=2, size=2) + 
-  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
-  xlab("") + 
-  ylab("Fraction of Chemokine-Expressing Cells") +
+# Supp Figure 2D
+
+## Boxplot with uncorrected and corrected signal
+
+```{r Supp_Fig_2D_corrected signal, dev=("pdf"), fig.width=8, fig.height=5}
+cells_panel2 <- cells_panel
+cells_panel2[cells_panel2$signal_type == "MeanIntensity", ]$signal_type = "uncorrected"
+cells_panel2[cells_panel2$signal_type == "MeanIntensityCorrected", ]$signal_type = "spill-over corrected"
+
+ggplot(cells_panel2[cells_panel2$Metadata_Target == "T9",], aes(x=`Metal Tag`, y=counts_asinh, fill=signal_type)) +
+  geom_boxplot(outlier.shape = NA, lwd=0.5) +
   theme_bw() +
-  theme(text = element_text(size=16),
-        axis.text.x = element_text(angle=45, hjust=1, vjust=1)) +
-  guides(col=guide_legend("Location")) + 
-  coord_cartesian(ylim=c(0,0.35))
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+        text = element_text(size=18)) +
+  guides(fill=guide_legend(title="Signal")) +
+  ylab("Mean Count (asinh)") +
+  xlab("") +
+  facet_wrap(~Metadata_Target,labeller = as_labeller(c(T9 = "mRNA Probe for Channel 9 (Er168)")))
+```
 
-p <- grid.arrange(a,b, ncol=2, nrow=1)
+# Preparations 2
 
-grid.arrange(c,p,nrow=1, widths = c(0.35,0.65))
+## Remove previous data 
 
-# MM_location for Mutations
-data.frame(colData(sce_rna_sub)) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(Mutation, MM_location_simplified) %>%
-  summarise(n=n()) %>%
-  group_by(Mutation) %>%
-  mutate(percentage = n / sum(n) * 100)
+```{r}
+rm(list = ls())
+
+# Reload helper functions
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+```
+
+## Load the data
+
+```{r}
+cells1 = fread("data/data_for_analysis/12plex_validation/HeLa/20190208/cell.csv", header = T,sep=",")
+cells3 = fread("data/data_for_analysis/12plex_validation/HeLa/20190215/cell.csv", header = T,sep=",")
+cells4 = fread("data/data_for_analysis/12plex_validation/HeLa/20190222/cell.csv", header = T,sep=",")
+
+meta1 = fread("data/data_for_analysis/12plex_validation/HeLa/20190208/Image.csv",header = T,sep=",")
+meta3 = fread("data/data_for_analysis/12plex_validation/HeLa/20190215/Image.csv",header = T,sep=",")
+meta4 = fread("data/data_for_analysis/12plex_validation/HeLa/20190222/Image.csv",header = T,sep=",")
+
+meta1 = meta1[,.(ImageNumber,FileName_CellImage)]
+meta3 = meta3[,.(ImageNumber,FileName_CellImage)]
+meta4 = meta4[,.(ImageNumber,FileName_CellImage)]
+
+meta1[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",6), 
+             secondary_stain = getInfoFromString(FileName_CellImage,"_",7)),by=ImageNumber]
+meta3[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",6), 
+             secondary_stain = getInfoFromString(FileName_CellImage,"_",7)),by=ImageNumber]
+meta4[,':=' (replicate = getInfoFromString(FileName_CellImage,"_",1),stain = getInfoFromString(FileName_CellImage,"_",7), 
+             secondary_stain = getInfoFromString(FileName_CellImage,"_",8), 
+             another_stain = getInfoFromString(FileName_CellImage,"_",6)),by=ImageNumber]
+
+# rename positive stain 
+meta1[meta1$stain=="positive" & meta1$secondary_stain == "noAb",]$stain = "positive without Ab"
+meta1[meta1$stain=="positive" & meta1$secondary_stain == "withAb",]$stain = "positive with Ab"
+meta3[meta3$stain=="positive" & meta3$secondary_stain == "noAb",]$stain = "positive without Ab"
+meta3[meta3$stain=="positive" & meta3$secondary_stain == "withAb",]$stain = "positive with Ab"
+meta3[meta3$stain=="negative" & meta3$secondary_stain == "s0",]$stain = "negative 1st"
+meta3[meta3$stain=="negative" & meta3$secondary_stain == "new",]$stain = "negative"
+meta4[meta4$stain=="noAb",]$stain = "positive without Ab"
+meta4[meta4$stain=="withAb",]$stain = "positive with Ab"
+meta4[meta4$another_stain=="negative",]$stain = "negative"
+meta4[meta4$another_stain=="T12",]$stain = "T12"
+
+# change stain name
+meta3[meta3$stain=="T7new",]$stain = "T7"
+meta3[meta3$stain=="T5new",]$stain = "T5"
+meta3[meta3$stain=="T11new",]$stain = "T11"
+meta3[meta3$replicate =="20190221",]$replicate = "20190215"
+
+panel = fread( "data/data_for_analysis/12plex_validation/HeLa/20190212_HeLa_12plex_validation.csv")
+
+# sort Metal Number in same order than in the Image.csv file!!
+panel$`Metal Number` = str_extract(panel$`Metal Tag`, "[0-9]+")
+panel = panel[order(panel$`Metal Number`),]
+panel$channel = c(1:nrow(panel))
+
+# melt table
+cells1_long = melt.data.table(cells1,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
+cells3_long = melt.data.table(cells3,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
+cells4_long = melt.data.table(cells4,id.vars = c("ImageNumber", "ObjectNumber"),variable.factor = F)
+
+# multiply value by 2E16 since it divided by this number in CellProfiler
+cells1_long$value = cells1_long$value * 65535
+cells3_long$value = cells3_long$value * 65535
+cells4_long$value = cells4_long$value * 65535
+
+cells1_long[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+cells1_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 counts_asinh = asinh(value/1)),
+                 by=id]
+
+cells3_long[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+cells3_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 counts_asinh = asinh(value/1)),
+                 by=id]
+
+cells4_long[,id := paste(ImageNumber,ObjectNumber,sep ="_")]
+cells4_long[,':=' (channel = as.integer(getInfoFromFileList(variable,sep="_",strPos = 4,censorStr = "c")),
+                 counts_asinh = asinh(value/1)),
+                 by=id]
+
+# take only FullStack entries and not FullStackFiltered (not possible with RNA measurement, only with Ab's)
+cells1_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+cells3_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+cells4_long[,measurement:=getInfoFromString(variable,"_",3),by=variable]
+
+cells1_long = cells1_long[measurement=="FullStack",]
+cells3_long = cells3_long[measurement=="FullStack",]
+cells4_long = cells4_long[measurement=="FullStack",]
+```
+
+## Merge meta dat with cells data and then then merge all the files to have one file with all three replicates
+
+```{r}
+cells1_long = merge(cells1_long,meta1,by="ImageNumber")
+cells3_long = merge(cells3_long,meta3,by="ImageNumber")
+cells4_long = merge(cells4_long,meta4,by="ImageNumber")
+
+# select only 1 negative measuremenet in 3th measurement
+cells3_long = cells3_long[cells3_long$stain != "negative 1st", ]
+
+# remove additional columns which are not needed
+cells1_long = cells1_long[,!("secondary_stain")]
+cells3_long = cells3_long[,!("secondary_stain")]
+cells4_long = cells4_long[,!("secondary_stain")]
+cells4_long = cells4_long[,!("another_stain")]
+
+
+cells = rbind(cells1_long, cells3_long)
+cells = rbind(cells, cells4_long)
+```
+
+## Merge cells and panel data and exclude non-relevant channels
+
+```{r}
+# exclude certain channels, make sure to exclude the right ones!
+cells_panel <- merge(cells,panel[,.(channel,Target)],by="channel")
+cells_panel <- cells_panel[Target %in% c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),]
+```
+
+## Load data frolm 8plex validation and make it comparable
+
+```{r}
+# import data from 8plex validation
+cells_panel_8plex = readRDS(file = "data/data_for_analysis/12plex_validation/HeLa/2018_data_8plex_validation_DS.rds")
+
+# make both data.frames same so they can be merged
+cells_panel = cells_panel[, !("measurement")]
+cells_panel_8plex = cells_panel_8plex[, !("AreaShape_Area")]
+
+# rename the stains in the 8plex data
+unique(cells_panel_8plex$stain)
+cells_panel_8plex = cells_panel_8plex[!(stain %in% ("oldMix")), ]
+cells_panel_8plex[stain == "C1", ]$stain = "T1"
+cells_panel_8plex[stain == "C2", ]$stain = "T4"
+cells_panel_8plex[stain == "C3", ]$stain = "T3"
+cells_panel_8plex[stain == "C4", ]$stain = "T8"
+cells_panel_8plex[stain == "C5", ]$stain = "T12"
+cells_panel_8plex[stain == "C6", ]$stain = "T2"
+cells_panel_8plex[stain == "C7", ]$stain = "T9"
+cells_panel_8plex[stain == "C8", ]$stain = "T6"
+cells_panel_8plex[stain == "all", ]$stain = "positive with Ab"
+cells_panel_8plex[stain == "neg", ]$stain = "negative"
+cells_panel_8plex[Target == "C1", ]$Target = "T1"
+cells_panel_8plex[Target == "C2", ]$Target = "T4"
+cells_panel_8plex[Target == "C3", ]$Target = "T3"
+cells_panel_8plex[Target == "C4", ]$Target = "T8"
+cells_panel_8plex[Target == "C5", ]$Target = "T12"
+cells_panel_8plex[Target == "C6", ]$Target = "T2"
+cells_panel_8plex[Target == "C7", ]$Target = "T9"
+cells_panel_8plex[Target == "C8", ]$Target = "T6"
+
+# check
+unique(cells_panel_8plex$stain)
+unique(cells_panel_8plex$Target)
+all(colnames(cells_panel) == colnames(cells_panel_8plex))
+
+# merge both files
+cells_panel_12plex = rbind(cells_panel, cells_panel_8plex)
+```
+
+# Supp Figure 2A
+
+## Throw out the DNA, histone and panCytokeratin data and then get the info of PPIB staining
+
+```{r Supp_Fig_2A_merged_comparison_per_channel, fig.width=10, fig.height=8, dev=c('pdf')}
+# subset
+cells_panel_12plex_sub = cells_panel_12plex[stain == Target,]
+
+# relevel factor
+cells_panel_12plex_sub$Target <- factor(cells_panel_12plex_sub$Target, levels = c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"))
+
+# check out difference in signal intensity for PPIB in the different channels
+ggplot(data = cells_panel_12plex_sub[Target %in%c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"),], aes(x=as.factor(Target),y=counts_asinh)) +
+  geom_boxplot(fill="deepskyblue1")+
+  theme_minimal()+
+  theme(text = element_text(size=25), axis.text.x = element_text(angle = 90, hjust = 1)) +
+  ylab("Mean Intensity Count per Cell [asinh]") + 
+  xlab("Target Channels") + 
+  geom_hline(yintercept = mean(cells_panel_12plex_sub$counts_asinh), linetype = 2) +
+  scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T10","T11", "T12"),
+                      labels= c("T1 PPIB","T2 PPIB","T3 PPIB", "T4 PPIB", "T5 PPIB","T6 PPIB","T7 PPIB","T8 PPIB","T9 PPIB","T10 PPIB", "T11 PPIB", "T12 PPIB")) 
+```
+
+## Signal range
+
+```{r}
+cells_panel_12plex_sub %>%
+  group_by(stain) %>%
+  summarize(mean_per_channel = mean(counts_asinh)) %>%
+  mutate(sd = sd(mean_per_channel), mean = mean(mean_per_channel), min = min(mean_per_channel), max = max(mean_per_channel))
+```
+
+# Supp Figure 2C
+
+## Influence of Antibody Incubation
+
+```{r Supp_Fig_2C_overnight_Ab_incubation, fig.width=10, fig.height=8, dev=c('pdf')}
+dd = cells_panel[stain == "positive without Ab" | stain == "positive with Ab",]
+
+# relevel factor
+dd$Target <- factor(dd$Target, levels = c("T1","T2","T3","T4","T5","T6","T7","T8","T9","T10","T11","T12"))
+dd$stain <- ifelse(dd$stain == "positive with Ab", "+ Antibodies", "- Antibodies")
+
+# plot
+ggplot(data=dd, aes(x=Target, y=counts_asinh, fill = stain)) + 
+  geom_boxplot() +
+  scale_x_discrete(breaks=c("T1", "T2", "T3","T4","T5","T6","T7","T8", "T9", "T11","T10", "T12"),
+                      labels= c("T1 POLR2A","T2 PPIB","T3 UBC", "T4 HPRT1", "T5 TUB","T6 RPL28","T7 RPL5","T8 B2M","T9 ACTB","T10 LDHA", "T11 RPLP0", "T12 GAPDH")) +
+  theme_minimal()+
+  theme(text = element_text(size=25), axis.text.x = element_text(angle = 90, hjust = 1)) + 
+  ylab("Mean Intensity Count per Cell [asinh]") +
+  xlab("Target Channels") + 
+  scale_fill_discrete(name = "Protocol Type") 
+```
+
+# Supp Figure 2B
+
+## Compare Positive Controls with RNAseq data
+
+```{r Supp_Fig_2B_correlation_with_RNAseq, fig.width=8, fig.height=7, dev=c('pdf')}
+# add gene name
+cells_panel_12plex$gene <- ""
+cells_panel_12plex[cells_panel_12plex$Target == "T1",]$gene <- "POLR2A"
+cells_panel_12plex[cells_panel_12plex$Target == "T2",]$gene <- "PPIB"
+cells_panel_12plex[cells_panel_12plex$Target == "T3",]$gene <- "UBC"
+cells_panel_12plex[cells_panel_12plex$Target == "T4",]$gene <- "HPRT1"
+cells_panel_12plex[cells_panel_12plex$Target == "T5",]$gene <- "TUB"
+cells_panel_12plex[cells_panel_12plex$Target == "T6",]$gene <- "RPL28"
+cells_panel_12plex[cells_panel_12plex$Target == "T7",]$gene <- "RPL5"
+cells_panel_12plex[cells_panel_12plex$Target == "T8",]$gene <- "B2M"
+cells_panel_12plex[cells_panel_12plex$Target == "T9",]$gene <- "ACTB"
+cells_panel_12plex[cells_panel_12plex$Target == "T10",]$gene <- "LDHA"
+cells_panel_12plex[cells_panel_12plex$Target == "T11",]$gene <- "RPLP0"
+cells_panel_12plex[cells_panel_12plex$Target == "T12",]$gene <- "GAPDH"
+
+median_per_gene <- cells_panel_12plex %>%
+  filter(stain == "positive with Ab") %>%
+  filter(replicate %in% c("20190208", "20190215", "20190222")) %>%
+  group_by(gene) %>%
+  summarise(expression_RNAScope = median(counts_asinh))
+
+# data from human protein atlas
+rna_seq <- data.frame(median_per_gene$gene)
+colnames(rna_seq) <- "gene"
+
+# load scRNA-seq data (downloaded from HPA, https://www.proteinatlas.org/about/download, Human Protein Atlas version 21.0)
+HPA_data <- read.delim("data/data_for_analysis/HPA_rna_celline.tsv")
+
+# HeLa cell line with genes-of-interest
+HPA_data_sub <- HPA_data %>%
+  filter(Cell.line == "HeLa") %>%
+  filter(Gene.name %in% unique(cells_panel_12plex$gene))
+
+colnames(HPA_data_sub) <- c("geneID", "gene", "cellline", "TPM", "pTPM", "nTPM")
+
+# merge 
+sum <- left_join(median_per_gene, HPA_data_sub)
+
+# plot 
+ggplot(sum, aes(x=log2(nTPM), y=expression_RNAScope, label=gene)) + 
+  geom_label_repel(size=7, fill="deepskyblue1", alpha=1,
+                   min.segment.length = unit(0, 'lines'),
+                   force_pull = 0) +
+  geom_point(size=3) +
+  geom_smooth(method = "lm") +
+  xlab("Normalized Expression RNA-Seq nTPM [log2]") +
+  ylab("Median Expression RNAScope [asinh]") + 
+  stat_cor(method = "pearson",
+           aes(label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
+           size = 10, cor.coef.name = "R", label.sep="\n", label.y.npc = "top") + 
+  theme_minimal() + 
+  theme(text = element_text(size=20)) 
+```
+
+## Correlation
+
+```{r}
+# correlation of the two technologies
+cor(sum$expression_RNAScope, log2(sum$nTPM), method = c("pearson"))
 ```
