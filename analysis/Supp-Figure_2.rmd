@@ -64,43 +64,7 @@ clincial = read.csv(file = "data/data_for_analysis/protein/clinical_data_protein
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 ```
 
-# Supp Figure 2A
 
-## Fraction of Tumor Cells that express chemokines
-
-```{r Supp_Fig_2A_tumor_cells_chemokine, dev=("pdf"), fig.width=9, fig.height=5}
-cur_dat <- data.frame(colData(sce_rna))
-cur_dat <- cur_dat %>%
-  filter(celltype == "Tumor") %>%
-  filter(Location != "CTRL")
-
-cur_dat <- cur_dat[,c("ImageNumber", "Mutation", colnames(cur_dat)[grepl(glob2rx("C*L*"),names(cur_dat))])]
-
-# colSums of Chemokines in Tumor Cells (Multiple Producer count more than once)
-cur_dat <- cur_dat %>%
-  group_by(ImageNumber, Mutation) %>%
-  mutate(cells = n()) %>%
-  group_by(ImageNumber, cells, Mutation) %>%
-  summarise_each(funs(sum))
-
-# compute fractions
-cur_dat[,4:14] <- cur_dat[,4:14] / t(cur_dat$cells)
-
-cur_dat <- cur_dat %>%
-  filter(cells > 200) %>%
-  reshape2::melt(id.vars=c("ImageNumber", "cells", "Mutation"), variable.name="chemokine", value.name="fraction")
-
-ggplot(cur_dat,aes(x=fct_reorder(chemokine, fraction, .fun = median, .desc = TRUE), y=fraction+0.001)) + 
-  geom_boxplot(alpha=.5) +
-  geom_quasirandom(alpha=.2) +
-  theme_bw() + 
-  theme(text=element_text(size=16)) +
-  ylab("Fraction of Expressing Tumor Cells\n(fraction + 0.001)") +
-  xlab("") +
-  scale_y_log10() +
-  annotation_logticks(sides = "l") +
-  geom_hline(yintercept = median(cur_dat$fraction+0.001), linetype = 2) 
-```
 
 ## Mutation split by Location
 

@@ -27,6 +27,7 @@ library(reshape2)
 library(tidyverse)
 library(dplyr)
 library(data.table) 
+library(ggrastr)
 library(ggplot2)
 library(colorRamps)
 library(RColorBrewer)
@@ -43,6 +44,19 @@ library(circlize)
 library(ggrepel)
 library(rstatix)
 ```
+
+# Load Data
+```{r}
+# SCE object
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+```
+
+# Analysis
+
 
 # Supp Fig 5A
 
@@ -113,7 +127,7 @@ dittoHeatmap(cur_sce, genes = good_markers, assay = "asinh",
 ```
 
 # Supp Figure 5C and 5D
-These plots are generated after the randomForest classification. For this, see files XY...
+These plots are generated after the randomForest classification. For this, see files 04_1_RNA_celltype_classification.rmd and 04_1_Protein_celltype_classification.rmd
 
 # Supp Figure 5E
 
@@ -170,4 +184,247 @@ cor.test(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"])
 cor.test(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"])
 cor.test(rna_sum[,"Tumor"], prot_sum[,"Tumor"])
 cor.test(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])
+```
+
+# Supp Figure 5E
+
+## Detection of chemokine expressing cells
+
+for the detection of chemokine expressing cells we make use of the fact that we also measured a negative control (DapB).
+
+```{r}
+# get the names of the chemokine channels without the negative control channel
+chemokine_channels = rownames(sce_rna[which(grepl("T\\d+_",rownames(sce_rna)) & ! grepl("DapB",rownames(sce_rna))),])
+chemokine_channels_sub <- c("T2_CCL22")
+
+# run function to define chemokine expressing cells 
+output_list <- compute_difference(sce_rna, 
+                          cellID = "cellID", 
+                          assay_name = "asinh", 
+                          threshold = 0.01, 
+                          mRNA_channels = chemokine_channels_sub, 
+                          negative_control = "T6_DapB", 
+                          return_calc_metrics = TRUE)
+```
+
+## Plot Results from Chemokine Detection
+
+```{r Supp_Fig_5E_chemokine_detection,fig.height=7, fig.width=17, dev=c("pdf"), dpi=25}
+# check difference between DapB and signal (histogram)
+plot_list = list()
+for(i in chemokine_channels_sub){
+  
+  # subset whole data set for visualization purposes
+  diff_chemo <- output_list[[i]]
+  diff_chemo_sub <- diff_chemo[sample(nrow(diff_chemo), nrow(diff_chemo)*0.5), ]
+
+  a <- ggplot(data = diff_chemo_sub, aes(x=scaled_diff)) + 
+  geom_histogram(binwidth = 0.05, aes(fill = 
+                                       ifelse(padj <= 0.01 & scaled_diff > 0, 'p<0.01', 'n.s.'))) + 
+  xlab(paste(paste("Scaled Difference ", i, sep = " "), " - DapB", sep = "")) + 
+    xlim(-5,7) +
+    theme_minimal() + 
+    theme(text = element_text(size=20),
+          legend.position = "none") + 
+    scale_fill_manual(values = c("black", "deepskyblue1"))
+  
+  # significant cells defined by subtraction
+  b <- ggplot(data=diff_chemo_sub, aes(x=mean_negative_control, y=mean_chemokine)) + 
+    geom_point_rast(alpha=0.2, aes(col = 
+                                ifelse(padj <= 0.01 & scaled_diff > 0, 'p<0.01', 'n.s.'))) + 
+    scale_color_manual(values = c("black", "deepskyblue1"), 
+                       name = "Legend") +
+    guides(color = guide_legend(override.aes = list(alpha=1, size=3))) +
+    xlim(0,5.5) + ylim(0,5.5) +
+    ylab(paste("Mean expression of", i, sep=" ")) +
+    xlab("Mean DapB mRNA expression") +
+    theme_minimal() + 
+    theme(text = element_text(size=20)) 
+
+  
+  grid.arrange(a,b, nrow = 1, ncol=2)
+}
+```
+
+# Supp Figure 5G
+
+This script reproduces the homology analysis between the different chemokines.
+We downloaded the data from www.ncbi.nlm.nih.gov and saved the transcript 
+sequences. https://www.ebi.ac.uk/Tools/msa/clustalo/ was used to align all-vs-all
+transcripts using the following call:
+
+```
+$APPBIN/clustal-omega-1.2.4/bin/clustalo --infile clustalo-E20210914-122047-0397-8283578-p2m.sequence --threads 8 --MAC-RAM 8000 --verbose --guidetree-out clustalo-E20210914-122047-0397-8283578-p2m.dnd --outfmt clustal --resno --outfile clustalo-E20210914-122047-0397-8283578-p2m.clustal_num --output-order tree-order --seqtype dna
+```
+
+We will first look at the identity matrix, inidcating the percentage of
+sequence similarity.
+
+```{r read-in-data, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(SingleCellExperiment)
+
+seq_similarity <- read.table("~/switchdrive/Institution/MelanomaMC/ClustalW_results/identity_matrix.txt")
+rownames(seq_similarity) <- seq_similarity$V2
+seq_similarity <- seq_similarity[,-c(1,2)]
+
+# Remove non coding transcript variants
+seq_similarity <- seq_similarity[!grepl("XR_|NR_", rownames(seq_similarity)),
+                                 !grepl("XR_|NR_", rownames(seq_similarity))]
+rownames(seq_similarity) <- sub("\\.[0-9]*", "", rownames(seq_similarity))
+
+library(ape)
+phylogenetic_tree <- read.tree("~/switchdrive/Institution/MelanomaMC/ClustalW_results/phylogenetic_tree.txt")
+plot(phylogenetic_tree)
+```
+
+Now, we will map between RefSeq transcript ids, ensemble transcript ids and
+gene names.
+
+```{r biomart}
+library(biomaRt)
+ensembl <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
+cur_tab <- getBM(attributes=c("refseq_mrna", "ensembl_gene_id", "hgnc_symbol"), 
+      filters = "refseq_mrna", values = rownames(seq_similarity), 
+      mart = ensembl, uniqueRows = FALSE)
+cur_tab <- cur_tab[match(rownames(seq_similarity), cur_tab$refseq_mrna),]
+
+rownames(seq_similarity)  <- colnames(seq_similarity) <- 
+    paste0(cur_tab$refseq_mrna, "_", cur_tab$hgnc_symbol)
+```
+
+We now visualize the similarity as heatmap.
+
+```{r viz-similarity-heatmap, fig.height=7, fig.width=7}
+library(pheatmap)
+library(viridis)
+pheatmap(seq_similarity, cluster_cols = FALSE,
+         cluster_rows = FALSE, color = inferno(100), breaks = 0:100)
+```
+
+And we compare it to correlation in expression across all cells.
+
+```{r cor-expression, fig.height=5, fig.width=5}
+final_sce <- sce_rna
+# select only the cells that express chemokines
+for_analysis <- final_sce[,final_sce$expressor != "NA"]
+
+cur_cor <- cor(t(assay(for_analysis, "asinh")[c("T5_CCL4", "T7_CCL18", "T1_CXCL8",
+                                             "T4_CXCL10", "T3_CXCL12", "T8_CXCL13",
+                                             "T12_CCL2", "T2_CCL22",
+                                             "T9_CXCL9", "T11_CCL8", "T10_CCL19"),]), 
+                                           method = "spearman")
+
+pheatmap(cur_cor, color = colorRampPalette(c("dark blue", "white", "dark red"))(100), 
+         breaks = seq(-1, 1, length.out = 100))
+```
+
+```{r viz-correlation}
+cor_tibbble <- cur_cor %>%
+    as_tibble() %>% 
+    mutate(probe = rownames(cur_cor)) %>% 
+    pivot_longer(cols = 1:ncol(cur_cor)) %>%
+    mutate(probe = str_split(probe, pattern = "_", simplify = TRUE)[,2],
+           name = str_split(name, pattern = "_", simplify = TRUE)[,2]) %>%
+    arrange(probe, name) %>%
+    filter(probe != name)
+
+sim_tibble <- seq_similarity %>%
+    as_tibble() %>% 
+    mutate(probe = rownames(seq_similarity)) %>% 
+    pivot_longer(cols = 1:ncol(seq_similarity)) %>%
+    mutate(from_chemo = str_split(probe, pattern = "_", simplify = TRUE)[,3],
+           to_chemo = str_split(name, pattern = "_", simplify = TRUE)[,3]) %>%
+    group_by(from_chemo, to_chemo) %>%
+    summarize(mean_similarity = mean(value, na.rm=TRUE)) %>%
+    arrange(from_chemo, to_chemo) %>%
+    filter(from_chemo != to_chemo)
+
+all.equal(paste(cor_tibbble$probe, cor_tibbble$name),
+          paste(sim_tibble$from_chemo, sim_tibble$to_chemo))
+
+ggplot(data.frame(similarity = sim_tibble$mean_similarity,
+                  correlation = cor_tibbble$value)) +
+    geom_point(aes(similarity, correlation))
+
+cor.test(sim_tibble$mean_similarity,
+         cor_tibbble$value)
+```
+
+## Number of co-expressors
+
+Finally, we will compare the sequence similarity to the jaccard index 
+of chemokine expressors.
+
+```{r}
+library(ggpubr)
+
+# Define the jaccard similarity
+jaccard <- function(x,y){
+    intersection <- length(intersect(x,y))
+    union = length(x) + length(y) - intersection
+    return (intersection/union)
+}
+
+# We will pass the unique cell ids into this function
+cur_out <- lapply(seq_len(nrow(sim_tibble)),
+       function(x){
+           from_chemo_cells <- colnames(final_sce)[colData(final_sce)[[sim_tibble$from_chemo[x]]] != 0]
+           to_chemo_cells <- colnames(final_sce)[colData(final_sce)[[sim_tibble$to_chemo[x]]] != 0]
+           return(jaccard(from_chemo_cells, to_chemo_cells))
+       })
+sim_tibble$jaccard_sim <- unlist(cur_out)
+
+p <- ggplot(data.frame(similarity = sim_tibble$mean_similarity,
+                  jaccard_sim = sim_tibble$jaccard_sim)) +
+    geom_point(aes(similarity, jaccard_sim)) +
+    geom_smooth(method = "lm", aes(similarity, jaccard_sim)) +  stat_cor(method = "pearson",
+           aes(x = similarity, y = jaccard_sim, label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
+           size = 7, cor.coef.name = "R", label.sep="\n", label.y.npc = "top") + 
+    theme_bw() + theme(text=element_text(size=15)) +
+    xlab("Sequence similarity") + ylab("Chemokine co-expression [Jaccard index]")
+
+ggsave("milieu_sequence_similarity.pdf", p, width = 7, height = 5)
+
+cor.test(sim_tibble$mean_similarity,
+         sim_tibble$jaccard_sim)
+```
+
+
+# Supp Figure 5H
+
+## Fraction of Tumor Cells that express chemokines
+
+```{r Supp_Fig_5H_tumor_cells_chemokine, dev=("pdf"), fig.width=9, fig.height=5}
+cur_dat <- data.frame(colData(sce_rna))
+cur_dat <- cur_dat %>%
+  filter(celltype == "Tumor") %>%
+  filter(Location != "CTRL")
+
+cur_dat <- cur_dat[,c("ImageNumber", "Mutation", colnames(cur_dat)[grepl(glob2rx("C*L*"),names(cur_dat))])]
+
+# colSums of Chemokines in Tumor Cells (Multiple Producer count more than once)
+cur_dat <- cur_dat %>%
+  group_by(ImageNumber, Mutation) %>%
+  mutate(cells = n()) %>%
+  group_by(ImageNumber, cells, Mutation) %>%
+  summarise_each(funs(sum))
+
+# compute fractions
+cur_dat[,4:14] <- cur_dat[,4:14] / t(cur_dat$cells)
+
+cur_dat <- cur_dat %>%
+  filter(cells > 200) %>%
+  reshape2::melt(id.vars=c("ImageNumber", "cells", "Mutation"), variable.name="chemokine", value.name="fraction")
+
+ggplot(cur_dat,aes(x=fct_reorder(chemokine, fraction, .fun = median, .desc = TRUE), y=fraction+0.001)) + 
+  geom_boxplot(alpha=.5) +
+  geom_quasirandom(alpha=.2) +
+  theme_bw() + 
+  theme(text=element_text(size=16)) +
+  ylab("Fraction of Expressing Tumor Cells\n(fraction + 0.001)") +
+  xlab("") +
+  scale_y_log10() +
+  annotation_logticks(sides = "l") +
+  geom_hline(yintercept = median(cur_dat$fraction+0.001), linetype = 2) 
 ```

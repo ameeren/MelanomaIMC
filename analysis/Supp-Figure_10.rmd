@@ -43,6 +43,9 @@ sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
 
 sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
 sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+
+# dysfunction stain
+sce_dysfunction <- readRDS(file = "data/data_for_analysis/sce_dysfunction.rds")
 ```
 
 # Supp Figure 10A
@@ -132,7 +135,66 @@ grid.arrange(leg)
 ```
 
 # Supp Figure 10B
-will follow - Code from Daniel
+
+```{r Supp_Fig_10B_correlation_RNA_Prot_CXCL13+, dev="pdf", fig.width=5, fig.height=5}
+# only CD8+ T cells
+CD8_sce <- sce_dysfunction[,sce_dysfunction$celltype %in% c("CD8_Tcell","CD8_CXCL13+_Tcell")]
+
+pat_dat <- as_tibble(colData(sce_RNA)) %>%
+  filter(is.na(dysfunction_score) == FALSE) %>%
+  select(Description,PatientID) %>%
+  distinct()
+
+cur_dat <- as_tibble(colData(CD8_sce))
+cur_dat <- left_join(cur_dat,pat_dat,"Description")
+RNA_dat <- as_tibble(colData(sce_RNA))
+
+prot_dat_CXCL13 <- cur_dat %>%
+  filter(is.na(dysfunction_score) == FALSE) %>%
+  select(PatientID,celltype) %>%
+  group_by(PatientID,celltype) %>%
+  count(celltype) %>%
+  ungroup() %>%
+  group_by(PatientID) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  mutate(frac = n/total_cellcount) %>%
+  filter(celltype == "CD8_CXCL13+_Tcell") %>%
+  select(PatientID,frac) %>%
+  distinct() %>%
+  pull(frac,PatientID)
+  
+rna_dat <- RNA_dat %>%
+  filter(is.na(dysfunction_score) == FALSE) %>%
+  select(celltype,PatientID,dysfunction_score,CXCL13) %>%
+  mutate(celltype2 = paste0(celltype,"_",CXCL13)) %>%
+  filter(celltype2 %in% c("CD8+ T cell_0","CD8+ T cell_1")) %>%
+  group_by(PatientID,celltype, .drop = FALSE) %>%
+  count(celltype2) %>%
+  ungroup() %>%
+  group_by(PatientID, .drop = FALSE) %>%
+  mutate(total_cellcount = sum(n),frac=n/total_cellcount) %>%
+  filter(celltype2 == "CD8+ T cell_0") %>%
+  mutate(frac_CD8_CXCL13 = 1-frac) %>%
+  pull(frac_CD8_CXCL13,PatientID)
+
+# check names and only select those names in RNA data that we have in protein data
+identical(names(rna_dat),names(prot_dat_CXCL13))
+rna_dat <- rna_dat[names(prot_dat_CXCL13)]
+
+# merge all data
+all_dat <- data.frame(PatientID = names(prot_dat_CXCL13),
+                      prot_CXCL13 = as.vector(prot_dat_CXCL13),
+                      rna_frac = as.vector(rna_dat))
+
+ggplot(all_dat, aes(x=prot_CXCL13, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8+ CXCL13+ T cells (Protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+```
 
 # Supp Figure 10C
 
