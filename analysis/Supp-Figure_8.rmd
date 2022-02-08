@@ -36,6 +36,9 @@ library(ggpubr)
 library(ComplexHeatmap)
 library(rstatix)
 library(dendextend)
+library(parallel)
+library(neighbouRhood)
+library(unix)
 ```
 
 ## Load Data
@@ -232,6 +235,8 @@ cur_sce <- as.data.frame(colData(sce_rna))
 dat_cells$cellID <- paste("RNA_", paste(dat_cells$ImageNumber, dat_cells$ObjectNumber, sep = "_"), sep = "")
 
 image_df <- data.frame()
+gc()
+rlimit_as(Inf)
 for(size in c(2,3,4,5,6)) {
   images <- data.frame()
   for(i in colnames(cur_sce[,grepl("CCL|CXCL",colnames(cur_sce))])){
@@ -285,6 +290,7 @@ for(size in c(2,3,4,5,6)) {
       mutate(percentage_sig = (n/sum(n)) * 100)
     
     images <- rbind(images, cbind(summary[1,], i))
+    gc()
   }
   
   # calculate percentage of images with significant patches

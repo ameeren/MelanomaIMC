@@ -44,21 +44,6 @@ library(ggpubr)
 ```{r load datasets}
 sce_rna <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 
-#SKCM_GSE120575 <- read_Data(data = "data/data_for_analysis/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_expression.h5",
-                      #metadata_file = "data/data_for_analysis/scRNAseq/SKCM_GSE120575_aPD1aCTLA4_CellMetainfo_table.tsv",
-                      #name = "SKCM_GSE120575",
-                      #sorting = "immune")
-
-#SKCM_GSE123139 <- read_Data(data = "data/data_for_analysis/scRNAseq/SKCM_GSE123139_expression.h5",
-                      #metadata_file = "data/data_for_analysis/scRNAseq/SKCM_GSE123139_CellMetainfo_table.tsv",
-                      #name = "SKCM_GSE123139",
-                      #sorting = "immune")
-
-#SKCM_GSE72056 <- read_Data(data = "data/data_for_analysis/scRNAseq/SKCM_GSE72056_expression.h5",
-                      #metadata_file = "data/data_for_analysis/scRNAseq/SKCM_GSE72056_CellMetainfo_table.tsv",
-                      #name = "SKCM_GSE72056",
-                      #sorting = "all")
-
 SKCM_GSE115978 <- read_Data(data = "data/data_for_analysis/scRNAseq/SKCM_GSE115978_aPD1_expression.h5",
                       metadata_file = "data/data_for_analysis/scRNAseq/SKCM_GSE115978_aPD1_CellMetainfo_table.tsv",
                       name = "SKCM_GSE115978",

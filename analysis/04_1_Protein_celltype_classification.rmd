@@ -29,6 +29,7 @@ library(dittoSeq)
 library(viridis)
 library(doParallel)
 library(ggpubr)
+library(randomForest)
 ```
 
 ## Load data
@@ -266,7 +267,7 @@ fitControl <- trainControl(method = "repeatedcv",
                            number = 10,
                            seeds = seeds)
 
-cl <- makePSOCKcluster(round(detectCores()/1.9,0), output = "log.txt")
+cl <- makePSOCKcluster(round(detectCores()/2,0), outfile = "")
 registerDoParallel(cl)
 
 set.seed(1234)
@@ -322,7 +323,7 @@ a <- data.frame(cm$byClass) %>%
                  size = Detection.Rate,
                  fill = class),
              shape = 21) + 
-  scale_fill_manual(values = metadata(sce)$colour_vectors$celltype) + 
+  scale_fill_manual(values = metadata(sce)$colour_vectors$layer_1) + 
   theme_bw() + 
   theme(text=element_text(size=12)) + 
   ylab("Sensitivity (TPR)") +

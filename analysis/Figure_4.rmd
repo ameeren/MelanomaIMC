@@ -490,7 +490,7 @@ dat_rna <- dat_rna %>%
 
 # mean per image
 dat_rna <- dat_rna %>%
-  select(-cellID) %>%
+  dplyr::select(-cellID) %>%
   group_by(Description, dysfunction_score) %>%
   summarise_if(is.numeric, mean, na.rm = TRUE)
 
@@ -509,7 +509,7 @@ dat_prot <- dat_prot %>%
 
 # mean per image
 dat_prot <- dat_prot %>%
-  select(-cellID) %>%
+  dplyr::select(-cellID) %>%
   group_by(Description, dysfunction_score) %>%
   summarise_if(is.numeric, mean, na.rm = TRUE)
 
@@ -525,7 +525,7 @@ stat.test <- comb %>%
   wilcox_test(data = ., asinh ~ dysfunction_score) %>%
   adjust_pvalue(method = "BH") %>%
   add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  add_xy_position(x = "celltype", dodge = 0.8)
+  add_xy_position(dodge = 0.8)
 
 # plot 
 ggplot(comb, aes(x=dysfunction_score, y=asinh)) + 

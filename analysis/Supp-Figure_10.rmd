@@ -140,14 +140,14 @@ grid.arrange(leg)
 # only CD8+ T cells
 CD8_sce <- sce_dysfunction[,sce_dysfunction$celltype %in% c("CD8_Tcell","CD8_CXCL13+_Tcell")]
 
-pat_dat <- as_tibble(colData(sce_RNA)) %>%
+pat_dat <- as_tibble(colData(sce_rna)) %>%
   filter(is.na(dysfunction_score) == FALSE) %>%
   select(Description,PatientID) %>%
   distinct()
 
 cur_dat <- as_tibble(colData(CD8_sce))
 cur_dat <- left_join(cur_dat,pat_dat,"Description")
-RNA_dat <- as_tibble(colData(sce_RNA))
+RNA_dat <- as_tibble(colData(sce_rna))
 
 prot_dat_CXCL13 <- cur_dat %>%
   filter(is.na(dysfunction_score) == FALSE) %>%
@@ -386,15 +386,15 @@ tumor_marker_rna <- c("B2M")
 # rna data 
 dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tumor"], "asinh")))
 dat_rna$cellID <- rownames(dat_rna)
-dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "dysfunction_score", "Description", "MM_location")])
+dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "dysfunction_score", "Description")])
 
 # filter
 dat_rna <- dat_rna %>%
   filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
 
 # mean per image
-dat_rna <- dat_rna %>%
-  select(-cellID) %>%
+dat_rna <- as_tibble(dat_rna) %>%
+  dplyr::select(-cellID) %>%
   group_by(Description, dysfunction_score) %>%
   summarise_if(is.numeric, mean, na.rm = TRUE)
 
@@ -405,7 +405,7 @@ dat_rna <- dat_rna %>%
 # protein data
 dat_prot <- data.frame(t(assay(sce_prot[tumor_marker_protein,, sce_prot$celltype == "Tumor"], "asinh")))
 dat_prot$cellID <- rownames(dat_prot)
-dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "dysfunction_score", "Description", "MM_location")])
+dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "dysfunction_score", "Description")])
 
 # filter
 dat_prot <- dat_prot %>%
@@ -413,7 +413,7 @@ dat_prot <- dat_prot %>%
 
 # mean per image
 dat_prot <- dat_prot %>%
-  select(-cellID) %>%
+  dplyr::select(-cellID) %>%
   group_by(Description, dysfunction_score) %>%
   summarise_if(is.numeric, mean, na.rm = TRUE)
 
@@ -429,14 +429,13 @@ stat.test <- comb %>%
   wilcox_test(data = ., asinh ~ dysfunction_score) %>%
   adjust_pvalue(method = "BH") %>%
   add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  add_xy_position(x = "celltype", dodge = 0.8)
-
+  add_xy_position(dodge = 0.8)
 
 # plot 
 p <- ggplot(comb, aes(x=dysfunction_score, y=asinh)) + 
   geom_boxplot(alpha=0.2, lwd=1, aes(fill=dysfunction_score)) +
   geom_quasirandom(alpha=0.6, size=2, aes(col=dysfunction_score)) +
-  scale_color_discrete(guide = FALSE) +
+  scale_color_discrete(guide = "none") +
   theme_bw() +
   theme(text = element_text(size=18),
         axis.text.x = element_blank(),
