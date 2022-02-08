@@ -16,9 +16,9 @@ Intratumoral immune cells are crucial for tumor control and anti-tumor responses
   <li>Download the source code and the data required from the analysis <a href=https://doi.org/10.5281/zenodo.5994136>here</a></li>
   <li>Install <a href=https://docs.docker.com/engine/install/ubuntu/>docker</a></li>
   <li>Pull the docker image with <code>docker pull toobiwankenobi/rstudiovm:versionX</code></a></li>
-  <li>Create docker container and run the container</a></li>
-  <li>Mount data</a></li>  
-  <li>Open the RStudio interface in your web browser</li>
+  <li>Run the docker image with <code>docker run -e PASSWORD=bioc -p 8787:8787 toobiwankenobi/rstudiovm:versionX/<code></li>
+  <li>Mount data to be accessible using the RStudio interface</a></li>  
+  <li>Open the RStudio interface (<code>http://localhost:8787/</code>, user = <code>rstudio</code>, password = <code>bioc</code>) in your web browser</li>
   <li>Run Files!</li>
 </ol>
 
