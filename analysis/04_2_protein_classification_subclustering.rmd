@@ -129,7 +129,7 @@ set.seed(12345)
 for(i in c("Macrophage","CD4+ T cell","CD8+ T cell")){
   cur_sce <- sce[,sce$celltype == i]
   
-  cur_sce <- cluster(cur_sce,features = marker_list[i][[1]],ydim = 2,xdim = 3,maxK = 4)
+  cur_sce <- CATALYST::cluster(cur_sce,features = marker_list[i][[1]], ydim = 2,xdim = 3,maxK = 4)
   
   fs_clustering[sce$celltype == i] <- cur_sce$cluster_id
 }
@@ -138,7 +138,7 @@ for(i in c("Macrophage","CD4+ T cell","CD8+ T cell")){
 for(i in c("pDC","Neutrophil","BnT cell","B cell","FOXP3+ T cell","Stroma", "unknown")){
   cur_sce <- sce[,sce$celltype == i]
   
-  cur_sce <- cluster(cur_sce,features = marker_list[i][[1]],ydim = 2,xdim = 2,maxK = 3)
+  cur_sce <- CATALYST::cluster(cur_sce,features = marker_list[i][[1]],ydim = 2,xdim = 2,maxK = 3)
   
   fs_clustering[sce$celltype == i] <- cur_sce$cluster_id
 }
@@ -146,7 +146,7 @@ for(i in c("pDC","Neutrophil","BnT cell","B cell","FOXP3+ T cell","Stroma", "unk
 # Tumor will be clustered into 9 clusters
 cur_sce <- sce[,sce$celltype == "Tumor"]
   
-cur_sce <- cluster(cur_sce,features = marker_list["Tumor"][[1]],ydim = 3,xdim = 3,maxK = 7)
+cur_sce <- CATALYST::cluster(cur_sce,features = marker_list["Tumor"][[1]],ydim = 3,xdim = 3,maxK = 7)
   
 fs_clustering[sce$celltype == "Tumor"] <- cur_sce$cluster_id
 
@@ -171,15 +171,18 @@ assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts"))
 assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
 
 # Linear scale 
-plotHeatmap(mean_sce, exprs_values = "arcsinh", 
+plotHeatmap(mean_sce, exprs_values = "arcsinh",
+            features = rownames(sce)[rowData(sce)$good_marker],
             colour_columns_by = c("celltype"), 
-            color = viridis(100), labels_col = mean_sce$celltype_clustered,
+            color = viridis(100), 
+            labels_col = mean_sce$celltype_clustered,
             show_colnames = TRUE, annotation_legend = FALSE, borders_color = NA)
 ```
 
 ```{r heatmap mean expression per celltype subclustered asinh scaled, fig.width= 20, fig.height=15}
 # Scaled
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
+            features = rownames(sce)[rowData(sce)$good_marker],
             colour_columns_by = c("celltype"), 
             labels_col = mean_sce$celltype_clustered,
             show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
@@ -282,6 +285,7 @@ assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts"))
 assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
 
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
+            features = rownames(sce)[rowData(sce)$good_marker],
             colour_columns_by = c("celltype"), 
             labels_col = mean_sce$cellAnnotation,
             show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
