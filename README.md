@@ -1,5 +1,5 @@
 <center> <h1>Multiplexed Imaging Mass Cytometry in Metastatic Melanoma Utilizing RNA and Protein Co-Detection Links Features of Response to Immunotherapy </h1> </center>
-Tobias Hoch<sup>1,2,3,5</sup>, Daniel Schulz$^{1,2,5,*}$, Nils Eling$^{1,2}$, Julia Martínez Gómez$^{4}$, Mitch Levesque$^{4}$, Bernd  Bodenmiller$^{1,2,*}$
+Tobias Hoch <sup>1,2,3,5</sup>, Daniel Schulz<sup>1,2,5</sup>, Nils Eling$<sup>1,2</sup>, Julia Martínez Gómez<sup>4</sup>, Mitch Levesque<sup>4</sup>, Bernd  Bodenmiller<sup>1,2,*</sup>
 
 1 University of Zurich, Department of Quantitative Biomedicine, Zurich, 8057, Switzerland </br>
 2 ETH Zurich, Institute for Molecular Health Sciences, Zurich, 8093 Switzerland </br>
