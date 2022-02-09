@@ -10,8 +10,10 @@ editor_options:
 ## Introduction
 
 ```{r}
+library(SingleCellExperiment)
 library(dplyr)
 library(lubridate)
+library(stringr)
 ```
 
 ## Load Clinical Data
@@ -217,6 +219,6 @@ clinicalDat$Age_range <- ifelse(clinicalDat$Age_range =="≥60", ">=60", clinica
 clinicalDat$Last_prev_therapy <- str_replace_all(clinicalDat$Last_prev_therapy, "-", ".")
 clinicalDat$Last_prev_therapy <- format(as.Date(my(clinicalDat$Last_prev_therapy)),"01-%b-20%y")
 
-write.csv2(clinicalDat, "~/bbDQBM/Git/MelanomaIMC/Table_S4.csv", row.names = FALSE)
+write.csv2(clinicalDat, "data/data_for_analysis/Table_S4.csv", row.names = FALSE)
 ```
 

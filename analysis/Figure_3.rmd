@@ -425,7 +425,7 @@ grid.arrange(plot_list[[1]] + theme(legend.position = "none"),
 grid.arrange(leg_c)
 ```
 
-# Fig 3E
+# Figure 3E
 Here, we will perform an enrichment analysis checking if certain cell types
 are enriched or avoid in chemokine milieus.
 We will test the enrichment of each cell type within this community type using a Fisher's exact test.
