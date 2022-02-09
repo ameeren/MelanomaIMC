@@ -130,7 +130,7 @@ leg <- get_legend(p)
 grid.arrange(p + theme(legend.position = "none"))
 ```
 
-```{r Supp_Fig_3C_tumor_profile_tcell_legend, fig.height=2, fig.width=2, dev=c('pdf')}
+```{r Supp_Fig_10A_tumor_profile_tcell_legend, fig.height=2, fig.width=2, dev=c('pdf')}
 grid.arrange(leg)
 ```
 

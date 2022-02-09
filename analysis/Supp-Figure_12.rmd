@@ -304,7 +304,7 @@ data_cd8neg$n_cd8neg <- data_cd8neg$n_cd8neg / data_cd8neg$mm2_rna
 
 ## Plot Density CXCL13+ T cells and density B cells per Patch score
 
-```{r Supp_Figure_12C_CXCL13TcellDensity, dev=("pdf"), fig.height=3.2, fig.width=9.4}
+```{r Supp_Fig_12C_CXCL13TcellDensity, dev=("pdf"), fig.height=3.2, fig.width=9.4}
 data_complete <- left_join(data_cd8neg, data_cd8pos[,c("Description","n_cd8pos")])
 
 # remove images with follicles
