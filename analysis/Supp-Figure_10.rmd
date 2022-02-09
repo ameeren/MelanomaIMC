@@ -67,7 +67,7 @@ dat_rna <- dat_rna %>%
 
 # mean per image
 dat_rna <- dat_rna %>%
-  select(-cellID) %>%
+  dplyr::select(-cellID) %>%
   group_by(Description, Tcell_density_score_image) %>%
   summarise_if(is.numeric, mean, na.rm = TRUE)
 
@@ -86,7 +86,7 @@ dat_prot <- dat_prot %>%
 
 # mean per image
 dat_prot <- dat_prot %>%
-  select(-cellID) %>%
+  dplyr::select(-cellID) %>%
   group_by(Description, Tcell_density_score_image) %>%
   summarise_if(is.numeric, mean, na.rm = TRUE)
 
@@ -142,7 +142,7 @@ CD8_sce <- sce_dysfunction[,sce_dysfunction$celltype %in% c("CD8_Tcell","CD8_CXC
 
 pat_dat <- as_tibble(colData(sce_rna)) %>%
   filter(is.na(dysfunction_score) == FALSE) %>%
-  select(Description,PatientID) %>%
+  dplyr::select(Description,PatientID) %>%
   distinct()
 
 cur_dat <- as_tibble(colData(CD8_sce))
@@ -151,25 +151,25 @@ RNA_dat <- as_tibble(colData(sce_rna))
 
 prot_dat_CXCL13 <- cur_dat %>%
   filter(is.na(dysfunction_score) == FALSE) %>%
-  select(PatientID,celltype) %>%
+  dplyr::select(PatientID,celltype) %>%
   group_by(PatientID,celltype) %>%
-  count(celltype) %>%
+  dplyr::count(celltype) %>%
   ungroup() %>%
   group_by(PatientID) %>%
   mutate(total_cellcount = sum(n)) %>%
   mutate(frac = n/total_cellcount) %>%
   filter(celltype == "CD8_CXCL13+_Tcell") %>%
-  select(PatientID,frac) %>%
+  dplyr::select(PatientID,frac) %>%
   distinct() %>%
   pull(frac,PatientID)
   
 rna_dat <- RNA_dat %>%
   filter(is.na(dysfunction_score) == FALSE) %>%
-  select(celltype,PatientID,dysfunction_score,CXCL13) %>%
+  dplyr::select(celltype,PatientID,dysfunction_score,CXCL13) %>%
   mutate(celltype2 = paste0(celltype,"_",CXCL13)) %>%
   filter(celltype2 %in% c("CD8+ T cell_0","CD8+ T cell_1")) %>%
   group_by(PatientID,celltype, .drop = FALSE) %>%
-  count(celltype2) %>%
+  dplyr::count(celltype2) %>%
   ungroup() %>%
   group_by(PatientID, .drop = FALSE) %>%
   mutate(total_cellcount = sum(n),frac=n/total_cellcount) %>%

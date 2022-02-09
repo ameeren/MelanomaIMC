@@ -150,7 +150,7 @@ for (i in c("high - High Dysfunction", "high - Low Dysfunction")){
   # make coord diagram
   chordDiagramFromDataFrame(cur_dat_relation,
                             grid.col = metadata(sce_prot)$colour_vectors$celltype,
-                            #reduce = 0.05, 
+                            reduce = 0.05, 
                             transparency = ifelse(cur_dat_relation[[1]] %in% c("CD8+ T cell"),0,0.6),
                             annotationTrack = c("grid"))
 }

@@ -313,7 +313,7 @@ grid.arrange(a,b, nrow=1)
 
 ## Single-Cell Heatmap of CD8+ T cells in Dysfunction Stain
 
-```{r Fig_4D_Scaled_Heatmap_Dysfunction, fig.height=8, fig.width=9}
+```{r Fig_4D_Scaled_Heatmap_Dysfunction, fig.height=8, fig.width=9, dev="png"}
 CD8T_markers <- c("CXCL13","PD-1","CD39","Tim-3","LAG-3","GITR","EOMES","ICOS","CD38","GranzymeB","CD45RO","Ki-67","TCF7","CD45RA","CD57")
 ex_markers <- c("CXCL13","PD-1","EOMES","CD39","GITR","Tim-3","LAG-3","CD38","Ki-67","GranzymeB")
 
@@ -471,11 +471,11 @@ ggplot(sum2, aes(x=cluster_number, y=fraction)) +
   ylim(0,1)
 ```
 
-# Figure 4E
+# Figure 4G
 
 ## Tumor Marker Profile for different Scoring Groups per Image
 
-```{r Fig_4E_tumor_profile_per_image, fig.height=4.5, fig.width=7, dev=c('pdf')}
+```{r Fig_4G_tumor_profile_per_image, fig.height=4.5, fig.width=7, dev=c('pdf')}
 tumor_marker_protein <- c("S100", "MiTF")
 tumor_marker_rna <- c("Mart1", "pRB")
 
@@ -542,11 +542,11 @@ ggplot(comb, aes(x=dysfunction_score, y=asinh)) +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.2)))
 ```
 
-# Figure 4F
+# Figure 4H
 
 ## S100 and T Cell Dysfunction
 
-```{r Fig_4F_S100_dysfunction, dev=("pdf"), fig.width=6.1, fig.height=3.4}
+```{r Fig_4H_S100_dysfunction, dev=("pdf"), fig.width=6.1, fig.height=3.4}
 # fraction of exhausted cd8 per image
 dysfunction <- data.frame(colData(sce_rna)) %>%
   mutate(celltype2 = paste(celltype, CXCL13, sep = "_")) %>%
