@@ -1,176 +1,196 @@
 ---
 title: "Supplementary Figure 7"
 author: "Tobias Hoch and Daniel Schulz"
-date: "2021-11-24"
+date: "2021-09-22"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
 ---
 
 # Introduction
-This script generates plots for Supplementary Figure 7.
+This script generates plots for Supplementary Figure 7. 
 
-# Preparations
+In this script we will sequentially load all melanoma datasets from http://tisch.comp-genomics.org/
 
-## Load libraries
+we will then calculate the proportions of each cell type expressing individual chemokines. under the hypothesis that the scRNAseq data is the ground truth. We will then compare these proportions to the observed proportions in IMC and thereby estimate whether we likely observe spatial spill over in IMC.
 
-```{r load libraries}
-sapply(list.files("code/helper_functions", full.names = TRUE), source)
-library(data.table)
-library(ggplot2)
-library(broom)
-library(dplyr)
-library(tidyverse)
-library(cowplot)
-library(ggbeeswarm)
-library(gridExtra)
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries
+
+```{r, message=FALSE}
+set.seed(12345)
+sapply(list.files("code/helper_functions/", full.names = TRUE), source)
+library(Seurat)
+library(hdf5r)
 library(SingleCellExperiment)
 library(scater)
-library(reshape2)
-library(circlize)
-library(rstatix)
-library(corrplot)
+library(dittoSeq)
+library(scran)
+library(ComplexHeatmap)
+library(outliers)
+library(purrr)
+library(data.table)
+library(dplyr)
+library(tidyr)
+library(cowplot)
 library(ggpubr)
 ```
 
 ## Load Data
 
-```{r}
-# SCE object
-sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
-sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+```{r load datasets}
+sce_rna <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 
-targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
+SKCM_GSE115978 <- read_Data(data = "data/data_for_analysis/scRNAseq/SKCM_GSE115978_aPD1_expression.h5",
+                      metadata_file = "data/data_for_analysis/scRNAseq/SKCM_GSE115978_aPD1_CellMetainfo_table.tsv",
+                      name = "SKCM_GSE115978",
+                      sorting = "all")
+
+HNSC_GSE139324 <- read_Data(data = "data/data_for_analysis/scRNAseq/HNSC_GSE139324_expression.h5",
+                      metadata_file = "data/data_for_analysis/scRNAseq/HNSC_GSE139324_CellMetainfo_table.tsv",
+                      name = "HNSC_GSE139324",
+                      sorting = "immune")
+
+NSCLC_GSE131907 <- read_Data(data = "data/data_for_analysis/scRNAseq/NSCLC_GSE131907_expression.h5",
+                      metadata_file = "data/data_for_analysis/scRNAseq/NSCLC_GSE131907_CellMetainfo_table.tsv",
+                      name = "NSCLC_GSE131907",
+                      sorting = "all")
+
+PAAD_CRA001160 <- read_Data(data = "data/data_for_analysis/scRNAseq/PAAD_CRA001160_expression.h5",
+                      metadata_file = "data/data_for_analysis/scRNAseq/PAAD_CRA001160_CellMetainfo_table.tsv",
+                      name = "PAAD_CRA001160",
+                      sorting = "all")
+
+UVM_GSE139829 <- read_Data(data = "data/data_for_analysis/scRNAseq/UVM_GSE139829_expression.h5",
+                      metadata_file = "data/data_for_analysis/scRNAseq/UVM_GSE139829_CellMetainfo_table.tsv",
+                      name = "UVM_GSE139829",
+                      sorting = "all")
+SKCM_GSE72056 <- read_Data(data = "data/data_for_analysis/scRNAseq/SKCM_GSE72056_expression.h5",
+                      metadata_file = "data/data_for_analysis/scRNAseq/SKCM_GSE72056_CellMetainfo_table.tsv",
+                      name = "SKCM_GSE72056",
+                      sorting = "all")
+
+# merge the datasets
+sc_dat <- rbind(HNSC_GSE139324, NSCLC_GSE131907, PAAD_CRA001160,SKCM_GSE115978, SKCM_GSE72056, UVM_GSE139829)
+comp_dataset <- c("HNSC_GSE139324","NSCLC_GSE131907","PAAD_CRA001160","SKCM_GSE115978","SKCM_GSE72056","UVM_GSE139829")
+
 ```
 
-# Supp Figure 7A
+# Analysis
 
-## Patients per Location
-
-```{r}
-sce_rna$MM_location <- ifelse(sce_rna$MM_location %in% c("skin", "skin_undefine"), "skin_undefined", sce_rna$MM_location)
-
-groups <- data.frame(colData(sce_rna)) %>%
-  distinct(ImageNumber, .keep_all = T) %>%
-  group_by(MM_location) %>%
-  distinct(PatientID, .keep_all = T) %>%
-  summarise(n=n()) %>%
-  filter(n>=10) %>%
-  arrange(-n)
-```
-
-## Boxplot/Barplot per Location for every chemokine combination
+## IMC data
 
 ```{r}
-fractions_per_image <- data.frame(colData(sce_rna)) %>%
-  group_by(ImageNumber, MM_location, expressor, celltype) %>%
-  summarise(n = n()) %>%
-  group_by(ImageNumber) %>%
-  mutate(fraction_per_image = n / sum(n)) %>%
-  group_by(ImageNumber, expressor) %>%
-  mutate(group_fraction = sum(fraction_per_image)) %>%
+cur_dat <- as_tibble(colData(sce_rna))
+
+cur_dat <- cur_dat %>%
+  group_by(celltype,.drop = FALSE) %>%
+  mutate(total_celltype_count = n()) %>%
+  select(celltype,total_celltype_count,cellID, CCL2,CCL4,CCL8,CCL18,CCL19,CCL22,CXCL8,CXCL9,CXCL10,CXCL12,CXCL13)
+
+imc_long <- cur_dat %>%
+  pivot_longer(cols = c(CCL2,CCL4,CCL8,CCL18,CCL19,CCL22,CXCL8,CXCL9,CXCL10,CXCL12,CXCL13),names_to = "chemokine")
+
+imc_long <- imc_long %>%
+  group_by(chemokine,.drop = FALSE) %>%
+  mutate(total_chem_count = sum(value)) %>%
   ungroup() %>%
-  filter(expressor %in% targets & MM_location %in% groups$MM_location)
+  group_by(celltype,chemokine,.drop = FALSE) %>%
+  mutate(celltype_chemokine_sum=sum(value)) %>%
+  ungroup() %>%
+  select(celltype,celltype_chemokine_sum,chemokine,total_celltype_count,total_chem_count) %>%
+  distinct() %>%
+  mutate(frac_of_chemokine_pos = celltype_chemokine_sum/total_chem_count,
+         frac_of_celltype = celltype_chemokine_sum/total_celltype_count) %>%
+  ungroup()
 
-# fraction of expressor cells per image 
-fraction_expressor_per_image <- fractions_per_image %>%
-  distinct(ImageNumber, MM_location, expressor, .keep_all = T) %>%
-  reshape2::dcast(ImageNumber + MM_location ~ expressor, value.var = "group_fraction", fill = 0) %>%
-  reshape2::melt(id.vars = c("ImageNumber", "MM_location"), variable.name = "expressor", 
-                 value.name = "fraction_per_image")
-
-# fraction of celltype expressing a certain combi per image
-celltype_fractions <- fractions_per_image %>%
-  distinct(ImageNumber, celltype, expressor, .keep_all = T) %>%
-  reshape2::dcast(ImageNumber + MM_location + expressor ~ celltype, value.var = "fraction_per_image", fill = 0) %>%
-  reshape2::melt(id.vars = c("ImageNumber", "MM_location", "expressor"), 
-                 variable.name = "celltype", value.name = "fraction_per_image") %>%
-  reshape2::dcast(ImageNumber + MM_location + celltype ~ expressor, value.var = "fraction_per_image", fill = 0) %>%
-  reshape2::melt(id.vars = c("ImageNumber", "MM_location", "celltype"), 
-                 variable.name = "expressor", value.name = "fraction_per_image") %>%
-  group_by(MM_location, expressor, celltype) %>%
-  summarise(sum_fraction = sum(fraction_per_image)) %>% # sum-up fractions over all images 
-  group_by(MM_location, expressor) %>%
-  mutate(proportions = sum_fraction / sum(sum_fraction)) # calculate proportions for each expressor
+imc_long$sorting <- "all"
+imc_long$dataset <- "IMC"
 ```
 
-## Plot
+## only celltypes available in IMC as well
 
-```{r Supp_Fig_7A_expression_per_location, dev=c('pdf')}
-# calculate signif of expressor-fractions per MM_location
-fraction_expressor_per_image %>%
-  group_by(expressor) %>%
-  wilcox_test(fraction_per_image ~ MM_location) %>%
-  adjust_pvalue(method = "BH") %>%
-  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
-  arrange(p.adj)
+here we will unify the naming of cell types that are available in both datasets.
 
-plot_list <- list()
-for(i in groups$MM_location) {
-  a <- fraction_expressor_per_image %>%
-    filter(MM_location == i) %>%  
-    group_by(ImageNumber, expressor) %>%
-    ggplot(., aes(y=as.factor(expressor), x=fraction_per_image)) + 
-    geom_boxplot() + 
-    geom_point(alpha=0.2) +
-    theme_bw() +
-    theme(axis.title.y = element_blank(),
-          axis.text.y = element_text(hjust=0.5)) +
-    xlab("Cell Fraction per Image") + 
-    coord_cartesian(xlim = c(0,0.05))
-  
-  b <- celltype_fractions %>%
-    filter(MM_location == i) %>%  
-    ggplot(., aes(y=expressor, x=-proportions, fill=celltype)) + 
-    geom_bar(stat = "identity") +
-    theme_bw() +
-    theme(axis.text.y = element_blank(),
-          axis.title.y = element_blank()) +
-    guides(fill=guide_legend(title = "Cell Type",nrow=2,byrow=TRUE)) +
-    xlab("Producing Cell Types") +
-          scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype),
-                        breaks = names(metadata(sce_rna)$colour_vectors$celltype),
-                        labels = names(metadata(sce_rna)$colour_vectors$celltype)) +
-    scale_x_continuous(breaks=c(-1.00,-0.75,-0.5, -0.25, 0.00),
-                     labels=c("100%", "75%", "50%", "25%", "0%"))
-  
-  leg <- get_legend(b)
-  
-  grid.arrange(b+theme(legend.position = "none"),a,nrow=1,
-               widths = c(.75,1),
-               top = i)
-}
+```{r}
+unique(sc_dat$celltype)
+
+#sc_dat[which(sc_dat$celltype == "B"),]$celltype <- "HLA-DR"
+#sc_dat[which(sc_dat$celltype == "CD4Tconv"),]$celltype <- "CD8- T cell"
+#sc_dat[which(sc_dat$celltype == "CD8Tex"),]$celltype <- "CD8+ T cell"
+#sc_dat[which(sc_dat$celltype == "CD8T"),]$celltype <- "CD8+ T cell"
+sc_dat[which(sc_dat$celltype == "Endothelial"),]$celltype <- "Vasculature"
+sc_dat[which(sc_dat$celltype == "Fibroblasts"),]$celltype <- "Stroma"
+sc_dat[which(sc_dat$celltype == "Malignant"),]$celltype <- "Tumor"
+sc_dat[which(sc_dat$celltype == "Mono/Macro"),]$celltype <- "Macrophage"
+
+#sc_dat[which(sc_dat$celltype == "Treg"),]$celltype <- "CD8- T cell"
+#sc_dat[which(sc_dat$celltype == "Plasma"),]$celltype <- "CD38"
+
+unique(sc_dat$celltype)
+
+celltypes <- c("CD8- T cell","CD8+ T cell","Vasculature", "Stroma","Macrophage","Tumor")
 ```
 
+## merge scRNA-seq and IMC data
 
-```{r Supp_Fig_2C_legend, dev=c('pdf'), fig.width=5, fig.height=2}
-grid.arrange(leg)
+we will also unify the cell type names wherever possible
+
+```{r}
+plot_dat <- sc_dat %>%
+  filter(celltype %in% celltypes, dataset %in% comp_dataset)
+
+# order IMC data correct for merging 
+imc_long <- imc_long[,colnames(plot_dat)]
+
+all_dat <- rbind(plot_dat,imc_long)
+all_dat$datatype <- "scRNAseq"
+all_dat[which(all_dat$dataset == "IMC"),]$datatype <- "IMC"
 ```
 
-# Supp Figure 7B
+```{r grubbs-statistical-test-1}
+test_dat <- all_dat %>%
+  group_by(chemokine, celltype) %>%
+  nest() %>%         
+  mutate(n = map_dbl(data, ~ nrow(.x)), # number of entries
+         G = map(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$statistic[[1]]), # G statistic
+         U = map(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$statistic[[2]]), # U statistic
+         grubbs = map(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$alternative), # Alternative hypotesis
+         p_grubbs = map_dbl(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$p.value)) %>% # p-value
+  mutate(G = signif(unlist(G), 3),
+         U = signif(unlist(U), 3),
+         grubbs = unlist(grubbs),
+         p_grubbs = signif(p_grubbs, 3)) %>%
+  select(-data) %>%
+  arrange(p_grubbs)
 
-## Chemokines cross-correlation
+# merge the test_dat data with the IMC data
+test_dat <- left_join(test_dat,imc_long[,c("celltype","chemokine","frac_of_chemokine_pos")],by=c("celltype","chemokine"))
 
-```{r Supp_Fig_7B_correlation_chemokines, fig.width=9, fig.height=9, dev=c('pdf')}
-# top abundant chemokines
-cur_rna <- data.frame(colData(sce_rna))
+# define whether a detected outlier is an IMC datapoint and apply 0.05 significant value cut-off
+sig_dat <- test_dat %>%
+  mutate(value = gsub("[^0-9.]", "",  grubbs),
+         is_IMC = value == frac_of_chemokine_pos,
+         sig = p_grubbs <= 0.05) %>%
+  filter(sig == TRUE,is_IMC == TRUE)
+```
 
-# sum
-rna_sum <- cur_rna %>%
-  group_by(Description, expressor) %>%
-  summarise(n = n()) %>%
-  reshape2::dcast(Description ~ expressor, value.var = "n", fill = 0) 
+## Supp Figure 7A
 
-# only keep highly abundant chemokines
-rna_sum <- rna_sum[,colnames(rna_sum) %in% targets]
-
-# correlation
-cor <- cor(rna_sum, rna_sum, method = "pearson")
-
-corrplot(cor, 
-         order = "FPC",
-         addCoef.col = "black",
-         method = "circle",
-         tl.col="black",
-         tl.cex = 1.5)
+```{r Supp_Fig_7A_IMC_scRNAseq_comparison, fig.height=10,fig.width=12.5, dev="pdf"}
+ggplot()+
+  geom_boxplot(data = all_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
+  geom_point(data = all_dat[which(all_dat$dataset != "IMC"),],aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
+  geom_point(data = all_dat[which(all_dat$datatype == "IMC"),],aes(x=celltype,y=frac_of_chemokine_pos),col="red",shape=18, size=5)+
+  geom_text(data = sig_dat,aes(x=celltype,y=0.75,label = p_grubbs), color= "red", angle=90) +
+  facet_wrap(.~chemokine)+
+  theme_bw()+
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
+        text = element_text(size=14)) +
+  ylab("Fraction of chemokine+ cells") +
+  guides(col=guide_legend(title="Dataset")) +
+  xlab("")
 ```

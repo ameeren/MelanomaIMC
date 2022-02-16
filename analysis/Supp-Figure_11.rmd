@@ -1,7 +1,7 @@
 ---
 title: "Supplementary Figure 11"
 author: "Tobias Hoch and Daniel Schulz"
-date: "2021-11-18"
+date: "2021-11-24"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
@@ -14,85 +14,501 @@ This script generates plots for Supplementary Figure 11.
 
 ## Load libraries
 
+First, we will load the libraries needed for this part of the analysis.
+
 ```{r, message=FALSE}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
 library(SingleCellExperiment)
-library(sf)
-library(concaveman)
-library(RANN)
+library(reshape2)
+library(tidyverse)
 library(dplyr)
-library(data.table)
+library(data.table) 
 library(ggplot2)
-library(ggrastr)
+library(ComplexHeatmap)
+library(rms)
+library(ggrepel)
+library(ggbeeswarm)
+library(circlize)
+library(ggpubr)
+library(ggridges)
+library(gridExtra)
+library(rstatix)
 ```
 
-## Load Data
+## Read the data
 
 ```{r}
-## Read the data
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
 sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+
+# dysfunction stain
+sce_dysfunction <- readRDS(file = "data/data_for_analysis/sce_dysfunction.rds")
 ```
 
-# Supp Fig 11A
+# Supp Figure 11A
 
-```{r Supp_Fig_11A_noBcellPatch, fig.width=6, fig.height=6, dev=c('pdf')}
-example <- findPatch(sce_prot[,sce_prot$Description == "G3"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
-                    'cellID', 
-                    'Center_X', 'Center_Y', 
-                    'Description', 
-                    distance = 15, 
-                    min_clust_size = 20,
-                    output_colname = "example_patch")
+## Tumor Marker Profile for different T cell Scoring Groups
 
-example <- findMilieu(example, 
-              'cellID', 
-              'Center_X', 'Center_Y', 
-              'Description', 
-              'example_patch', 
-              distance = 30,
-              output_colname = "example_milieu",
-              plot = TRUE)
+```{r Supp_Fig_11A_tumor_profile_tcell, fig.height=8, fig.width=10, dev=c('pdf')}
+tumor_marker_protein <- c("bCatenin", "Sox9", "pERK", "p75", "Ki67", "SOX10", "PARP", "S100", "MiTF")
+tumor_marker_rna <- c("Mart1", "pRB")
+
+# rna data 
+dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tumor"], "asinh")))
+dat_rna$cellID <- rownames(dat_rna)
+dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "Tcell_density_score_image", "Description", "MM_location", "Location")])
+
+# filter
+dat_rna <- dat_rna %>%
+  filter(Location != "CTRL")
+
+# mean per image
+dat_rna <- dat_rna %>%
+  dplyr::select(-cellID) %>%
+  group_by(Description, Tcell_density_score_image) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_rna <- dat_rna %>%
+  reshape2::melt(id.vars = c("Description", "Tcell_density_score_image"), variable.name = "channel", value.name = "asinh")
+
+# protein data
+dat_prot <- data.frame(t(assay(sce_prot[tumor_marker_protein,, sce_prot$celltype == "Tumor"], "asinh")))
+dat_prot$cellID <- rownames(dat_prot)
+dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "Tcell_density_score_image", "Description", "MM_location", "Location")])
+
+# filter
+dat_prot <- dat_prot %>%
+  filter(Location != "CTRL")
+
+# mean per image
+dat_prot <- dat_prot %>%
+  dplyr::select(-cellID) %>%
+  group_by(Description, Tcell_density_score_image) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_prot <- dat_prot %>%
+  reshape2::melt(id.vars = c("Description", "Tcell_density_score_image"), variable.name = "channel", value.name = "asinh")
+
+# join both data sets
+comb <- rbind(dat_prot, dat_rna)
+
+# adjusted wilcox.test for groups
+group_comparison <- list(c("absent", "high"), c("med", "high"))
+
+stat.test <- comb %>%
+  group_by(channel) %>%
+  wilcox_test(data = ., asinh ~ Tcell_density_score_image) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_xy_position(x = "Tcell_density_score_image", dodge = 0.8, comparisons = group_comparison) %>%
+  filter(is.na(y.position) == FALSE)
+
+# plot 
+p <- ggplot(comb, aes(x=Tcell_density_score_image, y=asinh)) + 
+  geom_boxplot(alpha=0.2, lwd=1, aes(fill=Tcell_density_score_image)) +
+  geom_quasirandom(alpha=0.6, size=2, aes(col=Tcell_density_score_image)) +
+  scale_color_discrete(guide = FALSE) +
+  theme_bw() +
+  theme(text = element_text(size=18),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank()) +
+  facet_wrap(~channel, scales = "free") + 
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
+  xlab("") + 
+  ylab("Mean Count per Image (asinh)") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.1))) +
+  guides(fill=guide_legend(title="T cell Score", override.aes = c(lwd=0.5, alpha=1)))
+
+leg <- get_legend(p)
+
+grid.arrange(p + theme(legend.position = "none"))
 ```
 
-# Supp Fig 11B
-
-```{r Supp_Fig_11B_smallBcellPatch, fig.width=6, fig.height=6, dev=c('pdf')}
-example <- findPatch(sce_prot[,sce_prot$Description == "F5"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
-                    'cellID', 
-                    'Center_X', 'Center_Y', 
-                    'Description', 
-                    distance = 15, 
-                    min_clust_size = 20,
-                    output_colname = "example_patch")
-
-example <- findMilieu(example, 
-              'cellID', 
-              'Center_X', 'Center_Y', 
-              'Description', 
-              'example_patch', 
-              distance = 30,
-              output_colname = "example_milieu",
-              plot = TRUE)
+```{r Supp_Fig_11A_tumor_profile_tcell_legend, fig.height=2, fig.width=2, dev=c('pdf')}
+grid.arrange(leg)
 ```
 
-# Supp Fig 11C
+# Supp Figure 11B
 
-```{r Supp_Fig_11C_BcellFollicle, fig.width=6, fig.height=6, dev=c('pdf')}
-example <- findPatch(sce_prot[,sce_prot$Description == "B6"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
-                    'cellID', 
-                    'Center_X', 'Center_Y', 
-                    'Description', 
-                    distance = 15, 
-                    min_clust_size = 20,
-                    output_colname = "example_patch")
+```{r Supp_Fig_11B_correlation_RNA_Prot_CXCL13+, dev="pdf", fig.width=5, fig.height=5}
+# only CD8+ T cells
+CD8_sce <- sce_dysfunction[,sce_dysfunction$celltype %in% c("CD8_Tcell","CD8_CXCL13+_Tcell")]
 
-example <- findMilieu(example, 
-              'cellID', 
-              'Center_X', 'Center_Y', 
-              'Description', 
-              'example_patch', 
-              distance = 30,
-              output_colname = "example_milieu",
-              plot = TRUE)
+pat_dat <- as_tibble(colData(sce_rna)) %>%
+  filter(is.na(dysfunction_score) == FALSE) %>%
+  dplyr::select(Description,PatientID) %>%
+  distinct()
+
+cur_dat <- as_tibble(colData(CD8_sce))
+cur_dat <- left_join(cur_dat,pat_dat,"Description")
+RNA_dat <- as_tibble(colData(sce_rna))
+
+prot_dat_CXCL13 <- cur_dat %>%
+  filter(is.na(dysfunction_score) == FALSE) %>%
+  dplyr::select(PatientID,celltype) %>%
+  group_by(PatientID,celltype) %>%
+  dplyr::count(celltype) %>%
+  ungroup() %>%
+  group_by(PatientID) %>%
+  mutate(total_cellcount = sum(n)) %>%
+  mutate(frac = n/total_cellcount) %>%
+  filter(celltype == "CD8_CXCL13+_Tcell") %>%
+  dplyr::select(PatientID,frac) %>%
+  distinct() %>%
+  pull(frac,PatientID)
+  
+rna_dat <- RNA_dat %>%
+  filter(is.na(dysfunction_score) == FALSE) %>%
+  dplyr::select(celltype,PatientID,dysfunction_score,CXCL13) %>%
+  mutate(celltype2 = paste0(celltype,"_",CXCL13)) %>%
+  filter(celltype2 %in% c("CD8+ T cell_0","CD8+ T cell_1")) %>%
+  group_by(PatientID,celltype, .drop = FALSE) %>%
+  dplyr::count(celltype2) %>%
+  ungroup() %>%
+  group_by(PatientID, .drop = FALSE) %>%
+  mutate(total_cellcount = sum(n),frac=n/total_cellcount) %>%
+  filter(celltype2 == "CD8+ T cell_0") %>%
+  mutate(frac_CD8_CXCL13 = 1-frac) %>%
+  pull(frac_CD8_CXCL13,PatientID)
+
+# check names and only select those names in RNA data that we have in protein data
+identical(names(rna_dat),names(prot_dat_CXCL13))
+rna_dat <- rna_dat[names(prot_dat_CXCL13)]
+
+# merge all data
+all_dat <- data.frame(PatientID = names(prot_dat_CXCL13),
+                      prot_CXCL13 = as.vector(prot_dat_CXCL13),
+                      rna_frac = as.vector(rna_dat))
+
+ggplot(all_dat, aes(x=prot_CXCL13, y=rna_frac)) + 
+  geom_point(size=3) + 
+  geom_smooth(method="lm") +
+  stat_cor(method = "spearman") + 
+  theme_bw() +
+  theme(text = element_text(size=15)) +
+  xlab("Fraction CD8+ CXCL13+ T cells (Protein data)") +
+  ylab("Fraction CD8+ CXCL13+ T cells (RNA data)")
+
+cor.test(all_dat$prot_CXCL13, all_dat$rna_frac, method = "spearman")
+```
+
+# Supp Figure 11C
+
+## Heatmap with Community Modules
+
+```{r prepare_heatmap_data}
+cur_dt <- data.frame(colData(sce_rna))
+clust <- data.frame()
+
+## wide table for communities 
+for(i in names(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))])) {
+  cur_dt_sub <- cur_dt[cur_dt[,i] > 0,]
+  cur_dt_sub <- cbind(cur_dt_sub[,c(i, "Description")],
+                      cur_dt_sub[,grepl(glob2rx("C*L*"),names(cur_dt_sub))])
+  
+  # count numbers of chemokine-expressing cells per patch
+  cur_dt_sub <- cur_dt_sub %>%
+    group_by(Description) %>%
+    group_by_at(i, .add = TRUE) %>%
+    summarise_each(funs(sum))
+  
+  cur_dt_sub$cluster_type <- i
+  
+  cur_dt_sub <- cur_dt_sub[,-2]
+  
+  clust <- rbind(clust, cur_dt_sub)
+}
+
+# remove pure clusters with low abundance (CCL22, CCL4, CCL8)
+clust <- clust[!(clust$cluster_type %in% c("ccl22_pure", "ccl4_pure", "ccl8_pure")),]
+
+# number of patches by image
+clust <- clust %>%
+  group_by(Description, cluster_type) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(Description ~ cluster_type, value.var = "n", fill = 0)
+
+# add images with 0 clusters and add more information
+to_add <- data.frame(colData(sce_rna)) %>%
+  distinct(Description, .keep_all = TRUE)
+
+clust <- left_join(to_add[,c("Description", "dysfunction_score", "Tcell_density_score_image")], clust)
+
+# repalce NA with 0 
+cur_dt_wide <- clust %>%
+  mutate_if(is.numeric,coalesce,0)
+
+# order according to image infiltration score
+cur_dt_wide <- cur_dt_wide[order(cur_dt_wide$dysfunction_score),]
+
+# chemokines per image
+total_chemokines <- cur_dt %>%
+  group_by(Description, chemokine) %>%
+  summarise(n=n()) %>%
+  group_by(Description) %>%
+  mutate(fraction = n/sum(n)) %>%
+  filter(chemokine == TRUE)
+
+# is a expressing cell part of a milieu?
+cur_dt$in_community <- ifelse(rowSums(cur_dt[,grepl(glob2rx("*pure"),names(cur_dt))]) > 0 & cur_dt$chemokine == TRUE, TRUE, FALSE)
+
+# fraction in_community 1vs.0 per image
+fractions <- cur_dt %>%
+  filter(chemokine == TRUE) %>%
+  group_by(Description, in_community) %>%
+  summarise(n=n()) %>%
+  group_by(Description) %>%
+  mutate(fraction = n / sum(n)) %>%
+  reshape2::dcast(Description ~ in_community, value.var = "fraction", fill = 0)
+
+names(fractions)[2:3] <- c("single", "community")
+fractions[, 2:3][is.na(fractions[, 2:3])] <- 0
+
+# chemokines per image (regardless of combination, multi-producing cells count more than once)
+chemokines <- cbind(cur_dt[,c("Description", "in_community")], cur_dt[,grepl(glob2rx("C*L*"),names(cur_dt))])
+
+# long table - chemokine / in_community info and count (n) per image
+chemokines <- reshape2::melt(chemokines, id.vars = c("Description", "in_community"), variable.name = "chemokine", value.name = "n") %>%
+  group_by(Description, in_community, chemokine) %>%
+  summarise(total = sum(n)) %>%
+  reshape2::dcast(Description + chemokine ~ in_community, value.var = "total") %>%
+  replace(is.na(.), 0) %>%
+  reshape2::melt(id.vars = c("Description", "chemokine"), variable.name = "in_community", value.name = "n")
+
+# combine all information
+cur_dt_wide <- left_join(cur_dt_wide, fractions)
+cur_dt_wide <- left_join(cur_dt_wide, total_chemokines)
+```
+
+## Plot Heatmap
+
+```{r Supp_Fig_11C_heatmap_modules_infiltration, fig.height=8, fig.width=14, dev=c('pdf')}
+# remove controls and only keep images with dysfunction score
+cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$Description %in% unique(sce_rna[,sce_rna$Location != "CTRL"]$Description),]
+cur_dt_wide_sub <- cur_dt_wide[cur_dt_wide$dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"),]
+
+# define subgroups to split  heatmap
+subgroup = cur_dt_wide_sub[,"dysfunction_score"]
+
+# heatmap annotation
+row_ha2 = rowAnnotation("Production Mode of\nChemokine-Expressing Cells" = 
+                          anno_barplot(cur_dt_wide_sub[,c("single", "community")], 
+                                       gp = gpar(fill = c("#F8766D", "#00BFC4")), width = unit(1.5, "cm")),
+                        "Fraction of Chemokine- \n Expressing Cells" = 
+                          anno_barplot(cur_dt_wide_sub[,"fraction"],
+                                       width = unit(1.5, "cm")),
+                        annotation_name_rot = 90, gap = unit(3, "mm"),
+                        col = list(Relapse = c("no relapse" = "orange", "relapse" = "black", "untreated/lost" = "grey")))
+
+# function for the zoom-in plot
+panel_fun_chemokines = function(index, nm) {
+    image_number = cur_dt_wide_sub[index,"Description"]
+    if(length(unique(image_number)) > 9){
+      df = chemokines[chemokines$Description %in% image_number, ]
+      g = ggplot(df, aes(x = factor(chemokine), y = log10(n+1), fill=in_community)) + 
+        geom_boxplot() + 
+        xlab("Chemokine") + 
+        ylab("# Cells [log10(n+1)]") +
+        theme_bw() +
+        theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1),
+              legend.position = "none") +
+        ylim(0,3)
+      g = grid.grabExpr(print(g))
+      pushViewport(viewport())
+      grid.rect()
+      grid.draw(g)
+      popViewport()
+    }
+}
+
+# create zoom-in 
+zoom = anno_zoom(align_to = subgroup, 
+                 which = "row", panel_fun = panel_fun_chemokines, 
+                 size = unit(6, "cm"), 
+                 gap = unit(1, "cm"), 
+                 width = unit(10, "cm"))
+
+# heatmap
+m <- as.matrix(cur_dt_wide_sub[,grepl(glob2rx("*pure"),names(cur_dt_wide_sub))])
+col_names <- c()
+for(i in (1:length(colnames(m)))){col_names <- c(col_names,(toupper(str_split(colnames(m), "_")[[i]][1])))}
+colnames(m) <- col_names
+
+col_fun = viridis::inferno(max(m)+1)
+
+ht1 = Heatmap(m, 
+        col = col_fun,
+        left_annotation = row_ha2,
+        right_annotation = rowAnnotation(foo = zoom, gap = unit(3,"cm")),
+        row_split = subgroup,
+        row_title_side = "left",
+        border = T,
+        row_gap = unit(3, "mm"),
+        cluster_rows = T,
+        cluster_columns = F,
+        cluster_row_slices = F,
+        show_heatmap_legend = F,
+        show_row_dend = F,
+        name = "Detected Patches",
+        column_title = "Chemokine Milieu", 
+        column_title_side = "bottom",
+        column_title_gp = gpar(fontsize=20),
+        show_row_names = F,
+        width = unit(15,"cm"))
+
+draw(ht1)
+```
+
+## Legend
+
+```{r Supp_Fig_11C_legend, dev=c('pdf'), fig.width=3, fig.height=1}
+# manual legends
+lgd1 = Legend(labels = c("Stand-alone", "Milieu"), title = "Production Mode", legend_gp = gpar(fill = c("#F8766D", "#00BFC4")))
+lgd2 = Legend(col_fun = colorRamp2(c(0:max(m)), colors = col_fun), 
+              at = seq(0, max(m)+2, by=5), title = "Detected Milieus", direction = "horizontal", grid_width = unit(2, "cm"))
+
+# Draw Legend
+draw(packLegend(lgd2, lgd1, direction = "horizontal"))
+```
+
+# Supp Figure 11D
+
+## Tumor Marker Profile for different Dysfunction Scoring Groups per Image
+
+```{r Supp_Fig_11D_tumor_profile_per_image, fig.height=6, fig.width=10, dev=c('pdf')}
+tumor_marker_protein <- c("pS6", "bCatenin", "H3K27me3", "HLADR", "Sox9", "pERK", "p75", "PDL1", "Ki67", "SOX10", "PARP")
+tumor_marker_rna <- c("B2M")
+
+# rna data 
+dat_rna <- data.frame(t(assay(sce_rna[tumor_marker_rna, sce_rna$celltype == "Tumor"], "asinh")))
+dat_rna$cellID <- rownames(dat_rna)
+dat_rna <- left_join(dat_rna, data.frame(colData(sce_rna))[,c("cellID", "dysfunction_score", "Description")])
+
+# filter
+dat_rna <- dat_rna %>%
+  filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
+
+# mean per image
+dat_rna <- as_tibble(dat_rna) %>%
+  dplyr::select(-cellID) %>%
+  group_by(Description, dysfunction_score) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_rna <- dat_rna %>%
+  reshape2::melt(id.vars = c("Description", "dysfunction_score"), variable.name = "channel", value.name = "asinh")
+
+# protein data
+dat_prot <- data.frame(t(assay(sce_prot[tumor_marker_protein,, sce_prot$celltype == "Tumor"], "asinh")))
+dat_prot$cellID <- rownames(dat_prot)
+dat_prot <- left_join(dat_prot, data.frame(colData(sce_prot))[,c("cellID", "dysfunction_score", "Description")])
+
+# filter
+dat_prot <- dat_prot %>%
+  filter(dysfunction_score %in% c("High Dysfunction", "Low Dysfunction"))
+
+# mean per image
+dat_prot <- dat_prot %>%
+  dplyr::select(-cellID) %>%
+  group_by(Description, dysfunction_score) %>%
+  summarise_if(is.numeric, mean, na.rm = TRUE)
+
+# melt
+dat_prot <- dat_prot %>%
+  reshape2::melt(id.vars = c("Description", "dysfunction_score"), variable.name = "channel", value.name = "asinh")
+
+# join both data sets
+comb <- rbind(dat_prot, dat_rna)
+
+stat.test <- comb %>%
+  group_by(channel) %>%
+  wilcox_test(data = ., asinh ~ dysfunction_score) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_xy_position(dodge = 0.8)
+
+# plot 
+p <- ggplot(comb, aes(x=dysfunction_score, y=asinh)) + 
+  geom_boxplot(alpha=0.2, lwd=1, aes(fill=dysfunction_score)) +
+  geom_quasirandom(alpha=0.6, size=2, aes(col=dysfunction_score)) +
+  scale_color_discrete(guide = "none") +
+  theme_bw() +
+  theme(text = element_text(size=18),
+        axis.text.x = element_blank(),
+        axis.ticks = element_blank(),
+        axis.title.x = element_blank()) +
+  facet_wrap(~channel, scales = "free", ncol = 4) + 
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7) + 
+  xlab("") + 
+  ylab("Mean Count per Image (asinh)") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.2))) +
+  guides(fill=guide_legend(title="Dysfunction Score", override.aes = c(lwd=0.5, alpha=1)))
+
+leg <- get_legend(p)
+
+grid.arrange(p + theme(legend.position = "none"))
+```
+
+```{r Supp_Fig_11D_tumor_profile_per_image_legend, fig.height=2, fig.width=2, dev=c('pdf')}
+grid.arrange(leg)
+```
+
+# Supp Figure 11E
+
+## Define S100+ cells
+
+```{r signal_strength_distrubution_S100, eval = F}
+y <- c(rep(1:10,16),rep(11,7))
+
+# add the group information to the sce object
+sce_rna$groups <- y[colData(sce_rna)$ImageNumber]
+
+# now we use the function written by Nils
+plotDist(sce_rna["S100", sce_rna$celltype == "Tumor"], plot_type = "ridges", 
+         colour_by = "groups", split_by = "rows", 
+         exprs_values = "asinh") +
+  geom_vline(xintercept = 3)
+```
+
+## Plot
+
+```{r Supp_Fig_11E_S100_manual, fig.height=5, fig.width=5, dev=c('pdf')}
+# manual gating 
+sce_rna$S100 <- ifelse(assay(sce_rna["S100",], "asinh") > 3, "positive", "negative")
+
+# fraction of S100 tumor cells per image
+s100 <- data.frame(colData(sce_rna)) %>%
+  filter(celltype == "Tumor") %>%
+  group_by(ImageNumber, dysfunction_score, S100) %>%
+  summarise(n=n()) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(ImageNumber + dysfunction_score ~ S100, fill = 0, value.var = "fraction") %>%
+  reshape2::melt(id.vars = c("ImageNumber", "dysfunction_score"), variable.name = "S100", value.name = "fraction") %>%
+  filter(is.na(dysfunction_score) == F & S100 == "positive")
+
+s100$dysfunction_score <- factor(s100$dysfunction_score)
+
+stat.test <- s100 %>%
+  group_by(S100) %>%
+  wilcox_test(data = ., fraction ~ dysfunction_score) %>%
+  adjust_pvalue(method = "BH") %>%
+  add_significance("p.adj",cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %>%
+  add_x_position(dodge = 0.8)
+
+ggplot(s100, aes(x=dysfunction_score, y=fraction)) + 
+  geom_boxplot(alpha=0.2, lwd=1.5, aes(fill = dysfunction_score)) + 
+  geom_quasirandom(aes(col=dysfunction_score), size=3) +
+  stat_pvalue_manual(stat.test, label = "p.adj.signif", size = 7, y.position = 1) + 
+  xlab("") + 
+  ylab("Fraction of S100+ Tumor Cells") +
+  theme_bw() +
+  theme(text = element_text(size=16),
+        legend.position = "none") +
+  ylim(0,1.05)
 ```

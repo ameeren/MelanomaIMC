@@ -1,196 +1,413 @@
 ---
 title: "Supplementary Figure 6"
 author: "Tobias Hoch and Daniel Schulz"
-date: "2021-09-22"
+date: "2021-01-30"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
 ---
 
 # Introduction
-This script generates plots for Supplementary Figure 6. 
+This script generates plots for Supplementary Figure 6.
 
-In this script we will sequentially load all melanoma datasets from http://tisch.comp-genomics.org/
+# Preparations
 
-we will then calculate the proportions of each cell type expressing individual chemokines. under the hypothesis that the scRNAseq data is the ground truth. We will then compare these proportions to the observed proportions in IMC and thereby estimate whether we likely observe spatial spill over in IMC.
-
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+```{r setup}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ```
 
-## Load Libraries
+## Load libraries
 
-```{r, message=FALSE}
-set.seed(12345)
-sapply(list.files("code/helper_functions/", full.names = TRUE), source)
-library(Seurat)
-library(hdf5r)
+```{r load-libraries, message=FALSE}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(cytomapper)
 library(SingleCellExperiment)
+library(reshape2)
+library(tidyverse)
+library(dplyr)
+library(data.table) 
+library(ggrastr)
+library(ggplot2)
+library(colorRamps)
+library(RColorBrewer)
+library(gridExtra)
+library(ggpmisc)
+library(ComplexHeatmap)
 library(scater)
 library(dittoSeq)
-library(scran)
-library(ComplexHeatmap)
-library(outliers)
-library(purrr)
-library(data.table)
-library(dplyr)
-library(tidyr)
-library(cowplot)
+library(ggbeeswarm)
+library(corrplot)
 library(ggpubr)
+library(cowplot)
+library(circlize)
+library(ggrepel)
+library(rstatix)
+library(ape)
+library(biomaRt)
 ```
 
-## Load Data
+# Load Data
+```{r}
+# SCE object
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 
-```{r load datasets}
-sce_rna <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
-
-SKCM_GSE115978 <- read_Data(data = "data/data_for_analysis/scRNAseq/SKCM_GSE115978_aPD1_expression.h5",
-                      metadata_file = "data/data_for_analysis/scRNAseq/SKCM_GSE115978_aPD1_CellMetainfo_table.tsv",
-                      name = "SKCM_GSE115978",
-                      sorting = "all")
-
-HNSC_GSE139324 <- read_Data(data = "data/data_for_analysis/scRNAseq/HNSC_GSE139324_expression.h5",
-                      metadata_file = "data/data_for_analysis/scRNAseq/HNSC_GSE139324_CellMetainfo_table.tsv",
-                      name = "HNSC_GSE139324",
-                      sorting = "immune")
-
-NSCLC_GSE131907 <- read_Data(data = "data/data_for_analysis/scRNAseq/NSCLC_GSE131907_expression.h5",
-                      metadata_file = "data/data_for_analysis/scRNAseq/NSCLC_GSE131907_CellMetainfo_table.tsv",
-                      name = "NSCLC_GSE131907",
-                      sorting = "all")
-
-PAAD_CRA001160 <- read_Data(data = "data/data_for_analysis/scRNAseq/PAAD_CRA001160_expression.h5",
-                      metadata_file = "data/data_for_analysis/scRNAseq/PAAD_CRA001160_CellMetainfo_table.tsv",
-                      name = "PAAD_CRA001160",
-                      sorting = "all")
-
-UVM_GSE139829 <- read_Data(data = "data/data_for_analysis/scRNAseq/UVM_GSE139829_expression.h5",
-                      metadata_file = "data/data_for_analysis/scRNAseq/UVM_GSE139829_CellMetainfo_table.tsv",
-                      name = "UVM_GSE139829",
-                      sorting = "all")
-SKCM_GSE72056 <- read_Data(data = "data/data_for_analysis/scRNAseq/SKCM_GSE72056_expression.h5",
-                      metadata_file = "data/data_for_analysis/scRNAseq/SKCM_GSE72056_CellMetainfo_table.tsv",
-                      name = "SKCM_GSE72056",
-                      sorting = "all")
-
-# merge the datasets
-sc_dat <- rbind(HNSC_GSE139324, NSCLC_GSE131907, PAAD_CRA001160,SKCM_GSE115978, SKCM_GSE72056, UVM_GSE139829)
-comp_dataset <- c("HNSC_GSE139324","NSCLC_GSE131907","PAAD_CRA001160","SKCM_GSE115978","SKCM_GSE72056","UVM_GSE139829")
-
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
 ```
 
 # Analysis
 
-## IMC data
+# Supp Fig 5A
+
+```{r Supp_Fig_6A_gatedCells_Protein, fig.width=7.5, fig.height=4.8, dev=("png")}
+# sample 300 cells per cell type
+sce_prot_sub <- sce_prot[,sce_prot$layer_1_gated != "unlabelled"]
+
+set.seed(2345)
+# sub-sample 500 cells
+sample <- data.frame(colData(sce_prot_sub)) %>%
+  group_by(celltype) %>%
+  slice_sample(n=300)
+
+# unique cellIDs
+sample <- sample[sample$cellID %in% unique(sample$cellID),]
+
+cur_sce <- sce_prot[,sce_prot$cellID %in% sample$cellID]
+
+good_markers <- rownames(sce_prot)[rowData(sce_prot)$good_marker]
+
+colors <- metadata(sce_prot)$colour_vector$celltype
+colors <- colors[c("B cell", "BnT cell", "CD4+ T cell", "CD8+ T cell", "FOXP3+ T cell", "Macrophage", "Neutrophil", "pDC", "Stroma", "Tumor", "unknown")]
+
+dittoHeatmap(cur_sce,
+             genes = good_markers, 
+             assay = "asinh",
+            annot.by = c("celltype"),
+            show_colnames = FALSE,
+            cluster_rows = TRUE,
+            annot.colors = colors,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101),
+            use_raster=TRUE)
+```
+
+# Supp Figure 6B
+
+```{r Supp_Fig_6B_gatedCells_RNA, fig.width=8, fig.height=4.8, dev=("png")}
+set.seed(2345)
+
+sce_rna_sub <- sce_rna[,sce_rna$layer_1_gated != "unlabelled"]
+
+# remove unkown - not enough cells
+sce_rna_sub <- sce_rna_sub[,sce_rna_sub$celltype != "unknown"]
+
+# sub-sample 500 cells
+sample <- data.frame(colData(sce_rna_sub)) %>%
+  group_by(celltype) %>%
+  slice_sample(n=300)
+
+# unique cellIDs
+sample <- sample[sample$cellID %in% unique(sample$cellID),]
+
+cur_sce <- sce_rna[,sce_rna$cellID %in% unique(sample$cellID)]
+
+good_markers <- rownames(sce_rna)[rowData(sce_rna)$good_marker]
+colors <- metadata(sce_rna)$colour_vector$celltype[]
+colors <- colors[c("CD38", "CD8- T cell", "CD8+ T cell", "HLA-DR", "Macrophage", "Neutrophil", "Stroma", "Tumor", "Vasculature")]
+
+dittoHeatmap(cur_sce, genes = good_markers, assay = "asinh",
+            annot.by = c("celltype"),
+            show_colnames = FALSE,
+            cluster_rows = TRUE,
+            annot.colors = colors,
+            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
+            breaks = seq(-3,3, length.out = 101),
+            use_raster=TRUE)
+```
+
+# Supp Figure 6C and 5D
+These plots are generated after the randomForest classification. For this, see files 04_1_RNA_celltype_classification.rmd and 04_1_Protein_celltype_classification.rmd
+
+# Supp Figure 6E
+
+```{r Supp_Fig_6E_cross_correlation, fig.width=9, fig.height=9, dev=c('pdf')}
+# rna data
+cur_rna <- data.frame(colData(sce_rna))
+
+# protein data
+cur_prot <- data.frame(colData(sce_prot))
+
+# rna data set - cell type fractions
+rna_sum <- cur_rna %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  group_by(Description) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
+
+# protein data set - cell type fractions
+prot_sum <- cur_prot %>%
+  group_by(Description, celltype) %>%
+  summarise(n = n()) %>%
+  group_by(Description) %>%
+  mutate(fraction = n/sum(n)) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
+
+# equal images
+all(rna_sum$Description == prot_sum$Description)
+
+# correlation
+cor <- cor(rna_sum[,-1], prot_sum[,-1], method = "pearson")
+
+# reorder cor matrix
+cor <- cor[c("CD38", "HLA-DR", "Stroma", "Vasculature", "unknown", "CD8- T cell", "CD8+ T cell", "Macrophage", "Neutrophil", "Tumor"),
+           c("B cell", "BnT cell", "pDC", "Stroma", "unknown", "FOXP3+ T cell", "CD4+ T cell", "CD8+ T cell", "Macrophage", "Neutrophil", "Tumor") ]
+
+corrplot(cor, 
+         addCoef.col = "black",
+         method = "circle",
+         tl.col="black",
+         tl.cex = 1.5)
+
+# correlation and p-value
+common_cells <- c("Macrophage", "Neutrophil", "Tumor", "CD8+ T cell")
+
+# mean correlation for celltype specific correlation
+round(mean(cor(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"]),
+     cor(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"]),
+     cor(rna_sum[,"Tumor"], prot_sum[,"Tumor"]),
+     cor(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])),2)
+
+# p-values
+cor.test(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"])
+cor.test(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"])
+cor.test(rna_sum[,"Tumor"], prot_sum[,"Tumor"])
+cor.test(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])
+```
+
+# Supp Figure 6F
+
+## Detection of chemokine expressing cells
+
+for the detection of chemokine expressing cells we make use of the fact that we also measured a negative control (DapB).
 
 ```{r}
-cur_dat <- as_tibble(colData(sce_rna))
+# get the names of the chemokine channels without the negative control channel
+chemokine_channels = rownames(sce_rna[which(grepl("T\\d+_",rownames(sce_rna)) & ! grepl("DapB",rownames(sce_rna))),])
+chemokine_channels_sub <- c("T2_CCL22")
+
+# run function to define chemokine expressing cells 
+output_list <- compute_difference(sce_rna, 
+                          cellID = "cellID", 
+                          assay_name = "asinh", 
+                          threshold = 0.01, 
+                          mRNA_channels = chemokine_channels_sub, 
+                          negative_control = "T6_DapB", 
+                          return_calc_metrics = TRUE)
+```
+
+## Plot Results from Chemokine Detection
+
+```{r Supp_Fig_6F_chemokine_detection,fig.height=7, fig.width=17, dev=c("pdf"), dpi=25}
+# check difference between DapB and signal (histogram)
+plot_list = list()
+for(i in chemokine_channels_sub){
+  
+  # subset whole data set for visualization purposes
+  diff_chemo <- output_list[[i]]
+  diff_chemo_sub <- diff_chemo[sample(nrow(diff_chemo), nrow(diff_chemo)*0.5), ]
+
+  a <- ggplot(data = diff_chemo_sub, aes(x=scaled_diff)) + 
+  geom_histogram(binwidth = 0.05, aes(fill = 
+                                       ifelse(padj <= 0.01 & scaled_diff > 0, 'p<0.01', 'n.s.'))) + 
+  xlab(paste(paste("Scaled Difference ", i, sep = " "), " - DapB", sep = "")) + 
+    xlim(-5,7) +
+    theme_minimal() + 
+    theme(text = element_text(size=20),
+          legend.position = "none") + 
+    scale_fill_manual(values = c("black", "deepskyblue1"))
+  
+  # significant cells defined by subtraction
+  b <- ggplot(data=diff_chemo_sub, aes(x=mean_negative_control, y=mean_chemokine)) + 
+    geom_point_rast(alpha=0.2, aes(col = 
+                                ifelse(padj <= 0.01 & scaled_diff > 0, 'p<0.01', 'n.s.'))) + 
+    scale_color_manual(values = c("black", "deepskyblue1"), 
+                       name = "Legend") +
+    guides(color = guide_legend(override.aes = list(alpha=1, size=3))) +
+    xlim(0,5.5) + ylim(0,5.5) +
+    ylab(paste("Mean expression of", i, sep=" ")) +
+    xlab("Mean DapB mRNA expression") +
+    theme_minimal() + 
+    theme(text = element_text(size=20)) 
+
+  
+  grid.arrange(a,b, nrow = 1, ncol=2)
+}
+```
+
+# Supp Figure 6G
+
+This script reproduces the homology analysis between the different chemokines.
+We downloaded the data from www.ncbi.nlm.nih.gov and saved the transcript 
+sequences. https://www.ebi.ac.uk/Tools/msa/clustalo/ was used to align all-vs-all
+transcripts using the following call:
+
+```
+$APPBIN/clustal-omega-1.2.4/bin/clustalo --infile clustalo-E20210914-122047-0397-8283578-p2m.sequence --threads 8 --MAC-RAM 8000 --verbose --guidetree-out clustalo-E20210914-122047-0397-8283578-p2m.dnd --outfmt clustal --resno --outfile clustalo-E20210914-122047-0397-8283578-p2m.clustal_num --output-order tree-order --seqtype dna
+```
+
+We will first look at the identity matrix, inidcating the percentage of
+sequence similarity.
+
+```{r read-in-data, message=FALSE, warning=FALSE}
+seq_similarity <- read.table("data/data_for_analysis/ClustalW_results/identity_matrix.txt")
+rownames(seq_similarity) <- seq_similarity$V2
+seq_similarity <- seq_similarity[,-c(1,2)]
+
+# Remove non coding transcript variants
+seq_similarity <- seq_similarity[!grepl("XR_|NR_", rownames(seq_similarity)),
+                                 !grepl("XR_|NR_", rownames(seq_similarity))]
+rownames(seq_similarity) <- sub("\\.[0-9]*", "", rownames(seq_similarity))
+
+
+phylogenetic_tree <- read.tree("data/data_for_analysis/ClustalW_results/phylogenetic_tree.txt")
+```
+
+Now, we will map between RefSeq transcript ids, ensemble transcript ids and
+gene names.
+
+```{r biomart}
+ensembl <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
+cur_tab <- getBM(attributes=c("refseq_mrna", "ensembl_gene_id", "hgnc_symbol"), 
+      filters = "refseq_mrna", values = rownames(seq_similarity), 
+      mart = ensembl, uniqueRows = FALSE)
+cur_tab <- cur_tab[match(rownames(seq_similarity), cur_tab$refseq_mrna),]
+
+rownames(seq_similarity)  <- colnames(seq_similarity) <- 
+    paste0(cur_tab$refseq_mrna, "_", cur_tab$hgnc_symbol)
+```
+
+
+And we compare it to correlation in expression across all cells.
+
+```{r cor-expression, fig.height=5, fig.width=5}
+final_sce <- sce_rna
+# select only the cells that express chemokines
+for_analysis <- final_sce[,final_sce$expressor != "NA"]
+
+cur_cor <- cor(t(assay(for_analysis, "asinh")[c("T5_CCL4", "T7_CCL18", "T1_CXCL8",
+                                             "T4_CXCL10", "T3_CXCL12", "T8_CXCL13",
+                                             "T12_CCL2", "T2_CCL22",
+                                             "T9_CXCL9", "T11_CCL8", "T10_CCL19"),]), 
+                                           method = "spearman")
+
+pheatmap(cur_cor, color = colorRampPalette(c("dark blue", "white", "dark red"))(100), 
+         breaks = seq(-1, 1, length.out = 100))
+```
+
+```{r viz-correlation}
+cor_tibbble <- cur_cor %>%
+    as_tibble() %>%
+    mutate(probe = rownames(cur_cor)) %>% 
+    pivot_longer(cols = 1:ncol(cur_cor)) %>%
+    mutate(probe = str_split(probe, pattern = "_", simplify = TRUE)[,2],
+           name = str_split(name, pattern = "_", simplify = TRUE)[,2]) %>%
+    arrange(probe, name) %>%
+    filter(probe != name)
+
+sim_tibble <- seq_similarity %>%
+    as_tibble() %>% 
+    mutate(probe = rownames(seq_similarity)) %>% 
+    pivot_longer(cols = 1:ncol(seq_similarity)) %>%
+    mutate(from_chemo = str_split(probe, pattern = "_", simplify = TRUE)[,3],
+           to_chemo = str_split(name, pattern = "_", simplify = TRUE)[,3]) %>%
+    group_by(from_chemo, to_chemo) %>%
+    dplyr::summarize(mean_similarity = mean(value, na.rm=TRUE)) %>%
+    arrange(from_chemo, to_chemo) %>%
+    filter(from_chemo != to_chemo)
+
+all.equal(paste(cor_tibbble$probe, cor_tibbble$name),
+          paste(sim_tibble$from_chemo, sim_tibble$to_chemo))
+
+ggplot(data.frame(similarity = sim_tibble$mean_similarity,
+                  correlation = cor_tibbble$value)) +
+    geom_point(aes(similarity, correlation))
+
+cor.test(sim_tibble$mean_similarity,
+         cor_tibbble$value)
+```
+
+## Number of co-expressors
+
+Finally, we will compare the sequence similarity to the jaccard index 
+of chemokine expressors.
+
+```{r Supp_Fig_6G_JaccardPlot, dev="pdf", fig.width=7, fig.height=5}
+# Define the jaccard similarity
+jaccard <- function(x,y){
+    intersection <- length(intersect(x,y))
+    union = length(x) + length(y) - intersection
+    return (intersection/union)
+}
+
+# We will pass the unique cell ids into this function
+cur_out <- lapply(seq_len(nrow(sim_tibble)),
+       function(x){
+           from_chemo_cells <- colnames(final_sce)[colData(final_sce)[[sim_tibble$from_chemo[x]]] != 0]
+           to_chemo_cells <- colnames(final_sce)[colData(final_sce)[[sim_tibble$to_chemo[x]]] != 0]
+           return(jaccard(from_chemo_cells, to_chemo_cells))
+       })
+sim_tibble$jaccard_sim <- unlist(cur_out)
+
+ggplot(data.frame(similarity = sim_tibble$mean_similarity,
+                  jaccard_sim = sim_tibble$jaccard_sim)) +
+    geom_point(aes(similarity, jaccard_sim)) +
+    geom_smooth(method = "lm", aes(similarity, jaccard_sim)) +  stat_cor(method = "pearson",
+           aes(x = similarity, y = jaccard_sim, label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
+           size = 7, cor.coef.name = "R", label.sep="\n", label.y.npc = "top") + 
+    theme_bw() + theme(text=element_text(size=15)) +
+    xlab("Sequence similarity") + ylab("Chemokine co-expression [Jaccard index]")
+
+cor.test(sim_tibble$mean_similarity,
+         sim_tibble$jaccard_sim)
+```
+
+# Supp Figure 6H
+
+## Fraction of Tumor Cells that express chemokines
+
+```{r Supp_Fig_6H_tumor_cells_chemokine, dev=("pdf"), fig.width=9, fig.height=5}
+cur_dat <- data.frame(colData(sce_rna))
+cur_dat <- cur_dat %>%
+  filter(celltype == "Tumor") %>%
+  filter(Location != "CTRL")
+
+cur_dat <- cur_dat[,c("ImageNumber", "Mutation", colnames(cur_dat)[grepl(glob2rx("C*L*"),names(cur_dat))])]
+
+# colSums of Chemokines in Tumor Cells (Multiple Producer count more than once)
+cur_dat <- cur_dat %>%
+  group_by(ImageNumber, Mutation) %>%
+  mutate(cells = n()) %>%
+  group_by(ImageNumber, cells, Mutation) %>%
+  summarise_each(funs(sum))
+
+# compute fractions
+cur_dat[,4:14] <- cur_dat[,4:14] / t(cur_dat$cells)
 
 cur_dat <- cur_dat %>%
-  group_by(celltype,.drop = FALSE) %>%
-  mutate(total_celltype_count = n()) %>%
-  select(celltype,total_celltype_count,cellID, CCL2,CCL4,CCL8,CCL18,CCL19,CCL22,CXCL8,CXCL9,CXCL10,CXCL12,CXCL13)
+  filter(cells > 200) %>%
+  reshape2::melt(id.vars=c("ImageNumber", "cells", "Mutation"), variable.name="chemokine", value.name="fraction")
 
-imc_long <- cur_dat %>%
-  pivot_longer(cols = c(CCL2,CCL4,CCL8,CCL18,CCL19,CCL22,CXCL8,CXCL9,CXCL10,CXCL12,CXCL13),names_to = "chemokine")
-
-imc_long <- imc_long %>%
-  group_by(chemokine,.drop = FALSE) %>%
-  mutate(total_chem_count = sum(value)) %>%
-  ungroup() %>%
-  group_by(celltype,chemokine,.drop = FALSE) %>%
-  mutate(celltype_chemokine_sum=sum(value)) %>%
-  ungroup() %>%
-  select(celltype,celltype_chemokine_sum,chemokine,total_celltype_count,total_chem_count) %>%
-  distinct() %>%
-  mutate(frac_of_chemokine_pos = celltype_chemokine_sum/total_chem_count,
-         frac_of_celltype = celltype_chemokine_sum/total_celltype_count) %>%
-  ungroup()
-
-imc_long$sorting <- "all"
-imc_long$dataset <- "IMC"
-```
-
-## only celltypes available in IMC as well
-
-here we will unify the naming of cell types that are available in both datasets.
-
-```{r}
-unique(sc_dat$celltype)
-
-#sc_dat[which(sc_dat$celltype == "B"),]$celltype <- "HLA-DR"
-#sc_dat[which(sc_dat$celltype == "CD4Tconv"),]$celltype <- "CD8- T cell"
-#sc_dat[which(sc_dat$celltype == "CD8Tex"),]$celltype <- "CD8+ T cell"
-#sc_dat[which(sc_dat$celltype == "CD8T"),]$celltype <- "CD8+ T cell"
-sc_dat[which(sc_dat$celltype == "Endothelial"),]$celltype <- "Vasculature"
-sc_dat[which(sc_dat$celltype == "Fibroblasts"),]$celltype <- "Stroma"
-sc_dat[which(sc_dat$celltype == "Malignant"),]$celltype <- "Tumor"
-sc_dat[which(sc_dat$celltype == "Mono/Macro"),]$celltype <- "Macrophage"
-
-#sc_dat[which(sc_dat$celltype == "Treg"),]$celltype <- "CD8- T cell"
-#sc_dat[which(sc_dat$celltype == "Plasma"),]$celltype <- "CD38"
-
-unique(sc_dat$celltype)
-
-celltypes <- c("CD8- T cell","CD8+ T cell","Vasculature", "Stroma","Macrophage","Tumor")
-```
-
-## merge scRNA-seq and IMC data
-
-we will also unify the cell type names wherever possible
-
-```{r}
-plot_dat <- sc_dat %>%
-  filter(celltype %in% celltypes, dataset %in% comp_dataset)
-
-# order IMC data correct for merging 
-imc_long <- imc_long[,colnames(plot_dat)]
-
-all_dat <- rbind(plot_dat,imc_long)
-all_dat$datatype <- "scRNAseq"
-all_dat[which(all_dat$dataset == "IMC"),]$datatype <- "IMC"
-```
-
-```{r grubbs-statistical-test-1}
-test_dat <- all_dat %>%
-  group_by(chemokine, celltype) %>%
-  nest() %>%         
-  mutate(n = map_dbl(data, ~ nrow(.x)), # number of entries
-         G = map(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$statistic[[1]]), # G statistic
-         U = map(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$statistic[[2]]), # U statistic
-         grubbs = map(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$alternative), # Alternative hypotesis
-         p_grubbs = map_dbl(data, ~ grubbs.test(.x$frac_of_chemokine_pos)$p.value)) %>% # p-value
-  mutate(G = signif(unlist(G), 3),
-         U = signif(unlist(U), 3),
-         grubbs = unlist(grubbs),
-         p_grubbs = signif(p_grubbs, 3)) %>%
-  select(-data) %>%
-  arrange(p_grubbs)
-
-# merge the test_dat data with the IMC data
-test_dat <- left_join(test_dat,imc_long[,c("celltype","chemokine","frac_of_chemokine_pos")],by=c("celltype","chemokine"))
-
-# define whether a detected outlier is an IMC datapoint and apply 0.05 significant value cut-off
-sig_dat <- test_dat %>%
-  mutate(value = gsub("[^0-9.]", "",  grubbs),
-         is_IMC = value == frac_of_chemokine_pos,
-         sig = p_grubbs <= 0.05) %>%
-  filter(sig == TRUE,is_IMC == TRUE)
-```
-
-## Supp Figure 6A
-
-```{r Supp_Fig_6A_IMC_scRNAseq_comparison, fig.height=10,fig.width=15, dev="pdf"}
-ggplot()+
-  geom_boxplot(data = all_dat,aes(x=celltype,y=frac_of_chemokine_pos))+
-  geom_point(data = all_dat[which(all_dat$dataset != "IMC"),],aes(x=celltype,y=frac_of_chemokine_pos,col=as.factor(dataset)))+
-  geom_point(data = all_dat[which(all_dat$datatype == "IMC"),],aes(x=celltype,y=frac_of_chemokine_pos),col="red",shape=18, size=5)+
-  geom_text(data = sig_dat,aes(x=celltype,y=0.75,label = p_grubbs), color= "red", angle=90) +
-  facet_wrap(.~chemokine)+
-  theme_bw()+
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5),
-        text = element_text(size=14)) +
-  ylab("Fraction of chemokine+ cells") +
-  guides(col=guide_legend(title="Dataset")) +
-  xlab("")
+ggplot(cur_dat,aes(x=fct_reorder(chemokine, fraction, .fun = median, .desc = TRUE), y=fraction+0.001)) + 
+  geom_boxplot(alpha=.5) +
+  geom_quasirandom(alpha=.2) +
+  theme_bw() + 
+  theme(text=element_text(size=16)) +
+  ylab("Fraction of Expressing Tumor Cells\n(fraction + 0.001)") +
+  xlab("") +
+  scale_y_log10() +
+  annotation_logticks(sides = "l") +
+  geom_hline(yintercept = median(cur_dat$fraction+0.001), linetype = 2) 
 ```

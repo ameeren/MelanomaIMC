@@ -1,7 +1,7 @@
 ---
 title: "Supplementary Figure 5"
 author: "Tobias Hoch and Daniel Schulz"
-date: "2021-01-30"
+date: "2020-11-18"
 output: workflowr::wflow_html
 editor_options:
   chunk_output_type: console
@@ -12,402 +12,294 @@ This script generates plots for Supplementary Figure 5.
 
 # Preparations
 
-```{r setup}
-knitr::opts_chunk$set(echo = TRUE, message= FALSE)
-knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
-```
-
 ## Load libraries
 
-```{r load-libraries, message=FALSE}
+```{r, message=FALSE}
 sapply(list.files("code/helper_functions", full.names = TRUE), source)
-library(cytomapper)
 library(SingleCellExperiment)
 library(reshape2)
 library(tidyverse)
 library(dplyr)
 library(data.table) 
-library(ggrastr)
 library(ggplot2)
-library(colorRamps)
-library(RColorBrewer)
-library(gridExtra)
-library(ggpmisc)
 library(ComplexHeatmap)
-library(scater)
-library(dittoSeq)
-library(ggbeeswarm)
-library(corrplot)
-library(ggpubr)
-library(cowplot)
-library(circlize)
+library(rms)
 library(ggrepel)
+library(ggbeeswarm)
+library(circlize)
+library(ggpubr)
+library(ggridges)
+library(gridExtra)
 library(rstatix)
-library(ape)
-library(biomaRt)
+library(cowplot)
+library(ggrastr)
 ```
 
-# Load Data
+## Read the data
+
 ```{r}
-# SCE object
-sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
-sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+# clinical data
+dat <- read_csv("data/data_for_analysis/protein/clinical_data_protein.csv")
 
-sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+# Protein data
+
+sce_prot <- readRDS("data/data_for_analysis/sce_protein.rds")
 sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+
+# take panel_meta because there are the channel names from the shiny output (and only there, not in the SCE)
+panel_meta_prot <- read.csv(file = "data/data_for_analysis/protein/melanoma_1.06_protein.csv", 
+                       sep= ",",  stringsAsFactors = FALSE )
+
+
+# RNA data
+
+sce_rna <- readRDS("data/data_for_analysis/sce_rna.rds")
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+
+# take panel_meta because there are the channel names from the shiny output (and only there, not in the SCE)
+panel_meta_rna <- read.csv(file = "data/data_for_analysis/rna/panel_mat.csv", stringsAsFactors = FALSE )
 ```
 
-# Analysis
+# Supp Figure 5A
 
-# Supp Fig 5A
+## Clinical features of the cohort 
 
-```{r Supp_Fig_5A_gatedCells_Protein, fig.width=7.5, fig.height=4.8, dev=("png")}
-# sample 300 cells per cell type
-sce_prot_sub <- sce_prot[,sce_prot$layer_1_gated != "unlabelled"]
+Note: as the cohort is very diverse, we are using the BlockID as the minimal unit since clinical parameters are described per BlockID. However, sometimes we do have patients of which we have multiple FFPE blocks (BlockIDs). Nonetheless, clinical parameters are not given per patient but per patient FFPE block and are therefore considered the minimial unit.
 
-set.seed(2345)
-# sub-sample 500 cells
-sample <- data.frame(colData(sce_prot_sub)) %>%
-  group_by(celltype) %>%
-  slice_sample(n=300)
+## Number of Samples
 
-# unique cellIDs
-sample <- sample[sample$cellID %in% unique(sample$cellID),]
+```{r Supp_Fig_5A_number_of_samples, fig.height=6, fig.width=17, dev=c('pdf')}
+dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location == "CTRL"]$BlockID),]$MM_location <- "Control"
 
-cur_sce <- sce_prot[,sce_prot$cellID %in% sample$cellID]
+# remove control samples
+dat <- dat[dat$BlockID %in% unique(sce_prot[,sce_prot$Location != "CTRL"]$BlockID),]
 
-good_markers <- rownames(sce_prot)[rowData(sce_prot)$good_marker]
+p1 <- unique(dat[,c("BlockID","MM_location")]) %>%
+  ggplot()+
+  geom_bar(aes(y=MM_location),stat ="count") +
+  xlab("Biopsy Blocks per Location") +
+  ylab("Metastasis Location") +
+  theme_bw()+
+  theme(text = element_text(size=16))
+  
+p2 <- dat %>%
+  ggplot()+
+  geom_bar(aes(x=BlockID, fill=(MM_location)),stat="count")+
+  theme_bw()+
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x=element_blank(),
+        text = element_text(size=16)) + 
+  ylab("Number of Samples") +
+  xlab("Biopsy Blocks") +
+  scale_y_continuous(limits = c(0,4), expand = c(0, 0)) +
+  guides(fill=guide_legend(title="Metasis Location"))
 
-colors <- metadata(sce_prot)$colour_vector$celltype
-colors <- colors[c("B cell", "BnT cell", "CD4+ T cell", "CD8+ T cell", "FOXP3+ T cell", "Macrophage", "Neutrophil", "pDC", "Stroma", "Tumor", "unknown")]
-
-dittoHeatmap(cur_sce,
-             genes = good_markers, 
-             assay = "asinh",
-            annot.by = c("celltype"),
-            show_colnames = FALSE,
-            cluster_rows = TRUE,
-            annot.colors = colors,
-            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(-3,3, length.out = 101),
-            use_raster=TRUE)
+plot_grid(p1,p2,rel_widths = c(1.25,3))  
 ```
 
 # Supp Figure 5B
 
-```{r Supp_Fig_5B_gatedCells_RNA, fig.width=8, fig.height=4.8, dev=("png")}
-set.seed(2345)
-
-sce_rna_sub <- sce_rna[,sce_rna$layer_1_gated != "unlabelled"]
-
-# remove unkown - not enough cells
-sce_rna_sub <- sce_rna_sub[,sce_rna_sub$celltype != "unknown"]
-
-# sub-sample 500 cells
-sample <- data.frame(colData(sce_rna_sub)) %>%
-  group_by(celltype) %>%
-  slice_sample(n=300)
-
-# unique cellIDs
-sample <- sample[sample$cellID %in% unique(sample$cellID),]
-
-cur_sce <- sce_rna[,sce_rna$cellID %in% unique(sample$cellID)]
-
-good_markers <- rownames(sce_rna)[rowData(sce_rna)$good_marker]
-colors <- metadata(sce_rna)$colour_vector$celltype[]
-colors <- colors[c("CD38", "CD8- T cell", "CD8+ T cell", "HLA-DR", "Macrophage", "Neutrophil", "Stroma", "Tumor", "Vasculature")]
-
-dittoHeatmap(cur_sce, genes = good_markers, assay = "asinh",
-            annot.by = c("celltype"),
-            show_colnames = FALSE,
-            cluster_rows = TRUE,
-            annot.colors = colors,
-            heatmap.colors = colorRampPalette(c("dark blue", "white", "dark red"))(100),
-            breaks = seq(-3,3, length.out = 101),
-            use_raster=TRUE)
-```
-
-# Supp Figure 5C and 5D
-These plots are generated after the randomForest classification. For this, see files 04_1_RNA_celltype_classification.rmd and 04_1_Protein_celltype_classification.rmd
-
-# Supp Figure 5E
-
-```{r Supp_Fig_5E_cross_correlation, fig.width=9, fig.height=9, dev=c('pdf')}
-# rna data
-cur_rna <- data.frame(colData(sce_rna))
-
-# protein data
-cur_prot <- data.frame(colData(sce_prot))
-
-# rna data set - cell type fractions
-rna_sum <- cur_rna %>%
-  group_by(Description, celltype) %>%
-  summarise(n = n()) %>%
-  group_by(Description) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
-
-# protein data set - cell type fractions
-prot_sum <- cur_prot %>%
-  group_by(Description, celltype) %>%
-  summarise(n = n()) %>%
-  group_by(Description) %>%
-  mutate(fraction = n/sum(n)) %>%
-  reshape2::dcast(Description ~ celltype, value.var = "fraction", fill = 0)
-
-# equal images
-all(rna_sum$Description == prot_sum$Description)
-
-# correlation
-cor <- cor(rna_sum[,-1], prot_sum[,-1], method = "pearson")
-
-# reorder cor matrix
-cor <- cor[c("CD38", "HLA-DR", "Stroma", "Vasculature", "unknown", "CD8- T cell", "CD8+ T cell", "Macrophage", "Neutrophil", "Tumor"),
-           c("B cell", "BnT cell", "pDC", "Stroma", "unknown", "FOXP3+ T cell", "CD4+ T cell", "CD8+ T cell", "Macrophage", "Neutrophil", "Tumor") ]
-
-corrplot(cor, 
-         addCoef.col = "black",
-         method = "circle",
-         tl.col="black",
-         tl.cex = 1.5)
-
-# correlation and p-value
-common_cells <- c("Macrophage", "Neutrophil", "Tumor", "CD8+ T cell")
-
-# mean correlation for celltype specific correlation
-round(mean(cor(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"]),
-     cor(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"]),
-     cor(rna_sum[,"Tumor"], prot_sum[,"Tumor"]),
-     cor(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])),2)
-
-# p-values
-cor.test(rna_sum[,"Macrophage"], prot_sum[,"Macrophage"])
-cor.test(rna_sum[,"Neutrophil"], prot_sum[,"Neutrophil"])
-cor.test(rna_sum[,"Tumor"], prot_sum[,"Tumor"])
-cor.test(rna_sum[,"CD8+ T cell"], prot_sum[,"CD8+ T cell"])
-```
-
-# Supp Figure 5F
-
-## Detection of chemokine expressing cells
-
-for the detection of chemokine expressing cells we make use of the fact that we also measured a negative control (DapB).
+## Select one random file per celltype and load file
 
 ```{r}
-# get the names of the chemokine channels without the negative control channel
-chemokine_channels = rownames(sce_rna[which(grepl("T\\d+_",rownames(sce_rna)) & ! grepl("DapB",rownames(sce_rna))),])
-chemokine_channels_sub <- c("T2_CCL22")
+# load all subsetted sce object from hierarchichal gating and combine the
+label.files <- list.files("data/data_for_analysis/protein/celltype_classifier", full.names = TRUE)
+file_names <- data.frame(path = label.files)
+file_names$fileName <- sub(".*/", "", label.files)
+file_names$celltype <- sub("\\_.*", "", file_names$fileName)
 
-# run function to define chemokine expressing cells 
-output_list <- compute_difference(sce_rna, 
-                          cellID = "cellID", 
-                          assay_name = "asinh", 
-                          threshold = 0.01, 
-                          mRNA_channels = chemokine_channels_sub, 
-                          negative_control = "T6_DapB", 
-                          return_calc_metrics = TRUE)
+# select one random file per celltype
+file_names <- file_names %>%
+  group_by(celltype) %>%
+  sample_n(1)
+
+# Read in SCE objects
+cur_sces <- lapply(file_names$path, readRDS)
 ```
 
-## Plot Results from Chemokine Detection
+## Print gating scheme - Protein
 
-```{r Supp_Fig_5F_chemokine_detection,fig.height=7, fig.width=17, dev=c("pdf"), dpi=25}
-# check difference between DapB and signal (histogram)
-plot_list = list()
-for(i in chemokine_channels_sub){
+```{r Supp_Fig_5B_gating_scheme_protein, fig.height=8, fig.width=6, dev=("pdf")}
+for(element in cur_sces){
+  # current labelled sce object
+  sce_label <- element
+  cur_celltype <- unique(sce_label$cytomapper_CellLabel)
+  # select all gates from metadata
+  gates <- metadata(sce_label)[grepl("cytomapper_gate_", names(metadata(sce_label)))]
+  cur_img <- gates[[1]]$img_id
+  # subset sce to current image 
+  cur_sce <- sce_prot[,sce_prot$ImageNumber == cur_img]
+  plots <- list()
   
-  # subset whole data set for visualization purposes
-  diff_chemo <- output_list[[i]]
-  diff_chemo_sub <- diff_chemo[sample(nrow(diff_chemo), nrow(diff_chemo)*0.5), ]
-
-  a <- ggplot(data = diff_chemo_sub, aes(x=scaled_diff)) + 
-  geom_histogram(binwidth = 0.05, aes(fill = 
-                                       ifelse(padj <= 0.01 & scaled_diff > 0, 'p<0.01', 'n.s.'))) + 
-  xlab(paste(paste("Scaled Difference ", i, sep = " "), " - DapB", sep = "")) + 
-    xlim(-5,7) +
-    theme_minimal() + 
-    theme(text = element_text(size=20),
-          legend.position = "none") + 
-    scale_fill_manual(values = c("black", "deepskyblue1"))
+  for(i in names(gates)) {
+    plots[[i]] <- local({
+      # select gates and imageID
+      cur_gate <- as.data.frame(gates[[i]]$gate)
+      cur_img <- gates[[i]]$img_id
+      
+      # names of channels (complicated because shiny has different channel names than SCE)
+      x_gate <- rownames(cur_gate)[1]
+      y_gate <- rownames(cur_gate)[2]
+      x_metal <- panel_meta_prot[panel_meta_prot$clean_target == x_gate, "Metal.Tag"]
+      y_metal <- panel_meta_prot[panel_meta_prot$clean_target == y_gate, "Metal.Tag"]
+      x_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == x_metal,])
+      y_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == y_metal,])
+      
+      # select current channels
+      cur_counts <- as.data.frame(t(assay(cur_sce, "asinh")[c(x_original, y_original),]))
+      
+      # check if cells are in gate
+      cur_counts$in_gate <- ifelse(cur_counts[,1] >= cur_gate[1,1] &
+                                     cur_counts[,1] <= cur_gate[1,2] &
+                                     cur_counts[,2] >= cur_gate[2,1] &
+                                     cur_counts[,2] <= cur_gate[2,2], TRUE, FALSE)
+      
+      # cellIDs of cells in gate (for next gate)
+      cur_cells <- rownames(cur_counts[cur_counts$in_gate == TRUE,])
+      
+      # update cur_sce
+      cur_sce <<- cur_sce[,cur_sce$cellID %in% cur_cells] ####### !!!!
+      
+      # plot
+      p <- ggplot() +
+        geom_point_rast(data=cur_counts, aes(x=cur_counts[,1], y=cur_counts[,2], 
+                                        color=ifelse(cur_counts[,"in_gate"] == TRUE, "red", "black")),
+                   alpha=ifelse(cur_counts[,"in_gate"] == TRUE, 0.5,0.1)) +
+        geom_rect(data = cur_gate, aes(xmin=cur_gate[1,1], xmax=cur_gate[1,2], ymin=cur_gate[2,1],
+                                       ymax=cur_gate[2,2]),
+                  color="black", alpha=0.2) +
+        xlab(x_gate) +
+        ylab(y_gate) +
+        scale_color_identity() +
+        theme_bw() +
+        theme(legend.position = "none") +
+        coord_cartesian(xlim = c(0,6.5), ylim = c(0,6.5))
+      p
+    })
+  }
   
-  # significant cells defined by subtraction
-  b <- ggplot(data=diff_chemo_sub, aes(x=mean_negative_control, y=mean_chemokine)) + 
-    geom_point_rast(alpha=0.2, aes(col = 
-                                ifelse(padj <= 0.01 & scaled_diff > 0, 'p<0.01', 'n.s.'))) + 
-    scale_color_manual(values = c("black", "deepskyblue1"), 
-                       name = "Legend") +
-    guides(color = guide_legend(override.aes = list(alpha=1, size=3))) +
-    xlim(0,5.5) + ylim(0,5.5) +
-    ylab(paste("Mean expression of", i, sep=" ")) +
-    xlab("Mean DapB mRNA expression") +
-    theme_minimal() + 
-    theme(text = element_text(size=20)) 
-
-  
-  grid.arrange(a,b, nrow = 1, ncol=2)
+  n <- length(plots)
+  nCol <- floor(sqrt(n))
+  do.call("grid.arrange", c(plots, ncol=3,nrow=4, top=cur_celltype))
 }
 ```
 
-# Supp Figure 5G
+# Supp Figure 5C
 
-This script reproduces the homology analysis between the different chemokines.
-We downloaded the data from www.ncbi.nlm.nih.gov and saved the transcript 
-sequences. https://www.ebi.ac.uk/Tools/msa/clustalo/ was used to align all-vs-all
-transcripts using the following call:
+## Select one random file per celltype and load file
 
-```
-$APPBIN/clustal-omega-1.2.4/bin/clustalo --infile clustalo-E20210914-122047-0397-8283578-p2m.sequence --threads 8 --MAC-RAM 8000 --verbose --guidetree-out clustalo-E20210914-122047-0397-8283578-p2m.dnd --outfmt clustal --resno --outfile clustalo-E20210914-122047-0397-8283578-p2m.clustal_num --output-order tree-order --seqtype dna
-```
+```{r}
+# load all subsetted sce object from hierarchichal gating and combine the
+label.files <- list.files("data/data_for_analysis/rna/celltype_classifier", full.names = TRUE)
+file_names <- data.frame(path = label.files)
+file_names$fileName <- sub(".*/", "", label.files)
+file_names$celltype <- sub("\\_.*", "", file_names$fileName)
 
-We will first look at the identity matrix, inidcating the percentage of
-sequence similarity.
+# select one random file per celltype
+file_names <- file_names %>%
+  group_by(celltype) %>%
+  sample_n(1)
 
-```{r read-in-data, message=FALSE, warning=FALSE}
-seq_similarity <- read.table("data/data_for_analysis/ClustalW_results/identity_matrix.txt")
-rownames(seq_similarity) <- seq_similarity$V2
-seq_similarity <- seq_similarity[,-c(1,2)]
-
-# Remove non coding transcript variants
-seq_similarity <- seq_similarity[!grepl("XR_|NR_", rownames(seq_similarity)),
-                                 !grepl("XR_|NR_", rownames(seq_similarity))]
-rownames(seq_similarity) <- sub("\\.[0-9]*", "", rownames(seq_similarity))
-
-
-phylogenetic_tree <- read.tree("data/data_for_analysis/ClustalW_results/phylogenetic_tree.txt")
+# Read in SCE objects
+cur_sces <- lapply(file_names$path, readRDS)
 ```
 
-Now, we will map between RefSeq transcript ids, ensemble transcript ids and
-gene names.
+## Print gating scheme
 
-```{r biomart}
-ensembl <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
-cur_tab <- getBM(attributes=c("refseq_mrna", "ensembl_gene_id", "hgnc_symbol"), 
-      filters = "refseq_mrna", values = rownames(seq_similarity), 
-      mart = ensembl, uniqueRows = FALSE)
-cur_tab <- cur_tab[match(rownames(seq_similarity), cur_tab$refseq_mrna),]
-
-rownames(seq_similarity)  <- colnames(seq_similarity) <- 
-    paste0(cur_tab$refseq_mrna, "_", cur_tab$hgnc_symbol)
-```
-
-
-And we compare it to correlation in expression across all cells.
-
-```{r cor-expression, fig.height=5, fig.width=5}
-final_sce <- sce_rna
-# select only the cells that express chemokines
-for_analysis <- final_sce[,final_sce$expressor != "NA"]
-
-cur_cor <- cor(t(assay(for_analysis, "asinh")[c("T5_CCL4", "T7_CCL18", "T1_CXCL8",
-                                             "T4_CXCL10", "T3_CXCL12", "T8_CXCL13",
-                                             "T12_CCL2", "T2_CCL22",
-                                             "T9_CXCL9", "T11_CCL8", "T10_CCL19"),]), 
-                                           method = "spearman")
-
-pheatmap(cur_cor, color = colorRampPalette(c("dark blue", "white", "dark red"))(100), 
-         breaks = seq(-1, 1, length.out = 100))
-```
-
-```{r viz-correlation}
-cor_tibbble <- cur_cor %>%
-    as_tibble() %>% 
-    mutate(probe = rownames(cur_cor)) %>% 
-    pivot_longer(cols = 1:ncol(cur_cor)) %>%
-    mutate(probe = str_split(probe, pattern = "_", simplify = TRUE)[,2],
-           name = str_split(name, pattern = "_", simplify = TRUE)[,2]) %>%
-    arrange(probe, name) %>%
-    filter(probe != name)
-
-sim_tibble <- seq_similarity %>%
-    as_tibble() %>% 
-    mutate(probe = rownames(seq_similarity)) %>% 
-    pivot_longer(cols = 1:ncol(seq_similarity)) %>%
-    mutate(from_chemo = str_split(probe, pattern = "_", simplify = TRUE)[,3],
-           to_chemo = str_split(name, pattern = "_", simplify = TRUE)[,3]) %>%
-    group_by(from_chemo, to_chemo) %>%
-    summarize(mean_similarity = mean(value, na.rm=TRUE)) %>%
-    arrange(from_chemo, to_chemo) %>%
-    filter(from_chemo != to_chemo)
-
-all.equal(paste(cor_tibbble$probe, cor_tibbble$name),
-          paste(sim_tibble$from_chemo, sim_tibble$to_chemo))
-
-ggplot(data.frame(similarity = sim_tibble$mean_similarity,
-                  correlation = cor_tibbble$value)) +
-    geom_point(aes(similarity, correlation))
-
-cor.test(sim_tibble$mean_similarity,
-         cor_tibbble$value)
-```
-
-## Number of co-expressors
-
-Finally, we will compare the sequence similarity to the jaccard index 
-of chemokine expressors.
-
-```{r Supp_Fig_5G_JaccardPlot, dev="pdf", fig.width=7, fig.height=5}
-# Define the jaccard similarity
-jaccard <- function(x,y){
-    intersection <- length(intersect(x,y))
-    union = length(x) + length(y) - intersection
-    return (intersection/union)
+```{r Supp_Fig_5C_gating_scheme_rna, fig.height=8, fig.width=6, dev=("pdf")}
+for(element in cur_sces){
+  # current labelled sce object
+  sce_label <- element
+  cur_celltype <- unique(sce_label$cytomapper_CellLabel)
+  # select all gates from metadata
+  gates <- metadata(sce_label)[grepl("cytomapper_gate_", names(metadata(sce_label)))]
+  cur_img <- gates[[1]]$img_id
+  # subset sce to current image 
+  cur_sce <- sce_rna[,sce_rna$ImageNumber == cur_img]
+  plots <- list()
+  
+  for(i in names(gates)) {
+    plots[[i]] <- local({
+      # select gates and imageID
+      cur_gate <- as.data.frame(gates[[i]]$gate)
+      cur_img <- gates[[i]]$img_id
+      
+      # names of channels (complicated because shiny has different channel names than SCE)
+      x_gate <- rownames(cur_gate)[1]
+      x_metal <- panel_meta_rna[panel_meta_rna$clean_target == x_gate, "Metal.Tag"]
+      x_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == x_metal,])
+      
+      if(nrow(gates[[i]]$gate) == 2) {
+        y_gate <- rownames(cur_gate)[2]
+        y_metal <- panel_meta_rna[panel_meta_rna$clean_target == y_gate, "Metal.Tag"]
+        y_original <- rownames(rowData(cur_sce)[rowData(cur_sce)[,"Metal.Tag"] == y_metal,])
+        
+        # select current channels
+        cur_counts <- as.data.frame(t(assay(cur_sce, "asinh")[c(x_original, y_original),]))
+        
+        # check if cells are in gate
+        cur_counts$in_gate <- ifelse(cur_counts[,1] >= cur_gate[1,1] &
+                                       cur_counts[,1] <= cur_gate[1,2] &
+                                       cur_counts[,2] >= cur_gate[2,1] &
+                                       cur_counts[,2] <= cur_gate[2,2], TRUE, FALSE)
+        
+        # cellIDs of cells in gate (for next gate)
+        cur_cells <- rownames(cur_counts[cur_counts$in_gate == TRUE,])
+        
+        # update cur_sce
+        cur_sce <<- cur_sce[,cur_sce$cellID %in% cur_cells]
+        
+        # plot
+        p <- ggplot() +
+          geom_point_rast(data=cur_counts, aes(x=cur_counts[,1], y=cur_counts[,2], 
+                                               color=ifelse(cur_counts[,"in_gate"] == TRUE, "red", "black")),
+                          alpha=ifelse(cur_counts[,"in_gate"] == TRUE, 0.5,0.1)) +
+          geom_rect(data = cur_gate, aes(xmin=cur_gate[1,1], xmax=cur_gate[1,2], ymin=cur_gate[2,1],
+                                         ymax=cur_gate[2,2]),
+                    color="black", alpha=0.2) +
+          xlab(x_gate) +
+          ylab(y_gate) +
+          scale_color_identity() +
+          theme_bw() +
+          theme(legend.position = "none") +
+          coord_cartesian(xlim = c(0,8), ylim = c(0,8))
+        p
+      }
+      else {
+        # select current channels
+        cur_counts <- as.data.frame(assay(cur_sce, "asinh")[c(x_original),])
+        
+        # check if cells are in gate
+        cur_counts$in_gate <- ifelse(cur_counts[,1] >= cur_gate[1,1] &
+                                       cur_counts[,1] <= cur_gate[1,2], TRUE, FALSE)
+        
+        # cellIDs of cells in gate (for next gate)
+        cur_cells <- rownames(cur_counts[cur_counts$in_gate == TRUE,])
+        
+        # update cur_sce
+        cur_sce <<- cur_sce[,cur_sce$cellID %in% cur_cells]
+        
+        # plot
+        p <- ggplot() +
+          geom_jitter_rast(data=cur_counts, aes(x=rownames(cur_gate), y=cur_counts[,1], 
+                                                color=ifelse(cur_counts[,"in_gate"] == TRUE, "red", "black")),
+                           alpha=ifelse(cur_counts[,"in_gate"] == TRUE, 0.5,0.1)) +
+          geom_hline(yintercept = cur_gate[1,1], color="black", alpha=1) +
+          geom_hline(yintercept = cur_gate[1,2], color="black", alpha=1) +
+          xlab(x_gate) +
+          ylab("Expression (asinh)") +
+          scale_color_identity() +
+          theme_bw() +
+          theme(legend.position = "none",
+                axis.text.x = element_blank()) +
+          coord_cartesian(xlim = c(0,8), ylim = c(0,8))
+        p
+      }
+    })
+  }
+  
+  n <- length(plots)
+  nCol <- floor(sqrt(n))
+  do.call("grid.arrange", c(plots, ncol=3, nrow=4, top=cur_celltype))
 }
-
-# We will pass the unique cell ids into this function
-cur_out <- lapply(seq_len(nrow(sim_tibble)),
-       function(x){
-           from_chemo_cells <- colnames(final_sce)[colData(final_sce)[[sim_tibble$from_chemo[x]]] != 0]
-           to_chemo_cells <- colnames(final_sce)[colData(final_sce)[[sim_tibble$to_chemo[x]]] != 0]
-           return(jaccard(from_chemo_cells, to_chemo_cells))
-       })
-sim_tibble$jaccard_sim <- unlist(cur_out)
-
-ggplot(data.frame(similarity = sim_tibble$mean_similarity,
-                  jaccard_sim = sim_tibble$jaccard_sim)) +
-    geom_point(aes(similarity, jaccard_sim)) +
-    geom_smooth(method = "lm", aes(similarity, jaccard_sim)) +  stat_cor(method = "pearson",
-           aes(x = similarity, y = jaccard_sim, label = paste0("atop(", ..r.label..,  ",", ..p.label.. ,")")),
-           size = 7, cor.coef.name = "R", label.sep="\n", label.y.npc = "top") + 
-    theme_bw() + theme(text=element_text(size=15)) +
-    xlab("Sequence similarity") + ylab("Chemokine co-expression [Jaccard index]")
-
-cor.test(sim_tibble$mean_similarity,
-         sim_tibble$jaccard_sim)
-```
-
-# Supp Figure 5H
-
-## Fraction of Tumor Cells that express chemokines
-
-```{r Supp_Fig_5H_tumor_cells_chemokine, dev=("pdf"), fig.width=9, fig.height=5}
-cur_dat <- data.frame(colData(sce_rna))
-cur_dat <- cur_dat %>%
-  filter(celltype == "Tumor") %>%
-  filter(Location != "CTRL")
-
-cur_dat <- cur_dat[,c("ImageNumber", "Mutation", colnames(cur_dat)[grepl(glob2rx("C*L*"),names(cur_dat))])]
-
-# colSums of Chemokines in Tumor Cells (Multiple Producer count more than once)
-cur_dat <- cur_dat %>%
-  group_by(ImageNumber, Mutation) %>%
-  mutate(cells = n()) %>%
-  group_by(ImageNumber, cells, Mutation) %>%
-  summarise_each(funs(sum))
-
-# compute fractions
-cur_dat[,4:14] <- cur_dat[,4:14] / t(cur_dat$cells)
-
-cur_dat <- cur_dat %>%
-  filter(cells > 200) %>%
-  reshape2::melt(id.vars=c("ImageNumber", "cells", "Mutation"), variable.name="chemokine", value.name="fraction")
-
-ggplot(cur_dat,aes(x=fct_reorder(chemokine, fraction, .fun = median, .desc = TRUE), y=fraction+0.001)) + 
-  geom_boxplot(alpha=.5) +
-  geom_quasirandom(alpha=.2) +
-  theme_bw() + 
-  theme(text=element_text(size=16)) +
-  ylab("Fraction of Expressing Tumor Cells\n(fraction + 0.001)") +
-  xlab("") +
-  scale_y_log10() +
-  annotation_logticks(sides = "l") +
-  geom_hline(yintercept = median(cur_dat$fraction+0.001), linetype = 2) 
 ```

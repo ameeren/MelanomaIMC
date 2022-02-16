@@ -1,5 +1,5 @@
 ---
-title: "Supplementary Figure 2"
+title: "Supplementary Figure 3"
 author: "Tobias Hoch and Daniel Schulz"
 date: "2020-08-04"
 output: workflowr::wflow_html
@@ -8,7 +8,7 @@ editor_options:
 ---
 
 # Introduction
-This script generates plots for Supplementary Figure 2. It contains data that is not stored in the SCE format. 
+This script generates plots for Supplementary Figure 3. It contains data that is not stored in the SCE format. 
 
 # Preparations 1
 
@@ -85,7 +85,7 @@ unique(cells_long1$signal_type)
 unique(cells_long2$signal_type)
 ```
 
-## Merge meta data with cells data
+## Merge meta data with cells data and combine data from both replicates
 
 ```{r}
 cells1 = merge(cells_long1, meta1,by="ImageNumber")
@@ -109,11 +109,11 @@ cells_panel_uncorrected = cells_panel[cells_panel$signal_type == "MeanIntensity"
 cells_panel_corrected = cells_panel[cells_panel$signal_type == "MeanIntensityCorrected",]
 ```
 
-# Supp Figure 2E
+# Supp Figure 3E
 
 ## Unspecific Amplifier Binding 
 
-```{r Supp_Fig_2E_heatmap_unspecific_binding, dev=c('pdf')}
+```{r Supp_Fig_3E_heatmap_unspecific_binding, dev=c('pdf')}
 results = matrix(nrow=12, ncol = 12)
 rownames(results) = unique(cells_panel$Target)
 colnames(results) = unique(cells_panel$Target)
@@ -153,11 +153,11 @@ a = Heatmap(as.matrix(results),
 draw(a)
 ```
 
-# Supp Figure 2D
+# Supp Figure 3D
 
 ## Boxplot with uncorrected and corrected signal
 
-```{r Supp_Fig_2D_corrected signal, dev=("pdf"), fig.width=8, fig.height=5}
+```{r Supp_Fig_3D_corrected signal, dev=("pdf"), fig.width=8, fig.height=5}
 cells_panel2 <- cells_panel
 cells_panel2[cells_panel2$signal_type == "MeanIntensity", ]$signal_type = "uncorrected"
 cells_panel2[cells_panel2$signal_type == "MeanIntensityCorrected", ]$signal_type = "spill-over corrected"
@@ -337,11 +337,11 @@ all(colnames(cells_panel) == colnames(cells_panel_8plex))
 cells_panel_12plex = rbind(cells_panel, cells_panel_8plex)
 ```
 
-# Supp Figure 2A
+# Supp Figure 3A
 
 ## Throw out the DNA, histone and panCytokeratin data and then get the info of PPIB staining
 
-```{r Supp_Fig_2A_merged_comparison_per_channel, fig.width=10, fig.height=8, dev=c('pdf')}
+```{r Supp_Fig_3A_merged_comparison_per_channel, fig.width=10, fig.height=8, dev=c('pdf')}
 # subset
 cells_panel_12plex_sub = cells_panel_12plex[stain == Target,]
 
@@ -369,11 +369,11 @@ cells_panel_12plex_sub %>%
   mutate(sd = sd(mean_per_channel), mean = mean(mean_per_channel), min = min(mean_per_channel), max = max(mean_per_channel))
 ```
 
-# Supp Figure 2C
+# Supp Figure 3C
 
 ## Influence of Antibody Incubation
 
-```{r Supp_Fig_2C_overnight_Ab_incubation, fig.width=10, fig.height=8, dev=c('pdf')}
+```{r Supp_Fig_3C_overnight_Ab_incubation, fig.width=10, fig.height=8, dev=c('pdf')}
 dd = cells_panel[stain == "positive without Ab" | stain == "positive with Ab",]
 
 # relevel factor
@@ -392,11 +392,11 @@ ggplot(data=dd, aes(x=Target, y=counts_asinh, fill = stain)) +
   scale_fill_discrete(name = "Protocol Type") 
 ```
 
-# Supp Figure 2B
+# Supp Figure 3B
 
 ## Compare Positive Controls with RNAseq data
 
-```{r Supp_Fig_2B_correlation_with_RNAseq, fig.width=8, fig.height=7, dev=c('pdf')}
+```{r Supp_Fig_3B_correlation_with_RNAseq, fig.width=8, fig.height=7, dev=c('pdf')}
 # add gene name
 cells_panel_12plex$gene <- ""
 cells_panel_12plex[cells_panel_12plex$Target == "T1",]$gene <- "POLR2A"
@@ -455,5 +455,6 @@ ggplot(sum, aes(x=log2(nTPM), y=expression_RNAScope, label=gene)) +
 
 ```{r}
 # correlation of the two technologies
-cor(sum$expression_RNAScope, log2(sum$nTPM), method = c("pearson"))
+sum_sub <- sum[sum$gene != "POLR2A",]
+cor.test(sum_sub$expression_RNAScope, log2(sum_sub$nTPM), method = c("pearson"))
 ```
