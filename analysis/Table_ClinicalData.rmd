@@ -1,6 +1,6 @@
 ---
-title: "Table_1"
-author: "toobiwankenobi"
+title: "Table_S4"
+author: "Tobias Hoch"
 date: "2021-11-22"
 output: workflowr::wflow_html
 editor_options:
@@ -205,13 +205,6 @@ scores <- as.data.frame(colData(sce_prot)) %>%
 
 clinicalDat <- left_join(scores, clinical_data_protein)
 
-# remove exact date in clinical data
-clinicalDat$Date_death <- format(as.Date(clinicalDat$Date_death),"01-%b-20%y")
-clinicalDat$Date_surgery <- format(as.Date(clinicalDat$Date_surgery),"01-%b-20%y")
-clinicalDat$Date_progression <- format(as.Date(clinicalDat$Date_progression),"01-%b-20%y")
-clinicalDat$Start_treatment <- format(as.Date(clinicalDat$Start_treatment),"01-%b-20%y")
-clinicalDat$End_treatment <- format(as.Date(clinicalDat$End_treatment),"01-%b-20%y")
-clinicalDat$Last_PET <- format(as.Date(clinicalDat$Last_PET),"01-%b-20%y")
 clinicalDat$IHC_T_score <- NULL
 clinicalDat$Age_range <- ifelse(clinicalDat$Age_range =="≥60", ">=60", clinicalDat$Age_range)
 
