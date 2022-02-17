@@ -336,7 +336,21 @@ data.frame(colData(sce_rna)) %>%
 ## Fisher Test for Bcell patches and Dysfunction
 
 ```{r}
+# no control samples
 cont_table <- data.frame(colData(sce_prot)) %>%
+  filter(Location != "CTRL") %>%
+  distinct(Description,.keep_all = T) %>%
+  filter(is.na(dysfunction_score) == FALSE) %>%
+  group_by(bcell_patch_score, dysfunction_score) %>%
+  summarise(n=n()) %>%
+  filter(bcell_patch_score %in% c("Small B cell Patches", "B cell Follicles")) %>%
+  reshape2::dcast(bcell_patch_score ~ dysfunction_score, value.var = "n", fill = 0)
+
+fisher.test(cont_table[,-1])
+
+# no LN samples
+cont_table <- data.frame(colData(sce_prot)) %>%
+  filter(Location != "CTRL" & MM_location_simplified != "LN") %>%
   distinct(Description,.keep_all = T) %>%
   filter(is.na(dysfunction_score) == FALSE) %>%
   group_by(bcell_patch_score, dysfunction_score) %>%

@@ -1,0 +1,141 @@
+---
+title: "12_Bcell_Score"
+author: "toobiwankenobi"
+date: "2021-10-20"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Load packages and helper functions
+
+```{r load packages}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(ggplot2)
+library(scater)
+library(viridis)
+library(igraph)
+library(CATALYST)
+library(reshape2)
+library(cowplot)
+library(ggridges)
+library(tidyverse)
+library(viridis)
+library(dplyr)
+library(cytomapper)
+library(concaveman)
+library(data.table)
+library(sf)
+library(ggbeeswarm)
+library(RANN)
+```
+
+## Load data
+
+```{r load data}
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+
+image_prot <- read.csv("data/data_for_analysis/protein/Image.csv")
+
+sce_prot$bcell_patch_score <- NULL
+sce_rna$bcell_patch_score <- NULL
+```
+
+# Define grouping for B cell / patch densities
+
+## Cell Densities 
+
+```{r}
+# Protein
+im_size_prot <- (image_prot$Height_cellmask * image_prot$Width_cellmask)/1000000
+im_size_prot <- data.frame(im_size_prot)
+im_size_prot$Description <- image_prot$Metadata_Description
+```
+
+# B cell / patch grouping
+
+```{r}
+# max patch size per image
+max_patch <- data.frame(colData(sce_prot)) %>%
+  filter(bcell_patch != 0) %>%
+  group_by(Description, bcell_patch) %>%
+  summarise(n=n()) %>%
+  summarise(max_patch_size = max(n)) %>%
+  arrange(-max_patch_size)
+
+# assing patch score
+max_patch$bcell_patch_score <- ifelse(max_patch$max_patch_size >= median(max_patch$max_patch_size), "B cell Follicles", "Small B cell Patches")
+```
+
+## Make grouping
+
+1 No B cells (lower half of median split in images with no B cell patches)
+2 No B cell Patches (upper half of median split in images with no B cell patches)
+3 Small B cell Patches (lower half of median split for maximum patch size per image)
+4 B cell Follicles (upper half of median split for maximum patch size per image)
+
+```{r}
+# images with no patches
+noPatch_img <- data.frame(colData(sce_prot)) %>%
+  group_by(Description) %>%
+  summarise(n=sum(bcell_patch)) %>%
+  distinct(Description, .keep_all = T) %>%
+  ungroup() %>%
+  filter(n==0)
+
+# remove all images with patches
+Bcell <- data.frame(colData(sce_prot)) %>%
+  filter(Description %in% noPatch_img$Description) %>%
+  group_by(Description,celltype) %>%
+  summarise(n=n()) %>%
+  reshape2::dcast(Description ~ celltype, value.var = "n", fill = 0) %>%
+  select(Description, `B cell`)
+
+Bcell$density <- Bcell$`B cell` / im_size_prot[match(Bcell$Description, im_size_prot$Description),]$im_size_prot
+
+# assing patch score
+Bcell$bcell_patch_score <- ifelse(Bcell$density >= median(Bcell$density), "No B cell Patches", "No B cells")
+
+# merge both data sets
+data <- rbind(Bcell[,c("Description", "bcell_patch_score")], max_patch[,c("Description", "bcell_patch_score")])
+
+# factorize with levels
+data$bcell_patch_score <- factor(data$bcell_patch_score, levels = c("No B cells", "No B cell Patches", "Small B cell Patches", "B cell Follicles"))
+
+# group sizes
+data %>%
+  group_by(bcell_patch_score) %>%
+  summarise(n=n())
+```
+
+## add to sce object
+
+```{r}
+cur_rna <- data.frame(colData(sce_rna))[,c("Description", "ImageNumber")]
+cur_prot <- data.frame(colData(sce_prot))[,c("Description", "ImageNumber")]
+
+cur_rna <- left_join(cur_rna, data)
+cur_prot <- left_join(cur_prot, data)
+
+sce_rna$bcell_patch_score <- cur_rna$bcell_patch_score
+sce_prot$bcell_patch_score <- cur_prot$bcell_patch_score
+```
+
+## Number of Patients in different groups
+
+```{r}
+data.frame(colData(sce_rna)) %>%
+  filter(Location != "CTRL") %>%
+  distinct(PatientID, .keep_all = T) %>%
+  group_by(bcell_patch_score) %>%
+  summarise(patients = n())
+```
+
+## Save SCE object
+
+```{r save sce}
+saveRDS(sce_prot, file = "data/data_for_analysis/sce_protein.rds")
+saveRDS(sce_rna, file = "data/data_for_analysis/sce_RNA.rds")
+```

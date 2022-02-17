@@ -1,0 +1,147 @@
+---
+title: "13_Dysfunction Stain"
+author: ""
+date: "2021-01-19"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+Here, we load the data from the dysfunction stain. Images with a T cell dysfunction score were re-acquired with an extended T cell marker panel. An SCE object will be created and saved at the end and serves for further analyses (e.g. Fig 4D, Fig S10B)
+
+# Preparation
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Load Libraries
+
+```{r}
+library(SingleCellExperiment)
+library(imcRtools)
+library(BiocParallel)
+library(BiocNeighbors)
+library(dittoSeq)
+library(scater)
+library(scales)
+library(cowplot)
+library(Hmisc)
+library(tidyverse)
+library(ggpubr)
+library(scran)
+set.seed(12345)
+```
+
+## Load Data
+
+```{r}
+sce_1 <- read_steinbock(path = "data/full_data/exhaustion_stain/",
+                        return_as = "sce", graphs_folder = NULL, regionprops_folder = NULL, 
+                        image_file = NULL)
+
+sce_2 <- read_steinbock(path = "data/full_data/revision_stain/",
+                        return_as = "sce", graphs_folder = NULL, regionprops_folder = NULL,
+                        image_file = NULL)
+
+sce_RNA <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+```
+
+## add metadata to sce_1
+
+```{r}
+assay(sce_1,"asinh") <- asinh(counts(sce_1))
+colnames(sce_1) <- paste0(sce_1$sample_id,"_",sce_1$ObjectNumber)
+
+# add information from dysfunction score and Description
+imnames <- c("E5","H9","F9","L8","N10","F2","D8","E4","J4","G11","L4","O9")
+names(imnames) <- unique(sce_1$sample_id)
+
+sce_1$Description <- imnames[sce_1$sample_id]
+
+# Dysfunction Score
+highDys <- unique(sce_RNA[,sce_RNA$dysfunction_score %in% "High Dysfunction"]$Description)
+lowDys <- unique(sce_RNA[,sce_RNA$dysfunction_score %in% "Low Dysfunction"]$Description)
+
+sce_1$dysfunction_score <- NA
+sce_1[,sce_1$Description %in% highDys]$dysfunction_score <- "High Dysfunction"
+sce_1[,sce_1$Description %in% lowDys]$dysfunction_score <- "Low Dysfunction"
+```
+
+## add metadata to sce_2
+
+```{r}
+assay(sce_2,"asinh") <- asinh(counts(sce_2))
+colnames(sce_2) <- paste0(sce_2$sample_id,"_",sce_2$ObjectNumber)
+
+# add information from dysfunction score and Description
+imnames <- c("E2","D4","D3","G9","B6","O2","M10","B3","N8","A4","I11","K2","I5","M9")
+names(imnames) <- unique(sce_2$sample_id)[c(1,7:14,2:6)]
+
+sce_2$Description <- imnames[sce_2$sample_id]
+
+sce_2$dysfunction_score <- NA
+sce_2[,sce_2$Description %in% highDys]$dysfunction_score <- "High Dysfunction"
+sce_2[,sce_2$Description %in% lowDys]$dysfunction_score <- "Low Dysfunction"
+```
+
+## merge sce objects
+we will also remove images E2. this images was the first image of a measurement after downtime of the machine and had substantially higher intensities that all other images.
+
+```{r}
+sce <- cbind(sce_1,sce_2)
+rm(sce_1,sce_2)
+
+sce <- sce[,sce$Description != "E2"]
+
+# remove images with no dysfunction score
+sce <- sce[,sce$dysfunction_score %in% c("High Dysfunction", "Low Dysfunction")]
+```
+
+# Analysis
+
+## define cut offs for the definition of CD8 T cells per sample
+here we check if there are any global intensity biases for CD8
+
+```{r, fig.height=12, fig.width=8}
+dittoRidgePlot(sce,var="CD8a", group.by= "Description",assay = "asinh")
+```
+__samples E2, F2 L8, D4 and B3 should be inspected further since they have higher CD8 background. However, we will more generally chose a conservative cut off for T cell definition__
+
+```{r}
+for (i  in unique(sce$Description)) {
+  p <-dittoScatterPlot(sce[,which(sce$Description == i )],x.var = "CD8a",y.var = "CXCL13",assay.x = "asinh",assay.y = "asinh", main=i,)
+  plot(p)
+}
+```
+
+CD8 cut-off at asinh = 2
+
+```{r, fig.height=5, fig.width=5}
+for (i  in unique(sce$Description)) {
+  p <-dittoScatterPlot(sce[,which(sce$Description == i )],x.var = "CD3",y.var = "CD8a",assay.x = "asinh",assay.y = "asinh", main=i,)
+  plot(p)
+}
+```
+
+general cut off for CD3: 1
+
+## Define Cell Types manually
+
+```{r}
+sce$celltype <- "other"
+sce$CXCL13 <- "negative"
+
+sce[,which(t(assay(sce,"asinh"))[,"CD8a"] > 2 & t(assay(sce,"asinh"))[,"CD3"] > 1) ]$celltype <- "CD8_Tcell"
+sce[,which(t(assay(sce,"asinh"))[,"CXCL13"] > 2 ) ]$CXCL13 <- "positive"
+
+sce[,which(sce$celltype == "CD8_Tcell" & sce$CXCL13 == "positive")]$celltype <- "CD8_CXCL13+_Tcell"
+sce[,which(sce$celltype == "other" & sce$CXCL13 == "positive")]$celltype <- "other_CXCL13+"
+```
+
+## Save SCE object
+
+```{r save sce}
+saveRDS(sce, file = "data/data_for_analysis/sce_dysfunction.rds")
+```

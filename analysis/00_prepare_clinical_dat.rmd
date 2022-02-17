@@ -20,6 +20,8 @@ knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())
 ## Load libraries
 ```{r}
 library(dplyr)
+library(lubridate)
+library(stringr)
 ```
 
 ## Load the data
@@ -152,6 +154,30 @@ prot_sub <- full_mat_prot[,c("Description", "BlockID", "PatientID")]
 compare <- left_join(prot_sub, rna_sub, by = "Description")
 all(compare$BlockID.x == compare$BlockID.y)
 unique(compare$PatientID.x == compare$PatientID.y)
+```
+
+## remove exact dates
+
+```{r}
+# remove exact date in clinical data - Protein
+full_mat_prot$Date_death <- format(as.Date(full_mat_prot$Date_death),"01-%b-20%y")
+full_mat_prot$Date_surgery <- format(as.Date(full_mat_prot$Date_surgery),"01-%b-20%y")
+full_mat_prot$Date_progression <- format(as.Date(full_mat_prot$Date_progression),"01-%b-20%y")
+full_mat_prot$Start_treatment <- format(as.Date(full_mat_prot$Start_treatment),"01-%b-20%y")
+full_mat_prot$End_treatment <- format(as.Date(full_mat_prot$End_treatment),"01-%b-20%y")
+full_mat_prot$Last_PET <- format(as.Date(full_mat_prot$Last_PET),"01-%b-20%y")
+full_mat_prot$Last_prev_therapy <- str_replace_all(full_mat_prot$Last_prev_therapy, "-", ".")
+full_mat_prot$Last_prev_therapy <- format(as.Date(my(full_mat_prot$Last_prev_therapy)),"01-%b-20%y")
+
+# remove exact date in clinical data - RNA
+full_mat_rna$Date_death <- format(as.Date(full_mat_rna$Date_death),"01-%b-20%y")
+full_mat_rna$Date_surgery <- format(as.Date(full_mat_rna$Date_surgery),"01-%b-20%y")
+full_mat_rna$Date_progression <- format(as.Date(full_mat_rna$Date_progression),"01-%b-20%y")
+full_mat_rna$Start_treatment <- format(as.Date(full_mat_rna$Start_treatment),"01-%b-20%y")
+full_mat_rna$End_treatment <- format(as.Date(full_mat_rna$End_treatment),"01-%b-20%y")
+full_mat_rna$Last_PET <- format(as.Date(full_mat_rna$Last_PET),"01-%b-20%y")
+full_mat_rna$Last_prev_therapy <- str_replace_all(full_mat_rna$Last_prev_therapy, "-", ".")
+full_mat_rna$Last_prev_therapy <- format(as.Date(my(full_mat_rna$Last_prev_therapy)),"01-%b-20%y")
 ```
 
 # Save .csv Files

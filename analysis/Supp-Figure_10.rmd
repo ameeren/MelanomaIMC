@@ -1,0 +1,76 @@
+---
+title: "Supplementary Figure 10"
+author: "Tobias Hoch and Daniel Schulz"
+date: "2021-11-18"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+# Introduction
+This script generates plots for Supplementary Figure 10. 
+
+# Preparations 
+
+## Load libraries
+
+```{r}
+library(SingleCellExperiment)
+library(ggplot2)
+library(tidyverse)
+library(dplyr)
+library(ggrastr)
+```
+
+## Load data
+
+```{r}
+sce_prot <- readRDS("data/data_for_analysis/sce_protein.rds")
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+
+sce_rna <- readRDS("data/data_for_analysis/sce_RNA.rds")
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+```
+
+# Supp Figure 10A
+
+## B cell and HLADR overlap between data sets
+
+```{r Supp_Fig_10A_rna_prot_Bcell_overlap, fig.height=9, fig.width=6.5, dev=("pdf")}
+prot <- as.data.frame(colData(sce_prot)[,c("Center_X", "Center_Y", "Description", "celltype")])
+rna <- as.data.frame(colData(sce_rna)[,c("Center_X", "Center_Y", "Description", "celltype")])
+prot$dataSet <- "Protein only"
+rna$dataSet <- "RNA&Protein"
+
+full <- rbind(prot,rna)
+
+full <- full %>%
+  mutate(celltype = ifelse(celltype %in% c("B cell", "HLA-DR"), "B cell", "Other"))
+
+# show 10 images with the most B cells
+max <- full %>%
+  filter(dataSet == "Protein only" & celltype == "B cell") %>%
+  group_by(Description) %>%
+  summarise(n=n()) %>%
+  slice_max(n, n=10)
+
+full_sub <- full[full$Description %in% max$Description,]
+
+ggplot(full_sub, aes(x=Center_X, y=Center_Y)) + 
+  geom_point_rast(col=ifelse(full_sub$celltype == "B cell", "springgreen3", "grey"), size=.3, 
+             alpha=ifelse(full_sub$celltype == "B cell", 0.5, 0.1)) + 
+  facet_wrap(~Description+dataSet, ncol = 4, scales = "free") +
+  theme_bw() +
+  theme(text = element_text(size=9)) +
+  xlab("X Coordinate") +
+  ylab("Y Coordinate")
+```
+
+## Percentage of HLA-DR covered by those 10 images
+
+```{r}
+total_hladr <- ncol(sce_rna[,sce_rna$celltype == "HLA-DR"])
+sub_hladr <- ncol(sce_rna[,sce_rna$celltype == "HLA-DR" & 
+                            sce_rna$Description %in% unique(max$Description)])
+  
+percentage <- sub_hladr / total_hladr * 100
+```

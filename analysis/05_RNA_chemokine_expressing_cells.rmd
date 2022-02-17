@@ -231,5 +231,5 @@ metadata(sce)$chemokines_morethan600_withcontrol <- targets
 ## Save SCE object
 
 ```{r save sce object}
-saveRDS(object = sce,file = "data/data_for_analysis/sce_RNA.rds")
+saveRDS(object = sce, file = "data/data_for_analysis/sce_RNA.rds")
 ```

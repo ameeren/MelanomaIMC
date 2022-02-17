@@ -60,12 +60,10 @@ dysfunction <- data.frame(colData(sce_rna)) %>%
   group_by(Description) %>%
   mutate(fraction = n / sum(n)) %>%
   filter(celltype2 == "CD8+ T cell_1") %>%
-  mutate(dysfunction_score = ifelse(fraction >= 0.05, "High Dysfunction", "Low Dysfunction")) %>%
   ungroup() %>%
+  mutate(dysfunction_score = ifelse(fraction >= median(fraction), "High Dysfunction", "Low Dysfunction")) %>%
   select(Description, dysfunction_score, fraction)
 
-#dysfunction[dysfunction$Description == "L10", ]$dysfunction_score <- "Low Dysfunction"
-  
 cur_rna <- data.frame(colData(sce_rna))
 cur_rna <- left_join(cur_rna, dysfunction)
 sce_rna$dysfunction_score <- cur_rna$dysfunction_score

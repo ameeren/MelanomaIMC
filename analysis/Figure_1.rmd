@@ -25,7 +25,6 @@ library(data.table)
 library(scater)
 library(ggplot2)
 library(dittoSeq)
-library(cba)
 library(ComplexHeatmap)
 library(dplyr)
 library(reshape2)
@@ -43,13 +42,16 @@ library(dendextend)
 ```{r load_data}
 sce_rna <- readRDS(file = "data/data_for_analysis/sce_RNA.rds")
 sce_prot <- readRDS(file = "data/data_for_analysis/sce_protein.rds")
+
+sce_rna <- sce_rna[,sce_rna$Location != "CTRL"]
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
 ```
 
 # Figure 1C
 
 ## Heatmap showing marker expression of celltypes - RNA data 
 
-```{r Fig_1C_Scaled_Heatmap_RNA, fig.width=19, fig.height=12, dev=c('pdf')}
+```{r Fig_1C_Scaled_Heatmap_RNA, fig.width=16, fig.height=19, dev=c('pdf')}
 # add marker expression to cells
 marker_expression <- data.frame(t(assay(sce_rna[rowData(sce_rna)$good_marker,], "asinh")))
 marker_expression$cellID <- rownames(marker_expression)
@@ -79,9 +81,9 @@ colnames(m) <- dat_aggr$celltype
 # number annotation
 ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,])), nsmall = 0, big.mark = "'"), 
                                                    which = "column", 
-                                                   rot = 0, 
+                                                   rot = 90, 
                                                    just = "center",
-                                              height = unit(1,"cm"),
+                                              height = unit(2.3,"cm"),
                                                    location = 0.5,
                                                    gp = gpar(fontsize=16,col = "black", border = "black")))
 
@@ -101,22 +103,22 @@ h <- Heatmap(m, name = "Scaled Expression",
              column_names_centered = FALSE,
              show_column_names = TRUE,
              top_annotation = ha,
-             row_names_gp = gpar(fontsize = 16),
+             row_names_gp = gpar(fontsize = 14),
              row_title_gp = gpar(fontsize = 23),
              col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
              heatmap_legend_param = list(at = c(-2:2), legend_width = unit(6,"cm"), 
                                          direction="horizontal", title_gp = gpar(fontsize=16),
                                          labels_gp = gpar(fontsize=12), title_position = "topcenter"),
-             column_names_side = "top",
-             height = unit(23, "cm"),
-             width = unit(35,"cm"))
+             column_names_side = "bottom",
+             height = unit(17, "cm"),
+             width = unit(15,"cm"))
 
 draw(h, heatmap_legend_side = "bottom")
 ```
 
 ## Heatmap showing marker expression of celltypes - Protein data
 
-```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=19, fig.height=12, dev=c('pdf')}
+```{r Fig_1C_Scaled_Heatmap_Protein, fig.width=16, fig.height=19, dev=c('pdf')}
 # add marker expression to cells
 marker_expression <- data.frame(t(assay(sce_prot[rowData(sce_prot)$good_marker,], "asinh")))
 marker_expression$cellID <- rownames(marker_expression)
@@ -146,9 +148,9 @@ colnames(m) <- dat_aggr$celltype
 # number annotation
 ha <- HeatmapAnnotation("Numbers" = anno_text(format(round(as.numeric(dat_sum[2,])), nsmall = 0, big.mark = "'"), 
                                                    which = "column", 
-                                                   rot = 0, 
+                                                   rot = 90, 
                                                    just = "center",
-                                              height = unit(1,"cm"),
+                                              height = unit(2.3,"cm"),
                                                    location = 0.5,
                                                    gp = gpar(fontsize=16,col = "black", border = "black")))
 
@@ -166,16 +168,16 @@ h <- Heatmap(m, name = "Scaled Expression",
              column_names_rot = 45,
              column_names_centered = FALSE,
              show_column_names = TRUE,
-             row_names_gp = gpar(fontsize = 16),
+             row_names_gp = gpar(fontsize = 14),
              row_title_gp = gpar(fontsize = 23),
              top_annotation = ha,
              col = colorRamp2(c(-2, 0, 2), c("blue", "white", "red")),
              heatmap_legend_param = list(at = c(-2:2), legend_width = unit(6,"cm"), 
                                          direction="horizontal", title_gp = gpar(fontsize=16),title_position = "topcenter",
                                          labels_gp = gpar(fontsize=12)),
-             column_names_side = "top",
-             height = unit(23, "cm"),
-             width = unit(35,"cm"))
+             column_names_side = "bottom",
+             height = unit(17, "cm"),
+             width = unit(15,"cm"))
 
 draw(h, heatmap_legend_side = "bottom")
 ```
@@ -301,8 +303,8 @@ ha <- rowAnnotation(`Punch Location` = patient_meta[,c("Location")],
                       anno_barplot(hm_dat, 
                                    gp=gpar(fill=col_vector),
                                    bar_width = 1,
-                                   height = unit(30,"cm"),
-                                   width = unit(15,"cm"),
+                                   height = unit(25,"cm"),
+                                   width = unit(11,"cm"),
                                    show_row_names = FALSE),
                         col = list(`Punch Location` = col_vector_punch),
                     show_legend = FALSE)
@@ -316,11 +318,11 @@ h1 = Heatmap(patient_meta[,c("MM_location_simplified")],
              col = col_vector_location, 
              width = unit(0.5, "cm"), 
              cluster_rows = dend,
-             row_dend_width = unit(3, "cm"),
-             height = unit(45, "cm"),
+             row_dend_width = unit(1, "cm"),
+             height = unit(25, "cm"),
              show_heatmap_legend = FALSE, 
              heatmap_legend_param = list(title = "Met Location"),
-             row_names_gp = gpar(cex=0.5),
+             row_names_gp = gpar(cex=3),
              show_row_names = TRUE,
              right_annotation =  ha,
              column_labels = "Met Location")

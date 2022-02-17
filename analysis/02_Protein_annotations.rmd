@@ -139,7 +139,7 @@ sce$Date_death <- Date_death[sce$ImageNumber]
 
 #binarize death
 sce$Death <- "no"
-sce[,grepl("20",sce$Date_death)]$Death <- "yes"
+sce[,is.na(sce$Date_death) == FALSE]$Death <- "yes"
 ```
 
 

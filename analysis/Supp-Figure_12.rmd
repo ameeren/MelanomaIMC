@@ -1,0 +1,98 @@
+---
+title: "Supplementary Figure 12"
+author: "Tobias Hoch and Daniel Schulz"
+date: "2021-11-18"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+# Introduction
+This script generates plots for Supplementary Figure 12.
+
+# Preparations
+
+## Load libraries
+
+```{r, message=FALSE}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(sf)
+library(concaveman)
+library(RANN)
+library(dplyr)
+library(data.table)
+library(ggplot2)
+library(ggrastr)
+```
+
+## Load Data
+
+```{r}
+## Read the data
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_prot <- sce_prot[,sce_prot$Location != "CTRL"]
+```
+
+# Supp Fig 12A
+
+```{r Supp_Fig_12A_noBcellPatch, fig.width=6, fig.height=6, dev=c('pdf')}
+example <- findPatch(sce_prot[,sce_prot$Description == "G3"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
+                    'cellID', 
+                    'Center_X', 'Center_Y', 
+                    'Description', 
+                    distance = 15, 
+                    min_clust_size = 20,
+                    output_colname = "example_patch")
+
+example <- findMilieu(example, 
+              'cellID', 
+              'Center_X', 'Center_Y', 
+              'Description', 
+              'example_patch', 
+              distance = 30,
+              output_colname = "example_milieu",
+              plot = TRUE)
+```
+
+# Supp Fig 12B
+
+```{r Supp_Fig_12B_smallBcellPatch, fig.width=6, fig.height=6, dev=c('pdf')}
+example <- findPatch(sce_prot[,sce_prot$Description == "F5"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
+                    'cellID', 
+                    'Center_X', 'Center_Y', 
+                    'Description', 
+                    distance = 15, 
+                    min_clust_size = 20,
+                    output_colname = "example_patch")
+
+example <- findMilieu(example, 
+              'cellID', 
+              'Center_X', 'Center_Y', 
+              'Description', 
+              'example_patch', 
+              distance = 30,
+              output_colname = "example_milieu",
+              plot = TRUE)
+```
+
+# Supp Fig 12C
+
+```{r Supp_Fig_12C_BcellFollicle, fig.width=6, fig.height=6, dev=c('pdf')}
+example <- findPatch(sce_prot[,sce_prot$Description == "B6"], sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
+                    'cellID', 
+                    'Center_X', 'Center_Y', 
+                    'Description', 
+                    distance = 15, 
+                    min_clust_size = 20,
+                    output_colname = "example_patch")
+
+example <- findMilieu(example, 
+              'cellID', 
+              'Center_X', 'Center_Y', 
+              'Description', 
+              'example_patch', 
+              distance = 30,
+              output_colname = "example_milieu",
+              plot = TRUE)
+```

@@ -1,0 +1,109 @@
+---
+title: "TLS identifiaction"
+author: "Tobias Hoch"
+date: "2020-05-28"
+output: workflowr::wflow_html
+editor_options:
+  chunk_output_type: console
+---
+
+## Introduction
+
+This script detects interaction networks of a given celltype (here: B cells) and defines these networks as clusters. Once a cluster is defined, an algorithm screens the neighbourhood of those clusters to identify cells within/surrounding a cluster. These cells are defined as the community of a cluster. 
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+```
+
+## Load packages and helper functions
+
+```{r load packages}
+sapply(list.files("code/helper_functions", full.names = TRUE), source)
+library(SingleCellExperiment)
+library(ggplot2)
+library(scater)
+library(viridis)
+library(igraph)
+library(CATALYST)
+library(reshape2)
+library(cowplot)
+library(ggridges)
+library(tidyverse)
+library(viridis)
+library(dplyr)
+library(cytomapper)
+library(concaveman)
+library(data.table)
+library(sf)
+library(ggbeeswarm)
+library(RANN)
+```
+
+## Load data
+
+```{r load data}
+sce_prot = readRDS(file = "data/data_for_analysis/sce_protein.rds")
+sce_rna = readRDS(file = "data/data_for_analysis/sce_RNA.rds")
+```
+
+## Find patches of B cells and their milieus
+
+A B cell cluster is defined by at least 20 adjacent B cells (Bcell and BnTcell, max distance of 15µm between them). A milieu is defined by all cells within a cluster and the proximity (enlarging distance = 15µm)
+
+```{r Cluster and Community Detection}
+sce_prot$bcell_patch <- NULL
+sce_prot$bcell_milieu <- NULL
+sce_prot$bcell_patch_score <- NULL
+
+start = Sys.time()
+
+# quantiles of cell radius
+quantile(sqrt(sce_prot[,sce_prot$celltype %in% c("B cell")]$Area/pi))
+
+# find B cell clusters
+sce_prot <- findPatch(sce_prot, sce_prot[,colData(sce_prot)$celltype %in% c("B cell", "BnT cell")]$cellID, 
+                    'cellID', 'Center_X', 'Center_Y', 'ImageNumber', 
+                    distance = 15, min_clust_size = 10, output_colname = "bcell_patch")
+
+# number of B cell clusters
+length(unique(sce_prot$bcell_patch))
+
+# define cells within/surrounding a cluster of B cells
+sce_prot <- findMilieu(sce_prot, 
+                     'cellID', 'Center_X', 'Center_Y', 'ImageNumber', 'bcell_patch', 
+                     distance = 30, output_colname = "bcell_milieu")
+
+# number of chemokine communities
+length(unique(sce_prot$bcell_milieu))
+end = Sys.time()
+print(end-start)
+```
+
+## Plot some patches
+
+```{r example_patch, fig.width=10, fig.height=10, dev=c('pdf')}
+example <- findPatch(sce_prot[,sce_prot$Description %in% c("D4")], sce_prot[,sce_prot$celltype %in% c("B cell", "BnT cell")]$cellID, 
+                    'cellID', 
+                    'Center_X', 'Center_Y', 
+                    'ImageNumber', 
+                    distance = 15, 
+                    min_clust_size = 10,
+                    output_colname = "example_patch")
+
+example <- findMilieu(example, 
+              'cellID', 
+              'Center_X', 'Center_Y', 
+              'ImageNumber', 
+              'example_patch', 
+              distance = 30,
+              output_colname = "example_milieu",
+              plot = TRUE)
+```
+
+## Save SCE object
+
+```{r save sce}
+saveRDS(sce_prot, file = "data/data_for_analysis/sce_protein.rds")
+saveRDS(sce_rna, file = "data/data_for_analysis/sce_RNA.rds")
+```
+

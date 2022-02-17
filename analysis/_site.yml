@@ -5,8 +5,6 @@ navbar:
   left:
   - text: Home
     href: index.html
-  - text: About
-    href: about.html
   - text: RNA TMA
     menu:
     - text: Read Data
@@ -47,8 +45,13 @@ navbar:
       href: 09_Tcell_Score.html
     - text: Dysfunction Score
       href: 10_Dysfunction_Score.html
+    - text: Bcell Patch Detection
+      href: 11_Bcell_Patch_Detection.html
     - text: Bcell Score
-      href: 11_Bcell_Score.html
+      href: 12_Bcell_Score.html
+    - text: Dysfunction Validation
+      href: 13_Dysfunction_Stain.html
+
   - text: Main Figures
     menu:
     - text: Figure 1
@@ -61,18 +64,32 @@ navbar:
       href: Figure_4.html
     - text: Figure 5
       href: Figure_5.html
-  - text: Supplemental Figures
+  - text: Supplementary Material
     menu:
-    - text: Supp-Figure 1
-      href: Supp-Figure_1.html
     - text: Supp-Figure 2
       href: Supp-Figure_2.html
-    - text: Supp-Figure 3
-      href: Supp-Figure_3.html
     - text: Supp-Figure 4
       href: Supp-Figure_4.html
     - text: Supp-Figure 5
       href: Supp-Figure_5.html
+    - text: Supp-Figure 6
+      href: Supp-Figure_6.html
+    - text: Supp-Figure 7
+      href: Supp-Figure_7.html
+    - text: Supp-Figure 8
+      href: Supp-Figure_8.html
+    - text: Supp-Figure 9
+      href: Supp-Figure_9.html
+    - text: Supp-Figure 10
+      href: Supp-Figure_10.html
+    - text: Supp-Figure 11
+      href: Supp-Figure_11.html
+    - text: Supp-Figure 12
+      href: Supp-Figure_12.html
+    - text: Supp-Figure 13
+      href: Supp-Figure_13.html
+    - text: Clinical Data
+      href: Table_ClinicalData.html
   - text: Additional Material
     menu:
     - text: Summary Statistics

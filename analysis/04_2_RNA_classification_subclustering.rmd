@@ -28,7 +28,6 @@ library(SingleCellExperiment)
 library(ggplot2)
 library(scater)
 library(viridis)
-library(Rphenograph)
 library(igraph)
 library(CATALYST)
 library(workflowr)
@@ -155,6 +154,7 @@ assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts
 
 # Scaled
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
+            features = rownames(sce)[rowData(sce)$good_marker],
             colour_columns_by = "celltype", 
             labels_col = mean_sce$celltype_clustered,
             show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,
@@ -198,6 +198,7 @@ assay(mean_sce, "arcsinh") <- asinh(assay(mean_sce, "meanCounts"))
 assay(mean_sce, "arcsinh_scaled") <- t(scale(t(asinh(assay(mean_sce, "meanCounts")))))
 
 plotHeatmap(mean_sce, exprs_values = "arcsinh_scaled", 
+            features = rownames(sce)[rowData(sce)$good_marker],
             colour_columns_by = c("celltype"), 
             labels_col = mean_sce$celltype,
             show_colnames = TRUE, annotation_legend = TRUE, borders_color = NA,

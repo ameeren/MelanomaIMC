@@ -1,5 +1,5 @@
 ---
-title: "10_coloring"
+title: "08_coloring"
 author: ""
 date: "2020-11-25"
 output: workflowr::wflow_html
@@ -34,17 +34,17 @@ sce_prot <- readRDS("data/data_for_analysis/sce_protein.rds")
 ## All celltypes
 
 ```{r}
-col <- c("sienna4", "tomato", "gray65", "sienna1", "lightblue", "deepskyblue", "cyan",
-         "dodgerblue2", "darkolivegreen1", "darkolivegreen4", "springgreen3","darkgreen", "yellow3",
-         "khaki3", "gold")
+colvec <- c("sienna4", "tomato", "gray65", "red3", "blueviolet", "deeppink", "blueviolet",
+         "darkorchid1", "deepskyblue", "darkblue", "deepskyblue","aquamarine", "green",
+         "darkgreen", "yellow")
 
-names <- c("Tumor", "Stroma", "unknown", "Vasculature", "CD8- T cell", "CD8+ T cell", "CD4+ T cell",
+names(colvec) <- c("Tumor", "Stroma", "unknown", "Vasculature", "CD8- T cell", "CD8+ T cell", "CD4+ T cell",
            "FOXP3+ T cell", "B cell", "BnT cell", "HLA-DR", "CD38" ,"Macrophage", "Neutrophil", "pDC")
 
-barplot(seq_along(names), col=col, main="Pastel_hcl", names.arg = names)
+pie(c(rep(1,length((colvec)))),col = colvec,labels = names(colvec))
 
-col_celltypes <- col
-names(col_celltypes) <- names
+col_celltypes <- colvec
+names(col_celltypes) <- names(colvec)
 ```
 
 # RNA
@@ -101,4 +101,3 @@ metadata(sce_prot)$colour_vectors$celltype <- cell_protein
 saveRDS(sce_rna, "data/data_for_analysis/sce_RNA.rds")
 saveRDS(sce_prot, "data/data_for_analysis/sce_protein.rds")
 ```
-
