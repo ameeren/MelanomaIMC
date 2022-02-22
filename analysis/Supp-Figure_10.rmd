@@ -73,4 +73,5 @@ sub_hladr <- ncol(sce_rna[,sce_rna$celltype == "HLA-DR" &
                             sce_rna$Description %in% unique(max$Description)])
   
 percentage <- sub_hladr / total_hladr * 100
+percentage
 ```

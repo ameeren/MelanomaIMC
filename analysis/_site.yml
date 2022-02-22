@@ -1,4 +1,4 @@
-name: melanoma_publication_new_data
+name: MelanomaIMC
 output_dir: ../docs
 navbar:
   title: Melanoma Publication
@@ -70,8 +70,6 @@ navbar:
       href: Supp-Figure_3.html
     - text: Supp-Figure 5
       href: Supp-Figure_5.html
-    - text: Supp-Figure 5
-      href: Supp-Figure_5.html
     - text: Supp-Figure 6
       href: Supp-Figure_6.html
     - text: Supp-Figure 7
@@ -96,8 +94,6 @@ navbar:
     menu:
     - text: Summary Statistics
       href: Summary_Statistics.html
-    - text: License
-      href: license.html
 output:
   workflowr::wflow_html:
     toc: yes
