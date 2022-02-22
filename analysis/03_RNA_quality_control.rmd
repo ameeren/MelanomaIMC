@@ -174,29 +174,6 @@ p.list$treatment_group_before_surgery <- dittoDimPlot(cur_sce, var = "treatment_
 plot_grid(plotlist = p.list, ncol = 4, rel_widths = c(1.5, 1, 1, 1))
 ```
 
-## Marker Expression on UMAP
-
-```{r asinh_UMAP_marker, fig.width=35, fig.height=25, message=FALSE}
-p.list <- list()
-for(i in rownames(sce)[rowData(cur_sce)$good_marker]){
-  p.list[[i]] <- plotUMAP(cur_sce, colour_by = i, by_exprs_values = "asinh")
-}
-
-plot_grid(plotlist = p.list, ncol = 7)
-```
-
-## Scaled Expression UMAP
-
-```{r scaled_asinh_UMAP_marker, fig.width=35, fig.height=25, message=FALSE}
-p.list <- list()
-for(i in rownames(sce)[rowData(cur_sce)$good_marker]){
-  p.list[[i]] <- plotUMAP(cur_sce, colour_by = i, by_exprs_values = "scaled_asinh")
-}
-
-
-plot_grid(plotlist = p.list, ncol = 7)
-```
-
 # Save data
 
 ## Save updated SCE object

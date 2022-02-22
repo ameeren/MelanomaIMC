@@ -279,6 +279,9 @@ Now, we will map between RefSeq transcript ids, ensemble transcript ids and
 gene names.
 
 ```{r biomart}
+# workaround: useMart error: SSL certificate problem: unable to get local issuer certificate
+httr::set_config(httr::config(ssl_verifypeer = FALSE), override = FALSE)
+
 ensembl <- useMart("ensembl", dataset="hsapiens_gene_ensembl")
 cur_tab <- getBM(attributes=c("refseq_mrna", "ensembl_gene_id", "hgnc_symbol"), 
       filters = "refseq_mrna", values = rownames(seq_similarity), 
