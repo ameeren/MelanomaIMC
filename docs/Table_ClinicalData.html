@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Tobias Hoch" />
+
+<meta name="date" content="2021-11-22" />
+
+<title>Table_S4</title>
+
+<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Melanoma Publication</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    RNA TMA
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="01_RNA_read_data.html">Read Data</a>
+    </li>
+    <li>
+      <a href="02_RNA_annotations.html">Annotations</a>
+    </li>
+    <li>
+      <a href="03_RNA_quality_control.html">Quality Control</a>
+    </li>
+    <li>
+      <a href="04_1_RNA_celltype_classification.html">Automated Celltype Classification</a>
+    </li>
+    <li>
+      <a href="04_2_RNA_classification_subclustering.html">Subclustering</a>
+    </li>
+    <li>
+      <a href="05_RNA_chemokine_expressing_cells.html">Chemokine-Expressing Cells</a>
+    </li>
+    <li>
+      <a href="06_RNA_chemokine_patch_detection.html">Chemokine Patches</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Protein TMA
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="01_Protein_read_data.html">Read Data</a>
+    </li>
+    <li>
+      <a href="02_Protein_annotations.html">Annotations</a>
+    </li>
+    <li>
+      <a href="03_Protein_quality_control.html">Quality Control</a>
+    </li>
+    <li>
+      <a href="04_1_Protein_celltype_classification.html">Automated Celltype Classification</a>
+    </li>
+    <li>
+      <a href="04_2_Protein_classification_subclustering.html">Subclustering</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Misc.
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="00_prepare_clinical_dat.html">Prep Clinical Table</a>
+    </li>
+    <li>
+      <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
+    </li>
+    <li>
+      <a href="08_color_vectors.html">Color Vectors</a>
+    </li>
+    <li>
+      <a href="09_Tcell_Score.html">Tcell Score</a>
+    </li>
+    <li>
+      <a href="10_Dysfunction_Score.html">Dysfunction Score</a>
+    </li>
+    <li>
+      <a href="11_Bcell_Patch_Detection.html">Bcell Patch Detection</a>
+    </li>
+    <li>
+      <a href="12_Bcell_Score.html">Bcell Score</a>
+    </li>
+    <li>
+      <a href="13_Dysfunction_Stain.html">Dysfunction Validation</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Main Figures
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Figure_1.html">Figure 1</a>
+    </li>
+    <li>
+      <a href="Figure_2.html">Figure 2</a>
+    </li>
+    <li>
+      <a href="Figure_3.html">Figure 3</a>
+    </li>
+    <li>
+      <a href="Figure_4.html">Figure 4</a>
+    </li>
+    <li>
+      <a href="Figure_5.html">Figure 5</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Supplementary Material
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Supp-Figure_2.html">Supp-Figure 2</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_4.html">Supp-Figure 4</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_5.html">Supp-Figure 5</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_6.html">Supp-Figure 6</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_7.html">Supp-Figure 7</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_8.html">Supp-Figure 8</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_9.html">Supp-Figure 9</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_10.html">Supp-Figure 10</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_11.html">Supp-Figure 11</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_12.html">Supp-Figure 12</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_13.html">Supp-Figure 13</a>
+    </li>
+    <li>
+      <a href="Table_ClinicalData.html">Clinical Data</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Additional Material
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Summary_Statistics.html">Summary Statistics</a>
+    </li>
+    <li>
+      <a href="license.html">License</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Table_S4</h1>
+<h4 class="author">Tobias Hoch</h4>
+<h4 class="date">2021-11-22</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2022-02-17
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+</p>
+<p>
+<strong>Knit directory:</strong> <code>MelanomaIMC/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version 1.7.0). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20200728code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20200728)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20200728code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20200728)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreeef31e95f8a1c3c7a35c8d3a9e6e8b9cd96e4a5d4targetblankef31e95a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/ef31e95f8a1c3c7a35c8d3a9e6e8b9cd96e4a5d4" target="_blank">ef31e95</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreeef31e95f8a1c3c7a35c8d3a9e6e8b9cd96e4a5d4targetblankef31e95a" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/ef31e95f8a1c3c7a35c8d3a9e6e8b9cd96e4a5d4" target="_blank">ef31e95</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rproj.user/
+    Ignored:    Table_S4.csv
+    Ignored:    analysis/.DS_Store
+    Ignored:    analysis/._.DS_Store
+    Ignored:    code/.DS_Store
+    Ignored:    code/._.DS_Store
+    Ignored:    data/.DS_Store
+    Ignored:    data/._.DS_Store
+    Ignored:    data/data_for_analysis/
+    Ignored:    data/full_data/
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/Table_ClinicalData.rmd</code>) and HTML (<code>docs/Table_ClinicalData.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/ef31e95f8a1c3c7a35c8d3a9e6e8b9cd96e4a5d4/analysis/Table_ClinicalData.rmd" target="_blank">ef31e95</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-17
+</td>
+<td>
+change dates in clinical data
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/a4bcb73fefeaf4f0dbf97415772c48ecc0e5aaf6/analysis/Table_ClinicalData.rmd" target="_blank">a4bcb73</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-09
+</td>
+<td>
+clean repo
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/45e4546567d85ef7ef0a976235f594f7f837624f/analysis/Table_ClinicalData.rmd" target="_blank">45e4546</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-06
+</td>
+<td>
+clean repo for publication
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<pre class="r"><code>library(SingleCellExperiment)</code></pre>
+<pre><code>Loading required package: SummarizedExperiment</code></pre>
+<pre><code>Loading required package: MatrixGenerics</code></pre>
+<pre><code>Loading required package: matrixStats</code></pre>
+<pre><code>
+Attaching package: &#39;MatrixGenerics&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:matrixStats&#39;:
+
+    colAlls, colAnyNAs, colAnys, colAvgsPerRowSet, colCollapse,
+    colCounts, colCummaxs, colCummins, colCumprods, colCumsums,
+    colDiffs, colIQRDiffs, colIQRs, colLogSumExps, colMadDiffs,
+    colMads, colMaxs, colMeans2, colMedians, colMins, colOrderStats,
+    colProds, colQuantiles, colRanges, colRanks, colSdDiffs, colSds,
+    colSums2, colTabulates, colVarDiffs, colVars, colWeightedMads,
+    colWeightedMeans, colWeightedMedians, colWeightedSds,
+    colWeightedVars, rowAlls, rowAnyNAs, rowAnys, rowAvgsPerColSet,
+    rowCollapse, rowCounts, rowCummaxs, rowCummins, rowCumprods,
+    rowCumsums, rowDiffs, rowIQRDiffs, rowIQRs, rowLogSumExps,
+    rowMadDiffs, rowMads, rowMaxs, rowMeans2, rowMedians, rowMins,
+    rowOrderStats, rowProds, rowQuantiles, rowRanges, rowRanks,
+    rowSdDiffs, rowSds, rowSums2, rowTabulates, rowVarDiffs, rowVars,
+    rowWeightedMads, rowWeightedMeans, rowWeightedMedians,
+    rowWeightedSds, rowWeightedVars</code></pre>
+<pre><code>Loading required package: GenomicRanges</code></pre>
+<pre><code>Loading required package: stats4</code></pre>
+<pre><code>Loading required package: BiocGenerics</code></pre>
+<pre><code>
+Attaching package: &#39;BiocGenerics&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:stats&#39;:
+
+    IQR, mad, sd, var, xtabs</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    anyDuplicated, append, as.data.frame, basename, cbind, colnames,
+    dirname, do.call, duplicated, eval, evalq, Filter, Find, get, grep,
+    grepl, intersect, is.unsorted, lapply, Map, mapply, match, mget,
+    order, paste, pmax, pmax.int, pmin, pmin.int, Position, rank,
+    rbind, Reduce, rownames, sapply, setdiff, sort, table, tapply,
+    union, unique, unsplit, which.max, which.min</code></pre>
+<pre><code>Loading required package: S4Vectors</code></pre>
+<pre><code>
+Attaching package: &#39;S4Vectors&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    expand.grid, I, unname</code></pre>
+<pre><code>Loading required package: IRanges</code></pre>
+<pre><code>Loading required package: GenomeInfoDb</code></pre>
+<pre><code>Loading required package: Biobase</code></pre>
+<pre><code>Welcome to Bioconductor
+
+    Vignettes contain introductory material; view with
+    &#39;browseVignettes()&#39;. To cite Bioconductor, see
+    &#39;citation(&quot;Biobase&quot;)&#39;, and for packages &#39;citation(&quot;pkgname&quot;)&#39;.</code></pre>
+<pre><code>
+Attaching package: &#39;Biobase&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:MatrixGenerics&#39;:
+
+    rowMedians</code></pre>
+<pre><code>The following objects are masked from &#39;package:matrixStats&#39;:
+
+    anyMissing, rowMedians</code></pre>
+<pre class="r"><code>library(dplyr)</code></pre>
+<pre><code>
+Attaching package: &#39;dplyr&#39;</code></pre>
+<pre><code>The following object is masked from &#39;package:Biobase&#39;:
+
+    combine</code></pre>
+<pre><code>The following objects are masked from &#39;package:GenomicRanges&#39;:
+
+    intersect, setdiff, union</code></pre>
+<pre><code>The following object is masked from &#39;package:GenomeInfoDb&#39;:
+
+    intersect</code></pre>
+<pre><code>The following objects are masked from &#39;package:IRanges&#39;:
+
+    collapse, desc, intersect, setdiff, slice, union</code></pre>
+<pre><code>The following objects are masked from &#39;package:S4Vectors&#39;:
+
+    first, intersect, rename, setdiff, setequal, union</code></pre>
+<pre><code>The following objects are masked from &#39;package:BiocGenerics&#39;:
+
+    combine, intersect, setdiff, union</code></pre>
+<pre><code>The following object is masked from &#39;package:matrixStats&#39;:
+
+    count</code></pre>
+<pre><code>The following objects are masked from &#39;package:stats&#39;:
+
+    filter, lag</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    intersect, setdiff, setequal, union</code></pre>
+<pre class="r"><code>library(lubridate)</code></pre>
+<pre><code>
+Attaching package: &#39;lubridate&#39;</code></pre>
+<pre><code>The following objects are masked from &#39;package:GenomicRanges&#39;:
+
+    intersect, setdiff, union</code></pre>
+<pre><code>The following object is masked from &#39;package:GenomeInfoDb&#39;:
+
+    intersect</code></pre>
+<pre><code>The following objects are masked from &#39;package:IRanges&#39;:
+
+    %within%, intersect, setdiff, union</code></pre>
+<pre><code>The following objects are masked from &#39;package:S4Vectors&#39;:
+
+    intersect, second, second&lt;-, setdiff, union</code></pre>
+<pre><code>The following objects are masked from &#39;package:BiocGenerics&#39;:
+
+    intersect, setdiff, union</code></pre>
+<pre><code>The following objects are masked from &#39;package:base&#39;:
+
+    date, intersect, setdiff, union</code></pre>
+<pre class="r"><code>library(stringr)</code></pre>
+</div>
+<div id="load-clinical-data" class="section level2">
+<h2>Load Clinical Data</h2>
+<pre class="r"><code>clinical_data_protein &lt;- read.csv2(&quot;data/data_for_analysis/protein/clinical_data_protein.csv&quot;, sep = &quot;,&quot;)
+sce_prot = readRDS(file = &quot;data/data_for_analysis/sce_protein.rds&quot;)
+sce_prot &lt;- sce_prot[,sce_prot$Location != &quot;CTRL&quot;]</code></pre>
+</div>
+<div id="information-to-add" class="section level2">
+<h2>Information to add</h2>
+<pre class="r"><code>info &lt;- as.data.frame(colData(sce_prot)) %&gt;%
+  distinct(BlockID, .keep_all = TRUE) %&gt;%
+  select(BlockID, MM_location_simplified)
+
+clinical_data_protein &lt;- left_join(clinical_data_protein, info)</code></pre>
+<pre><code>Joining, by = &quot;BlockID&quot;</code></pre>
+</div>
+<div id="information-for-clinical-data-table" class="section level1">
+<h1>Information for Clinical Data Table</h1>
+<div id="blockid-level" class="section level2">
+<h2>BlockID level</h2>
+<pre class="r"><code>block_level &lt;- clinical_data_protein %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  distinct(BlockID, .keep_all = TRUE) %&gt;%
+  select(PatientID, BlockID, Age_range, Gender, Primary_melanoma_type, MM_location, Cancer_Stage, Mutation,
+         Last_sys_treatment_before_surgery, Treatment_after_surgery, MM_location_simplified, Status_at_3m)
+
+# total blocks
+length(unique(block_level$BlockID))</code></pre>
+<pre><code>[1] 86</code></pre>
+<pre class="r"><code># Sex
+block_level %&gt;%
+  group_by(Gender) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round(n / sum(n) *100,2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>  Gender  n percentage
+1      f 36      41.86
+2      m 50      58.14</code></pre>
+<pre class="r"><code># Age
+block_level %&gt;%
+  group_by(Age_range) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round(n / sum(n) *100,2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>  Age_range  n percentage
+1       &lt;45  9      10.47
+2       ≥60 55      63.95
+3     45-59 22      25.58</code></pre>
+<pre class="r"><code># Primary Melanoma Type
+block_level %&gt;%
+  group_by(Primary_melanoma_type) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = n / sum(n) *100) %&gt;%
+  mutate(Primary_melanoma_type = ifelse(percentage &gt; 5 | Primary_melanoma_type == &quot;unknown&quot;, Primary_melanoma_type, &quot;other&quot;)) %&gt;%
+  group_by(Primary_melanoma_type) %&gt;%
+  summarise(n=sum(n), percentage=round(sum(percentage),2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>  Primary_melanoma_type  n percentage
+1     acral lentiginous  9      10.47
+2             cutaneous 67      77.91
+3                 other  6       6.98
+4               unknown  4       4.65</code></pre>
+<pre class="r"><code># Met Location
+block_level %&gt;%
+  group_by(MM_location) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = n / sum(n) *100) %&gt;%
+  mutate(MM_location = ifelse(percentage &gt; 5, MM_location, &quot;other&quot;)) %&gt;%
+  group_by(MM_location) %&gt;%
+  summarise(n=sum(n), percentage=round(sum(percentage),2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>        MM_location  n percentage
+1             brain  6       6.98
+2                LN 27      31.40
+3             other 16      18.60
+4 skin_subcutaneous 26      30.23
+5     skin_undefine  6       6.98
+6       soft tissue  5       5.81</code></pre>
+<pre class="r"><code># Cancer Stage
+block_level %&gt;%
+  group_by(Cancer_Stage) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round(n / sum(n) *100,2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>  Cancer_Stage  n percentage
+1          III 31      36.05
+2    III or IV  2       2.33
+3           IV 50      58.14
+4      unknown  3       3.49</code></pre>
+<pre class="r"><code># Mutation
+block_level %&gt;%
+  group_by(Mutation) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = n / sum(n) *100) %&gt;%
+  mutate(Mutation = ifelse(percentage &gt; 5 | Mutation == &quot;unknown&quot;, Mutation, &quot;other&quot;)) %&gt;%
+  group_by(Mutation) %&gt;%
+  summarise(n=sum(n), percentage=sum(percentage))</code></pre>
+<pre><code># A tibble: 5 × 3
+  Mutation     n percentage
+  &lt;chr&gt;    &lt;int&gt;      &lt;dbl&gt;
+1 BRAF        38      44.2 
+2 NRAS        26      30.2 
+3 other        3       3.49
+4 unknown      4       4.65
+5 wt          15      17.4 </code></pre>
+<pre class="r"><code># Systemic Treatment Before
+block_level %&gt;%
+  group_by(Last_sys_treatment_before_surgery) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = n / sum(n) *100) %&gt;%
+  mutate(Last_sys_treatment_before_surgery = ifelse(percentage &gt; 5 | is.na(Last_sys_treatment_before_surgery) == T, Last_sys_treatment_before_surgery, &quot;other&quot;)) %&gt;%
+  group_by(Last_sys_treatment_before_surgery) %&gt;%
+  summarise(n=sum(n)) %&gt;%
+  mutate(percentage = round(n / sum(n) *100,2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>  Last_sys_treatment_before_surgery  n percentage
+1                              aPD1 17      19.77
+2                             other 12      13.95
+3                         untreated 56      65.12
+4                              &lt;NA&gt;  1       1.16</code></pre>
+<pre class="r"><code># Systemic Treatment After
+block_level %&gt;%
+  mutate(Last_sys_treatment_before_surgery = ifelse(is.na(Last_sys_treatment_before_surgery), 
+                                                    &quot;unknown&quot;, Last_sys_treatment_before_surgery)) %&gt;%
+  mutate(Treatment_after_surgery = ifelse(is.na(Treatment_after_surgery), 
+                                                    &quot;unknown&quot;, Treatment_after_surgery)) %&gt;%
+  mutate(treatmentGroup_before = ifelse(Last_sys_treatment_before_surgery == &quot;untreated&quot;, 
+         &quot;Naive&quot;, &quot;Pre-Treated&quot;)) %&gt;%
+  mutate(treatmentGroup_before = ifelse(Last_sys_treatment_before_surgery == &quot;unknown&quot;, 
+         &quot;Unknown&quot;, treatmentGroup_before)) %&gt;%
+  mutate(treatmentGroups = paste(treatmentGroup_before, Treatment_after_surgery, sep = &quot;_&quot;)) %&gt;%
+  group_by(treatmentGroup_before, treatmentGroups) %&gt;%
+  summarise(n=n()) %&gt;%
+  ungroup() %&gt;%
+  mutate(percentage = n / sum(n) *100) %&gt;%
+  mutate(treatmentGroups = ifelse(percentage &gt; 5, treatmentGroups, paste(treatmentGroup_before, &quot;other&quot;, sep = &quot;_&quot;))) %&gt;%
+  group_by(treatmentGroups) %&gt;%
+  summarise(n=sum(n), percentage=round(sum(percentage),2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>`summarise()` has grouped output by &#39;treatmentGroup_before&#39;. You can override
+using the `.groups` argument.</code></pre>
+<pre><code>           treatmentGroups  n percentage
+1               Naive_aPD1 22      25.58
+2       Naive_BRAFi + MEKi  6       6.98
+3              Naive_other 18      20.93
+4          Naive_untreated 10      11.63
+5         Pre-Treated_aPD1  9      10.47
+6 Pre-Treated_BRAFi + MEKi  8       9.30
+7        Pre-Treated_other 12      13.95
+8            Unknown_other  1       1.16</code></pre>
+<pre class="r"><code># Response Information 3M after 
+block_level %&gt;%
+  group_by(Status_at_3m) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = n / sum(n) *100) %&gt;%
+  mutate(Status_at_3m = ifelse(percentage &gt; 5, Status_at_3m, &quot;other&quot;)) %&gt;%
+  group_by(Status_at_3m) %&gt;%
+  summarise(n=sum(n), percentage=round(sum(percentage),2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>  Status_at_3m  n percentage
+1           NR 30      34.88
+2            R 16      18.60
+3         &lt;NA&gt; 40      46.51</code></pre>
+</div>
+<div id="patient-level" class="section level2">
+<h2>Patient level</h2>
+</div>
+<div id="which-paramters-are-unique-for-patients-not-multiple-levels-per-patient" class="section level2">
+<h2>Which paramters are unique for patients (not multiple levels per patient)</h2>
+<pre class="r"><code>unique_variables &lt;- block_level %&gt;%
+  reshape2::melt(id.vars=&quot;PatientID&quot;, variable.name=&quot;Variable&quot;, value.name=&quot;Value&quot;) %&gt;%
+  group_by(PatientID, Variable) %&gt;%
+  distinct(Value, .keep_all = T) %&gt;%
+  summarise(n=n())</code></pre>
+<pre><code>`summarise()` has grouped output by &#39;PatientID&#39;. You can override using the
+`.groups` argument.</code></pre>
+<pre class="r"><code>multiple_levels &lt;- unique(as.character(unique_variables[unique_variables$n &gt; 1,]$Variable))
+all_variables &lt;- unique(as.character(unique_variables$Variable))
+unique_variables &lt;- setdiff(all_variables, multiple_levels)</code></pre>
+<pre class="r"><code>patient_level &lt;- block_level %&gt;%
+  distinct(PatientID, Age_range, Gender, Primary_melanoma_type, Cancer_Stage)
+
+# total blocks
+length(unique(patient_level$PatientID))</code></pre>
+<pre><code>[1] 69</code></pre>
+<pre class="r"><code># Sex
+patient_level %&gt;%
+  group_by(Gender) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round(n / sum(n) *100,2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>  Gender  n percentage
+1      f 28      40.58
+2      m 41      59.42</code></pre>
+<pre class="r"><code># Age
+patient_level %&gt;%
+  group_by(Age_range) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round(n / sum(n) *100,2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>  Age_range  n percentage
+1       &lt;45  6       8.70
+2       ≥60 47      68.12
+3     45-59 16      23.19</code></pre>
+<pre class="r"><code># Primary Melanoma Type
+patient_level %&gt;%
+  group_by(Primary_melanoma_type) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = n / sum(n) *100) %&gt;%
+  mutate(Primary_melanoma_type = ifelse(percentage &gt; 5, Primary_melanoma_type, &quot;other&quot;)) %&gt;%
+  group_by(Primary_melanoma_type) %&gt;%
+  summarise(n=sum(n), percentage=round(sum(percentage),2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>  Primary_melanoma_type  n percentage
+1     acral lentiginous  4       5.80
+2             cutaneous 57      82.61
+3                 other  4       5.80
+4               unknown  4       5.80</code></pre>
+<pre class="r"><code># Cancer Stage
+patient_level %&gt;%
+  group_by(Cancer_Stage) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(percentage = round(n / sum(n) *100,2)) %&gt;%
+  as.data.frame()</code></pre>
+<pre><code>  Cancer_Stage  n percentage
+1          III 29      42.03
+2    III or IV  2       2.90
+3           IV 35      50.72
+4      unknown  3       4.35</code></pre>
+</div>
+<div id="whole-data-table-as-csv" class="section level2">
+<h2>Whole Data Table as CSV</h2>
+<pre class="r"><code># join with T cell Score, B cell Score, Dysfunction Score
+scores &lt;- as.data.frame(colData(sce_prot)) %&gt;%
+  distinct(Description, .keep_all = T) %&gt;%
+  select(Description, Tcell_density_score_image, bcell_patch_score, dysfunction_score)
+
+clinicalDat &lt;- left_join(scores, clinical_data_protein)</code></pre>
+<pre><code>Joining, by = &quot;Description&quot;</code></pre>
+<pre class="r"><code>clinicalDat$IHC_T_score &lt;- NULL
+clinicalDat$Age_range &lt;- ifelse(clinicalDat$Age_range ==&quot;≥60&quot;, &quot;&gt;=60&quot;, clinicalDat$Age_range)
+
+# correct clinicalDat$Last_prev_therapy
+clinicalDat$Last_prev_therapy &lt;- str_replace_all(clinicalDat$Last_prev_therapy, &quot;-&quot;, &quot;.&quot;)
+clinicalDat$Last_prev_therapy &lt;- format(as.Date(my(clinicalDat$Last_prev_therapy)),&quot;01-%b-20%y&quot;)
+
+write.csv2(clinicalDat, &quot;data/data_for_analysis/Table_S4.csv&quot;, row.names = FALSE)</code></pre>
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.1.2 (2021-11-01)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 20.04.3 LTS
+
+Matrix products: default
+BLAS/LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.8.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] stats4    stats     graphics  grDevices utils     datasets  methods  
+[8] base     
+
+other attached packages:
+ [1] stringr_1.4.0               lubridate_1.8.0            
+ [3] dplyr_1.0.7                 SingleCellExperiment_1.16.0
+ [5] SummarizedExperiment_1.24.0 Biobase_2.54.0             
+ [7] GenomicRanges_1.46.1        GenomeInfoDb_1.30.1        
+ [9] IRanges_2.28.0              S4Vectors_0.32.3           
+[11] BiocGenerics_0.40.0         MatrixGenerics_1.6.0       
+[13] matrixStats_0.61.0          workflowr_1.7.0            
+
+loaded via a namespace (and not attached):
+ [1] Rcpp_1.0.8             lattice_0.20-45        getPass_0.2-2         
+ [4] ps_1.6.0               assertthat_0.2.1       rprojroot_2.0.2       
+ [7] digest_0.6.29          utf8_1.2.2             plyr_1.8.6            
+[10] R6_2.5.1               evaluate_0.14          httr_1.4.2            
+[13] pillar_1.7.0           zlibbioc_1.40.0        rlang_1.0.0           
+[16] rstudioapi_0.13        whisker_0.4            callr_3.7.0           
+[19] jquerylib_0.1.4        Matrix_1.4-0           rmarkdown_2.11        
+[22] RCurl_1.98-1.5         DelayedArray_0.20.0    compiler_4.1.2        
+[25] httpuv_1.6.5           xfun_0.29              pkgconfig_2.0.3       
+[28] htmltools_0.5.2        tidyselect_1.1.1       tibble_3.1.6          
+[31] GenomeInfoDbData_1.2.7 fansi_1.0.2            crayon_1.4.2          
+[34] later_1.3.0            bitops_1.0-7           grid_4.1.2            
+[37] jsonlite_1.7.3         lifecycle_1.0.1        DBI_1.1.2             
+[40] git2r_0.29.0           magrittr_2.0.2         cli_3.1.1             
+[43] stringi_1.7.6          XVector_0.34.0         reshape2_1.4.4        
+[46] fs_1.5.2               promises_1.2.0.1       bslib_0.3.1           
+[49] ellipsis_0.3.2         vctrs_0.3.8            generics_0.1.2        
+[52] tools_4.1.2            glue_1.6.1             purrr_0.3.4           
+[55] processx_3.5.2         fastmap_1.1.0          yaml_2.2.2            
+[58] knitr_1.37             sass_0.4.0            </code></pre>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

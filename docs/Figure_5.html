@@ -1,0 +1,1754 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+
+<meta name="author" content="Tobias Hoch and Daniel Schulz" />
+
+<meta name="date" content="2021-01-30" />
+
+<title>Figure 5</title>
+
+<script src="site_libs/header-attrs-2.11/header-attrs.js"></script>
+<script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
+<script src="site_libs/bootstrap-3.3.5/js/bootstrap.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/html5shiv.min.js"></script>
+<script src="site_libs/bootstrap-3.3.5/shim/respond.min.js"></script>
+<style>h1 {font-size: 34px;}
+       h1.title {font-size: 38px;}
+       h2 {font-size: 30px;}
+       h3 {font-size: 24px;}
+       h4 {font-size: 18px;}
+       h5 {font-size: 16px;}
+       h6 {font-size: 12px;}
+       code {color: inherit; background-color: rgba(0, 0, 0, 0.04);}
+       pre:not([class]) { background-color: white }</style>
+<script src="site_libs/jqueryui-1.11.4/jquery-ui.min.js"></script>
+<link href="site_libs/tocify-1.9.1/jquery.tocify.css" rel="stylesheet" />
+<script src="site_libs/tocify-1.9.1/jquery.tocify.js"></script>
+<script src="site_libs/navigation-1.1/tabsets.js"></script>
+<link href="site_libs/highlightjs-9.12.0/textmate.css" rel="stylesheet" />
+<script src="site_libs/highlightjs-9.12.0/highlight.js"></script>
+
+<link rel="icon" href="https://github.com/workflowr/workflowr-assets/raw/main/img/reproducible.png">
+<!-- Add a small amount of space between sections. -->
+<style type="text/css">
+div.section {
+  padding-top: 12px;
+}
+</style>
+
+
+
+<style type="text/css">
+  code{white-space: pre-wrap;}
+  span.smallcaps{font-variant: small-caps;}
+  span.underline{text-decoration: underline;}
+  div.column{display: inline-block; vertical-align: top; width: 50%;}
+  div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+  ul.task-list{list-style: none;}
+    </style>
+
+<style type="text/css">code{white-space: pre;}</style>
+<script type="text/javascript">
+if (window.hljs) {
+  hljs.configure({languages: []});
+  hljs.initHighlightingOnLoad();
+  if (document.readyState && document.readyState === "complete") {
+    window.setTimeout(function() { hljs.initHighlighting(); }, 0);
+  }
+}
+</script>
+
+
+
+
+
+
+
+
+<style type = "text/css">
+.main-container {
+  max-width: 940px;
+  margin-left: auto;
+  margin-right: auto;
+}
+img {
+  max-width:100%;
+}
+.tabbed-pane {
+  padding-top: 12px;
+}
+.html-widget {
+  margin-bottom: 20px;
+}
+button.code-folding-btn:focus {
+  outline: none;
+}
+summary {
+  display: list-item;
+}
+pre code {
+  padding: 0;
+}
+</style>
+
+
+<style type="text/css">
+.dropdown-submenu {
+  position: relative;
+}
+.dropdown-submenu>.dropdown-menu {
+  top: 0;
+  left: 100%;
+  margin-top: -6px;
+  margin-left: -1px;
+  border-radius: 0 6px 6px 6px;
+}
+.dropdown-submenu:hover>.dropdown-menu {
+  display: block;
+}
+.dropdown-submenu>a:after {
+  display: block;
+  content: " ";
+  float: right;
+  width: 0;
+  height: 0;
+  border-color: transparent;
+  border-style: solid;
+  border-width: 5px 0 5px 5px;
+  border-left-color: #cccccc;
+  margin-top: 5px;
+  margin-right: -10px;
+}
+.dropdown-submenu:hover>a:after {
+  border-left-color: #adb5bd;
+}
+.dropdown-submenu.pull-left {
+  float: none;
+}
+.dropdown-submenu.pull-left>.dropdown-menu {
+  left: -100%;
+  margin-left: 10px;
+  border-radius: 6px 0 6px 6px;
+}
+</style>
+
+<script type="text/javascript">
+// manage active state of menu based on current page
+$(document).ready(function () {
+  // active menu anchor
+  href = window.location.pathname
+  href = href.substr(href.lastIndexOf('/') + 1)
+  if (href === "")
+    href = "index.html";
+  var menuAnchor = $('a[href="' + href + '"]');
+
+  // mark it active
+  menuAnchor.tab('show');
+
+  // if it's got a parent navbar menu mark it active as well
+  menuAnchor.closest('li.dropdown').addClass('active');
+
+  // Navbar adjustments
+  var navHeight = $(".navbar").first().height() + 15;
+  var style = document.createElement('style');
+  var pt = "padding-top: " + navHeight + "px; ";
+  var mt = "margin-top: -" + navHeight + "px; ";
+  var css = "";
+  // offset scroll position for anchor links (for fixed navbar)
+  for (var i = 1; i <= 6; i++) {
+    css += ".section h" + i + "{ " + pt + mt + "}\n";
+  }
+  style.innerHTML = "body {" + pt + "padding-bottom: 40px; }\n" + css;
+  document.head.appendChild(style);
+});
+</script>
+
+<!-- tabsets -->
+
+<style type="text/css">
+.tabset-dropdown > .nav-tabs {
+  display: inline-table;
+  max-height: 500px;
+  min-height: 44px;
+  overflow-y: auto;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.tabset-dropdown > .nav-tabs > li.active:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li.active:before {
+  content: "&#xe258;";
+  border: none;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open:before {
+  content: "";
+  font-family: 'Glyphicons Halflings';
+  display: inline-block;
+  padding: 10px;
+  border-right: 1px solid #ddd;
+}
+
+.tabset-dropdown > .nav-tabs > li.active {
+  display: block;
+}
+
+.tabset-dropdown > .nav-tabs > li > a,
+.tabset-dropdown > .nav-tabs > li > a:focus,
+.tabset-dropdown > .nav-tabs > li > a:hover {
+  border: none;
+  display: inline-block;
+  border-radius: 4px;
+  background-color: transparent;
+}
+
+.tabset-dropdown > .nav-tabs.nav-tabs-open > li {
+  display: block;
+  float: none;
+}
+
+.tabset-dropdown > .nav-tabs > li {
+  display: none;
+}
+</style>
+
+<!-- code folding -->
+
+
+
+<style type="text/css">
+
+#TOC {
+  margin: 25px 0px 20px 0px;
+}
+@media (max-width: 768px) {
+#TOC {
+  position: relative;
+  width: 100%;
+}
+}
+
+@media print {
+.toc-content {
+  /* see https://github.com/w3c/csswg-drafts/issues/4434 */
+  float: right;
+}
+}
+
+.toc-content {
+  padding-left: 30px;
+  padding-right: 40px;
+}
+
+div.main-container {
+  max-width: 1200px;
+}
+
+div.tocify {
+  width: 20%;
+  max-width: 260px;
+  max-height: 85%;
+}
+
+@media (min-width: 768px) and (max-width: 991px) {
+  div.tocify {
+    width: 25%;
+  }
+}
+
+@media (max-width: 767px) {
+  div.tocify {
+    width: 100%;
+    max-width: none;
+  }
+}
+
+.tocify ul, .tocify li {
+  line-height: 20px;
+}
+
+.tocify-subheader .tocify-item {
+  font-size: 0.90em;
+}
+
+.tocify .list-group-item {
+  border-radius: 0px;
+}
+
+
+</style>
+
+
+
+</head>
+
+<body>
+
+
+<div class="container-fluid main-container">
+
+
+<!-- setup 3col/9col grid for toc_float and main content  -->
+<div class="row">
+<div class="col-xs-12 col-sm-4 col-md-3">
+<div id="TOC" class="tocify">
+</div>
+</div>
+
+<div class="toc-content col-xs-12 col-sm-8 col-md-9">
+
+
+
+
+<div class="navbar navbar-default  navbar-fixed-top" role="navigation">
+  <div class="container">
+    <div class="navbar-header">
+      <button type="button" class="navbar-toggle collapsed" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a class="navbar-brand" href="index.html">Melanoma Publication</a>
+    </div>
+    <div id="navbar" class="navbar-collapse collapse">
+      <ul class="nav navbar-nav">
+        <li>
+  <a href="index.html">Home</a>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    RNA TMA
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="01_RNA_read_data.html">Read Data</a>
+    </li>
+    <li>
+      <a href="02_RNA_annotations.html">Annotations</a>
+    </li>
+    <li>
+      <a href="03_RNA_quality_control.html">Quality Control</a>
+    </li>
+    <li>
+      <a href="04_1_RNA_celltype_classification.html">Automated Celltype Classification</a>
+    </li>
+    <li>
+      <a href="04_2_RNA_classification_subclustering.html">Subclustering</a>
+    </li>
+    <li>
+      <a href="05_RNA_chemokine_expressing_cells.html">Chemokine-Expressing Cells</a>
+    </li>
+    <li>
+      <a href="06_RNA_chemokine_patch_detection.html">Chemokine Patches</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Protein TMA
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="01_Protein_read_data.html">Read Data</a>
+    </li>
+    <li>
+      <a href="02_Protein_annotations.html">Annotations</a>
+    </li>
+    <li>
+      <a href="03_Protein_quality_control.html">Quality Control</a>
+    </li>
+    <li>
+      <a href="04_1_Protein_celltype_classification.html">Automated Celltype Classification</a>
+    </li>
+    <li>
+      <a href="04_2_Protein_classification_subclustering.html">Subclustering</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Misc.
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="00_prepare_clinical_dat.html">Prep Clinical Table</a>
+    </li>
+    <li>
+      <a href="07_TCF7_PD1_gating.html">TCF7/PD1 Gating</a>
+    </li>
+    <li>
+      <a href="08_color_vectors.html">Color Vectors</a>
+    </li>
+    <li>
+      <a href="09_Tcell_Score.html">Tcell Score</a>
+    </li>
+    <li>
+      <a href="10_Dysfunction_Score.html">Dysfunction Score</a>
+    </li>
+    <li>
+      <a href="11_Bcell_Patch_Detection.html">Bcell Patch Detection</a>
+    </li>
+    <li>
+      <a href="12_Bcell_Score.html">Bcell Score</a>
+    </li>
+    <li>
+      <a href="13_Dysfunction_Stain.html">Dysfunction Validation</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Main Figures
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Figure_1.html">Figure 1</a>
+    </li>
+    <li>
+      <a href="Figure_2.html">Figure 2</a>
+    </li>
+    <li>
+      <a href="Figure_3.html">Figure 3</a>
+    </li>
+    <li>
+      <a href="Figure_4.html">Figure 4</a>
+    </li>
+    <li>
+      <a href="Figure_5.html">Figure 5</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Supplementary Material
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Supp-Figure_2.html">Supp-Figure 2</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_4.html">Supp-Figure 4</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_5.html">Supp-Figure 5</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_6.html">Supp-Figure 6</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_7.html">Supp-Figure 7</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_8.html">Supp-Figure 8</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_9.html">Supp-Figure 9</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_10.html">Supp-Figure 10</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_11.html">Supp-Figure 11</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_12.html">Supp-Figure 12</a>
+    </li>
+    <li>
+      <a href="Supp-Figure_13.html">Supp-Figure 13</a>
+    </li>
+    <li>
+      <a href="Table_ClinicalData.html">Clinical Data</a>
+    </li>
+  </ul>
+</li>
+<li class="dropdown">
+  <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">
+    Additional Material
+     
+    <span class="caret"></span>
+  </a>
+  <ul class="dropdown-menu" role="menu">
+    <li>
+      <a href="Summary_Statistics.html">Summary Statistics</a>
+    </li>
+    <li>
+      <a href="license.html">License</a>
+    </li>
+  </ul>
+</li>
+      </ul>
+      <ul class="nav navbar-nav navbar-right">
+        
+      </ul>
+    </div><!--/.nav-collapse -->
+  </div><!--/.container -->
+</div><!--/.navbar -->
+
+<div id="header">
+
+
+
+<h1 class="title toc-ignore">Figure 5</h1>
+<h4 class="author">Tobias Hoch and Daniel Schulz</h4>
+<h4 class="date">2021-01-30</h4>
+
+</div>
+
+
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
+</button>
+</p>
+<div id="workflowr-report" class="collapse">
+<ul class="nav nav-tabs">
+<li class="active">
+<a data-toggle="tab" href="#summary">Summary</a>
+</li>
+<li>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
+</li>
+<li>
+<a data-toggle="tab" href="#versions">Past versions</a>
+</li>
+</ul>
+<div class="tab-content">
+<div id="summary" class="tab-pane fade in active">
+<p>
+<strong>Last updated:</strong> 2022-02-10
+</p>
+<p>
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
+</p>
+<p>
+<strong>Knit directory:</strong> <code>MelanomaIMC/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
+</p>
+<p>
+This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysis was created with <a
+  href="https://github.com/workflowr/workflowr">workflowr</a> (version 1.7.0). The <em>Checks</em> tab describes the reproducibility checks that were applied when the results were created. The <em>Past versions</em> tab lists the development history.
+</p>
+<hr>
+</div>
+<div id="checks" class="tab-pane fade">
+<div id="workflowr-checks" class="panel-group">
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
+</p>
+</div>
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongEnvironmentstrongempty"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Environment:</strong> empty </a>
+</p>
+</div>
+<div id="strongEnvironmentstrongempty" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! The global environment was empty. Objects defined in the global environment can affect the analysis in your R Markdown file in unknown ways. For reproduciblity it’s best to always run the code in an empty environment.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSeedstrongcodesetseed20200728code"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Seed:</strong> <code>set.seed(20200728)</code> </a>
+</p>
+</div>
+<div id="strongSeedstrongcodesetseed20200728code" class="panel-collapse collapse">
+<div class="panel-body">
+<p>The command <code>set.seed(20200728)</code> was run prior to running the code in the R Markdown file. Setting a seed ensures that any results that rely on randomness, e.g. subsampling or permutations, are reproducible.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongSessioninformationstrongrecorded"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Session information:</strong> recorded </a>
+</p>
+</div>
+<div id="strongSessioninformationstrongrecorded" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Recording the operating system, R version, and package versions is critical for reproducibility.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongCachestrongnone"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Cache:</strong> none </a>
+</p>
+</div>
+<div id="strongCachestrongnone" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Nice! There were no cached chunks for this analysis, so you can be confident that you successfully produced the results during this run.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongFilepathsstrongrelative"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>File paths:</strong> relative </a>
+</p>
+</div>
+<div id="strongFilepathsstrongrelative" class="panel-collapse collapse">
+<div class="panel-body">
+<p>Great job! Using relative paths to the files within your workflowr project makes it easier to run your code on other machines.</p>
+</div>
+</div>
+</div>
+<div class="panel panel-default">
+<div class="panel-heading">
+<p class="panel-title">
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreea2860df480bbbf6833e9812ecd3c9f60a9b68e66targetblanka2860dfa"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/a2860df480bbbf6833e9812ecd3c9f60a9b68e66" target="_blank">a2860df</a> </a>
+</p>
+</div>
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreea2860df480bbbf6833e9812ecd3c9f60a9b68e66targetblanka2860dfa" class="panel-collapse collapse">
+<div class="panel-body">
+<p>
+Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
+</p>
+<p>
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/a2860df480bbbf6833e9812ecd3c9f60a9b68e66" target="_blank">a2860df</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+</p>
+<p>
+Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
+</p>
+<pre><code>
+Ignored files:
+    Ignored:    .DS_Store
+    Ignored:    .Rproj.user/
+    Ignored:    Table_S4.csv
+    Ignored:    analysis/.DS_Store
+    Ignored:    analysis/._.DS_Store
+    Ignored:    code/.DS_Store
+    Ignored:    code/._.DS_Store
+    Ignored:    data/.DS_Store
+    Ignored:    data/._.DS_Store
+    Ignored:    data/data_for_analysis/
+    Ignored:    data/full_data/
+
+Unstaged changes:
+    Modified:   analysis/Figure_5.rmd
+    Modified:   analysis/Supp-Figure_12.rmd
+    Modified:   analysis/Supp-Figure_13.rmd
+    Modified:   analysis/Supp-Figure_5.rmd
+
+</code></pre>
+<p>
+Note that any generated files, e.g. HTML, png, CSS, etc., are not included in this status report because it is ok for generated content to have uncommitted changes.
+</p>
+</div>
+</div>
+</div>
+</div>
+<hr>
+</div>
+<div id="versions" class="tab-pane fade">
+
+<p>
+These are the previous versions of the repository in which changes were made to the R Markdown (<code>analysis/Figure_5.rmd</code>) and HTML (<code>docs/Figure_5.html</code>) files. If you’ve configured a remote Git repository (see <code>?wflow_git_remote</code>), click on the hyperlinks in the table below to view the files as they were in that past version.
+</p>
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+File
+</th>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+<th>
+Message
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/dfe5f09a7a87824946d781bb7f19d603cda19ebd/analysis/Figure_5.rmd" target="_blank">dfe5f09</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-09
+</td>
+<td>
+change Figure order
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/588dbb1758ebd986ce8dbcc84aa9d8ee1b991052/analysis/Figure_5.rmd" target="_blank">588dbb1</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-06
+</td>
+<td>
+Figure Order
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/b20b6fbc2a2e0ee6e1e3b73f3ace0d3c11cf084d/analysis/Figure_5.rmd" target="_blank">b20b6fb</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-02
+</td>
+<td>
+update code for Supp Figures
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3da15db29f412e8bbd5b3c941ecc9bab416135f9/analysis/Figure_5.rmd" target="_blank">3da15db</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-11-24
+</td>
+<td>
+changes for revision
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/434eee41eeccd323199a2c2911928aa5ddc4298f/analysis/Figure_5.rmd" target="_blank">434eee4</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-09-23
+</td>
+<td>
+Figure adaptions and new Supp Figure with gates
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/c4e2793867ef4d68137ee1656703b2baea2dede6/analysis/Figure_5.rmd" target="_blank">c4e2793</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-08-04
+</td>
+<td>
+rearrange figure order to match pre-print
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/4109ff15127b705dbe3fb4b6916895cd1220b29b/docs/Figure_5.html" target="_blank">4109ff1</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-07-07
+</td>
+<td>
+delete html files and adapt gitignore
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/4affda4895cc0b25d4336d4649dce69baf935b77/analysis/Figure_5.rmd" target="_blank">4affda4</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-04-14
+</td>
+<td>
+figure adaptations
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/4affda4895cc0b25d4336d4649dce69baf935b77/docs/Figure_5.html" target="_blank">4affda4</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-04-14
+</td>
+<td>
+figure adaptations
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/32038914d8c7a9d59102c5e037cad3afae9ac319/analysis/Figure_5.rmd" target="_blank">3203891</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-19
+</td>
+<td>
+change celltype names
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/32038914d8c7a9d59102c5e037cad3afae9ac319/docs/Figure_5.html" target="_blank">3203891</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-19
+</td>
+<td>
+change celltype names
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/ee1595de9ec17ee414a5beafb9ed08d174e12139/analysis/Figure_5.rmd" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/ee1595de9ec17ee414a5beafb9ed08d174e12139/docs/Figure_5.html" target="_blank">ee1595d</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-12
+</td>
+<td>
+clean repo and adapt files
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/3f5af3f59358eebb33aa2a8a06fddca34dad6a6b/docs/Figure_5.html" target="_blank">3f5af3f</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-09
+</td>
+<td>
+add .html files
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/afa7957551baf7d1a04d81ec4159f689d43513a3/analysis/Figure_5.rmd" target="_blank">afa7957</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-08
+</td>
+<td>
+minor changes on figures and figure order
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/20a1458a4a84f38a314ea39a12a78aad3595e51d/analysis/Figure_5.rmd" target="_blank">20a1458</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-04
+</td>
+<td>
+adapt figure order
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/f9bb33a83d519d86072a7e716214ff78bce022a0/analysis/Figure_5.rmd" target="_blank">f9bb33a</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2021-02-04
+</td>
+<td>
+new Figure 5 and minor changes in figure order
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/c3e8a470a34a0512f7c31e40da611e115ce6cd53/analysis/Figure_5.rmd" target="_blank">c3e8a47</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2020-10-12
+</td>
+<td>
+clean branch
+</td>
+</tr>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/2c11d5cd8e42b3be31d1c1f512864b531f93fd7c/analysis/Figure_5.rmd" target="_blank">2c11d5c</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2020-08-05
+</td>
+<td>
+add new scripts
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+<hr>
+</div>
+</div>
+</div>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>This script generates plots for Figure 5.</p>
+</div>
+<div id="preparations" class="section level1">
+<h1>Preparations</h1>
+<pre class="r"><code>knitr::opts_chunk$set(echo = TRUE, message= FALSE)
+knitr::opts_knit$set(root.dir = rprojroot::find_rstudio_root_file())</code></pre>
+<div id="load-libraries" class="section level2">
+<h2>Load libraries</h2>
+<pre class="r"><code>sapply(list.files(&quot;code/helper_functions&quot;, full.names = TRUE), source)</code></pre>
+<pre><code>        code/helper_functions/calculateSummary.R
+value   ?                                       
+visible FALSE                                   
+        code/helper_functions/censor_dat.R
+value   ?                                 
+visible FALSE                             
+        code/helper_functions/detect_mRNA_expression.R
+value   ?                                             
+visible FALSE                                         
+        code/helper_functions/DistanceToClusterCenter.R
+value   ?                                              
+visible FALSE                                          
+        code/helper_functions/findMilieu.R code/helper_functions/findPatch.R
+value   ?                                  ?                                
+visible FALSE                              FALSE                            
+        code/helper_functions/getInfoFromString.R
+value   ?                                        
+visible FALSE                                    
+        code/helper_functions/getSpotnumber.R
+value   ?                                    
+visible FALSE                                
+        code/helper_functions/plotCellCounts.R
+value   ?                                     
+visible FALSE                                 
+        code/helper_functions/plotCellFractions.R
+value   ?                                        
+visible FALSE                                    
+        code/helper_functions/plotDist.R code/helper_functions/read_Data.R
+value   ?                                ?                                
+visible FALSE                            FALSE                            
+        code/helper_functions/scatter_function.R
+value   ?                                       
+visible FALSE                                   
+        code/helper_functions/sceChecks.R
+value   ?                                
+visible FALSE                            
+        code/helper_functions/validityChecks.R
+value   ?                                     
+visible FALSE                                 </code></pre>
+<pre class="r"><code>library(SingleCellExperiment)
+library(reshape2)
+library(tidyverse)
+library(dplyr)
+library(data.table) 
+library(ggplot2)
+library(ComplexHeatmap)
+library(colorRamps)
+library(circlize)
+library(RColorBrewer)
+library(ggpubr)
+library(ggbeeswarm)
+library(gridExtra)
+library(tidyr)
+library(ggpmisc)
+library(circlize)
+library(dittoSeq)
+library(scater)
+library(cowplot)
+library(cytomapper)
+library(corrplot)
+library(ggridges)
+library(rstatix)
+library(sf)
+library(concaveman)
+library(RANN)</code></pre>
+</div>
+<div id="read-the-data" class="section level2">
+<h2>Read the data</h2>
+<pre class="r"><code>sce_rna = readRDS(file = &quot;data/data_for_analysis/sce_RNA.rds&quot;)
+sce_prot = readRDS(file = &quot;data/data_for_analysis/sce_protein.rds&quot;)
+
+sce_rna &lt;- sce_rna[,sce_rna$Location != &quot;CTRL&quot;]
+sce_prot &lt;- sce_prot[,sce_prot$Location != &quot;CTRL&quot;]
+
+# meta data
+dat_relation = fread(file = &quot;data/data_for_analysis/protein/Object relationships.csv&quot;,stringsAsFactors = FALSE)
+dat_relation_rna = fread(file = &quot;data/data_for_analysis/RNA/Object relationships.csv&quot;,stringsAsFactors = FALSE)
+
+# image
+image_mat_rna &lt;- read.csv(&quot;data/data_for_analysis/rna/Image.csv&quot;)
+
+# surv_dat
+dat_survival_prot &lt;- fread(file = &quot;data/data_for_analysis/protein/clinical_data_protein.csv&quot;)</code></pre>
+</div>
+<div id="prepare-relation-data-protein" class="section level2">
+<h2>Prepare Relation Data Protein</h2>
+<pre class="r"><code># prepare data and add cellID
+dat_relation$cellID_first &lt;- paste(&quot;protein&quot;, paste(dat_relation$`First Image Number`, dat_relation$`First Object Number`, sep = &quot;_&quot;), sep = &quot;_&quot;)
+dat_relation$cellID_second &lt;- paste(&quot;protein&quot;, paste(dat_relation$`Second Image Number`, dat_relation$`Second Object Number`, sep = &quot;_&quot;), sep = &quot;_&quot;)
+
+# add celltype status to first and second label
+celltype_first &lt;- data.frame(colData(sce_prot))[,c(&quot;cellID&quot;, &quot;celltype&quot;, &quot;celltype_clustered&quot;)]
+colnames(celltype_first) &lt;- c(&quot;cellID_first&quot;, &quot;celltype_first&quot;, &quot;celltype_clust_first&quot;)
+celltype_second &lt;- data.frame(colData(sce_prot))[,c(&quot;cellID&quot;, &quot;celltype&quot;, &quot;celltype_clustered&quot;)]
+colnames(celltype_second) &lt;- c(&quot;cellID_second&quot;, &quot;celltype_second&quot;, &quot;celltype_clust_second&quot;)
+
+dat_relation &lt;- left_join(dat_relation, celltype_first, by = &quot;cellID_first&quot;)
+dat_relation &lt;- left_join(dat_relation, celltype_second, by = &quot;cellID_second&quot;)
+
+colnames(dat_relation)[5] &lt;- &quot;FirstImageNumber&quot;</code></pre>
+</div>
+<div id="prepare-relation-data-rna" class="section level2">
+<h2>Prepare Relation Data RNA</h2>
+<pre class="r"><code># prepare data and add cellID
+dat_relation_rna$cellID_first &lt;- paste(&quot;RNA&quot;, paste(dat_relation_rna$`First Image Number`, dat_relation_rna$`First Object Number`, sep = &quot;_&quot;), sep = &quot;_&quot;)
+dat_relation_rna$cellID_second &lt;- paste(&quot;RNA&quot;, paste(dat_relation_rna$`Second Image Number`, dat_relation_rna$`Second Object Number`, sep = &quot;_&quot;), sep = &quot;_&quot;)
+
+# add celltype status to first and second label
+celltype_first &lt;- data.frame(colData(sce_rna))[,c(&quot;cellID&quot;, &quot;celltype_rf&quot;, &quot;celltype_clustered&quot;)]
+colnames(celltype_first) &lt;- c(&quot;cellID_first&quot;, &quot;celltype_first&quot;, &quot;celltype_clust_first&quot;)
+celltype_second &lt;- data.frame(colData(sce_rna))[,c(&quot;cellID&quot;, &quot;celltype_rf&quot;, &quot;celltype_clustered&quot;)]
+colnames(celltype_second) &lt;- c(&quot;cellID_second&quot;, &quot;celltype_second&quot;, &quot;celltype_clust_second&quot;)
+
+dat_relation_rna &lt;- left_join(dat_relation_rna, celltype_first, by = &quot;cellID_first&quot;)
+dat_relation_rna &lt;- left_join(dat_relation_rna, celltype_second, by = &quot;cellID_second&quot;)
+
+colnames(dat_relation_rna)[5] &lt;- &quot;FirstImageNumber&quot;</code></pre>
+</div>
+</div>
+<div id="figure-5a" class="section level1">
+<h1>Figure 5A</h1>
+<div id="generate-adjacency-matrix-for-all-images" class="section level2">
+<h2>Generate adjacency matrix for all images</h2>
+<pre class="r"><code># subset sce for inflamed/exhausted in high samples
+sce_protein_sub &lt;- sce_prot[, sce_prot$dysfunction_density %in% c(&quot;high - High Dysfunction&quot;, &quot;high - Low Dysfunction&quot;)]
+
+# sample 9 images each
+images &lt;- data.frame(colData(sce_protein_sub)) %&gt;%
+  distinct(ImageNumber, .keep_all = T) %&gt;%
+  group_by(dysfunction_density) %&gt;%
+  #filter(ImageNumber %in% sample(ImageNumber, 9)) %&gt;%
+  select(ImageNumber, dysfunction_density)
+
+return &lt;- list()
+
+for (i in c(&quot;high - High Dysfunction&quot;, &quot;high - Low Dysfunction&quot;)){
+  # title name
+  title_name &lt;- i
+
+  # count interactions in 20 sample images
+  cur_dat_relation &lt;- data.frame(dat_relation) %&gt;%
+    filter(FirstImageNumber %in% images[images$dysfunction_density == i,]$ImageNumber) %&gt;%
+    select(&quot;celltype_first&quot; ,&quot;celltype_second&quot;) %&gt;%
+    dplyr::count(celltype_first,celltype_second) %&gt;%
+    data.frame()
+  
+  # remove tumor-tumor interactions
+  cur_dat_relation &lt;- cur_dat_relation[cur_dat_relation$celltype_first != &quot;Tumor&quot;,]
+  cur_dat_relation &lt;- cur_dat_relation[cur_dat_relation$celltype_first != &quot;unknown&quot;,]
+  cur_dat_relation &lt;- cur_dat_relation[cur_dat_relation$celltype_second != &quot;unknown&quot;,]
+  
+    # count interactions
+  cur_dat_relation_subcluster &lt;- data.frame(dat_relation) %&gt;%
+    filter(FirstImageNumber %in% images[images$dysfunction_density == i,]$ImageNumber) %&gt;%
+    select(&quot;celltype_first&quot; , &quot;celltype_clust_second&quot;) %&gt;%
+    dplyr::count(celltype_first, celltype_clust_second) %&gt;%
+    data.frame()
+  
+  # make coord diagram
+  chordDiagramFromDataFrame(cur_dat_relation,
+                            grid.col = metadata(sce_prot)$colour_vectors$celltype,
+                            reduce = 0.05, 
+                            transparency = ifelse(cur_dat_relation[[1]] %in% c(&quot;CD8+ T cell&quot;),0,0.6),
+                            annotationTrack = c(&quot;grid&quot;))
+}</code></pre>
+<embed src="figure/Figure_5.rmd/Fig_5A_interaction_chord_groups-1.pdf" width="480" style="display: block; margin: auto;" type="application/pdf" />
+<embed src="figure/Figure_5.rmd/Fig_5A_interaction_chord_groups-2.pdf" width="480" style="display: block; margin: auto;" type="application/pdf" />
+<pre class="r"><code># create legend for tumor subclusters
+lgd2 = Legend(labels = names(metadata(sce_prot)$colour_vector$celltype), title = &quot;Cell Type&quot;, legend_gp = gpar(fill = unname(metadata(sce_prot)$colour_vector$celltype)))
+draw(packLegend(lgd2, 
+                #lgd1, 
+                gap = unit(2, &quot;cm&quot;)))</code></pre>
+<embed src="figure/Figure_5.rmd/Fig_5A_legend-1.pdf" width="144" style="display: block; margin: auto;" type="application/pdf" />
+</div>
+</div>
+<div id="figure-5b" class="section level1">
+<h1>Figure 5B</h1>
+<div id="celltypes" class="section level2">
+<h2>Celltypes</h2>
+<pre class="r"><code>celltypes &lt;- data.frame(colData(sce_prot)) %&gt;%
+  filter(celltype != &quot;Tumor&quot;) %&gt;%
+  group_by(ImageNumber, bcell_patch_score, dysfunction_score, celltype) %&gt;%
+  summarise(n=n()) %&gt;%
+  mutate(fraction = n/sum(n)) %&gt;%
+  filter(is.na(dysfunction_score) == FALSE)
+
+celltypes$bcell_patch_score &lt;- as.character(celltypes$bcell_patch_score)
+celltypes$bcell_patch_score &lt;- factor(celltypes$bcell_patch_score, levels = c(&quot;No B cells&quot;, &quot;No B cell Patches&quot;, &quot;Small B cell Patches&quot;, &quot;B cell Follicles&quot;))
+
+stat.test &lt;- celltypes %&gt;%
+  group_by(celltype) %&gt;%
+  wilcox_test(data = ., fraction ~ dysfunction_score) %&gt;%
+  adjust_pvalue(method = &quot;BH&quot;) %&gt;%
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %&gt;%
+  add_x_position(x = &quot;dysfunction_score&quot;, dodge = 0.8)
+
+
+ggplot(celltypes, aes(x=celltype, y=fraction)) +
+  geom_boxplot(alpha=.5, lwd = 1, outlier.shape = NA, aes(fill=dysfunction_score)) +
+  geom_quasirandom(dodge.width=0.75, alpha=1, size=1, aes(group=dysfunction_score)) + 
+  stat_pvalue_manual(stat.test, x = &quot;celltype&quot;, label = &quot;p.adj.signif&quot;, size = 7, y.position = -0.05) + 
+  theme_bw() +
+  theme(text = element_text(size = 20),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+  guides(fill=guide_legend(title=&quot;Dysfunction Score&quot;, override.aes = c(lwd=0.5, alpha=1)), col=guide_legend(title=&quot;B cell Score&quot;)) +
+  xlab(&quot;&quot;) + 
+  ylab(&quot;Cell Type Fractions&quot;) +
+  scale_color_manual(values = c(&quot;black&quot;, &quot;lightblue&quot;, &quot;darkblue&quot;, &quot;red&quot;, &quot;red4&quot;),
+                    labels = c(&quot; &quot;, &quot;no Bcells&quot;, &quot;few Bcells&quot;, &quot;small patches&quot;, &quot;large patches&quot;),
+                    guide = TRUE)</code></pre>
+<embed src="figure/Figure_5.rmd/Fig_5B_celltype_fractions_dysfunction-1.pdf" width="825.6" style="display: block; margin: auto;" type="application/pdf" />
+<pre class="r"><code># check images above median in Low Dysfunction group for B cells (all have large patches)
+celltypes %&gt;%
+  filter(dysfunction_score == &quot;Low Dysfunction&quot;) %&gt;%
+  filter(celltype == &quot;B cell&quot;) %&gt;%
+  group_by(dysfunction_score) %&gt;%
+  mutate(median_frac = median(fraction)) %&gt;%
+  filter(fraction &gt; median_frac)</code></pre>
+<pre><code># A tibble: 8 × 7
+# Groups:   dysfunction_score [1]
+  ImageNumber bcell_patch_score    dysfunction_score celltype     n fraction
+        &lt;int&gt; &lt;fct&gt;                &lt;chr&gt;             &lt;chr&gt;    &lt;int&gt;    &lt;dbl&gt;
+1          19 Small B cell Patches Low Dysfunction   B cell     131   0.0761
+2          29 B cell Follicles     Low Dysfunction   B cell     883   0.134 
+3          33 B cell Follicles     Low Dysfunction   B cell    4829   0.365 
+4          86 B cell Follicles     Low Dysfunction   B cell    2416   0.253 
+5          95 B cell Follicles     Low Dysfunction   B cell    1602   0.116 
+6         109 B cell Follicles     Low Dysfunction   B cell    1337   0.255 
+7         114 B cell Follicles     Low Dysfunction   B cell    2895   0.362 
+8         118 B cell Follicles     Low Dysfunction   B cell     782   0.204 
+# … with 1 more variable: median_frac &lt;dbl&gt;</code></pre>
+</div>
+</div>
+<div id="figure-5c" class="section level1">
+<h1>Figure 5C</h1>
+<div id="b-cell-patch-grouping-for-dysfunction-groups" class="section level2">
+<h2>B cell patch grouping for dysfunction groups</h2>
+<pre class="r"><code>a &lt;- data.frame(colData(sce_rna)) %&gt;%
+  distinct(Description, .keep_all = T) %&gt;%
+  group_by(bcell_patch_score, dysfunction_score) %&gt;%
+  summarise(n=n()) %&gt;%
+  filter(is.na(dysfunction_score) == F) %&gt;%
+  group_by(dysfunction_score) %&gt;%
+  mutate(fraction = n / sum(n)) %&gt;%
+  ungroup()
+
+ggplot(a) + 
+  geom_col(aes(y=dysfunction_score, x=fraction, fill=bcell_patch_score)) +
+  theme_minimal() + 
+  theme(text = element_text(size = 22)) +
+  xlab(&quot;Fraction of Samples&quot;) +
+  ylab(&quot;&quot;) +
+  guides(fill=guide_legend(title=&quot;B cell Score&quot;))</code></pre>
+<embed src="figure/Figure_5.rmd/Fig_5C_bcell_groups_fraction-1.pdf" width="960" style="display: block; margin: auto;" type="application/pdf" />
+</div>
+</div>
+<div id="figure-5d" class="section level1">
+<h1>Figure 5D</h1>
+<div id="analysis-and-visualization" class="section level2">
+<h2>Analysis and Visualization</h2>
+<pre class="r"><code># fraction of all CXCL13 production
+cxcl13_fraction &lt;- data.frame(colData(sce_rna)) %&gt;%
+  mutate(mmLocationPunch = paste(MM_location, Location, sep = &quot;_&quot;)) %&gt;%
+  filter(mmLocationPunch != &quot;LN_M&quot;) %&gt;% # remove LN margin samples 
+  filter(CXCL13 == 1) %&gt;% 
+  group_by(Description, celltype, .drop = FALSE) %&gt;%
+  summarise(n=n()) %&gt;%
+  reshape2::dcast(Description ~ celltype, fill = 0, value.var = &quot;n&quot;) %&gt;%
+  reshape2::melt(id.vars=c(&quot;Description&quot;), variable.name = &quot;celltype&quot;, value.name = &quot;n&quot;) %&gt;%
+  group_by(Description, .drop = FALSE) %&gt;%
+  mutate(fraction = n / sum(n)) %&gt;%
+  filter(celltype %in% c(&quot;CD8+ T cell&quot;, &quot;CD8- T cell&quot;, &quot;HLA-DR&quot;))
+
+all_images &lt;- data.frame(colData(sce_rna)) %&gt;%
+  mutate(mmLocationPunch = paste(MM_location, Location, sep = &quot;_&quot;)) %&gt;%
+  filter(mmLocationPunch != &quot;LN_M&quot;) %&gt;%
+  distinct(Description, .keep_all = T) %&gt;%
+  select(Description)
+
+# left_join to have all images
+all_images &lt;- left_join(all_images, cxcl13_fraction)
+
+# add 0 to images that do not containt CXCL13 producing cells
+all_images &lt;- all_images %&gt;%
+  reshape2::dcast(Description ~ celltype, value.var = &quot;fraction&quot;, fill = 0) %&gt;%
+  select(-`NA`) %&gt;%
+  reshape2::melt(id.vars=c(&quot;Description&quot;), variable.name = &quot;celltype&quot;, value.name = &quot;fraction&quot;)
+
+# get Bcell score for each image
+Bcell &lt;- data.frame(colData(sce_rna)) %&gt;%
+  distinct(Description, .keep_all = T) %&gt;%
+  group_by(Description) %&gt;%
+  select(Description, bcell_patch_score)
+
+# add Bcell score
+all_images &lt;- left_join(all_images, Bcell[,c(&quot;Description&quot;,&quot;bcell_patch_score&quot;)])
+
+# stats - is there a difference between celltype fractions in the groups?
+all_images %&gt;%
+  group_by(bcell_patch_score) %&gt;%
+  wilcox_test(fraction ~ celltype) %&gt;%
+  adjust_pvalue(method = &quot;BH&quot;) %&gt;%
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1))</code></pre>
+<pre><code># A tibble: 12 × 10
+   bcell_patch_score .y.   group1 group2    n1    n2 statistic        p    p.adj
+ * &lt;fct&gt;             &lt;chr&gt; &lt;chr&gt;  &lt;chr&gt;  &lt;int&gt; &lt;int&gt;     &lt;dbl&gt;    &lt;dbl&gt;    &lt;dbl&gt;
+ 1 No B cells        frac… CD8- … CD8+ …    54    54     1485  8.52e- 1 8.52e- 1
+ 2 No B cells        frac… CD8- … HLA-DR    54    54     1930. 6.97e- 5 1.39e- 4
+ 3 No B cells        frac… CD8+ … HLA-DR    54    54     1956. 3.58e- 5 8.59e- 5
+ 4 No B cell Patches frac… CD8- … CD8+ …    52    52     1478. 4.06e- 1 4.87e- 1
+ 5 No B cell Patches frac… CD8- … HLA-DR    52    52     2308. 8.1 e-12 9.72e-11
+ 6 No B cell Patches frac… CD8+ … HLA-DR    52    52     2133  6.87e- 9 4.12e- 8
+ 7 Small B cell Pat… frac… CD8- … CD8+ …    19    19      116  6.1 e- 2 9.15e- 2
+ 8 Small B cell Pat… frac… CD8- … HLA-DR    19    19      349  4.14e- 7 1.66e- 6
+ 9 Small B cell Pat… frac… CD8+ … HLA-DR    19    19      337  2.17e- 6 6.51e- 6
+10 B cell Follicles  frac… CD8- … CD8+ …    14    14      160  4   e- 3 6.86e- 3
+11 B cell Follicles  frac… CD8- … HLA-DR    14    14      112. 5.2 e- 1 5.67e- 1
+12 B cell Follicles  frac… CD8+ … HLA-DR    14    14       68  1.75e- 1 2.33e- 1
+# … with 1 more variable: p.adj.signif &lt;chr&gt;</code></pre>
+<pre class="r"><code>ggplot(all_images,aes(x=bcell_patch_score, y = as.numeric(fraction), fill=celltype)) + 
+  geom_boxplot(alpha=1, lwd=1, outlier.shape = NA, aes(fill=celltype)) + 
+  geom_quasirandom(dodge.width=0.75, alpha=1, size=2, aes(fill=celltype)) +
+  ylab(&quot;Fraction of Total CXCL13 Expression&quot;) +
+  #stat_pvalue_manual(stat.test, label = &quot;p.adj.signif&quot;, size = 7) + 
+  xlab(&quot;&quot;) + 
+  theme_bw() +
+  theme(text = element_text(size=19),
+        axis.text.x = element_text(angle=45, vjust=1, hjust=1)) +
+  scale_fill_manual(values = unname(metadata(sce_rna)$colour_vectors$celltype[c(&quot;CD8+ T cell&quot;, &quot;CD8- T cell&quot;, &quot;HLA-DR&quot;)]),
+                    breaks = names(metadata(sce_rna)$colour_vectors$celltype[c(&quot;CD8+ T cell&quot;, &quot;CD8- T cell&quot;, &quot;HLA-DR&quot;)])) +
+  guides(fill=guide_legend(title=&quot;Cell Type&quot;, override.aes = c(lwd=0.5))) +
+  scale_color_discrete(guide = FALSE)</code></pre>
+<pre><code>Warning: It is deprecated to specify `guide = FALSE` to remove a guide. Please
+use `guide = &quot;none&quot;` instead.</code></pre>
+<embed src="figure/Figure_5.rmd/Fig_5D_Bcell_patches_CXCL13_fractions-1.pdf" width="758.4" style="display: block; margin: auto;" type="application/pdf" />
+</div>
+</div>
+<div id="figure-5e" class="section level1">
+<h1>Figure 5E</h1>
+<div id="example-of-cxcl10-cluster-and-corresponding-community" class="section level2">
+<h2>Example of CXCL10 Cluster and corresponding Community</h2>
+<pre class="r"><code>example &lt;- findPatch(sce_prot[,sce_prot$Description == &quot;C9&quot;], sce_prot[,colData(sce_prot)$celltype %in% c(&quot;B cell&quot;, &quot;BnT cell&quot;)]$cellID, 
+                    &#39;cellID&#39;, 
+                    &#39;Center_X&#39;, &#39;Center_Y&#39;, 
+                    &#39;Description&#39;, 
+                    distance = 15, 
+                    min_clust_size = 20,
+                    output_colname = &quot;example_patch&quot;)</code></pre>
+<pre><code>Time difference of 2.423921 secs
+[1] &quot;patches successfully added to sce object&quot;</code></pre>
+<pre class="r"><code>example &lt;- findMilieu(example, 
+              &#39;cellID&#39;, 
+              &#39;Center_X&#39;, &#39;Center_Y&#39;, 
+              &#39;Description&#39;, 
+              &#39;example_patch&#39;, 
+              distance = 50,
+              output_colname = &quot;example_milieu&quot;,
+              plot = TRUE)</code></pre>
+<embed src="figure/Figure_5.rmd/Fig_5E_clusters_and_communities-1.pdf" width="576" style="display: block; margin: auto;" type="application/pdf" />
+<pre><code>Time difference of 3.288275 secs
+[1] &quot;milieus successfully added to sce object&quot;</code></pre>
+</div>
+</div>
+<div id="figure-5f" class="section level1">
+<h1>Figure 5F</h1>
+<div id="fraction-of-tcf7-tcells-cells-in-b-cell-patch-groups" class="section level2">
+<h2>Fraction of Tcf7 Tcells cells in B cell patch groups</h2>
+<pre class="r"><code>celltypes &lt;- data.frame(colData(sce_prot)) %&gt;%
+  mutate(mmLocationPunch = paste(MM_location, Location, sep = &quot;_&quot;)) %&gt;%
+  filter(mmLocationPunch != &quot;LN_M&quot;) %&gt;% # remove LN margin images
+  mutate(TCF7_PD1 = paste(PD1, TCF7, sep = &quot;_&quot;)) %&gt;%
+  group_by(PatientID,BlockID, Description, bcell_patch_score, celltype, TCF7_PD1) %&gt;%
+  summarise(n=n()) %&gt;% 
+  reshape2::dcast(PatientID + BlockID + Description + bcell_patch_score + celltype ~ TCF7_PD1, value.var = &quot;n&quot;, fill=0) %&gt;%
+  reshape2::melt(id.vars = c(&quot;PatientID&quot;,&quot;BlockID&quot;, &quot;Description&quot;, &quot;bcell_patch_score&quot;, &quot;celltype&quot;), 
+                 variable.name = &quot;TCF7_PD1&quot;, value.name = &quot;n&quot;) %&gt;%
+  reshape2::dcast(PatientID + BlockID + Description + bcell_patch_score + TCF7_PD1 ~ celltype, value.var = &quot;n&quot;, fill=0) %&gt;%
+  reshape2::melt(id.vars = c(&quot;PatientID&quot;,&quot;BlockID&quot;, &quot;Description&quot;, &quot;bcell_patch_score&quot;, &quot;TCF7_PD1&quot;), 
+                 variable.name = &quot;celltype&quot;, value.name = &quot;n&quot;) %&gt;%
+  group_by(Description, celltype) %&gt;%
+  mutate(fraction = n/sum(n)) %&gt;%
+  mutate(total_cells = sum(n)) %&gt;%
+  ungroup() %&gt;%
+  filter(celltype %in% c(&quot;CD8+ T cell&quot;, &quot;CD4+ T cell&quot;)) 
+
+celltypes$bcell_patch_score &lt;- as.character(celltypes$bcell_patch_score)
+celltypes$bcell_patch_score &lt;- factor(celltypes$bcell_patch_score, levels = c(&quot;No B cells&quot;, &quot;No B cell Patches&quot;, &quot;Small B cell Patches&quot;, &quot;B cell Follicles&quot;))
+
+celltypes$celltype &lt;- factor(celltypes$celltype, levels = c(&quot;CD8+ T cell&quot;, &quot;CD4+ T cell&quot;))
+
+stat.test &lt;- celltypes %&gt;%
+  group_by(celltype, TCF7_PD1) %&gt;%
+  kruskal_test(data = ., fraction ~ bcell_patch_score) %&gt;%
+  adjust_pvalue(method = &quot;BH&quot;) %&gt;%
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1)) %&gt;%
+  mutate(group1 = celltype, group2 = TCF7_PD1) %&gt;%
+  add_xy_position()
+
+ggplot(celltypes, aes(x=TCF7_PD1, y=fraction)) +
+  geom_boxplot(alpha=1, lwd = 0.5, outlier.size = 0.5, aes(fill=bcell_patch_score)) +
+  stat_pvalue_manual(x = &quot;group2&quot;, stat.test, y.position = -0.1, size = 6) +
+  theme_bw() +
+  theme(text = element_text(size = 14),
+        axis.text.x = element_text(angle = 45, vjust = 1, hjust=1)) + 
+  guides(fill=guide_legend(title=&quot;B cell Score&quot;, override.aes = c(lwd=0.5))) +
+  xlab(&quot;&quot;) + 
+  ylab(&quot;Fraction of Population&quot;) +
+  facet_wrap(~celltype, scales = &quot;free&quot;) +
+  ylim(-0.1,1.1)</code></pre>
+<pre><code>Warning: Removed 40 rows containing non-finite values (stat_boxplot).</code></pre>
+<embed src="figure/Figure_5.rmd/Fig_5F_cd8_tcf7_pd1_bcells-1.pdf" width="639.36" style="display: block; margin: auto;" type="application/pdf" />
+</div>
+<div id="magnify-tcf7pd1-population" class="section level2">
+<h2>Magnify TCF7+PD1+ population</h2>
+<pre class="r"><code># magnify PD1+TCF7+ population
+ggplot(celltypes[celltypes$TCF7_PD1 == &quot;PD1+_TCF7+&quot;,], aes(x=TCF7_PD1, y=fraction)) +
+  geom_boxplot(alpha=1, lwd = 0.5, outlier.size = 0.5, aes(fill=bcell_patch_score)) +
+  theme_bw() +
+  theme(text = element_text(size = 14),
+        axis.text.x = element_blank(),
+        legend.position = &quot;none&quot;) + 
+  xlab(&quot;&quot;) + 
+  ylab(&quot;&quot;) +
+  facet_wrap(~celltype, scales = &quot;free&quot;) +
+  coord_cartesian(ylim = c(0,0.05))</code></pre>
+<pre><code>Warning: Removed 10 rows containing non-finite values (stat_boxplot).</code></pre>
+<embed src="figure/Figure_5.rmd/Fig_5F_zoom-1.pdf" width="393.6" style="display: block; margin: auto;" type="application/pdf" />
+</div>
+</div>
+<div id="figure-5g" class="section level1">
+<h1>Figure 5G</h1>
+<div id="percentage-of-tcf7pd1cd8-cells-that-are-part-of-a-bcell-milieu" class="section level2">
+<h2>Percentage of TCF7+PD1+CD8+ cells that are part of a Bcell milieu</h2>
+<pre class="r"><code># what fraction of each celltype is part of a milieu?
+cur_dat &lt;- data.frame(colData(sce_prot)) %&gt;%
+  mutate(MMLocationPunch = paste(MM_location, Location, sep = &quot;_&quot;)) %&gt;%
+  filter(MMLocationPunch != &quot;LN_M&quot;) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  filter(celltype %in% c(&quot;CD8+ T cell&quot;, &quot;CD4+ T cell&quot;)) %&gt;%
+  mutate(status = paste(TCF7, PD1, sep = &quot;_&quot;)) %&gt;%
+  mutate(milieu_binary = ifelse(bcell_milieu &gt; 0, 1, 0)) %&gt;%
+  group_by(Description, milieu_binary, celltype, status) %&gt;%
+  summarise(n=n()) %&gt;%
+  group_by(Description, celltype, status) %&gt;%
+  mutate(fraction_in_milieu = n / sum(n)) %&gt;%
+  filter(milieu_binary == 1)
+
+# what fraction of the total cell area is made up by cells that are part of a milieu
+milieu_area &lt;- data.frame(colData(sce_prot)) %&gt;%
+  mutate(MMLocationPunch = paste(MM_location, Location, sep = &quot;_&quot;)) %&gt;%
+  filter(MMLocationPunch != &quot;LN_M&quot;) %&gt;%
+  filter(Location != &quot;CTRL&quot;) %&gt;%
+  mutate(milieu_binary = ifelse(bcell_milieu &gt; 0, 1, 0)) %&gt;%
+  group_by(Description, milieu_binary) %&gt;%
+  summarise(area = sum(Area)) %&gt;% 
+  group_by(Description) %&gt;%
+  mutate(fraction_of_area = area / sum(area))  %&gt;%
+  filter(row_number() == n())
+
+sum &lt;- left_join(cur_dat, milieu_area, by=&quot;Description&quot;)
+
+# calculate metric - milieu_fraction divided by milieu-area-fraction (this normalizes the first metric)
+sum$metric &lt;- sum$fraction_in_milieu / sum$fraction_of_area
+
+sum$celltype &lt;- factor(sum$celltype, levels = c(&quot;CD8+ T cell&quot;, &quot;CD4+ T cell&quot;))
+
+# one-sample t test
+stat.test &lt;- sum %&gt;%
+  group_by(celltype, status) %&gt;%
+  mutate(log10_metric = log10(metric)) %&gt;%
+  t_test(log10_metric ~ 1, mu = 0, alternative = &quot;greater&quot;, detailed = TRUE) %&gt;%
+  adjust_pvalue() %&gt;%
+  add_significance(&quot;p.adj&quot;,cutpoints = c(0, 1e-04, 0.001, 0.01, 0.1, 1))
+
+ggplot(sum, aes(x=sum$status, y=log10(metric))) +
+  geom_boxplot(outlier.shape = NA) + 
+  geom_quasirandom(size=0.75) +
+  geom_hline(yintercept = 0) +
+  facet_wrap(~celltype) +
+  theme_bw() + 
+  theme(text=element_text(size=14),
+        axis.text.x = element_text(angle=45, vjust=1, hjust=1)) +
+  stat_pvalue_manual(
+    stat.test, x = &quot;status&quot;, y.position = 1.5,
+    label = &quot;p.adj.signif&quot;,
+    position = position_dodge(0.8), 
+    size=6) + 
+  ylab(&quot;Enrichment in B cell milieus (log10)&quot;) +
+  xlab(&quot;&quot;)</code></pre>
+<embed src="figure/Figure_5.rmd/Fig_5G_milieu_presence_tcells-1.pdf" width="470.4" style="display: block; margin: auto;" type="application/pdf" />
+<br>
+<p>
+<button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
+<span class="glyphicon glyphicon-wrench" aria-hidden="true"></span> Session information
+</button>
+</p>
+<div id="workflowr-sessioninfo" class="collapse">
+<pre class="r"><code>sessionInfo()</code></pre>
+<pre><code>R version 4.1.2 (2021-11-01)
+Platform: x86_64-pc-linux-gnu (64-bit)
+Running under: Ubuntu 20.04.3 LTS
+
+Matrix products: default
+BLAS/LAPACK: /usr/lib/x86_64-linux-gnu/openblas-pthread/libopenblasp-r0.3.8.so
+
+locale:
+ [1] LC_CTYPE=en_US.UTF-8       LC_NUMERIC=C              
+ [3] LC_TIME=en_US.UTF-8        LC_COLLATE=en_US.UTF-8    
+ [5] LC_MONETARY=en_US.UTF-8    LC_MESSAGES=en_US.UTF-8   
+ [7] LC_PAPER=en_US.UTF-8       LC_NAME=C                 
+ [9] LC_ADDRESS=C               LC_TELEPHONE=C            
+[11] LC_MEASUREMENT=en_US.UTF-8 LC_IDENTIFICATION=C       
+
+attached base packages:
+[1] grid      stats4    stats     graphics  grDevices utils     datasets 
+[8] methods   base     
+
+other attached packages:
+ [1] RANN_2.6.1                  concaveman_1.1.0           
+ [3] sf_1.0-5                    rstatix_0.7.0              
+ [5] ggridges_0.5.3              corrplot_0.92              
+ [7] cytomapper_1.6.0            EBImage_4.36.0             
+ [9] cowplot_1.1.1               scater_1.22.0              
+[11] scuttle_1.4.0               dittoSeq_1.6.0             
+[13] ggpmisc_0.4.5               ggpp_0.4.3                 
+[15] gridExtra_2.3               ggbeeswarm_0.6.0           
+[17] ggpubr_0.4.0                RColorBrewer_1.1-2         
+[19] circlize_0.4.13             colorRamps_2.3             
+[21] ComplexHeatmap_2.10.0       data.table_1.14.2          
+[23] forcats_0.5.1               stringr_1.4.0              
+[25] purrr_0.3.4                 readr_2.1.2                
+[27] tidyr_1.2.0                 tibble_3.1.6               
+[29] ggplot2_3.3.5               tidyverse_1.3.1            
+[31] reshape2_1.4.4              SingleCellExperiment_1.16.0
+[33] SummarizedExperiment_1.24.0 Biobase_2.54.0             
+[35] GenomicRanges_1.46.1        GenomeInfoDb_1.30.1        
+[37] IRanges_2.28.0              S4Vectors_0.32.3           
+[39] BiocGenerics_0.40.0         MatrixGenerics_1.6.0       
+[41] matrixStats_0.61.0          dplyr_1.0.7                
+[43] workflowr_1.7.0            
+
+loaded via a namespace (and not attached):
+  [1] utf8_1.2.2                shinydashboard_0.7.2     
+  [3] tidyselect_1.1.1          htmlwidgets_1.5.4        
+  [5] BiocParallel_1.28.3       munsell_0.5.0            
+  [7] ScaledMatrix_1.2.0        units_0.7-2              
+  [9] codetools_0.2-18          withr_2.4.3              
+ [11] colorspace_2.0-2          highr_0.9                
+ [13] knitr_1.37                rstudioapi_0.13          
+ [15] ggsignif_0.6.3            labeling_0.4.2           
+ [17] git2r_0.29.0              GenomeInfoDbData_1.2.7   
+ [19] farver_2.1.0              pheatmap_1.0.12          
+ [21] rhdf5_2.38.0              rprojroot_2.0.2          
+ [23] vctrs_0.3.8               generics_0.1.2           
+ [25] xfun_0.29                 R6_2.5.1                 
+ [27] doParallel_1.0.16         clue_0.3-60              
+ [29] rsvd_1.0.5                locfit_1.5-9.4           
+ [31] bitops_1.0-7              rhdf5filters_1.6.0       
+ [33] DelayedArray_0.20.0       assertthat_0.2.1         
+ [35] promises_1.2.0.1          scales_1.1.1             
+ [37] beeswarm_0.4.0            gtable_0.3.0             
+ [39] beachmat_2.10.0           processx_3.5.2           
+ [41] rlang_1.0.0               MatrixModels_0.5-0       
+ [43] systemfonts_1.0.3         GlobalOptions_0.1.2      
+ [45] broom_0.7.12              yaml_2.2.2               
+ [47] abind_1.4-5               modelr_0.1.8             
+ [49] backports_1.4.1           httpuv_1.6.5             
+ [51] tools_4.1.2               ellipsis_0.3.2           
+ [53] raster_3.5-15             jquerylib_0.1.4          
+ [55] proxy_0.4-26              Rcpp_1.0.8               
+ [57] plyr_1.8.6                sparseMatrixStats_1.6.0  
+ [59] zlibbioc_1.40.0           classInt_0.4-3           
+ [61] RCurl_1.98-1.5            ps_1.6.0                 
+ [63] GetoptLong_1.0.5          viridis_0.6.2            
+ [65] haven_2.4.3               ggrepel_0.9.1            
+ [67] cluster_2.1.2             fs_1.5.2                 
+ [69] magrittr_2.0.2            SparseM_1.81             
+ [71] reprex_2.0.1              whisker_0.4              
+ [73] hms_1.1.1                 mime_0.12                
+ [75] evaluate_0.14             fftwtools_0.9-11         
+ [77] xtable_1.8-4              jpeg_0.1-9               
+ [79] readxl_1.3.1              shape_1.4.6              
+ [81] compiler_4.1.2            V8_4.0.0                 
+ [83] KernSmooth_2.23-20        crayon_1.4.2             
+ [85] htmltools_0.5.2           later_1.3.0              
+ [87] tzdb_0.2.0                tiff_0.1-11              
+ [89] lubridate_1.8.0           DBI_1.1.2                
+ [91] dbplyr_2.1.1              Matrix_1.4-0             
+ [93] car_3.0-12                cli_3.1.1                
+ [95] parallel_4.1.2            pkgconfig_2.0.3          
+ [97] getPass_0.2-2             sp_1.4-6                 
+ [99] terra_1.5-17              xml2_1.3.3               
+[101] foreach_1.5.2             svglite_2.0.0            
+[103] vipor_0.4.5               bslib_0.3.1              
+[105] XVector_0.34.0            rvest_1.0.2              
+[107] callr_3.7.0               digest_0.6.29            
+[109] rmarkdown_2.11            cellranger_1.1.0         
+[111] DelayedMatrixStats_1.16.0 curl_4.3.2               
+[113] shiny_1.7.1               quantreg_5.87            
+[115] rjson_0.2.21              lifecycle_1.0.1          
+[117] jsonlite_1.7.3            Rhdf5lib_1.16.0          
+[119] carData_3.0-5             BiocNeighbors_1.12.0     
+[121] viridisLite_0.4.0         fansi_1.0.2              
+[123] pillar_1.7.0              lattice_0.20-45          
+[125] fastmap_1.1.0             httr_1.4.2               
+[127] glue_1.6.1                png_0.1-7                
+[129] iterators_1.0.13          svgPanZoom_0.3.4         
+[131] class_7.3-20              stringi_1.7.6            
+[133] sass_0.4.0                HDF5Array_1.22.1         
+[135] BiocSingular_1.10.0       e1071_1.7-9              
+[137] irlba_2.3.5              </code></pre>
+</div>
+</div>
+</div>
+
+
+<!-- Adjust MathJax settings so that all math formulae are shown using
+TeX fonts only; see
+https://docs.mathjax.org/en/latest/web/configuration.html. This will make
+the presentation more consistent at the cost of the webpage sometimes
+taking slightly longer to load. Note that this only works because the
+footer is added to webpages before the MathJax javascript. -->
+<script type="text/x-mathjax-config">
+  MathJax.Hub.Config({
+    "HTML-CSS": { availableFonts: ["TeX"] }
+  });
+</script>
+
+
+
+
+</div>
+</div>
+
+</div>
+
+<script>
+
+// add bootstrap table styles to pandoc tables
+function bootstrapStylePandocTables() {
+  $('tr.odd').parent('tbody').parent('table').addClass('table table-condensed');
+}
+$(document).ready(function () {
+  bootstrapStylePandocTables();
+});
+
+
+</script>
+
+<!-- tabsets -->
+
+<script>
+$(document).ready(function () {
+  window.buildTabsets("TOC");
+});
+
+$(document).ready(function () {
+  $('.tabset-dropdown > .nav-tabs > li').click(function () {
+    $(this).parent().toggleClass('nav-tabs-open');
+  });
+});
+</script>
+
+<!-- code folding -->
+
+<script>
+$(document).ready(function ()  {
+
+    // temporarily add toc-ignore selector to headers for the consistency with Pandoc
+    $('.unlisted.unnumbered').addClass('toc-ignore')
+
+    // move toc-ignore selectors from section div to header
+    $('div.section.toc-ignore')
+        .removeClass('toc-ignore')
+        .children('h1,h2,h3,h4,h5').addClass('toc-ignore');
+
+    // establish options
+    var options = {
+      selectors: "h1,h2,h3",
+      theme: "bootstrap3",
+      context: '.toc-content',
+      hashGenerator: function (text) {
+        return text.replace(/[.\\/?&!#<>]/g, '').replace(/\s/g, '_');
+      },
+      ignoreSelector: ".toc-ignore",
+      scrollTo: 0
+    };
+    options.showAndHide = true;
+    options.smoothScroll = true;
+
+    // tocify
+    var toc = $("#TOC").tocify(options).data("toc-tocify");
+});
+</script>
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>
