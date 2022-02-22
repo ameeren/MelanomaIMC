@@ -451,10 +451,7 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="Supp-Figure_2.html">Supp-Figure 2</a>
-    </li>
-    <li>
-      <a href="Supp-Figure_4.html">Supp-Figure 4</a>
+      <a href="Supp-Figure_3.html">Supp-Figure 3</a>
     </li>
     <li>
       <a href="Supp-Figure_5.html">Supp-Figure 5</a>
@@ -484,6 +481,9 @@ div.tocify {
       <a href="Supp-Figure_13.html">Supp-Figure 13</a>
     </li>
     <li>
+      <a href="Supp-Figure_14.html">Supp-Figure 14</a>
+    </li>
+    <li>
       <a href="Table_ClinicalData.html">Clinical Data</a>
     </li>
   </ul>
@@ -497,9 +497,6 @@ div.tocify {
   <ul class="dropdown-menu" role="menu">
     <li>
       <a href="Summary_Statistics.html">Summary Statistics</a>
-    </li>
-    <li>
-      <a href="license.html">License</a>
     </li>
   </ul>
 </li>
@@ -542,7 +539,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2022-02-10
+<strong>Last updated:</strong> 2022-02-22
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -633,16 +630,16 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreea2860df480bbbf6833e9812ecd3c9f60a9b68e66targetblanka2860dfa"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/a2860df480bbbf6833e9812ecd3c9f60a9b68e66" target="_blank">a2860df</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreea2860df480bbbf6833e9812ecd3c9f60a9b68e66targetblanka2860dfa" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/a2860df480bbbf6833e9812ecd3c9f60a9b68e66" target="_blank">a2860df</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -652,8 +649,6 @@ Ignored files:
     Ignored:    .DS_Store
     Ignored:    .Rproj.user/
     Ignored:    Table_S4.csv
-    Ignored:    analysis/.DS_Store
-    Ignored:    analysis/._.DS_Store
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
     Ignored:    data/.DS_Store
@@ -662,10 +657,10 @@ Ignored files:
     Ignored:    data/full_data/
 
 Unstaged changes:
-    Modified:   analysis/Figure_5.rmd
-    Modified:   analysis/Supp-Figure_12.rmd
-    Modified:   analysis/Supp-Figure_13.rmd
-    Modified:   analysis/Supp-Figure_5.rmd
+    Modified:   .gitignore
+    Modified:   analysis/Supp-Figure_10.rmd
+    Modified:   analysis/_site.yml
+    Deleted:    analysis/license.Rmd
 
 </code></pre>
 <p>
@@ -704,6 +699,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/73aa80019a8950077ef2a01793a325aba443e842/docs/Figure_4.html" target="_blank">73aa800</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+<td>
+add .html for static website
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -1418,8 +1430,82 @@ leg &lt;- get_legend(p)</code></pre>
 use `guide = &quot;none&quot;` instead.</code></pre>
 <pre class="r"><code>grid.arrange(p + theme(legend.position = &quot;none&quot;))</code></pre>
 <embed src="figure/Figure_4.rmd/Fig_4A_tumor_profile_tcell-1.pdf" width="864" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4A_tumor_profile_tcell-1">
+Past versions of Fig_4A_tumor_profile_tcell-1.pdf
+</button>
+</p>
+<div id="fig-Fig_4A_tumor_profile_tcell-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4A_tumor_profile_tcell-1.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <pre class="r"><code>grid.arrange(leg)</code></pre>
 <embed src="figure/Figure_4.rmd/Fig_4A_tumor_profile_tcell_legend-1.pdf" width="192" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4A_tumor_profile_tcell_legend-1">
+Past versions of Fig_4A_tumor_profile_tcell_legend-1.pdf
+</button>
+</p>
+<div id="fig-Fig_4A_tumor_profile_tcell_legend-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4A_tumor_profile_tcell_legend-1.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="figure-4b" class="section level1">
@@ -1468,8 +1554,119 @@ plotCells(mask = mask_sub,
           exprs_values = &quot;scaled_asinh&quot;,
           scale = TRUE)</code></pre>
 <embed src="figure/Figure_4.rmd/Fig_4B_example_images_B2Mexpression-1.pdf" width="672" style="display: block; margin: auto;" type="application/pdf" />
-<embed src="figure/Figure_4.rmd/Fig_4B_example_images_B2Mexpression-2.pdf" width="672" style="display: block; margin: auto;" type="application/pdf" />
-<embed src="figure/Figure_4.rmd/Fig_4B_example_images_B2Mexpression-3.pdf" width="672" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4B_example_images_B2Mexpression-1">
+Past versions of Fig_4B_example_images_B2Mexpression-1.pdf
+</button>
+</p>
+<div id="fig-Fig_4B_example_images_B2Mexpression-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4B_example_images_B2Mexpression-1.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><embed src="figure/Figure_4.rmd/Fig_4B_example_images_B2Mexpression-2.pdf" width="672" style="display: block; margin: auto;" type="application/pdf" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4B_example_images_B2Mexpression-2">
+Past versions of Fig_4B_example_images_B2Mexpression-2.pdf
+</button>
+</p>
+<div id="fig-Fig_4B_example_images_B2Mexpression-2" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4B_example_images_B2Mexpression-2.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p><embed src="figure/Figure_4.rmd/Fig_4B_example_images_B2Mexpression-3.pdf" width="672" style="display: block; margin: auto;" type="application/pdf" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4B_example_images_B2Mexpression-3">
+Past versions of Fig_4B_example_images_B2Mexpression-3.pdf
+</button>
+</p>
+<div id="fig-Fig_4B_example_images_B2Mexpression-3" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4B_example_images_B2Mexpression-3.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="figure-4c" class="section level1">
@@ -1531,6 +1728,43 @@ b &lt;- ggplot(tumor_dat_chemokine, aes(y=mean_B2M, x=log10(fraction_positive)))
 <pre><code>Warning: Removed 6 rows containing non-finite values (stat_smooth).</code></pre>
 <pre><code>Warning: Removed 6 rows containing non-finite values (stat_cor).</code></pre>
 <embed src="figure/Figure_4.rmd/Fig_4C_B2M_correlation-1.pdf" width="691.2" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4C_B2M_correlation-1">
+Past versions of Fig_4C_B2M_correlation-1.pdf
+</button>
+</p>
+<div id="fig-Fig_4C_B2M_correlation-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4C_B2M_correlation-1.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="figure-4d" class="section level1">
@@ -1556,6 +1790,43 @@ dittoHeatmap(CD8_sce,
                                                       `High Dysfunction` = &quot;#F8766D&quot;)),
              breaks = seq(-3,3, length.out = 101))</code></pre>
 <p><img src="figure/Figure_4.rmd/Fig_4D_Scaled_Heatmap_Dysfunction-1.png" width="864" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4D_Scaled_Heatmap_Dysfunction-1">
+Past versions of Fig_4D_Scaled_Heatmap_Dysfunction-1.png
+</button>
+</p>
+<div id="fig-Fig_4D_Scaled_Heatmap_Dysfunction-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4D_Scaled_Heatmap_Dysfunction-1.png" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="figure-4e" class="section level1">
@@ -1635,6 +1906,43 @@ h &lt;- Heatmap(m_sub, name = &quot;Scaled Expression&quot;,
 
 draw(h, heatmap_legend_side = &quot;bottom&quot;)</code></pre>
 <embed src="figure/Figure_4.rmd/Fig_4E_Scaled_Heatmap_RNA_Tumor-1.pdf" width="576" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4E_Scaled_Heatmap_RNA_Tumor-1">
+Past versions of Fig_4E_Scaled_Heatmap_RNA_Tumor-1.pdf
+</button>
+</p>
+<div id="fig-Fig_4E_Scaled_Heatmap_RNA_Tumor-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4E_Scaled_Heatmap_RNA_Tumor-1.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="figure-4e-1" class="section level1">
@@ -1656,6 +1964,43 @@ ggplot(tumor_fractions, aes(x=celltype_clustered, y=fraction)) +
   xlab(&quot;&quot;) +
   ylab(&quot;Fraction of\nTotal Tumor&quot;)</code></pre>
 <embed src="figure/Figure_4.rmd/Fig_4E_boxplot_heatmap-1.pdf" width="1056" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4E_boxplot_heatmap-1">
+Past versions of Fig_4E_boxplot_heatmap-1.pdf
+</button>
+</p>
+<div id="fig-Fig_4E_boxplot_heatmap-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4E_boxplot_heatmap-1.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="figure-4f" class="section level1">
@@ -1707,6 +2052,43 @@ ggplot(sum2, aes(x=cluster_number, y=fraction)) +
 <pre><code>Warning: It is deprecated to specify `guide = FALSE` to remove a guide. Please
 use `guide = &quot;none&quot;` instead.</code></pre>
 <embed src="figure/Figure_4.rmd/Fig_4F_interaction_cytotoxic_tumor_boxplots-1.pdf" width="604.8" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4F_interaction_cytotoxic_tumor_boxplots-1">
+Past versions of Fig_4F_interaction_cytotoxic_tumor_boxplots-1.pdf
+</button>
+</p>
+<div id="fig-Fig_4F_interaction_cytotoxic_tumor_boxplots-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4F_interaction_cytotoxic_tumor_boxplots-1.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="figure-4g" class="section level1">
@@ -1778,6 +2160,43 @@ ggplot(comb, aes(x=dysfunction_score, y=asinh)) +
   xlab(&quot;&quot;) +
   scale_y_continuous(expand = expansion(mult = c(0.05, 0.2)))</code></pre>
 <embed src="figure/Figure_4.rmd/Fig_4G_tumor_profile_per_image-1.pdf" width="672" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4G_tumor_profile_per_image-1">
+Past versions of Fig_4G_tumor_profile_per_image-1.pdf
+</button>
+</p>
+<div id="fig-Fig_4G_tumor_profile_per_image-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4G_tumor_profile_per_image-1.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="figure-4h" class="section level1">
@@ -1831,6 +2250,43 @@ ggplot(cur_dat, aes(x=asinh, y=log10(fraction))) +
 <pre><code>Warning: Removed 1 rows containing non-finite values (stat_smooth).</code></pre>
 <pre><code>Warning: Removed 1 rows containing non-finite values (stat_cor).</code></pre>
 <embed src="figure/Figure_4.rmd/Fig_4H_S100_dysfunction-1.pdf" width="585.6" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Fig_4H_S100_dysfunction-1">
+Past versions of Fig_4H_S100_dysfunction-1.pdf
+</button>
+</p>
+<div id="fig-Fig_4H_S100_dysfunction-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/3697a9bd298361090ced40384505ee3a4b77d5dc/docs/figure/Figure_4.rmd/Fig_4H_S100_dysfunction-1.pdf" target="_blank">3697a9b</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">

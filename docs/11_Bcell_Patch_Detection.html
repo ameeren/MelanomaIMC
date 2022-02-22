@@ -451,10 +451,7 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="Supp-Figure_2.html">Supp-Figure 2</a>
-    </li>
-    <li>
-      <a href="Supp-Figure_4.html">Supp-Figure 4</a>
+      <a href="Supp-Figure_3.html">Supp-Figure 3</a>
     </li>
     <li>
       <a href="Supp-Figure_5.html">Supp-Figure 5</a>
@@ -484,6 +481,9 @@ div.tocify {
       <a href="Supp-Figure_13.html">Supp-Figure 13</a>
     </li>
     <li>
+      <a href="Supp-Figure_14.html">Supp-Figure 14</a>
+    </li>
+    <li>
       <a href="Table_ClinicalData.html">Clinical Data</a>
     </li>
   </ul>
@@ -497,9 +497,6 @@ div.tocify {
   <ul class="dropdown-menu" role="menu">
     <li>
       <a href="Summary_Statistics.html">Summary Statistics</a>
-    </li>
-    <li>
-      <a href="license.html">License</a>
     </li>
   </ul>
 </li>
@@ -542,7 +539,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2022-02-10
+<strong>Last updated:</strong> 2022-02-22
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -633,16 +630,16 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreea2860df480bbbf6833e9812ecd3c9f60a9b68e66targetblanka2860dfa"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/a2860df480bbbf6833e9812ecd3c9f60a9b68e66" target="_blank">a2860df</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreea2860df480bbbf6833e9812ecd3c9f60a9b68e66targetblanka2860dfa" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/a2860df480bbbf6833e9812ecd3c9f60a9b68e66" target="_blank">a2860df</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -652,8 +649,6 @@ Ignored files:
     Ignored:    .DS_Store
     Ignored:    .Rproj.user/
     Ignored:    Table_S4.csv
-    Ignored:    analysis/.DS_Store
-    Ignored:    analysis/._.DS_Store
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
     Ignored:    data/.DS_Store
@@ -662,10 +657,10 @@ Ignored files:
     Ignored:    data/full_data/
 
 Unstaged changes:
-    Modified:   analysis/Figure_5.rmd
-    Modified:   analysis/Supp-Figure_12.rmd
-    Modified:   analysis/Supp-Figure_13.rmd
-    Modified:   analysis/Supp-Figure_5.rmd
+    Modified:   .gitignore
+    Modified:   analysis/Supp-Figure_10.rmd
+    Modified:   analysis/_site.yml
+    Deleted:    analysis/license.Rmd
 
 </code></pre>
 <p>
@@ -704,6 +699,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/73aa80019a8950077ef2a01793a325aba443e842/docs/11_Bcell_Patch_Detection.html" target="_blank">73aa800</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+<td>
+add .html for static website
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -832,7 +844,7 @@ quantile(sqrt(sce_prot[,sce_prot$celltype %in% c(&quot;B cell&quot;)]$Area/pi))<
 sce_prot &lt;- findPatch(sce_prot, sce_prot[,colData(sce_prot)$celltype %in% c(&quot;B cell&quot;, &quot;BnT cell&quot;)]$cellID, 
                     &#39;cellID&#39;, &#39;Center_X&#39;, &#39;Center_Y&#39;, &#39;ImageNumber&#39;, 
                     distance = 15, min_clust_size = 10, output_colname = &quot;bcell_patch&quot;)</code></pre>
-<pre><code>Time difference of 10.30734 mins
+<pre><code>Time difference of 10.19127 mins
 [1] &quot;patches successfully added to sce object&quot;</code></pre>
 <pre class="r"><code># number of B cell clusters
 length(unique(sce_prot$bcell_patch))</code></pre>
@@ -841,14 +853,14 @@ length(unique(sce_prot$bcell_patch))</code></pre>
 sce_prot &lt;- findMilieu(sce_prot, 
                      &#39;cellID&#39;, &#39;Center_X&#39;, &#39;Center_Y&#39;, &#39;ImageNumber&#39;, &#39;bcell_patch&#39;, 
                      distance = 30, output_colname = &quot;bcell_milieu&quot;)</code></pre>
-<pre><code>Time difference of 2.779587 mins
+<pre><code>Time difference of 2.777045 mins
 [1] &quot;milieus successfully added to sce object&quot;</code></pre>
 <pre class="r"><code># number of chemokine communities
 length(unique(sce_prot$bcell_milieu))</code></pre>
 <pre><code>[1] 375</code></pre>
 <pre class="r"><code>end = Sys.time()
 print(end-start)</code></pre>
-<pre><code>Time difference of 13.098 mins</code></pre>
+<pre><code>Time difference of 12.97945 mins</code></pre>
 </div>
 <div id="plot-some-patches" class="section level2">
 <h2>Plot some patches</h2>
@@ -859,7 +871,7 @@ print(end-start)</code></pre>
                     distance = 15, 
                     min_clust_size = 10,
                     output_colname = &quot;example_patch&quot;)</code></pre>
-<pre><code>Time difference of 0.4352202 secs
+<pre><code>Time difference of 0.4569645 secs
 [1] &quot;patches successfully added to sce object&quot;</code></pre>
 <pre class="r"><code>example &lt;- findMilieu(example, 
               &#39;cellID&#39;, 
@@ -870,7 +882,44 @@ print(end-start)</code></pre>
               output_colname = &quot;example_milieu&quot;,
               plot = TRUE)</code></pre>
 <embed src="figure/11_Bcell_Patch_Detection.Rmd/example_patch-1.pdf" width="960" style="display: block; margin: auto;" type="application/pdf" />
-<pre><code>Time difference of 1.118382 secs
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-example_patch-1">
+Past versions of example_patch-1.pdf
+</button>
+</p>
+<div id="fig-example_patch-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/5418dcda61311e628e9bcf8cdf2a179555526546/docs/figure/11_Bcell_Patch_Detection.Rmd/example_patch-1.pdf" target="_blank">5418dcd</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<pre><code>Time difference of 1.115749 secs
 [1] &quot;milieus successfully added to sce object&quot;</code></pre>
 </div>
 <div id="save-sce-object" class="section level2">

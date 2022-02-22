@@ -451,10 +451,7 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="Supp-Figure_2.html">Supp-Figure 2</a>
-    </li>
-    <li>
-      <a href="Supp-Figure_4.html">Supp-Figure 4</a>
+      <a href="Supp-Figure_3.html">Supp-Figure 3</a>
     </li>
     <li>
       <a href="Supp-Figure_5.html">Supp-Figure 5</a>
@@ -484,6 +481,9 @@ div.tocify {
       <a href="Supp-Figure_13.html">Supp-Figure 13</a>
     </li>
     <li>
+      <a href="Supp-Figure_14.html">Supp-Figure 14</a>
+    </li>
+    <li>
       <a href="Table_ClinicalData.html">Clinical Data</a>
     </li>
   </ul>
@@ -497,9 +497,6 @@ div.tocify {
   <ul class="dropdown-menu" role="menu">
     <li>
       <a href="Summary_Statistics.html">Summary Statistics</a>
-    </li>
-    <li>
-      <a href="license.html">License</a>
     </li>
   </ul>
 </li>
@@ -542,7 +539,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2022-02-10
+<strong>Last updated:</strong> 2022-02-22
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -633,16 +630,16 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreea2860df480bbbf6833e9812ecd3c9f60a9b68e66targetblanka2860dfa"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/a2860df480bbbf6833e9812ecd3c9f60a9b68e66" target="_blank">a2860df</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreea2860df480bbbf6833e9812ecd3c9f60a9b68e66targetblanka2860dfa" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/a2860df480bbbf6833e9812ecd3c9f60a9b68e66" target="_blank">a2860df</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -652,8 +649,6 @@ Ignored files:
     Ignored:    .DS_Store
     Ignored:    .Rproj.user/
     Ignored:    Table_S4.csv
-    Ignored:    analysis/.DS_Store
-    Ignored:    analysis/._.DS_Store
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
     Ignored:    data/.DS_Store
@@ -662,10 +657,10 @@ Ignored files:
     Ignored:    data/full_data/
 
 Unstaged changes:
-    Modified:   analysis/Figure_5.rmd
-    Modified:   analysis/Supp-Figure_12.rmd
-    Modified:   analysis/Supp-Figure_13.rmd
-    Modified:   analysis/Supp-Figure_5.rmd
+    Modified:   .gitignore
+    Modified:   analysis/Supp-Figure_10.rmd
+    Modified:   analysis/_site.yml
+    Deleted:    analysis/license.Rmd
 
 </code></pre>
 <p>
@@ -704,6 +699,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/73aa80019a8950077ef2a01793a325aba443e842/docs/06_RNA_chemokine_patch_detection.html" target="_blank">73aa800</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+<td>
+add .html for static website
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -892,53 +904,53 @@ for(i in names(cur_sce[,grepl(glob2rx(&quot;C*L*&quot;),names(cur_sce))])) {
                      distance = 30,
                      output_colname = paste(tolower(i), &quot;only_comm&quot;, sep = &quot;&quot;))
 } </code></pre>
-<pre><code>Time difference of 5.514605 secs
+<pre><code>Time difference of 5.428674 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 17.19932 mins
+Time difference of 16.24191 mins
 [1] &quot;milieus successfully added to sce object&quot;
-Time difference of 4.668736 secs
+Time difference of 4.59466 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 12.49801 mins
+Time difference of 12.59703 mins
 [1] &quot;milieus successfully added to sce object&quot;
-Time difference of 3.967457 secs
+Time difference of 3.923479 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 12.58078 mins
+Time difference of 11.69238 mins
 [1] &quot;milieus successfully added to sce object&quot;
-Time difference of 17.62502 secs
+Time difference of 16.93034 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 20.10345 mins
+Time difference of 19.44266 mins
 [1] &quot;milieus successfully added to sce object&quot;
-Time difference of 9.109623 secs
+Time difference of 8.995506 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 21.92445 mins
+Time difference of 21.16684 mins
 [1] &quot;milieus successfully added to sce object&quot;
-Time difference of 12.13334 secs
+Time difference of 11.29811 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 19.18648 mins
+Time difference of 19.02707 mins
 [1] &quot;milieus successfully added to sce object&quot;
-Time difference of 12.39393 secs
+Time difference of 12.16586 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 26.49773 mins
+Time difference of 26.82327 mins
 [1] &quot;milieus successfully added to sce object&quot;
-Time difference of 1.585672 secs
+Time difference of 2.231001 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 6.12763 mins
+Time difference of 6.052862 mins
 [1] &quot;milieus successfully added to sce object&quot;
-Time difference of 16.86196 secs
+Time difference of 16.44517 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 17.50565 mins
+Time difference of 16.49096 mins
 [1] &quot;milieus successfully added to sce object&quot;
-Time difference of 0.8439357 secs
+Time difference of 0.9205458 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 3.367174 mins
+Time difference of 3.253333 mins
 [1] &quot;milieus successfully added to sce object&quot;
-Time difference of 8.333804 secs
+Time difference of 8.359026 secs
 [1] &quot;patches successfully added to sce object&quot;
-Time difference of 11.68944 mins
+Time difference of 11.95858 mins
 [1] &quot;milieus successfully added to sce object&quot;</code></pre>
 <pre class="r"><code>end = Sys.time()
 print(end-start)</code></pre>
-<pre><code>Time difference of 2.837728 hours</code></pre>
+<pre><code>Time difference of 2.771681 hours</code></pre>
 </div>
 <div id="define-pure-clusters-that-contain-more-than-10-producing-cells" class="section level2">
 <h2>Define pure clusters that contain more than 10 producing cells</h2>

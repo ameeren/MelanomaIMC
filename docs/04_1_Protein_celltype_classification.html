@@ -451,10 +451,7 @@ div.tocify {
   </a>
   <ul class="dropdown-menu" role="menu">
     <li>
-      <a href="Supp-Figure_2.html">Supp-Figure 2</a>
-    </li>
-    <li>
-      <a href="Supp-Figure_4.html">Supp-Figure 4</a>
+      <a href="Supp-Figure_3.html">Supp-Figure 3</a>
     </li>
     <li>
       <a href="Supp-Figure_5.html">Supp-Figure 5</a>
@@ -484,6 +481,9 @@ div.tocify {
       <a href="Supp-Figure_13.html">Supp-Figure 13</a>
     </li>
     <li>
+      <a href="Supp-Figure_14.html">Supp-Figure 14</a>
+    </li>
+    <li>
       <a href="Table_ClinicalData.html">Clinical Data</a>
     </li>
   </ul>
@@ -497,9 +497,6 @@ div.tocify {
   <ul class="dropdown-menu" role="menu">
     <li>
       <a href="Summary_Statistics.html">Summary Statistics</a>
-    </li>
-    <li>
-      <a href="license.html">License</a>
     </li>
   </ul>
 </li>
@@ -542,7 +539,7 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2022-02-09
+<strong>Last updated:</strong> 2022-02-22
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -633,16 +630,16 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreea2860df480bbbf6833e9812ecd3c9f60a9b68e66targetblanka2860dfa"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/a2860df480bbbf6833e9812ecd3c9f60a9b68e66" target="_blank">a2860df</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreea2860df480bbbf6833e9812ecd3c9f60a9b68e66targetblanka2860dfa" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/a2860df480bbbf6833e9812ecd3c9f60a9b68e66" target="_blank">a2860df</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -652,8 +649,6 @@ Ignored files:
     Ignored:    .DS_Store
     Ignored:    .Rproj.user/
     Ignored:    Table_S4.csv
-    Ignored:    analysis/.DS_Store
-    Ignored:    analysis/._.DS_Store
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
     Ignored:    data/.DS_Store
@@ -662,10 +657,10 @@ Ignored files:
     Ignored:    data/full_data/
 
 Unstaged changes:
-    Modified:   analysis/Figure_5.rmd
-    Modified:   analysis/Supp-Figure_12.rmd
-    Modified:   analysis/Supp-Figure_13.rmd
-    Modified:   analysis/Supp-Figure_5.rmd
+    Modified:   .gitignore
+    Modified:   analysis/Supp-Figure_10.rmd
+    Modified:   analysis/_site.yml
+    Deleted:    analysis/license.Rmd
 
 </code></pre>
 <p>
@@ -704,6 +699,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/73aa80019a8950077ef2a01793a325aba443e842/docs/04_1_Protein_celltype_classification.html" target="_blank">73aa800</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+<td>
+add .html for static website
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -1295,6 +1307,43 @@ dittoHeatmap(agr_sce[cur_markers,], assay = &quot;asinh&quot;,
             scale = &quot;none&quot;, heatmap.colors = viridis(100), 
             annotation_colors = list(layer_1_gated = metadata(sce)$colour_vectors$layer_1))</code></pre>
 <p><img src="figure/04_1_Protein_celltype_classification.rmd/quality-control-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-quality-control-4-1">
+Past versions of quality-control-4-1.png
+</button>
+</p>
+<div id="fig-quality-control-4-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/quality-control-4-1.png" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <pre class="r"><code># Centered and scaled
 dittoHeatmap(agr_sce[cur_markers,], assay = &quot;scaled_asinh&quot;,
             annot.by = c(&quot;ImageNumber&quot;, &quot;layer_1_gated&quot;), 
@@ -1303,6 +1352,43 @@ dittoHeatmap(agr_sce[cur_markers,], assay = &quot;scaled_asinh&quot;,
             heatmap.colors = colorRampPalette(c(&quot;dark blue&quot;, &quot;white&quot;, &quot;dark red&quot;))(100),
             breaks = seq(-3, 3, length.out = 101))</code></pre>
 <p><img src="figure/04_1_Protein_celltype_classification.rmd/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-5-1">
+Past versions of unnamed-chunk-5-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-5-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/unnamed-chunk-5-1.png" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <pre class="r"><code>unlab_sce &lt;- sce[,sce$layer_1_gated == &quot;unlabelled&quot;]
 
 ggplot() +
@@ -1317,6 +1403,43 @@ ggplot() +
   scale_color_manual(values = metadata(sce)$colour_vectors$layer_1) + 
   theme_bw()</code></pre>
 <p><img src="figure/04_1_Protein_celltype_classification.rmd/unnamed-chunk-6-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-unnamed-chunk-6-1">
+Past versions of unnamed-chunk-6-1.png
+</button>
+</p>
+<div id="fig-unnamed-chunk-6-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/unnamed-chunk-6-1.png" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="random-forrest-training" class="section level1">
@@ -1362,7 +1485,7 @@ rffit &lt;- train(x = t(assay(train_sce, &quot;asinh&quot;)[rowData(sce)$good_ma
 stopCluster(cl)
 end = Sys.time()
 print(end-start)</code></pre>
-<pre><code>Time difference of 18.29677 mins</code></pre>
+<pre><code>Time difference of 17.97361 mins</code></pre>
 <pre class="r"><code>rffit</code></pre>
 <pre><code>Random Forest 
 
@@ -1396,6 +1519,43 @@ The final value used for the model was mtry = 18.</code></pre>
                     ymax = Accuracy + AccuracySD),
                 width = 0.4)</code></pre>
 <p><img src="figure/04_1_Protein_celltype_classification.rmd/accuracy-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-accuracy-1">
+Past versions of accuracy-1.png
+</button>
+</p>
+<div id="fig-accuracy-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/accuracy-1.png" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <p>We can also compute the confusion matrix:</p>
 <pre class="r"><code>confusionMatrix(rffit)</code></pre>
 <pre><code>Cross-Validated (10 fold, repeated 1 times) Confusion Matrix 
@@ -1434,6 +1594,43 @@ Prediction      Macrophage Neutrophil  pDC Stroma Tumor unknown
 <pre class="r"><code>cur_varImp &lt;- varImp(rffit)
 plot(cur_varImp, top = 37)</code></pre>
 <p><img src="figure/04_1_Protein_celltype_classification.rmd/variable-importance-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-variable-importance-1">
+Past versions of variable-importance-1.png
+</button>
+</p>
+<div id="fig-variable-importance-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/variable-importance-1.png" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <p>Finally, we will validate the model using the test data.</p>
 <pre class="r"><code>cur_pred &lt;- predict(rffit, newdata = t(assay(test_sce, &quot;asinh&quot;)[rowData(sce)$good_marker,]))
 
@@ -1533,8 +1730,82 @@ Balanced Accuracy          0.978495</code></pre>
 legend &lt;- get_legend(a)
 a + theme(legend.position = &quot;none&quot;)</code></pre>
 <embed src="figure/04_1_Protein_celltype_classification.rmd/model-testing-1.pdf" width="412.8" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-model-testing-1">
+Past versions of model-testing-1.pdf
+</button>
+</p>
+<div id="fig-model-testing-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/model-testing-1.pdf" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <pre class="r"><code>plot(legend)</code></pre>
 <embed src="figure/04_1_Protein_celltype_classification.rmd/model-testing-legend-1.pdf" width="201.6" style="display: block; margin: auto;" type="application/pdf" />
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-model-testing-legend-1">
+Past versions of model-testing-legend-1.pdf
+</button>
+</p>
+<div id="fig-model-testing-legend-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/model-testing-legend-1.pdf" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <p>We will also observe the distribution of classification probabilities per image and class:</p>
 <pre class="r"><code>cur_pred &lt;- predict(rffit, newdata = t(assay(test_sce, &quot;asinh&quot;)[rowData(sce)$good_marker,]), 
                     type = &quot;prob&quot;)
@@ -1549,6 +1820,43 @@ cur_pred %&gt;%
     facet_wrap(. ~ class) + 
     theme(axis.text.x = element_text(angle = 90, hjust = 1))</code></pre>
 <p><img src="figure/04_1_Protein_celltype_classification.rmd/prediciton-probability-1.png" width="1440" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-prediciton-probability-1">
+Past versions of prediciton-probability-1.png
+</button>
+</p>
+<div id="fig-prediciton-probability-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/prediciton-probability-1.png" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <p>This plot shows the median probability for each image and class.</p>
 </div>
 </div>
@@ -1565,7 +1873,7 @@ cell_labels.prob &lt;- predict.train(rffit,
                        type = &quot;prob&quot;)
 end = Sys.time()
 print(end-start)</code></pre>
-<pre><code>Time difference of 1.006518 mins</code></pre>
+<pre><code>Time difference of 1.016046 mins</code></pre>
 <p>Store predictions in SCE object. We will not overwrite the labels of the already labelled cells.</p>
 <pre class="r"><code>cell_labels &lt;- sce$layer_1_gated
 cell_labels[colnames(unlab_sce)] &lt;- cell_labels.class
@@ -1580,9 +1888,83 @@ sce$celltype &lt;- cell_labels</code></pre>
 <pre class="r"><code>dittoDimPlot(sce[,sce$layer_1_gated != &quot;unlabelled&quot;], var = &quot;celltype&quot;, reduction.use = &quot;UMAP&quot;, size = 0.5, 
               color.panel = metadata(sce)$colour_vectors$layer_1, main = &quot;Cell types gated&quot;)</code></pre>
 <p><img src="figure/04_1_Protein_celltype_classification.rmd/UMAP_celltypes_gated-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-UMAP_celltypes_gated-1">
+Past versions of UMAP_celltypes_gated-1.png
+</button>
+</p>
+<div id="fig-UMAP_celltypes_gated-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/UMAP_celltypes_gated-1.png" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <pre class="r"><code>dittoDimPlot(sce[,sce$layer_1_gated == &quot;unlabelled&quot;], var = &quot;celltype&quot;, reduction.use = &quot;UMAP&quot;, size = 0.5, 
               color.panel = metadata(sce)$colour_vectors$layer_1, main = &quot;Cell types classified&quot;) </code></pre>
 <p><img src="figure/04_1_Protein_celltype_classification.rmd/UMAP_celltypes_classified-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-UMAP_celltypes_classified-1">
+Past versions of UMAP_celltypes_classified-1.png
+</button>
+</p>
+<div id="fig-UMAP_celltypes_classified-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/UMAP_celltypes_classified-1.png" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 <div id="probabilities-for-all-celltypes" class="section level2">
 <h2>Probabilities for all celltypes</h2>
@@ -1626,6 +2008,43 @@ dittoHeatmap(agr_sce[cur_markers,], assay = &quot;asinh&quot;,
             scale = &quot;none&quot;, heatmap.colors = viridis(100), 
             annotation_colors = list(celltype = metadata(sce)$colour_vectors$layer_1))</code></pre>
 <p><img src="figure/04_1_Protein_celltype_classification.rmd/heatmap-visualization-1.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-heatmap-visualization-1">
+Past versions of heatmap-visualization-1.png
+</button>
+</p>
+<div id="fig-heatmap-visualization-1" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/heatmap-visualization-1.png" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 <pre class="r"><code># Centered and scaled
 dittoHeatmap(agr_sce[cur_markers,], assay = &quot;asinh&quot;,
             annot.by = c(&quot;celltype&quot;), 
@@ -1634,6 +2053,43 @@ dittoHeatmap(agr_sce[cur_markers,], assay = &quot;asinh&quot;,
             heatmap.colors = colorRampPalette(c(&quot;dark blue&quot;, &quot;white&quot;, &quot;dark red&quot;))(100),
             breaks = seq(-3, 3, length.out = 101))</code></pre>
 <p><img src="figure/04_1_Protein_celltype_classification.rmd/heatmap-visualization-2.png" width="672" style="display: block; margin: auto;" /></p>
+<p>
+<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-heatmap-visualization-2">
+Past versions of heatmap-visualization-2.png
+</button>
+</p>
+<div id="fig-heatmap-visualization-2" class="collapse">
+<div class="table-responsive">
+<table class="table table-condensed table-hover">
+<thead>
+<tr>
+<th>
+Version
+</th>
+<th>
+Author
+</th>
+<th>
+Date
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/7e52c83b444bdec6fb70669e0a21be1f39818ef8/docs/figure/04_1_Protein_celltype_classification.rmd/heatmap-visualization-2.png" target="_blank">7e52c83</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
 </div>
 </div>
 <div id="save-rds" class="section level1">
