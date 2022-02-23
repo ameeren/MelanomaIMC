@@ -23,10 +23,17 @@ Intratumoral immune cells are crucial for tumor control and anti-tumor responses
 
 # How-To reproduce the pipeline
 <ol>
-  <li>Download the <a href="www.google.com">data</a> and store the folder (folder name) in MelanomaIMC/data </li>
-  <li>Download the <a href="www.google.com">docker</a> container containing all required packages</li>
-  <li>Install the docker container following these <a href="www.google.com">instructions</a></li>
-  <li>Open the RStudio interface following these <a href="www.google.com">instructions</a></li>
+  <li>Download the source code and the data required from the analysis <a href=https://doi.org/10.5281/zenodo.5994136>here</a></li>
+  <li>Install <a href=https://docs.docker.com/engine/install/ubuntu/>docker</a></li>
+  <li>Pull the docker image with <code>docker pull toobiwankenobi/rstudiovm:versionX</code></a></li>
+  <li>Run the docker image with <code>docker run -e PASSWORD=bioc -p 8787:8787 toobiwankenobi/rstudiovm:versionX/</code></li>
+  <li>Mount data to be accessible using the RStudio interface</a></li>  
+  <li>Open the RStudio interface (<code>http://localhost:8787/</code>, user = <code>rstudio</code>, password = <code>bioc</code>) in your web browser</li>
   <li>Run Files!</li>
 </ol>
 
+# Requirements
+Certain analyses require extensive computational power (mainly memory) if processes run in parallel. If you don't have these resources, the code might need to be adapted (i.e. parallelization needs to be reduced/removed). Raise an issue in this github repo to report any problems. 
+
+# Raw Data
+Raw Data (multi-channel .tiff files, single-cell masks, etc.) is available <a href=https://doi.org/10.5281/zenodo.6004986>here</a>

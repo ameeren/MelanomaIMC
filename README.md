@@ -23,9 +23,7 @@ Intratumoral immune cells are crucial for tumor control and anti-tumor responses
 </ol>
 
 # Requirements
-Certain analyses require extensive computational power (mainly memory) if processes run in parallel. If you don't have these resources, the code might need to be adapted (i.e. parallelization needs to be removed). Raise an issue in this github repo to report any problems. 
+Certain analyses require extensive computational power (mainly memory) if processes run in parallel. If you don't have these resources, the code might need to be adapted (i.e. parallelization needs to be reduced/removed). Raise an issue in this github repo to report any problems. 
 
 # Raw Data
 Raw Data (multi-channel .tiff files, single-cell masks, etc.) is available <a href=https://doi.org/10.5281/zenodo.6004986>here</a>
-
-

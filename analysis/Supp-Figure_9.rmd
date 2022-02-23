@@ -39,6 +39,7 @@ library(dendextend)
 library(parallel)
 library(neighbouRhood)
 library(unix)
+library(cytomapper)
 ```
 
 ## Load Data
@@ -68,9 +69,69 @@ dat_relation$cellID_second <- paste("RNA", paste(dat_relation$`Second Image Numb
 
 # Supp Figure 9A
 
+## Load masks
+
+```{r}
+all_mask <- loadImages(x = "data/full_data/rna/cpout/",
+                       pattern = "ilastik_s2_Probabilities_equalized_cellmask.tiff")
+```
+
+## add the ImageNumber to masks
+
+```{r match image numbers}
+# we load the metadata for the images.
+image_mat_rna <- as.data.frame(read.csv(file = "data/data_for_analysis/rna/Image.csv",stringsAsFactors = FALSE))
+
+# we extract only the FileNames of the masks as they are in the all_masks object
+cur_df <- data.frame(cellmask = image_mat_rna$FileName_cellmask,
+                     ImageNumber = image_mat_rna$ImageNumber,
+                     Description = image_mat_rna$Metadata_Description)
+
+# we set the rownames of the extracted data to be equal to the names of all_masks
+rownames(cur_df) <- gsub(pattern = ".tiff",replacement = "",image_mat_rna$FileName_cellmask)
+
+# we add the extracted information via mcols in the order of the all_masks object
+mcols(all_mask) <- cur_df[names(all_mask),]
+```
+
+## scale the masks
+
+```{r scale masks}
+all_mask <- scaleImages(all_mask,2^16-1)
+```
+
+## Plot 4 example Images from the T cell grouping
+
+```{r Supp_Fig_9A_example_images_TcellGroup, dev=("pdf"), fig.width=11, fig.height=8.4}
+# select the images K10 (absent), K3 (low), A11 (med), N3 (high) as representative images for the T cell grouping
+
+# subset masks
+mask_sub <- all_mask[mcols(all_mask)$Description %in% c("K10", "N3", "K3", "A11")]
+sce_prot_sub <- sce_prot[,sce_prot$Description %in% c("K10", "N3", "K3", "A11")]
+
+# rename all cells that are not CD8+ T cell 
+sce_prot_sub$celltype <- ifelse(sce_prot_sub$celltype %in% c("CD8+ T cell"), sce_prot_sub$celltype, "Other")
+
+# create color vector
+col_list <- list()
+col_list$`Cell Type` <- metadata(sce_prot)$colour_vectors$celltype[c("Tumor", "CD8+ T cell")]
+names(col_list$`Cell Type`) <- c("Other", "CD8+ T cell")
+col_list$`Cell Type`["CD8+ T cell"] <- "green"
+
+sce_prot_sub$`Cell Type` <- sce_prot_sub$celltype
+
+plotCells(mask = mask_sub, 
+          object = sce_prot_sub,
+          cell_id = "CellNumber", img_id = "Description", 
+          colour_by = "Cell Type",
+          colour = col_list)
+```
+
+# Supp Figure 9B
+
 ## Expressor in Tcell groups
 
-```{r Supp_Fig_9A_expressor_cd8_grouping, fig.width=14, fig.height=5, dev=("pdf")}
+```{r Supp_Fig_9B_expressor_cd8_grouping, fig.width=14, fig.height=5, dev=("pdf")}
 targets <- metadata(sce_rna)$chemokines_morethan600_withcontrol
 
 frac <- data.frame(colData(sce_rna)) %>%
@@ -106,11 +167,11 @@ ggplot(frac, aes(x=expressor, y = fraction)) +
   coord_cartesian(ylim = c(0,0.06))
 ```
 
-# Supp Figure 9B
+# Supp Figure 9C
 
 ## Grouping from Figure 1E
 
-```{r Supp_Fig_9B_expressor_dend_cluster, fig.width=14, fig.height=5, dev=("pdf")}
+```{r Supp_Fig_9C_expressor_dend_cluster, fig.width=14, fig.height=5, dev=("pdf")}
 # Create table with celltype fractions
 cur_df <- data.frame(celltype = sce_prot$celltype,
                      Description = sce_prot$Description,
@@ -202,7 +263,7 @@ ggplot(frac, aes(x=expressor, y = fraction)) +
   coord_cartesian(ylim = c(0,0.06))
 ```
 
-# Supp Figure 9C
+# Supp Figure 9D
 
 ## CP output
 
@@ -309,7 +370,7 @@ print(end-start)
 
 ## Visualize 
 
-```{r Supp_Fig_9C_patch_analysis, dev=("pdf"), fig.height=5, fig.width=8}
+```{r Supp_Fig_9D_patch_analysis, dev=("pdf"), fig.height=5, fig.width=8}
 dat <- image_df %>%
   reshape2::dcast(chemokine ~ patch_size, value.var = "significant_images", fill = 0)
 
