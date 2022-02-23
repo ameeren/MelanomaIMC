@@ -455,5 +455,5 @@ saveRDS(sce, "data/data_for_analysis/sce_protein.rds")
 layer_1_dat <- as.data.frame(cell_labels.prob)
 layer_1_dat$class <- cell_labels.class
 
-write.csv(layer_1_dat, file = "data/data_for_analysis/layer_1_classification_protein.csv")
+#write.csv(layer_1_dat, file = "data/data_for_analysis/layer_1_classification_protein.csv")
 ```
