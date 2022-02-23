@@ -521,7 +521,7 @@ div.tocify {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -530,7 +530,7 @@ div.tocify {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -539,10 +539,10 @@ div.tocify {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2022-02-22
+<strong>Last updated:</strong> 2022-02-23
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 7 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 6 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>MelanomaIMC/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -558,12 +558,12 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
@@ -630,16 +630,16 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreecd92c5128f8ddffff7e549ae2548f4b85b6b7984targetblankcd92c51a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/cd92c5128f8ddffff7e549ae2548f4b85b6b7984" target="_blank">cd92c51</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreecd92c5128f8ddffff7e549ae2548f4b85b6b7984targetblankcd92c51a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/cd92c5128f8ddffff7e549ae2548f4b85b6b7984" target="_blank">cd92c51</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -648,19 +648,18 @@ Note that you need to be careful to ensure that all relevant files for the analy
 Ignored files:
     Ignored:    .DS_Store
     Ignored:    .Rproj.user/
-    Ignored:    Table_S4.csv
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
     Ignored:    data/.DS_Store
     Ignored:    data/._.DS_Store
     Ignored:    data/data_for_analysis/
+    Ignored:    data/data_for_analysis_zenodo/
+    Ignored:    data/full_data.zip
     Ignored:    data/full_data/
 
 Unstaged changes:
     Modified:   .gitignore
-    Modified:   analysis/Supp-Figure_10.rmd
-    Modified:   analysis/_site.yml
-    Deleted:    analysis/license.Rmd
+    Modified:   analysis/Supp-Figure_9.rmd
 
 </code></pre>
 <p>
@@ -699,6 +698,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/fe331cb34643532a33df0b86310f1e9cc2d1c8e9/docs/Supp-Figure_9.html" target="_blank">fe331cb</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+<td>
+re-run whole analysis
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -839,7 +855,8 @@ library(rstatix)
 library(dendextend)
 library(parallel)
 library(neighbouRhood)
-library(unix)</code></pre>
+library(unix)
+library(cytomapper)</code></pre>
 </div>
 <div id="load-data" class="section level2">
 <h2>Load Data</h2>
@@ -865,6 +882,60 @@ dat_relation$cellID_second &lt;- paste(&quot;RNA&quot;, paste(dat_relation$`Seco
 </div>
 <div id="supp-figure-9a" class="section level1">
 <h1>Supp Figure 9A</h1>
+<div id="load-masks" class="section level2">
+<h2>Load masks</h2>
+<pre class="r"><code>all_mask &lt;- loadImages(x = &quot;data/full_data/rna/cpout/&quot;,
+                       pattern = &quot;ilastik_s2_Probabilities_equalized_cellmask.tiff&quot;)</code></pre>
+</div>
+<div id="add-the-imagenumber-to-masks" class="section level2">
+<h2>add the ImageNumber to masks</h2>
+<pre class="r"><code># we load the metadata for the images.
+image_mat_rna &lt;- as.data.frame(read.csv(file = &quot;data/data_for_analysis/rna/Image.csv&quot;,stringsAsFactors = FALSE))
+
+# we extract only the FileNames of the masks as they are in the all_masks object
+cur_df &lt;- data.frame(cellmask = image_mat_rna$FileName_cellmask,
+                     ImageNumber = image_mat_rna$ImageNumber,
+                     Description = image_mat_rna$Metadata_Description)
+
+# we set the rownames of the extracted data to be equal to the names of all_masks
+rownames(cur_df) &lt;- gsub(pattern = &quot;.tiff&quot;,replacement = &quot;&quot;,image_mat_rna$FileName_cellmask)
+
+# we add the extracted information via mcols in the order of the all_masks object
+mcols(all_mask) &lt;- cur_df[names(all_mask),]</code></pre>
+</div>
+<div id="scale-the-masks" class="section level2">
+<h2>scale the masks</h2>
+<pre class="r"><code>all_mask &lt;- scaleImages(all_mask,2^16-1)</code></pre>
+</div>
+<div id="plot-4-example-images-from-the-t-cell-grouping" class="section level2">
+<h2>Plot 4 example Images from the T cell grouping</h2>
+<pre class="r"><code># select the images K10 (absent), K3 (low), A11 (med), N3 (high) as representative images for the T cell grouping
+
+# subset masks
+mask_sub &lt;- all_mask[mcols(all_mask)$Description %in% c(&quot;K10&quot;, &quot;N3&quot;, &quot;K3&quot;, &quot;A11&quot;)]
+sce_prot_sub &lt;- sce_prot[,sce_prot$Description %in% c(&quot;K10&quot;, &quot;N3&quot;, &quot;K3&quot;, &quot;A11&quot;)]
+
+# rename all cells that are not CD8+ T cell 
+sce_prot_sub$celltype &lt;- ifelse(sce_prot_sub$celltype %in% c(&quot;CD8+ T cell&quot;), sce_prot_sub$celltype, &quot;Other&quot;)
+
+# create color vector
+col_list &lt;- list()
+col_list$`Cell Type` &lt;- metadata(sce_prot)$colour_vectors$celltype[c(&quot;Tumor&quot;, &quot;CD8+ T cell&quot;)]
+names(col_list$`Cell Type`) &lt;- c(&quot;Other&quot;, &quot;CD8+ T cell&quot;)
+col_list$`Cell Type`[&quot;CD8+ T cell&quot;] &lt;- &quot;green&quot;
+
+sce_prot_sub$`Cell Type` &lt;- sce_prot_sub$celltype
+
+plotCells(mask = mask_sub, 
+          object = sce_prot_sub,
+          cell_id = &quot;CellNumber&quot;, img_id = &quot;Description&quot;, 
+          colour_by = &quot;Cell Type&quot;,
+          colour = col_list)</code></pre>
+<embed src="figure/Supp-Figure_9.rmd/Supp_Fig_9A_example_images_TcellGroup-1.pdf" width="1056" style="display: block; margin: auto;" type="application/pdf" />
+</div>
+</div>
+<div id="supp-figure-9b" class="section level1">
+<h1>Supp Figure 9B</h1>
 <div id="expressor-in-tcell-groups" class="section level2">
 <h2>Expressor in Tcell groups</h2>
 <pre class="r"><code>targets &lt;- metadata(sce_rna)$chemokines_morethan600_withcontrol
@@ -902,48 +973,11 @@ ggplot(frac, aes(x=expressor, y = fraction)) +
   coord_cartesian(ylim = c(0,0.06))</code></pre>
 <pre><code>Warning: It is deprecated to specify `guide = FALSE` to remove a guide. Please
 use `guide = &quot;none&quot;` instead.</code></pre>
-<embed src="figure/Supp-Figure_9.rmd/Supp_Fig_9A_expressor_cd8_grouping-1.pdf" width="1344" style="display: block; margin: auto;" type="application/pdf" />
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Supp_Fig_9A_expressor_cd8_grouping-1">
-Past versions of Supp_Fig_9A_expressor_cd8_grouping-1.pdf
-</button>
-</p>
-<div id="fig-Supp_Fig_9A_expressor_cd8_grouping-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/d246c15656639107e108bbb2fd118635b156f4a3/docs/figure/Supp-Figure_9.rmd/Supp_Fig_9A_expressor_cd8_grouping-1.pdf" target="_blank">d246c15</a>
-</td>
-<td>
-toobiwankenobi
-</td>
-<td>
-2022-02-22
-</td>
-</tr>
-</tbody>
-</table>
+<embed src="figure/Supp-Figure_9.rmd/Supp_Fig_9B_expressor_cd8_grouping-1.pdf" width="1344" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 </div>
-</div>
-</div>
-<div id="supp-figure-9b" class="section level1">
-<h1>Supp Figure 9B</h1>
+<div id="supp-figure-9c" class="section level1">
+<h1>Supp Figure 9C</h1>
 <div id="grouping-from-figure-1e" class="section level2">
 <h2>Grouping from Figure 1E</h2>
 <pre class="r"><code># Create table with celltype fractions
@@ -1037,48 +1071,11 @@ ggplot(frac, aes(x=expressor, y = fraction)) +
   coord_cartesian(ylim = c(0,0.06))</code></pre>
 <pre><code>Warning: It is deprecated to specify `guide = FALSE` to remove a guide. Please
 use `guide = &quot;none&quot;` instead.</code></pre>
-<embed src="figure/Supp-Figure_9.rmd/Supp_Fig_9B_expressor_dend_cluster-1.pdf" width="1344" style="display: block; margin: auto;" type="application/pdf" />
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Supp_Fig_9B_expressor_dend_cluster-1">
-Past versions of Supp_Fig_9B_expressor_dend_cluster-1.pdf
-</button>
-</p>
-<div id="fig-Supp_Fig_9B_expressor_dend_cluster-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/d246c15656639107e108bbb2fd118635b156f4a3/docs/figure/Supp-Figure_9.rmd/Supp_Fig_9B_expressor_dend_cluster-1.pdf" target="_blank">d246c15</a>
-</td>
-<td>
-toobiwankenobi
-</td>
-<td>
-2022-02-22
-</td>
-</tr>
-</tbody>
-</table>
+<embed src="figure/Supp-Figure_9.rmd/Supp_Fig_9C_expressor_dend_cluster-1.pdf" width="1344" style="display: block; margin: auto;" type="application/pdf" />
 </div>
 </div>
-</div>
-</div>
-<div id="supp-figure-9c" class="section level1">
-<h1>Supp Figure 9C</h1>
+<div id="supp-figure-9d" class="section level1">
+<h1>Supp Figure 9D</h1>
 <div id="cp-output" class="section level2">
 <h2>CP output</h2>
 <pre class="r"><code># Load and prepare
@@ -1108,9 +1105,9 @@ dat_cells$cellID &lt;- paste(&quot;RNA_&quot;, paste(dat_cells$ImageNumber, dat_
 
 image_df &lt;- data.frame()
 gc()</code></pre>
-<pre><code>            used   (Mb) gc trigger   (Mb)  max used   (Mb)
-Ncells   9388125  501.4   16774485  895.9  16774485  895.9
-Vcells 747116115 5700.1 1086953049 8292.8 905727541 6910.2</code></pre>
+<pre><code>            used (Mb) gc trigger   (Mb)   max used   (Mb)
+Ncells  11795507  630   18778532 1002.9   18778532 1002.9
+Vcells 907534761 6924 1309232800 9988.7 1090431471 8319.4</code></pre>
 <pre class="r"><code>rlimit_as(Inf)</code></pre>
 <pre><code>$cur
 [1] Inf
@@ -1185,7 +1182,7 @@ $max
 end = Sys.time()
 
 print(end-start)</code></pre>
-<pre><code>Time difference of 25.49809 mins</code></pre>
+<pre><code>Time difference of 27.07411 mins</code></pre>
 </div>
 <div id="visualize" class="section level2">
 <h2>Visualize</h2>
@@ -1215,44 +1212,7 @@ Heatmap(m,
         row_names_side = &quot;left&quot;,
         width = unit(15, &quot;cm&quot;),
         height = unit(8, &quot;cm&quot;))</code></pre>
-<embed src="figure/Supp-Figure_9.rmd/Supp_Fig_9C_patch_analysis-1.pdf" width="768" style="display: block; margin: auto;" type="application/pdf" />
-<p>
-<button type="button" class="btn btn-default btn-xs btn-workflowr btn-workflowr-fig" data-toggle="collapse" data-target="#fig-Supp_Fig_9C_patch_analysis-1">
-Past versions of Supp_Fig_9C_patch_analysis-1.pdf
-</button>
-</p>
-<div id="fig-Supp_Fig_9C_patch_analysis-1" class="collapse">
-<div class="table-responsive">
-<table class="table table-condensed table-hover">
-<thead>
-<tr>
-<th>
-Version
-</th>
-<th>
-Author
-</th>
-<th>
-Date
-</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
-<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/d246c15656639107e108bbb2fd118635b156f4a3/docs/figure/Supp-Figure_9.rmd/Supp_Fig_9C_patch_analysis-1.pdf" target="_blank">d246c15</a>
-</td>
-<td>
-toobiwankenobi
-</td>
-<td>
-2022-02-22
-</td>
-</tr>
-</tbody>
-</table>
-</div>
-</div>
+<embed src="figure/Supp-Figure_9.rmd/Supp_Fig_9D_patch_analysis-1.pdf" width="768" style="display: block; margin: auto;" type="application/pdf" />
 <br>
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-sessioninfo" data-toggle="collapse" data-target="#workflowr-sessioninfo" style="display: block;">
@@ -1281,77 +1241,87 @@ attached base packages:
  [8] datasets  methods   base     
 
 other attached packages:
- [1] unix_1.5.4                  neighbouRhood_0.4          
- [3] magrittr_2.0.2              dtplyr_1.2.1               
- [5] dendextend_1.15.2           rstatix_0.7.0              
- [7] ComplexHeatmap_2.10.0       ggpubr_0.4.0               
- [9] ggpmisc_0.4.5               ggpp_0.4.3                 
-[11] data.table_1.14.2           cowplot_1.1.1              
-[13] gridExtra_2.3               dittoSeq_1.6.0             
-[15] scater_1.22.0               scuttle_1.4.0              
-[17] tidyr_1.2.0                 ggbeeswarm_0.6.0           
-[19] ggplot2_3.3.5               SingleCellExperiment_1.16.0
-[21] SummarizedExperiment_1.24.0 Biobase_2.54.0             
-[23] GenomicRanges_1.46.1        GenomeInfoDb_1.30.1        
-[25] IRanges_2.28.0              S4Vectors_0.32.3           
-[27] BiocGenerics_0.40.0         MatrixGenerics_1.6.0       
-[29] matrixStats_0.61.0          dplyr_1.0.7                
-[31] workflowr_1.7.0            
+ [1] cytomapper_1.6.0            EBImage_4.36.0             
+ [3] unix_1.5.4                  neighbouRhood_0.4          
+ [5] magrittr_2.0.2              dtplyr_1.2.1               
+ [7] dendextend_1.15.2           rstatix_0.7.0              
+ [9] ComplexHeatmap_2.10.0       ggpubr_0.4.0               
+[11] ggpmisc_0.4.5               ggpp_0.4.3                 
+[13] data.table_1.14.2           cowplot_1.1.1              
+[15] gridExtra_2.3               dittoSeq_1.6.0             
+[17] scater_1.22.0               scuttle_1.4.0              
+[19] tidyr_1.2.0                 ggbeeswarm_0.6.0           
+[21] ggplot2_3.3.5               SingleCellExperiment_1.16.0
+[23] SummarizedExperiment_1.24.0 Biobase_2.54.0             
+[25] GenomicRanges_1.46.1        GenomeInfoDb_1.30.1        
+[27] IRanges_2.28.0              S4Vectors_0.32.3           
+[29] BiocGenerics_0.40.0         MatrixGenerics_1.6.0       
+[31] matrixStats_0.61.0          dplyr_1.0.7                
+[33] workflowr_1.7.0            
 
 loaded via a namespace (and not attached):
   [1] backports_1.4.1           circlize_0.4.13          
-  [3] plyr_1.8.6                BiocParallel_1.28.3      
-  [5] digest_0.6.29             foreach_1.5.2            
-  [7] htmltools_0.5.2           magick_2.7.3             
-  [9] viridis_0.6.2             fansi_1.0.2              
- [11] ScaledMatrix_1.2.0        cluster_2.1.2            
- [13] doParallel_1.0.16         colorspace_2.0-2         
- [15] ggrepel_0.9.1             xfun_0.29                
- [17] callr_3.7.0               crayon_1.4.2             
- [19] RCurl_1.98-1.5            jsonlite_1.7.3           
- [21] iterators_1.0.13          glue_1.6.1               
- [23] gtable_0.3.0              zlibbioc_1.40.0          
- [25] XVector_0.34.0            MatrixModels_0.5-0       
- [27] GetoptLong_1.0.5          DelayedArray_0.20.0      
- [29] car_3.0-12                BiocSingular_1.10.0      
- [31] shape_1.4.6               abind_1.4-5              
- [33] SparseM_1.81              scales_1.1.1             
- [35] pheatmap_1.0.12           DBI_1.1.2                
- [37] Rcpp_1.0.8                viridisLite_0.4.0        
- [39] clue_0.3-60               rsvd_1.0.5               
- [41] httr_1.4.2                RColorBrewer_1.1-2       
- [43] ellipsis_0.3.2            pkgconfig_2.0.3          
- [45] farver_2.1.0              sass_0.4.0               
- [47] utf8_1.2.2                tidyselect_1.1.1         
- [49] labeling_0.4.2            rlang_1.0.0              
- [51] reshape2_1.4.4            later_1.3.0              
- [53] munsell_0.5.0             tools_4.1.2              
- [55] cli_3.1.1                 generics_0.1.2           
- [57] broom_0.7.12              ggridges_0.5.3           
- [59] evaluate_0.14             stringr_1.4.0            
- [61] fastmap_1.1.0             yaml_2.2.2               
- [63] processx_3.5.2            knitr_1.37               
- [65] fs_1.5.2                  purrr_0.3.4              
- [67] sparseMatrixStats_1.6.0   whisker_0.4              
- [69] quantreg_5.87             compiler_4.1.2           
- [71] rstudioapi_0.13           beeswarm_0.4.0           
- [73] png_0.1-7                 ggsignif_0.6.3           
- [75] tibble_3.1.6              bslib_0.3.1              
- [77] stringi_1.7.6             highr_0.9                
- [79] ps_1.6.0                  lattice_0.20-45          
- [81] Matrix_1.4-0              vctrs_0.3.8              
- [83] pillar_1.7.0              lifecycle_1.0.1          
- [85] jquerylib_0.1.4           GlobalOptions_0.1.2      
- [87] BiocNeighbors_1.12.0      bitops_1.0-7             
- [89] irlba_2.3.5               httpuv_1.6.5             
- [91] R6_2.5.1                  promises_1.2.0.1         
- [93] vipor_0.4.5               codetools_0.2-18         
- [95] assertthat_0.2.1          rprojroot_2.0.2          
- [97] rjson_0.2.21              withr_2.4.3              
- [99] GenomeInfoDbData_1.2.7    beachmat_2.10.0          
-[101] rmarkdown_2.11            DelayedMatrixStats_1.16.0
-[103] carData_3.0-5             git2r_0.29.0             
-[105] getPass_0.2-2            </code></pre>
+  [3] systemfonts_1.0.3         plyr_1.8.6               
+  [5] sp_1.4-6                  shinydashboard_0.7.2     
+  [7] BiocParallel_1.28.3       digest_0.6.29            
+  [9] foreach_1.5.2             htmltools_0.5.2          
+ [11] magick_2.7.3              viridis_0.6.2            
+ [13] tiff_0.1-11               fansi_1.0.2              
+ [15] ScaledMatrix_1.2.0        cluster_2.1.2            
+ [17] doParallel_1.0.16         svgPanZoom_0.3.4         
+ [19] svglite_2.0.0             jpeg_0.1-9               
+ [21] colorspace_2.0-2          ggrepel_0.9.1            
+ [23] xfun_0.29                 callr_3.7.0              
+ [25] crayon_1.4.2              RCurl_1.98-1.5           
+ [27] jsonlite_1.7.3            iterators_1.0.13         
+ [29] glue_1.6.1                gtable_0.3.0             
+ [31] zlibbioc_1.40.0           XVector_0.34.0           
+ [33] MatrixModels_0.5-0        GetoptLong_1.0.5         
+ [35] DelayedArray_0.20.0       car_3.0-12               
+ [37] BiocSingular_1.10.0       Rhdf5lib_1.16.0          
+ [39] shape_1.4.6               HDF5Array_1.22.1         
+ [41] abind_1.4-5               SparseM_1.81             
+ [43] scales_1.1.1              pheatmap_1.0.12          
+ [45] DBI_1.1.2                 Rcpp_1.0.8               
+ [47] xtable_1.8-4              viridisLite_0.4.0        
+ [49] clue_0.3-60               rsvd_1.0.5               
+ [51] htmlwidgets_1.5.4         httr_1.4.2               
+ [53] RColorBrewer_1.1-2        ellipsis_0.3.2           
+ [55] farver_2.1.0              pkgconfig_2.0.3          
+ [57] sass_0.4.0                locfit_1.5-9.4           
+ [59] utf8_1.2.2                labeling_0.4.2           
+ [61] reshape2_1.4.4            tidyselect_1.1.1         
+ [63] rlang_1.0.0               later_1.3.0              
+ [65] munsell_0.5.0             tools_4.1.2              
+ [67] cli_3.1.1                 generics_0.1.2           
+ [69] broom_0.7.12              ggridges_0.5.3           
+ [71] fftwtools_0.9-11          evaluate_0.14            
+ [73] stringr_1.4.0             fastmap_1.1.0            
+ [75] yaml_2.2.2                processx_3.5.2           
+ [77] knitr_1.37                fs_1.5.2                 
+ [79] purrr_0.3.4               sparseMatrixStats_1.6.0  
+ [81] mime_0.12                 whisker_0.4              
+ [83] quantreg_5.87             compiler_4.1.2           
+ [85] rstudioapi_0.13           beeswarm_0.4.0           
+ [87] png_0.1-7                 ggsignif_0.6.3           
+ [89] tibble_3.1.6              bslib_0.3.1              
+ [91] stringi_1.7.6             highr_0.9                
+ [93] ps_1.6.0                  lattice_0.20-45          
+ [95] Matrix_1.4-0              vctrs_0.3.8              
+ [97] rhdf5filters_1.6.0        pillar_1.7.0             
+ [99] lifecycle_1.0.1           jquerylib_0.1.4          
+[101] GlobalOptions_0.1.2       BiocNeighbors_1.12.0     
+[103] bitops_1.0-7              irlba_2.3.5              
+[105] raster_3.5-15             httpuv_1.6.5             
+[107] R6_2.5.1                  promises_1.2.0.1         
+[109] vipor_0.4.5               codetools_0.2-18         
+[111] assertthat_0.2.1          rhdf5_2.38.0             
+[113] rprojroot_2.0.2           rjson_0.2.21             
+[115] withr_2.4.3               GenomeInfoDbData_1.2.7   
+[117] terra_1.5-17              beachmat_2.10.0          
+[119] rmarkdown_2.11            DelayedMatrixStats_1.16.0
+[121] carData_3.0-5             git2r_0.29.0             
+[123] getPass_0.2-2             shiny_1.7.1              </code></pre>
 </div>
 </div>
 </div>
