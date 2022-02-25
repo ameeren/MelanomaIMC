@@ -459,7 +459,7 @@ $(document).ready(function () {
 <div class="tab-content">
 <div id="summary" class="tab-pane fade in active">
 <p>
-<strong>Last updated:</strong> 2022-02-22
+<strong>Last updated:</strong> 2022-02-25
 </p>
 <p>
 <strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 2 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
@@ -490,16 +490,16 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtree829018204cf4ab8671295d84a2df5eec24718647targetblank8290182a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/829018204cf4ab8671295d84a2df5eec24718647" target="_blank">8290182</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtreed246c15656639107e108bbb2fd118635b156f4a3targetblankd246c15a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtree829018204cf4ab8671295d84a2df5eec24718647targetblank8290182a" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/d246c15656639107e108bbb2fd118635b156f4a3" target="_blank">d246c15</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/829018204cf4ab8671295d84a2df5eec24718647" target="_blank">8290182</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -508,19 +508,17 @@ Note that you need to be careful to ensure that all relevant files for the analy
 Ignored files:
     Ignored:    .DS_Store
     Ignored:    .Rproj.user/
-    Ignored:    Table_S4.csv
     Ignored:    code/.DS_Store
     Ignored:    code/._.DS_Store
     Ignored:    data/.DS_Store
     Ignored:    data/._.DS_Store
     Ignored:    data/data_for_analysis/
+    Ignored:    data/data_for_analysis_zenodo/
+    Ignored:    data/full_data.zip
     Ignored:    data/full_data/
 
 Unstaged changes:
     Modified:   .gitignore
-    Modified:   analysis/Supp-Figure_10.rmd
-    Modified:   analysis/_site.yml
-    Deleted:    analysis/license.Rmd
 
 </code></pre>
 <p>
@@ -559,6 +557,40 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+Rmd
+</td>
+<td>
+<a href="https://github.com/BodenmillerGroup/MelanomaIMC/blob/b4da5af40734b87114bd742a7c95b0018484d70e/analysis/index.Rmd" target="_blank">b4da5af</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-23
+</td>
+<td>
+adapt readme and add example images to Fig S9
+</td>
+</tr>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/fe331cb34643532a33df0b86310f1e9cc2d1c8e9/docs/index.html" target="_blank">fe331cb</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-22
+</td>
+<td>
+re-run whole analysis
+</td>
+</tr>
 <tr>
 <td>
 html
@@ -819,21 +851,35 @@ Multiplexed Imaging Mass Cytometry in Metastatic Melanoma Utilizing RNA and Prot
 <h1>How-To reproduce the pipeline</h1>
 <ol>
 <li>
-Download the <a href="www.google.com">data</a> and store the folder (folder name) in MelanomaIMC/data
+Download the source code and the data required from the analysis <a href=https://doi.org/10.5281/zenodo.5994136>here</a>
 </li>
 <li>
-Download the <a href="www.google.com">docker</a> container containing all required packages
+Install <a href=https://docs.docker.com/engine/install/ubuntu/>docker</a>
 </li>
 <li>
-Install the docker container following these <a href="www.google.com">instructions</a>
+Pull the docker image with <code>docker pull toobiwankenobi/rstudiovm:versionX</code></a>
 </li>
 <li>
-Open the RStudio interface following these <a href="www.google.com">instructions</a>
+Run the docker image with <code>docker run -e PASSWORD=bioc -p 8787:8787 toobiwankenobi/rstudiovm:versionX/</code>
+</li>
+<li>
+Mount data to be accessible using the RStudio interface</a>
+</li>
+<li>
+Open the RStudio interface (<code><a href="http://localhost:8787/" class="uri">http://localhost:8787/</a></code>, user = <code>rstudio</code>, password = <code>bioc</code>) in your web browser
 </li>
 <li>
 Run Files!
 </li>
 </ol>
+</div>
+<div id="requirements" class="section level1">
+<h1>Requirements</h1>
+<p>Certain analyses require extensive computational power (mainly memory) if processes run in parallel. If you don’t have these resources, the code might need to be adapted (i.e. parallelization needs to be reduced/removed). Raise an issue in this github repo to report any problems.</p>
+</div>
+<div id="raw-data" class="section level1">
+<h1>Raw Data</h1>
+<p>Raw Data (multi-channel .tiff files, single-cell masks, etc.) is available <a href=https://doi.org/10.5281/zenodo.6004986>here</a></p>
 </div>
 
 
