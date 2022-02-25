@@ -69,6 +69,13 @@ max_patch <- data.frame(colData(sce_prot)) %>%
 max_patch$bcell_patch_score <- ifelse(max_patch$max_patch_size >= median(max_patch$max_patch_size), "B cell Follicles", "Small B cell Patches")
 ```
 
+## show median for the groups "B cell follicles" and "Small B cell patches"
+
+```{r}
+median(max_patch$max_patch_size)
+```
+
+
 ## Make grouping
 
 1 No B cells (lower half of median split in images with no B cell patches)
@@ -109,6 +116,13 @@ data %>%
   group_by(bcell_patch_score) %>%
   summarise(n=n())
 ```
+
+## show median for the groups "No B cells" and "No B cell Patches"
+
+```{r}
+median(Bcell$density)
+```
+
 
 ## add to sce object
 

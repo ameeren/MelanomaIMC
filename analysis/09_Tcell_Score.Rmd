@@ -78,6 +78,11 @@ sce_prot$cyotoxic_density_image <- cur_sce$density
 - high: 4. quantile
 
 ```{r}
+# print quantiles
+quantile(cellcount$density)
+```
+
+```{r}
 # define a vector with all ImgeNumbers
 T_density_scores <- c(1:length(unique(cellcount$ImageNumber)))
 
