@@ -441,7 +441,7 @@ $(document).ready(function () {
 
 <p>
 <button type="button" class="btn btn-default btn-workflowr btn-workflowr-report" data-toggle="collapse" data-target="#workflowr-report">
-<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span>
+<span class="glyphicon glyphicon-list" aria-hidden="true"></span> workflowr <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span>
 </button>
 </p>
 <div id="workflowr-report" class="collapse">
@@ -450,7 +450,7 @@ $(document).ready(function () {
 <a data-toggle="tab" href="#summary">Summary</a>
 </li>
 <li>
-<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> </a>
+<a data-toggle="tab" href="#checks"> Checks <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> </a>
 </li>
 <li>
 <a data-toggle="tab" href="#versions">Past versions</a>
@@ -462,7 +462,7 @@ $(document).ready(function () {
 <strong>Last updated:</strong> 2022-02-25
 </p>
 <p>
-<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 2 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 0
+<strong>Checks:</strong> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> 1 <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> 1
 </p>
 <p>
 <strong>Knit directory:</strong> <code>MelanomaIMC/</code> <span class="glyphicon glyphicon-question-sign" aria-hidden="true" title="This is the local directory in which the code in this file was executed."> </span>
@@ -478,28 +478,28 @@ This reproducible <a href="https://rmarkdown.rstudio.com">R Markdown</a> analysi
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguptodate"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>R Markdown file:</strong> up-to-date </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRMarkdownfilestronguncommittedchanges"> <span class="glyphicon glyphicon-exclamation-sign text-danger" aria-hidden="true"></span> <strong>R Markdown file:</strong> uncommitted changes </a>
 </p>
 </div>
-<div id="strongRMarkdownfilestronguptodate" class="panel-collapse collapse">
+<div id="strongRMarkdownfilestronguncommittedchanges" class="panel-collapse collapse">
 <div class="panel-body">
-<p>Great! Since the R Markdown file has been committed to the Git repository, you know the exact version of the code that produced these results.</p>
+<p>The R Markdown file has unstaged changes. To know which version of the R Markdown file created these results, you’ll want to first commit it to the Git repo. If you’re still working on the analysis, you can ignore this warning. When you’re finished, you can run <code>wflow_publish</code> to commit the R Markdown file and build the HTML.</p>
 </div>
 </div>
 </div>
 <div class="panel panel-default">
 <div class="panel-heading">
 <p class="panel-title">
-<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtree829018204cf4ab8671295d84a2df5eec24718647targetblank8290182a"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/829018204cf4ab8671295d84a2df5eec24718647" target="_blank">8290182</a> </a>
+<a data-toggle="collapse" data-parent="#workflowr-checks" href="#strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtree1b6c48aea03d3c8bbc5bd06733f2392c5e131a2btargetblank1b6c48aa"> <span class="glyphicon glyphicon-ok text-success" aria-hidden="true"></span> <strong>Repository version:</strong> <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/1b6c48aea03d3c8bbc5bd06733f2392c5e131a2b" target="_blank">1b6c48a</a> </a>
 </p>
 </div>
-<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtree829018204cf4ab8671295d84a2df5eec24718647targetblank8290182a" class="panel-collapse collapse">
+<div id="strongRepositoryversionstrongahrefhttpsgithubcomBodenmillerGroupMelanomaIMCtree1b6c48aea03d3c8bbc5bd06733f2392c5e131a2btargetblank1b6c48aa" class="panel-collapse collapse">
 <div class="panel-body">
 <p>
 Great! You are using Git for version control. Tracking code development and connecting the code version to the results is critical for reproducibility.
 </p>
 <p>
-The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/829018204cf4ab8671295d84a2df5eec24718647" target="_blank">8290182</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
+The results in this page were generated with repository version <a href="https://github.com/BodenmillerGroup/MelanomaIMC/tree/1b6c48aea03d3c8bbc5bd06733f2392c5e131a2b" target="_blank">1b6c48a</a>. See the <em>Past versions</em> tab to see a history of the changes made to the R Markdown and HTML files.
 </p>
 <p>
 Note that you need to be careful to ensure that all relevant files for the analysis have been committed to Git prior to generating the results (you can use <code>wflow_publish</code> or <code>wflow_git_commit</code>). workflowr only checks the R Markdown file, but you know if there are other scripts or data files that it depends on. Below is the status of the Git repository when the results were generated:
@@ -513,12 +513,13 @@ Ignored files:
     Ignored:    data/.DS_Store
     Ignored:    data/._.DS_Store
     Ignored:    data/data_for_analysis/
-    Ignored:    data/data_for_analysis_zenodo/
-    Ignored:    data/full_data.zip
     Ignored:    data/full_data/
+    Ignored:    data/latest.tar
 
 Unstaged changes:
     Modified:   .gitignore
+    Modified:   README.md
+    Modified:   analysis/index.Rmd
 
 </code></pre>
 <p>
@@ -557,6 +558,23 @@ Message
 </tr>
 </thead>
 <tbody>
+<tr>
+<td>
+html
+</td>
+<td>
+<a href="https://rawcdn.githack.com/BodenmillerGroup/MelanomaIMC/1b6c48aea03d3c8bbc5bd06733f2392c5e131a2b/docs/index.html" target="_blank">1b6c48a</a>
+</td>
+<td>
+toobiwankenobi
+</td>
+<td>
+2022-02-25
+</td>
+<td>
+index.html change
+</td>
+</tr>
 <tr>
 <td>
 Rmd
@@ -857,13 +875,13 @@ Download the source code and the data required from the analysis <a href=https:/
 Install <a href=https://docs.docker.com/engine/install/ubuntu/>docker</a>
 </li>
 <li>
-Pull the docker image with <code>docker pull toobiwankenobi/rstudiovm:versionX</code></a>
+Pull the docker image with <code>docker pull toobiwankenobi/melanoma_imc:latest</code></a>
 </li>
 <li>
-Run the docker image with <code>docker run -e PASSWORD=bioc -p 8787:8787 toobiwankenobi/rstudiovm:versionX/</code>
+Run the docker image with <code>docker run -e PASSWORD=bioc -p 8787:8787 toobiwankenobi/melanoma_imc:latest/</code>
 </li>
 <li>
-Mount data to be accessible using the RStudio interface</a>
+Make the source code and data accessible in order to use it in the RStudio interface</a>
 </li>
 <li>
 Open the RStudio interface (<code><a href="http://localhost:8787/" class="uri">http://localhost:8787/</a></code>, user = <code>rstudio</code>, password = <code>bioc</code>) in your web browser
